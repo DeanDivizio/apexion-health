@@ -42,12 +42,13 @@ interface Props {
     areas: Array<DataAreas>;
     footerHeading?: string;
     footerText?: string;
+    mega?: boolean;
 }
 
 export function MyAreaChart(props: Props) {
     console.log(props.data)
   return (
-    <Card className="rounded-xl">
+    <Card className={`rounded-xl min-w-72 ${props.mega? 'w-[50vw]' : null}`}>
       <CardHeader>
         <CardTitle className="text-center">{props.heading}</CardTitle>
         <CardDescription>

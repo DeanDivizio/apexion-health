@@ -24,12 +24,12 @@ weightData: [
 
 export default function Home() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-start p-12">
+    <main className="flex min-h-screen flex-col items-center justify-start py-12 px-64">
       <div id="heading" className="mb-16">
         <h1 className="text-6xl font-medium mb-6">Apexion</h1>
         <p className="text-center font-thin italic text-lg">{`Welcome back, Dean`}</p> {/*Name should be variable*/}
       </div>
-      <div id="homeCharts" className="flex gap-8 max-w-[80%]">
+      <div id="homeCharts" className="flex flex-wrap justify-center gap-8 max-w-[80%]">
         <MyAreaChart 
           heading="Total Testosterone" 
           data={data.testData} 
