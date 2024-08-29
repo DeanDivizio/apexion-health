@@ -46,7 +46,6 @@ interface Props {
 }
 
 export function MyAreaChart(props: Props) {
-    console.log(props.data)
   return (
     <Card className={`rounded-xl min-w-72 ${props.mega? 'w-[50vw]' : null}`}>
       <CardHeader>

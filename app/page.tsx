@@ -1,6 +1,8 @@
+"use client";
 import Image from "next/image";
 import { type ChartConfig } from "@/components/ui/chart"
 import {MyAreaChart} from "@/components/AreaChart"
+import { getAllResultsOneLabType, getItemsByPrimaryKeys } from "@/actions/AWS";
 
 const data = {
   testData: [
@@ -20,7 +22,14 @@ weightData: [
 ],
 }
 
-
+async function handleClick(){
+  try {
+    let data = await getItemsByPrimaryKeys(['TESTOSTERONE', 'CORTISOL']);
+    console.log('Fetched data:', data);
+  } catch (err) {
+    console.error('Failed to fetch data:', err);
+  }
+}
 
 export default function Home() {
   return (
@@ -29,6 +38,7 @@ export default function Home() {
         <h1 className="text-6xl font-medium mb-6">Apexion</h1>
         <p className="text-center font-thin italic text-lg">{`Welcome back, Dean`}</p> {/*Name should be variable*/}
       </div>
+      <button onClick={handleClick}>test</button>
       <div id="homeCharts" className="flex flex-wrap justify-center gap-8 max-w-[80%]">
         <MyAreaChart 
           heading="Total Testosterone" 

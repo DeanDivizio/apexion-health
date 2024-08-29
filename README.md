@@ -17,11 +17,12 @@ The plan right now is:
 
 Once I have a working app that's essentially a clinical data visualizer, it's time to move to phase 2.
 
-### Phase 2 - Nutrient Tracking
+### Phase 2 - Nutrient Tracking & TRT Tracking
 This should be the easiest additional feature to add since it's self-contained.
 - New db table
 - New ui section
     - meal submit form
+    - TRT form with options for category (test, hcg, ai, etc), as well as type (cyp, prop, cream), application site, and injection/application depth (surface, SQ, IM)
     - pre-built charts
 - maybe sync with other nutrient tracking apps (MyFitnessPal, etc)
 
