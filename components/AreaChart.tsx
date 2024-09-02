@@ -35,9 +35,8 @@ interface DataAreas {
 }
 
 interface Props {
-    heading: string;
     subheading?: string;
-    data: Array<object>;
+    data: Array<{displayName: string; month: string; year: string; unit: string; value: number;}>;
     xAxisKey: string;
     areas: Array<DataAreas>;
     footerHeading?: string;
@@ -49,7 +48,7 @@ export function MyAreaChart(props: Props) {
   return (
     <Card className={`rounded-xl min-w-72 ${props.mega? 'w-[50vw]' : null}`}>
       <CardHeader>
-        <CardTitle className="text-center">{props.heading}</CardTitle>
+        <CardTitle className="text-center">{props.data ? props.data[0].displayName : null}</CardTitle>
         <CardDescription>
           {props.subheading}
         </CardDescription>
@@ -81,7 +80,7 @@ export function MyAreaChart(props: Props) {
                 dataKey={area.key}
                 type="natural"
                 fill={area.color}
-                fillOpacity={0.3}
+                fillOpacity={0.2}
                 stroke={area.color}
                 stackId={area.order}
               />
@@ -93,10 +92,10 @@ export function MyAreaChart(props: Props) {
         <div className="flex w-full items-start gap-2 text-sm">
           <div className="grid gap-2">
             <div className="flex items-center gap-2 font-medium leading-none">
-              {props.footerHeading}
+            {props.data ? `${props.data[0].month} ${props.data[0].year} - ${props.data[props.data.length - 1].month} ${props.data[props.data.length - 1].year}` : null}
             </div>
             <div className="flex items-center gap-2 leading-none text-muted-foreground">
-              {props.footerText}
+            {props.data ? `Measured in ${props.data[0].unit}` : null}
             </div>
           </div>
         </div>

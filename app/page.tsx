@@ -1,87 +1,76 @@
 "use client";
-import Image from "next/image";
-import { type ChartConfig } from "@/components/ui/chart"
+import React, {useState, useEffect} from "react";
 import {MyAreaChart} from "@/components/AreaChart"
-import { getAllResultsOneLabType, getItemsByPrimaryKeys } from "@/actions/AWS";
+import { homeFetch } from "@/actions/InternalLogic";
+import { RenderChartsProps } from "@/utils/types";
 
-const data = {
-  testData: [
-  {date: "January", totalTest: 232.2, sHBG: 150.6},
-  {date: "May", totalTest: 236, sHBG: 158.4},
-  {date: "June", totalTest: 305, sHBG: 162.9},
-  {date: "July", totalTest: 321, sHBG: 180.3}
-],
-weightData: [
-  {date: "January", totalTest: 232.2, sHBG: 150.6},
-  {date: "Feb", totalTest: 245, sHBG: 150.6},
-  {date: "March", totalTest: 230, sHBG: 150.6},
-  {date: "April", totalTest: 225, sHBG: 150.6},
-  {date: "May", totalTest: 220, sHBG: 158.4},
-  {date: "June", totalTest: 200, sHBG: 162.9},
-  {date: "July", totalTest: 205, sHBG: 180.3}
-],
+interface DataChunk{
+  count: number;
+  displayName: string;
+  institution: string;
+  month: string;
+  rangeHigh: number;
+  rangeLow: number;
+  value: number;
 }
+interface DataSet {
 
-async function handleClick(){
-  try {
-    let data = await getItemsByPrimaryKeys(['TESTOSTERONE', 'CORTISOL']);
-    console.log('Fetched data:', data);
-  } catch (err) {
-    console.error('Failed to fetch data:', err);
-  }
 }
 
 export default function Home() {
+
+  const [data, setData] = useState({});
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [approvedIDs, setApprovedIDs] = useState(["TESTOSTERONE", "rbc", "plt"])
+
+  //Grabs Data
+  useEffect(() => {
+    async function dataFetch() {
+      try {
+        const data = await homeFetch(["TESTOSTERONE", "COMPLETE BLOOD COUNT", "THYROID STIMULATING HORMONE"]);
+        setData(data); 
+        // console.log(data);
+      } catch (err) {
+        setError('Failed to fetch data');
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+      dataFetch();
+  }, []);
+
+  //This filters the data based on individual requested tests (if provided) and then maps over it to render a chart for each test
+  function RenderCharts({ data, approvedIDs }: RenderChartsProps) {
+    return (
+      <div className="flex flex-wrap justify-center gap-8">
+      {Object.entries(data)
+        .filter(([key]) => !approvedIDs || approvedIDs.includes(key))
+        .map(([key, value]) => (
+          <MyAreaChart 
+            key={key}
+            data={value} 
+            xAxisKey="month" 
+            areas={[
+              { key: "value", color: "var(--color-blue)", order: 3 },
+              { key: "rangeHigh", color: "var(--color-green)", order: 2 }, 
+              { key: "rangeLow", color: "var(--color-red)", order: 1 },  
+            ]}
+          />
+        ))}
+    </div>
+    );
+  }
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-start py-12 px-64">
+    <main className="flex min-h-screen flex-col items-center justify-start py-12 px-48">
       <div id="heading" className="mb-16">
         <h1 className="text-6xl font-medium mb-6">Apexion</h1>
         <p className="text-center font-thin italic text-lg">{`Welcome back, Dean`}</p> {/*Name should be variable*/}
       </div>
-      <button onClick={handleClick}>test</button>
-      <div id="homeCharts" className="flex flex-wrap justify-center gap-8 max-w-[80%]">
-        <MyAreaChart 
-          heading="Total Testosterone" 
-          data={data.testData} 
-          xAxisKey="date" 
-          areas={[
-            {key: "totalTest", color: "var(--color-blue)", order: 1}, 
-            {key:"sHBG", color: "var(--color-green)", order: 2}
-          ]}
-          footerHeading={`All Time`}
-          footerText={`Measured in ng/dL`}
-        />
-        <MyAreaChart 
-          heading="Body Weight" 
-          data={data.weightData} 
-          xAxisKey="date" 
-          areas={[
-            {key: "totalTest", color: "var(--color-green)", order: 1}, 
-          ]}
-          footerHeading={`${data.weightData[0].date} - ${data.weightData[data.weightData.length-1].date}`}
-          footerText={`Measured in pounds`}
-        />
-        <MyAreaChart 
-          heading="Body Fat Percentage" 
-          data={data.weightData} 
-          xAxisKey="date" 
-          areas={[
-            {key: "totalTest", color: "var(--color-blue)", order: 1}, 
-            {key:"sHBG", color: "var(--color-green)", order: 2}
-          ]}
-          footerHeading={`${data.weightData[0].date} - ${data.weightData[data.weightData.length-1].date}`}
-          footerText={`Measured in ng/dL`}
-        />
-        <MyAreaChart 
-          heading="Red Blood Cells" 
-          data={data.testData} 
-          xAxisKey="date" 
-          areas={[
-            {key: "totalTest", color: "var(--color-red)", order: 1}, 
-          ]}
-          footerHeading={`All Time`}
-          footerText={`Measured in ng/dL`}
-        />
+      <div id="homeCharts">
+      <RenderCharts data={data} approvedIDs={approvedIDs} />
       </div>
     </main>
   );

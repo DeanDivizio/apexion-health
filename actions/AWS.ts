@@ -41,10 +41,10 @@ export async function getAllResultsOneLabType(labType: string) {
   }
 
 // Function to fetch all lab results of a set of given test types like "TESTOSTERONE" or "COMPLETE BLOOD COUNT"
-export async function getItemsByPrimaryKeys(primaryKeyValues: string[]): Promise<Record<string, any>[]> {
+export async function getItemsByPrimaryKeys(primaryKeyValues: string[]){
     const tableName = 'ClinicalLabs';
     const partitionKeyName = 'LabType';
-    const allItems: Record<string, any>[] = [];
+    const allItems: Array<any> = [];
 
     for (const keyValue of primaryKeyValues) {
       // Construct the QueryCommand parameters
@@ -63,6 +63,5 @@ export async function getItemsByPrimaryKeys(primaryKeyValues: string[]): Promise
         console.error(`Error querying items for key ${keyValue} from DynamoDB:`, err);
       }
     }
-    
     return allItems;
   }
