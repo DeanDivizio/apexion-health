@@ -41,8 +41,8 @@ export async function getAllResultsOneLabType(labType: string) {
   }
 
 // Function to fetch all lab results of a set of given test types like "TESTOSTERONE" or "COMPLETE BLOOD COUNT"
-export async function getItemsByPrimaryKeys(primaryKeyValues: string[]){
-    const tableName = 'ClinicalLabs';
+export async function getItemsByPrimaryKeys(primaryKeyValues: string[], table?:string,){
+    const tableName = table ? table : 'ClinicalLabs';
     const partitionKeyName = 'LabType';
     const allItems: Array<any> = [];
 

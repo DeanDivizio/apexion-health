@@ -1,5 +1,3 @@
-import { displayName } from "aws-sdk/clients/customerprofiles";
-
 export interface Result {
     id: string;
     displayName: string;
@@ -10,7 +8,7 @@ export interface Result {
 }
 export interface Test {
     LabType: string;
-    LabDate: number; // yyyymmdd format
+    LabDate: number;
     institution: string;
     results: Array<Result>;
 }
