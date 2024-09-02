@@ -2,8 +2,12 @@
 import React, {useState, useEffect} from "react";
 import { homeFetch } from "@/actions/InternalLogic";
 import { RenderCharts } from "@/utils/ChartRendering";
+import { useAuth, useUser } from "@clerk/nextjs";
 
 export default function Home() {
+
+  const { user } = useUser()
+
 
   const [data, setData] = useState({});
   const [isLoading, setIsLoading] = useState(true);
@@ -28,10 +32,9 @@ export default function Home() {
   }, []);
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-start py-12 px-48">
+    <main className="flex min-h-screen flex-col items-center justify-start pb-12 px-48">
       <div id="heading" className="mb-16">
-        <h1 className="text-6xl font-medium mb-6">Apexion</h1>
-        <p className="text-center font-thin italic text-lg">{`Welcome back, Dean`}</p> {/*Name should be variable*/}
+        <p className="text-center font-thin italic text-lg">{`Welcome back, ${user?.firstName}`}</p> {/*Name should be variable*/}
       </div>
       <div id="homeCharts">
         <RenderCharts data={data} approvedIDs={approvedIDs} />
