@@ -40,6 +40,7 @@ export type TestResult = {
     month: string;
     unit: string;
     year: string;
+    labType: string;
   };
   
 export type TestData = {
@@ -55,15 +56,14 @@ export type MyAreaChartProps = {
 export type RenderChartsProps = {
     data: TestData;
     approvedIDs?: string[];
+    categorize?: boolean;
+    categoryOrder?: string[];
   };
   
 
 //Specific Lab Type Definitions
 
 export interface Lab_Testosterone {
-    year: string;
-    month: string;
-    institution: string;
     totalTest: Result;
     shbg?: Result;
     freeTest?: Result;
@@ -71,9 +71,6 @@ export interface Lab_Testosterone {
 }
 
 export interface Lab_CBC {
-    year: string;
-    month: string;
-    institution: string;
     hematocrit: Result;
     hemoglobin: Result;
     rbc: Result;

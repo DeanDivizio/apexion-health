@@ -1,6 +1,6 @@
 "use server";
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, QueryCommand, QueryCommandInput, QueryCommandOutput } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, QueryCommand, QueryCommandInput, QueryCommandOutput, ScanCommand, ScanCommandInput, ScanCommandOutput } from '@aws-sdk/lib-dynamodb';
 
 // from here to line 20 is just AWS SDK setup
 const accessKeyId = process.env.AWS_ACCESS_KEY_ID!;
@@ -65,3 +65,32 @@ export async function getItemsByPrimaryKeys(primaryKeyValues: string[], table?:s
     }
     return allItems;
   }
+
+// Gets all items in a given table - defaults to lab data
+export async function getAllItems(table?: string) {
+  const tableName = table || 'ClinicalLabs';
+  const allItems: Array<any> = [];
+
+  try {
+    let lastEvaluatedKey: Record<string, any> | undefined;
+    do {
+      // Construct the ScanCommand parameters
+      const params: ScanCommandInput = {
+        TableName: tableName,
+        ExclusiveStartKey: lastEvaluatedKey,
+      };
+
+      const command = new ScanCommand(params);
+      const data: ScanCommandOutput = await docClient.send(command);
+      
+      allItems.push(...(data.Items || []));
+      lastEvaluatedKey = data.LastEvaluatedKey;
+
+    } while (lastEvaluatedKey);  // Continue scanning if there are more items
+
+  } catch (err) {
+    console.error(`Error scanning items from DynamoDB:`, err);
+  }
+
+  return allItems;
+}

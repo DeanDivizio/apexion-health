@@ -1,5 +1,5 @@
 "use server";
-import { getItemsByPrimaryKeys } from "@/actions/AWS";
+import { getItemsByPrimaryKeys, getAllItems } from "@/actions/AWS";
 import { Result, Test, IndividualResult } from "@/utils/types"
 
 // This takes data from AWS and separates the individual test results for averaging
@@ -32,9 +32,9 @@ import { Result, Test, IndividualResult } from "@/utils/types"
 
 // This takes the separeated results and organizes/averages them based on id + year + month
  function averageResultsByMonth(separatedResults: IndividualResult[]): { count: number, id: string, displayName: string, institution: string }[] {
-    const groupedResults: { [key: string]: { count: number, totalValue: number, totalRangeHigh: number, totalRangeLow: number, displayName: string, institution: string, id: string, month: string, unit: string, year: string } } = {};
+    const groupedResults: { [key: string]: { count: number, totalValue: number, totalRangeHigh: number, totalRangeLow: number, displayName: string, institution: string, id: string, month: string, unit: string, year: string, LabType:string } } = {};
   
-    separatedResults.forEach(({ institution, year, month, value, rangeHigh, rangeLow, id, displayName, unit }) => { 
+    separatedResults.forEach(({ institution, year, month, value, rangeHigh, rangeLow, id, displayName, unit, LabType }) => { 
       const key = `${id}${year}${month}`; 
       if (groupedResults[key]) {
         groupedResults[key].count++;
@@ -42,7 +42,7 @@ import { Result, Test, IndividualResult } from "@/utils/types"
         groupedResults[key].totalRangeHigh += rangeHigh || 0;
         groupedResults[key].totalRangeLow += rangeLow || 0;
       } else {
-        groupedResults[key] = { count: 1, totalValue: value, totalRangeHigh: rangeHigh || 0, totalRangeLow: rangeLow || 0, id: id, displayName: displayName, institution: institution, month: month, unit: unit, year:year }; // Include id and displayName here 
+        groupedResults[key] = { count: 1, totalValue: value, totalRangeHigh: rangeHigh || 0, totalRangeLow: rangeLow || 0, id: id, displayName: displayName, institution: institution, month: month, unit: unit, year:year, LabType:LabType }; // Include id and displayName here 
       }
     });
   
@@ -56,7 +56,8 @@ import { Result, Test, IndividualResult } from "@/utils/types"
       institution: result.institution,
       month: result.month,
       unit: result.unit,
-      year: result.year
+      year: result.year,
+      labType: result.LabType
   
     }));
   
@@ -117,5 +118,13 @@ import { Result, Test, IndividualResult } from "@/utils/types"
     data = averageResultsByMonth(separatedData);
     data = formatDataForInividualGraph(data);
     // console.log(data);
+    return(data);
+  }
+
+  export async function categoryFetch(table?:string) {
+    let data = await getAllItems(table);
+    let separatedData = separateResults(data);
+    data = averageResultsByMonth(separatedData);
+    data = formatDataForInividualGraph(data);
     return(data);
   }

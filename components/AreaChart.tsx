@@ -75,6 +75,44 @@ export function MyAreaChart(props: Props) {
               cursor={false}
               content={<ChartTooltipContent indicator="dot" />}
             />
+            <defs>
+              <linearGradient id="fillValue" x1="0" y1="0" x2="0" y2="1">
+                <stop
+                  offset="5%"
+                  stopColor="var(--color-blue)"
+                  stopOpacity={0.9}
+                />
+                <stop
+                  offset="95%"
+                  stopColor="var(--color-blue)"
+                  stopOpacity={0.5}
+                />
+              </linearGradient>
+              <linearGradient id="fillLow" x1="0" y1="0" x2="0" y2="1">
+                <stop
+                  offset="5%"
+                  stopColor="var(--color-red)"
+                  stopOpacity={0.8}
+                />
+                <stop
+                  offset="95%"
+                  stopColor="var(--color-red)"
+                  stopOpacity={0.4}
+                />
+              </linearGradient>
+              <linearGradient id="fillHigh" x1="0" y1="0" x2="0" y2="1">
+                <stop
+                  offset="5%"
+                  stopColor="var(--color-green)"
+                  stopOpacity={0.8}
+                />
+                <stop
+                  offset="95%"
+                  stopColor="var(--color-green)"
+                  stopOpacity={0.4}
+                />
+              </linearGradient>
+            </defs>
             {props.areas.map((area) => (
                 <Area
                 dataKey={area.key}
