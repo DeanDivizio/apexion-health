@@ -3,6 +3,7 @@ import React, {useState, useEffect} from "react";
 import { homeFetch } from "@/actions/InternalLogic";
 import { RenderCharts } from "@/utils/ChartRendering";
 import { useAuth, useUser } from "@clerk/nextjs";
+import { genBlobs } from "@/components/AnimatedBG";
 
 export default function Home() {
 
@@ -30,9 +31,8 @@ export default function Home() {
     }
       dataFetch();
   }, []);
-
   return (
-    <main className="flex min-h-screen flex-col items-center justify-start pb-12 px-48">
+    <main className="flex min-h-screen flex-col items-center justify-start pb-12 px-8 xl:px-48">
       <div id="heading" className="mb-16">
         <p className="text-center font-thin italic text-lg">{`Welcome back, ${user?.firstName}`}</p> {/*Name should be variable*/}
       </div>

@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { ClerkProvider } from '@clerk/nextjs'
 import Nav from "@/components/Nav";
+import AnimatedBG from "@/components/AnimatedBG";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -23,6 +24,7 @@ export default function RootLayout({
         <body>
           <Nav />
           {children}
+          <AnimatedBG />
         </body>
       </html>
     </ClerkProvider>

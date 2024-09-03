@@ -88,13 +88,37 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply text-foreground;
   }
 }
 
 :root {
-  background: #000;
+  background: #000000;
   --color-green: #27e476;
   --color-red: #b81212;
   --color-blue: #1262b8;
+}
+
+.card {
+  width: 100vw;
+  height: 100vh;
+  box-shadow: 0 7px 30px -10px rgba(150, 170, 180, 0.5);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  position: fixed;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+  z-index: -5;
+  background-color: #00000000;
+}
+
+.card > .blob {
+  background: #00000000;
+  height: 12%;
+  width: 6.5%;
+  border-radius: 100%;
+  filter: blur(500px);
+  position: absolute;
 }
