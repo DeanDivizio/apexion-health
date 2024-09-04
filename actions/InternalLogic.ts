@@ -1,9 +1,12 @@
 "use server";
 import { getItemsByPrimaryKeys, getAllItems } from "@/actions/AWS";
-import { Result, Test, IndividualResult } from "@/utils/types"
+import { Result, Test, IndividualResult } from "@/utils/types";
+import { auth } from '@clerk/nextjs/server';
+
+const { userId } = auth();
 
 // This takes data from AWS and separates the individual test results for averaging
- function separateResults(data: Test[]): IndividualResult[] { 
+function separateResults(data: Test[]): IndividualResult[] { 
     // Helper function to get the month name from a month number
     const getMonthName = (monthNumber: number): string => {
         const months = [
@@ -31,7 +34,7 @@ import { Result, Test, IndividualResult } from "@/utils/types"
   }
 
 // This takes the separeated results and organizes/averages them based on id + year + month
- function averageResultsByMonth(separatedResults: IndividualResult[]): { count: number, id: string, displayName: string, institution: string }[] {
+function averageResultsByMonth(separatedResults: IndividualResult[]): { count: number, id: string, displayName: string, institution: string }[] {
     const groupedResults: { [key: string]: { count: number, totalValue: number, totalRangeHigh: number, totalRangeLow: number, displayName: string, institution: string, id: string, month: string, unit: string, year: string, LabType:string } } = {};
   
     separatedResults.forEach(({ institution, year, month, value, rangeHigh, rangeLow, id, displayName, unit, LabType }) => { 
@@ -65,7 +68,7 @@ import { Result, Test, IndividualResult } from "@/utils/types"
   }
 
 // This takes the separeated results and organizes/averages them based on id + year
- function averageResultsByYear(separatedResults: IndividualResult[]): { count: number, id: string, displayName: string, institution: string }[] {
+function averageResultsByYear(separatedResults: IndividualResult[]): { count: number, id: string, displayName: string, institution: string }[] {
     const groupedResults: { [key: string]: { count: number, totalValue: number, totalRangeHigh: number, totalRangeLow: number, displayName: string, institution: string, id: string, year: string } } = {};
   
     separatedResults.forEach(({ institution, year, value, rangeHigh, rangeLow, id, displayName }) => { 
@@ -96,7 +99,7 @@ import { Result, Test, IndividualResult } from "@/utils/types"
   }
 
 // Formats averaged data into {id[result{data}]} format
-  function formatDataForInividualGraph(data: any[]){
+function formatDataForInividualGraph(data: any[]){
     const transformedData = data.reduce((acc: { [x: string]: any[]; }, item: { [x: string]: any; id: any; }) => {
         const { id, ...rest } = item;
         // If the ID key doesn't exist in the accumulator, create it as an empty array
@@ -113,18 +116,22 @@ import { Result, Test, IndividualResult } from "@/utils/types"
 
 // Runs through needed functions to populate data on homepage. exported to allow calling on home page
   export async function homeFetch(tests: string[]) {
-    let data = await getItemsByPrimaryKeys(tests);
-    let separatedData = separateResults(data);
-    data = averageResultsByMonth(separatedData);
-    data = formatDataForInividualGraph(data);
-    // console.log(data);
-    return(data);
+    if (userId) {
+      let data = await getItemsByPrimaryKeys(tests);
+      let separatedData = separateResults(data);
+      data = averageResultsByMonth(separatedData);
+      data = formatDataForInividualGraph(data);
+      // console.log(data);
+      return(data);
+    } else throw new Error('You need to be signed in to view data.')
   }
 
   export async function categoryFetch(table?:string) {
-    let data = await getAllItems(table);
-    let separatedData = separateResults(data);
-    data = averageResultsByMonth(separatedData);
-    data = formatDataForInividualGraph(data);
-    return(data);
+    if (userId) {
+      let data = await getAllItems(table);
+      let separatedData = separateResults(data);
+      data = averageResultsByMonth(separatedData);
+      data = formatDataForInividualGraph(data);
+      return(data);
+    } else throw new Error('You need to be signed in to view data.')
   }

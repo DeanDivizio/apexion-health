@@ -7,12 +7,12 @@ import { useUser } from "@clerk/nextjs";
 export default function Home() {
 
   const { user } = useUser()
-
+  const userMeta: string[] | unknown = user?.publicMetadata.homeLabs;
 
   const [data, setData] = useState({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [approvedIDs, setApprovedIDs] = useState(["TESTOSTERONE", "rbc", "plt", "rdw"])
+  const [approvedIDs, setApprovedIDs] = useState<string[]>(Array.isArray(userMeta) ? userMeta : []);
 
   //Grabs Data
   useEffect(() => {
