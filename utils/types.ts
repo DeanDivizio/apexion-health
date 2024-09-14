@@ -94,3 +94,49 @@ export interface Lab_CBC {
     plt?: Result;
     rdw?: Result;
 }
+
+// HRT Types
+
+export interface Testosterone_Form {
+  date: number;
+  time: number;
+  method: "Injection" | "Cream";
+  injectionDepth?: "Sub-Q" | "Intermuscular";
+  injectionEster?: "Cypionate" | "Enanthate" | "Propionate";
+  creamLocation?: string;
+  brand?: string;
+  dose: number;
+}
+
+export interface AromataseInhibitor_Form {
+  date: number;
+  time: number;
+  brand?: string;
+  brandPlaceholder: "i.e. Anastrozole, Aromasin";
+  dose: number;
+}
+
+export interface PDE5Inhibitor_Form {
+  date: number;
+  time: number;
+  brand?: string;
+  brandPlaceholder: "i.e. Cialis, Viagra";
+  dose: number;
+}
+
+export interface HCG_Form {
+  date: number;
+  time: number;
+  method: "Injection";
+  injectionDepth?: "Sub-Q" | "Intermuscular";
+  brand?: string;
+  dose: number;
+}
+
+export interface Estrogen_Form { //This will be updated later
+  date: number;
+  time: number;
+  brand?: string;
+  brandPlaceholder: "i.e. Cialis";
+  dose: number;
+}

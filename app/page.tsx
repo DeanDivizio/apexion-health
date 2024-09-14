@@ -3,7 +3,8 @@ import React, {useState, useEffect} from "react";
 import { homeFetch } from "@/actions/InternalLogic";
 import { RenderCharts } from "@/utils/ChartRendering";
 import { useUser } from "@clerk/nextjs";
-import GradientButton from "@/components/GradientButton"
+import GradientButton from "@/components/GradientButton";
+import HRTDrawer from "@/components/HRTDrawer";
 
 export default function Home() {
 
@@ -37,7 +38,7 @@ export default function Home() {
         <p className="text-center font-thin italic text-4xl">{`Welcome back, ${user?.firstName}`}</p> {/*Name should be variable*/}
       </div>
       <div id="homeButtons" className="pb-12">
-        <GradientButton text="test - to labs" link="/labs" />
+       <HRTDrawer />
       </div>
       <div id="homeCharts">
         <RenderCharts data={data} approvedIDs={approvedIDs} />
