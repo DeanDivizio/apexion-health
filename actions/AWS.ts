@@ -1,6 +1,6 @@
 "use server";
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, QueryCommand, QueryCommandInput, QueryCommandOutput, ScanCommand, ScanCommandInput, ScanCommandOutput } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, PutCommand, PutCommandInput, QueryCommand, QueryCommandInput, QueryCommandOutput, ScanCommand, ScanCommandInput, ScanCommandOutput } from '@aws-sdk/lib-dynamodb';
 import { auth } from "@clerk/nextjs/server"
 
 // from here to line 20 is just AWS SDK setup
@@ -21,7 +21,6 @@ const docClient = DynamoDBDocumentClient.from(client);
 
 // grab id of current user for auth. if null, user is not signed in
 const { userId } = auth();
-
 
 // Function to fetch all lab results of a given test type like "TESTOSTERONE" or "COMPLETE BLOOD COUNT"
 export async function getAllResultsOneLabType(labType: string) {
@@ -74,7 +73,6 @@ export async function getItemsByPrimaryKeys(primaryKeyValues: string[], table?:s
   } else throw new Error("User is not signed in.")
 }
 
-
 // Gets all items in a given table - defaults to lab data
 export async function getAllItems(table?: string) {
   if (userId){  
@@ -104,4 +102,26 @@ export async function getAllItems(table?: string) {
 
   return allItems;
   } else throw new Error("User is not signed in.")
+}
+
+// Add items to table
+export async function addItemToTable(formData: { [key: string]: any }, table:string) {
+  
+  if (!userId) {
+    throw new Error("User is not signed in.");
+  }
+
+  const tableName = table;
+  formData.userID = userId;
+
+  try {
+    const params: PutCommandInput = {
+      TableName: tableName,
+      Item: formData,
+    };
+    await docClient.send(new PutCommand(params));
+  } catch (err) {
+    console.error(`Error adding item to DynamoDB:`, err);
+  }
+
 }

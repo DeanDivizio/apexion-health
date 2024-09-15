@@ -37,8 +37,12 @@ export default function Home() {
       <div id="heading" className="my-16">
         <p className="text-center font-thin italic text-4xl">{`Welcome back, ${user?.firstName}`}</p> {/*Name should be variable*/}
       </div>
-      <div id="homeButtons" className="pb-12">
+      <div id="homeButtons" className="pb-24">
        <HRTDrawer />
+      </div>
+      <div className="w-full px-16 mb-6">
+        <h3 className="text-5xl font-regular tracking-normal mb-4 ">Pinned Data</h3>
+        <hr className="border-neutral-400"></hr>
       </div>
       <div id="homeCharts">
         <RenderCharts data={data} approvedIDs={approvedIDs} />

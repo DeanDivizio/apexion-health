@@ -8,14 +8,15 @@ import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage, } from "@/components/ui/form"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
+import { addItemToTable } from "@/actions/AWS"
 
 //define the form schema
 const FormSchema = z.object({
   category: z.string(),
   type: z.string(),
-  dose: z.number(),
+  dose: z.string().transform(Number),
   depth: z.string(),
-  date: z.number(),
+  date: z.string(),
   time: z.string(),
 
 })
@@ -31,7 +32,7 @@ export default function HRTForm() {
   })
 
   function onSubmit(data: z.infer<typeof FormSchema>) {
-    //need to fill this out
+    addItemToTable(data, "Apexion-Hormone")
   }
 
   return (
@@ -86,6 +87,7 @@ export default function HRTForm() {
                   <SelectItem value="estrogen">Estrogen</SelectItem>
                   <SelectItem value="ai">Aromatase Inhibitor</SelectItem>
                   <SelectItem value="pde5i">{`PDE5 Inhibitor (i.e. Cialis)`}</SelectItem>
+                  <SelectItem value="gonadotropin">{`Gonadotropin (HCG, Gonadorelin)`}</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -140,7 +142,7 @@ export default function HRTForm() {
                           <SelectItem value="e2cream">{`Estrodiol - Cream`}</SelectItem>
                           <SelectItem value="e2ring">{`Estrodiol - Vaginal Ring`}</SelectItem>
                           <SelectItem value="estriolsupp">{`Estriol - Suppository`}</SelectItem>
-                          <SelectItem value="estriolcream">{`Estrodiol - Cream`}</SelectItem>
+                          <SelectItem value="estriolcream">{`Estriol - Cream`}</SelectItem>
                         </>
                         : category === "pde5i" ?
                           <>
@@ -148,6 +150,11 @@ export default function HRTForm() {
                             <SelectItem value="sildenafil">{`Sildenafil (Viagra, Revatio)`}</SelectItem>
                             <SelectItem value="vardenafil">{`Vardenafil (Levitra)`}</SelectItem>
                             <SelectItem value="avanafil">{`Avanafil (Stendra)`}</SelectItem>
+                          </>
+                          :  category === "gonadotropin" ?
+                          <>
+                            <SelectItem value="gonadorelin">{`Gonadorelin (Factrel, Lutropin)`}</SelectItem>
+                            <SelectItem value="hcg">{`HCG (Pregnyl, Profasi, Novarel, Ovidrel)`}</SelectItem>
                           </>
                           : null
                   }
@@ -157,7 +164,7 @@ export default function HRTForm() {
             </FormItem>
           )}
         /> : null}
-        {category === "testosterone" && type && type != "cream" ?
+        {category === "testosterone" || category=== "gonadotropin" && type && type != "cream" ?
           <FormField
             control={form.control}
             name="depth"
