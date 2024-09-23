@@ -1,71 +1,86 @@
-"use client";
-import React, { useEffect } from "react";
-import anime from "animejs/lib/anime.es.js";
-import Image from "next/image";
+"use client"
 
-const rnd = (min:number, max:number) => Math.floor(Math.random() * (max - min + 1) + min);
-const colors = ["#00FF5F", "#2EFF7C", "#0866E8", "#08525C", "#04D3C4"];
-const rndBorderRadius = () =>
-  [...Array(4).keys()]
-    .map(() => rnd(30, 85) + "%")
-    .join(" ") +
-  " / " +
-  [...Array(4).keys()]
-    .map(() => rnd(30, 85) + "%")
-    .join(" ");
+import React, { useEffect, useRef } from "react"
+import { motion } from "framer-motion"
+import Image from "next/image"
 
-const createBlob = ({ id, x, y, color }) => {
-  const blob = document.createElement("div");
-  blob.id = `blob-${id}`;
-  blob.classList.add("blob");
-  blob.style.position = "absolute"; // Ensure absolute positioning for free movement
-  blob.style.top = `${y}%`;
-  blob.style.left = `${x}%`;
-  blob.style.backgroundColor = color;
-  blob.style.transform = `scale(${rnd(1.5, 2)})`;
-  blob.style.borderRadius = rndBorderRadius();
-  return blob;
-};
+const colors = ["#00FF5F", "#2EFF7C", "#0866E8", "#08525C", "#04D3C4"]
+const blobCount = 8
 
-const animateBlob = (id) => {
-  anime({
-    targets: `#blob-${id}`,
-    translateX: () => `+=${rnd(-20, 20)}%`, // Smaller range for subtle movement
-    translateY: () => `+=${rnd(-20, 20)}%`,
-    scale: () => rnd(2, 2.35),
-    rotate: () => rnd(-15, 15), // Subtle rotation for a smoother effect
-    opacity: () => rnd(0.1, 0.3),
-    easing: "linear",
-    duration: 10000, // Longer duration for smoother transitions
-    complete: () => animateBlob(id), // Loop animation
-    direction: "normal",
-    elasticity: 0,
-  });
-};
+const rnd = (min: number, max: number) => Math.random() * (max - min) + min
 
-const genBlobs = () => {
-  const card = document.querySelector(".card") ? document.querySelector(".card") : null;
-  if (card) card.innerHTML = "";
-  const blobCount = 15; // Fixed number of blobs
-  [...Array(blobCount).keys()].forEach((id) => {
-    const x = rnd(25, 75);
-    const y = rnd(25, 75);
-    const color = colors[rnd(0, colors.length)];
-    const blob = createBlob({ id, x, y, color });
-    if (card) card.appendChild(blob);
-    animateBlob(id); // Start animation
-  });
-};
+const Blob = ({ id }: { id: number }) => {
+  const color = colors[Math.floor(Math.random() * colors.length)]
+  
+  return (
+    <motion.div
+      key={id}
+      className="absolute rounded-full mix-blend-multiply filter blur-lg"
+      animate={{
+        x: [
+          `${rnd(-10, 110)}%`,
+          `${rnd(-10, 110)}%`,
+          `${rnd(-10, 110)}%`,
+          `${rnd(-10, 110)}%`
+        ],
+        y: [
+          `${rnd(-10, 110)}%`,
+          `${rnd(-10, 110)}%`,
+          `${rnd(-10, 110)}%`,
+          `${rnd(-10, 110)}%`
+        ],
+        scale: [1, 1.2, 0.8, 1],
+        rotate: [0, 90, 180, 270],
+      }}
+      transition={{
+        duration: rnd(60, 120),
+        ease: "linear",
+        repeat: Infinity,
+        repeatType: "loop",
+      }}
+      style={{
+        backgroundColor: color,
+        width: `${rnd(300, 500)}px`,
+        height: `${rnd(300, 500)}px`,
+        opacity: 0.3,
+      }}
+    />
+  )
+}
 
-export default function AnimatedBG() {
+export default function AnimatedBackground() {
+  const containerRef = useRef<HTMLDivElement>(null)
+
   useEffect(() => {
-    genBlobs();
-  }, []);
+    const updateBlobPositions = () => {
+      if (containerRef.current) {
+        const { width, height } = containerRef.current.getBoundingClientRect()
+        containerRef.current.style.setProperty('--container-width', `${width}px`)
+        containerRef.current.style.setProperty('--container-height', `${height}px`)
+      }
+    }
+
+    updateBlobPositions()
+    window.addEventListener('resize', updateBlobPositions)
+
+    return () => {
+      window.removeEventListener('resize', updateBlobPositions)
+    }
+  }, [])
 
   return (
-    <div className="container w-full min-h-full">
-        <div className="card bg-transparent"></div>
-        <img className="fixed top-0 left-0 -z-10 object-cover opacity-15 blur-sm" src={"geoBG.jpg"} alt={""}/>
+    <div ref={containerRef} className="relative w-full h-screen overflow-hidden bg-gray-100">
+      {Array.from({ length: blobCount }).map((_, i) => (
+        <Blob key={i} id={i} />
+      ))}
+      <div className="absolute inset-0 bg-white/50" />
+      <Image
+        src="/placeholder.svg?height=1080&width=1920"
+        alt="Background"
+        layout="fill"
+        objectFit="cover"
+        className="opacity-15 blur-sm"
+      />
     </div>
-  );
+  )
 }
