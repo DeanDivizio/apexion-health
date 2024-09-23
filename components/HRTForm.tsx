@@ -22,7 +22,7 @@ const FormSchema = z.object({
 })
 
 // Feature needed: save the current form values as defaults and populate based on defaults with subsequent uses
-export default function HRTForm({ onSuccess }: { onSuccess?: () => void }) {
+export default function HRTForm({ onSuccess }: { onSuccess: () => void }) {
 
   const [category, setCategory] = useState<string | null>(null)
   const [type, setType] = useState<string | null>(null)
