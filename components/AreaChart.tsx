@@ -116,6 +116,7 @@ export function MyAreaChart(props: Props) {
             {props.areas.map((area) => (
                 <Area
                 dataKey={area.key}
+                key={area.key}
                 type="natural"
                 fill={area.color}
                 fillOpacity={0.2}
