@@ -22,18 +22,29 @@ const FormSchema = z.object({
 })
 
 // Feature needed: save the current form values as defaults and populate based on defaults with subsequent uses
-export default function HRTForm() {
+export default function HRTForm({ onSuccess }: { onSuccess: () => void }) {
 
   const [category, setCategory] = useState<string | null>(null)
   const [type, setType] = useState<string | null>(null)
+  const [buttonText, setButtonText] = useState<string>("Log Data")
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
   })
 
-  function onSubmit(data: z.infer<typeof FormSchema>) {
-    addItemToTable(data, "Apexion-Hormone")
-  }
+  async function onSubmit(data: z.infer<typeof FormSchema>) {
+    try { 
+      setButtonText("sending...")
+      await addItemToTable(data, "Apexion-Hormone") 
+    }
+    catch (error) {console.error('An error occurred:', error);}
+    finally {
+      setButtonText("Sent!")
+      setTimeout(()=>{
+          onSuccess()
+        },1500)  
+      }
+    }
 
   return (
     <Form {...form}>
@@ -187,7 +198,7 @@ export default function HRTForm() {
             )}
           /> : null
         }
-        <Button type="submit">Log Data</Button>
+        <Button type="submit">{buttonText}</Button>
       </form>
     </Form>
   )
