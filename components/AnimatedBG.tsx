@@ -5,44 +5,49 @@ import { motion } from "framer-motion"
 import Image from "next/image"
 
 const colors = ["#00FF5F", "#2EFF7C", "#0866E8", "#08525C", "#04D3C4"]
-const blobCount = 8
+const blobCount = 24
 
 const rnd = (min: number, max: number) => Math.random() * (max - min) + min
 
 const Blob = ({ id }: { id: number }) => {
   const color = colors[Math.floor(Math.random() * colors.length)]
+  const size = `${rnd(200, 500)}px`
   
   return (
     <motion.div
       key={id}
       className="absolute rounded-full mix-blend-multiply filter blur-lg"
+      initial={{
+        x: `${rnd(-20, 120)}%`,
+        y: `${rnd(-20, 120)}%`,
+      }}
       animate={{
         x: [
-          `${rnd(-10, 110)}%`,
-          `${rnd(-10, 110)}%`,
-          `${rnd(-10, 110)}%`,
-          `${rnd(-10, 110)}%`
+          `${rnd(-20, 1500)}%`,
+          `${rnd(-20, 1500)}%`,
+          `${rnd(-20, 1500)}%`,
+          `${rnd(-20, 1500)}%`
         ],
         y: [
-          `${rnd(-10, 110)}%`,
-          `${rnd(-10, 110)}%`,
-          `${rnd(-10, 110)}%`,
-          `${rnd(-10, 110)}%`
+          `${rnd(-20, 400)}%`,
+          `${rnd(-20, 400)}%`,
+          `${rnd(-20, 400)}%`,
+          `${rnd(-20, 400)}%`
         ],
-        scale: [1, 1.2, 0.8, 1],
-        rotate: [0, 90, 180, 270],
+        scale: [1, 1.4, 0.8, 1],
+        rotate: [0, 180, 360],
       }}
       transition={{
-        duration: rnd(60, 120),
+        duration: rnd(500, 1000),
         ease: "linear",
         repeat: Infinity,
         repeatType: "loop",
       }}
       style={{
         backgroundColor: color,
-        width: `${rnd(300, 500)}px`,
-        height: `${rnd(300, 500)}px`,
-        opacity: 0.3,
+        width: size,
+        height: size,
+        opacity: 0.2,
       }}
     />
   )
@@ -69,13 +74,13 @@ export default function AnimatedBackground() {
   }, [])
 
   return (
-    <div ref={containerRef} className="relative w-full h-screen overflow-hidden bg-gray-100">
+    <div ref={containerRef} className="absolute top-0 -z-10 w-full h-screen overflow-hidden bg-transparent">
       {Array.from({ length: blobCount }).map((_, i) => (
         <Blob key={i} id={i} />
       ))}
-      <div className="absolute inset-0 bg-white/50" />
+      <div className="absolute inset-0" />
       <Image
-        src="/placeholder.svg?height=1080&width=1920"
+        src="/geoBG.jpg"
         alt="Background"
         layout="fill"
         objectFit="cover"

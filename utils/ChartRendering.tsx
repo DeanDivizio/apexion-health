@@ -75,7 +75,7 @@ export function RenderCharts({ data, approvedIDs, categorize = false, categoryOr
                     <DrawerTitle>{value[0].displayName}</DrawerTitle>
                     <DrawerDescription>Individual Lab Results - Averaged by Month</DrawerDescription>
                   </DrawerHeader>
-                  <div className="flex gap-8 justify-center pb-12">
+                  <div className="flex justify-center pb-12">
                   {value.map((element, i) => (
                     <Card key={i} className="rounded-xl">
                       <CardHeader>
