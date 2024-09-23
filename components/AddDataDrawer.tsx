@@ -6,7 +6,9 @@ export default function AddDataDrawer() {
         <Drawer>
             <DrawerTrigger className="text-2xl font-semibold mb-8 transition hover:text-blue-500">Add Data</DrawerTrigger>
             <DrawerContent className="flex flex-col items-center justify-center max-h-[90vh]">
-                <HRTForm />
+                <HRTForm onSuccess={function (): void {
+                    throw new Error("Function not implemented.");
+                } } />
             </DrawerContent>
         </Drawer>
     )
