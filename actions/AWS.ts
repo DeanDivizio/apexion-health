@@ -1,6 +1,6 @@
 "use server";
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, PutCommand, PutCommandInput, QueryCommand, QueryCommandInput, QueryCommandOutput, ScanCommand, ScanCommandInput, ScanCommandOutput } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, PutCommand, PutCommandInput, QueryCommand, QueryCommandInput, QueryCommandOutput, ScanCommand, ScanCommandInput, ScanCommandOutput, UpdateCommand, UpdateCommandInput } from '@aws-sdk/lib-dynamodb';
 import { auth } from "@clerk/nextjs/server"
 
 // from here to line 20 is just AWS SDK setup
@@ -105,7 +105,7 @@ export async function getAllItems(table?: string) {
 }
 
 // Add items to table
-export async function addItemToTable(formData: { [key: string]: any }, table:string) {
+export async function addItemToTableOLD(formData: { [key: string]: any }, table:string) {
   
   if (!userId) {
     throw new Error("User is not signed in.");
@@ -124,4 +124,43 @@ export async function addItemToTable(formData: { [key: string]: any }, table:str
     console.error(`Error adding item to DynamoDB:`, err);
   }
 
+}
+
+export async function addItemToTable(formData: { [key: string]: any }, table: string) {
+
+  if (!userId) {
+    throw new Error("User is not signed in.");
+  }
+
+  const tableName = table;
+  const date = formData.date || new Date().toISOString().split('T')[0].replace(/-/g, '');
+
+  // Remove userID and date from formData as they'll be used as keys
+  const { userID, date: formDate, ...dataToStore } = formData;
+
+  try {
+    const params: UpdateCommandInput = {
+      TableName: tableName,
+      Key: {
+        userID: userId,
+        date: date,
+      },
+      UpdateExpression: "SET #data = list_append(if_not_exists(#data, :empty_list), :newData)",
+      ExpressionAttributeNames: {
+        "#data": "data",
+      },
+      ExpressionAttributeValues: {
+        ":newData": [dataToStore],
+        ":empty_list": [],
+      },
+      ReturnValues: "UPDATED_NEW",
+    };
+
+    const result = await docClient.send(new UpdateCommand(params));
+    console.log("Update successful:", result);
+    return result;
+  } catch (err) {
+    console.error(`Error updating item in DynamoDB:`, err);
+    throw err;
+  }
 }

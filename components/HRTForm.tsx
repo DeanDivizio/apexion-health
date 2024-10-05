@@ -15,7 +15,7 @@ const FormSchema = z.object({
   category: z.string(),
   type: z.string(),
   dose: z.string().transform(Number),
-  depth: z.string(),
+  depth: z.string().optional(),
   date: z.string(),
   time: z.string(),
 
@@ -30,21 +30,27 @@ export default function HRTForm({ onSuccess }: { onSuccess: () => void }) {
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
+    defaultValues: {
+      category: "",
+      type: "",
+      dose: 0,
+      date: "",
+      time: "",
+    },
   })
-
   async function onSubmit(data: z.infer<typeof FormSchema>) {
     try { 
-      setButtonText("sending...")
-      await addItemToTable(data, "Apexion-Hormone") 
+      setButtonText("sending...");
+      await addItemToTable(data, "Apexion-Hormone");
+      setButtonText("Sent!");
+      setTimeout(() => {
+        onSuccess();
+      }, 500);
+    } catch (error) {
+      console.error('An error occurred:', error);
+      setButtonText("Error occurred");
     }
-    catch (error) {console.error('An error occurred:', error);}
-    finally {
-      setButtonText("Sent!")
-      setTimeout(()=>{
-          onSuccess()
-        },1500)  
-      }
-    }
+  }
 
   return (
     <Form {...form}>
