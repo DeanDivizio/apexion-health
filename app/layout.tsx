@@ -10,6 +10,7 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "Apexion Health",
   description: "Elegant and comprehensive health data tracking.",
+  manifest: 'manifest.json',
 };
 
 
