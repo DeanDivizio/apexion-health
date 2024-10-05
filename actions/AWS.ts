@@ -105,27 +105,6 @@ export async function getAllItems(table?: string) {
 }
 
 // Add items to table
-export async function addItemToTableOLD(formData: { [key: string]: any }, table:string) {
-  
-  if (!userId) {
-    throw new Error("User is not signed in.");
-  }
-
-  const tableName = table;
-  formData.userID = userId;
-
-  try {
-    const params: PutCommandInput = {
-      TableName: tableName,
-      Item: formData,
-    };
-    await docClient.send(new PutCommand(params));
-  } catch (err) {
-    console.error(`Error adding item to DynamoDB:`, err);
-  }
-
-}
-
 export async function addItemToTable(formData: { [key: string]: any }, table: string) {
 
   if (!userId) {
