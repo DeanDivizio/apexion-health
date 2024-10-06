@@ -8,8 +8,10 @@ import {useState} from 'react';
   
 export default function Menu() {
     const [isMobile, setIsMobile] = useState(false);
-    if (typeof window && window.innerWidth < 768 && !isMobile) {
+    if (window != undefined){
+        if (window.innerWidth < 768 && !isMobile) {
         setIsMobile(true);
+        }
     }
 
     return(
