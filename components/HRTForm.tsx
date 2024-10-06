@@ -75,7 +75,7 @@ export default function HRTForm({ onSuccess }: { onSuccess: () => void }) {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="w-2/3 space-y-6 flex flex-col justify-center">
-        <div className="flex mt-8 gap-6 items-center justify-center">
+        <div className="flex flex-col md:flex-row mt-8 gap-6 items-center justify-center">
           <div className="flex gap-2 items-center">
             <p>Date:</p>
             <div className="flex space-x-3">
