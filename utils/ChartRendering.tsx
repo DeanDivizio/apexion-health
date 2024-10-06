@@ -88,7 +88,7 @@ export function RenderCharts({ data, approvedIDs, categorize = false, categoryOr
                     <DrawerTitle>{value[0].displayName}</DrawerTitle>
                     <DrawerDescription>Individual Lab Results - Averaged by Month</DrawerDescription>
                   </DrawerHeader>
-                  <div className="flex justify-center pb-12">
+                  <div className="flex justify-center gap-4 overflow-x-scroll pb-12">
                   {value.map((element, i) => (
                     <Card key={i} className="rounded-xl">
                       <CardHeader>
@@ -98,9 +98,9 @@ export function RenderCharts({ data, approvedIDs, categorize = false, categoryOr
                         <CardDescription>
                           <div className="mb-4">{`${element.institution}`}</div>
                         </CardDescription>
-                        <div className="flex gap-2"><span className="font-medium">Your Value:</span><p className="mb-4 font-normal">{` ${element.value}${element.unit}`}</p></div>
-                        <div className="flex gap-2"><span className="font-light">Upper Normal:</span><p className="mb-2 font-extralight">{` ${element.rangeHigh}${element.unit}`}</p></div>
-                        <div className="flex gap-2"><span className="font-light">Lower Normal:</span><p className="mb-2 font-extralight">{` ${element.rangeLow}${element.unit}`}</p></div>
+                        <div className="flex gap-2"><span className="font-medium" >Your Value:</span><p className="mb-4 font-extralight" style={{color: "var(--color-blue)"}}>{` ${element.value}${element.unit}`}</p></div>
+                        <div className="flex gap-2"><span className="font-light">Upper Normal:</span><p className="mb-2 font-extralight" style={{color: "var(--color-green)"}}>{` ${element.rangeHigh}${element.unit}`}</p></div>
+                        <div className="flex gap-2"><span className="font-light">Lower Normal:</span><p className="mb-2 font-extralight" style={{color: "var(--color-red)"}}>{` ${element.rangeLow}${element.unit}`}</p></div>
                       </CardHeader>
                     </Card>
                   ))}</div>
