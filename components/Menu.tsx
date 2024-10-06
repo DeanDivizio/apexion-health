@@ -1,20 +1,20 @@
 "use client";
-import {
-    Sheet,
-    SheetContent,
-    SheetDescription,
-    SheetHeader,
-    SheetTitle,
-    SheetTrigger,
-  } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import AddDataDrawer from "./AddDataDrawer"
 import Link from "next/link"
+import { Menu as MenuIcon } from "lucide-react";
+import {useState} from 'react';
   
   
 export default function Menu() {
+    const [isMobile, setIsMobile] = useState(false);
+    if (typeof window && window.innerWidth < 768 && !isMobile) {
+        setIsMobile(true);
+    }
+
     return(
         <Sheet>
-            <SheetTrigger className="text-lg text-neutral-300 font-extralight hover:font-normal tracking-wide px-4 py-1 border border-neutral-500 rounded duration-200 transition-all hover:text-neutral-50 hover:border-green-400">Menu</SheetTrigger>
+            <SheetTrigger className="text-md md:text-lg text-neutral-300 font-extralight hover:font-normal tracking-wide px-3 md:px-4 py-1 border border-neutral-500 rounded duration-200 transition-all hover:text-neutral-50 hover:border-green-400">{isMobile ? <MenuIcon size={25}/> : 'Menu' }</SheetTrigger>
             <SheetContent side={"left"} className=" flex flex-col justify-between pt-32 pb-6">
                 <div className="flex flex-col mb-8">
                     <h3 className="text-3xl font-bold mb-4">View</h3>

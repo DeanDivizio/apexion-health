@@ -30,7 +30,7 @@ export default function Labs() {
   }, []);
   return (
     <main className="flex min-h-screen flex-col items-center justify-start pb-12 px-8 xl:px-48">
-      <div id="heading" className="my-16">
+      <div id="heading" className="mt-8 mb-16">
         <p className="text-center font-thin italic text-4xl">{`Your Labs, by Category`}</p>
       </div>
       <div id="homeCharts">
