@@ -16,7 +16,7 @@ const Blob = ({ id }: { id: number }) => {
   return (
     <motion.div
       key={id}
-      className="absolute rounded-full mix-blend-multiply filter blur-lg"
+      className="fixed rounded-full mix-blend-multiply filter blur-lg"
       initial={{
         x: `${rnd(-20, 120)}%`,
         y: `${rnd(-20, 120)}%`,
@@ -74,11 +74,11 @@ export default function AnimatedBackground() {
   }, [])
 
   return (
-    <div ref={containerRef} className="absolute top-0 -z-10 w-full h-screen overflow-hidden bg-transparent">
+    <div ref={containerRef} className="fixed top-0 -z-10 w-full h-screen overflow-hidden bg-transparent">
       {Array.from({ length: blobCount }).map((_, i) => (
         <Blob key={i} id={i} />
       ))}
-      <div className="absolute inset-0" />
+      <div className="fixed inset-0" />
       <Image
         src="/geoBG.jpg"
         alt="Background"

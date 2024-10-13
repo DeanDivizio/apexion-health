@@ -46,7 +46,6 @@ export default function StrengthExercise(id:number, form:any) {
     };
 
     return(
-        
         <div>
             <div>
                 <Select>

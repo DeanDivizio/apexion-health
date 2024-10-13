@@ -4,7 +4,7 @@ import Menu from "./Menu";
 export default function Nav() {
 
     return (
-        <div className="sticky top-0 z-50 grid grid-cols-4 lg:grid-cols-3 w-full justify-between items-center px-8 py-6 lg:py-6 lg:mb-4 bg-black bg-opacity-25 backdrop-blur-xl"> {/*probably want to take out wrap eventually and make a dedicated mobile nav*/}
+        <div className="sticky top-0 z-50 grid grid-cols-4 lg:grid-cols-3 w-full justify-between items-center px-8 py-6 lg:py-6 bg-black bg-opacity-25 backdrop-blur-xl"> {/*probably want to take out wrap eventually and make a dedicated mobile nav*/}
             <div className="order-1">
                <Menu />
             </div>

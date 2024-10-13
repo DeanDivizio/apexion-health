@@ -83,27 +83,30 @@ export function RenderCharts({ data, approvedIDs, categorize = false, categoryOr
                     ]}
                   />
                 </DrawerTrigger>
-                <DrawerContent className="flex gap-4 flex-wrap px-8 py-8">
+                <DrawerContent className="flex flex-col gap-4 px-8 py-8">
                   <DrawerHeader>
                     <DrawerTitle>{value[0].displayName}</DrawerTitle>
                     <DrawerDescription>Individual Lab Results - Averaged by Month</DrawerDescription>
                   </DrawerHeader>
-                  <div className="flex justify-center gap-4 overflow-x-scroll pb-12">
-                  {value.map((element, i) => (
-                    <Card key={i} className="rounded-xl">
-                      <CardHeader>
-                        <CardTitle>
-                          {`${element.month} ${element.year}`}
-                        </CardTitle>
-                        <CardDescription>
-                          <div className="mb-4">{`${element.institution}`}</div>
-                        </CardDescription>
-                        <div className="flex gap-2"><span className="font-medium" >Your Value:</span><p className="mb-4 font-extralight" style={{color: "var(--color-blue)"}}>{` ${element.value}${element.unit}`}</p></div>
-                        <div className="flex gap-2"><span className="font-light">Upper Normal:</span><p className="mb-2 font-extralight" style={{color: "var(--color-green)"}}>{` ${element.rangeHigh}${element.unit}`}</p></div>
-                        <div className="flex gap-2"><span className="font-light">Lower Normal:</span><p className="mb-2 font-extralight" style={{color: "var(--color-red)"}}>{` ${element.rangeLow}${element.unit}`}</p></div>
-                      </CardHeader>
-                    </Card>
-                  ))}</div>
+                  <div className="flex md:justify-center pb-4 md:pb-12" style={{overflowX:"scroll", paddingBottom:"2rem"}}>
+                    <div className="flex gap-4 min-w-max">
+                      {value.map((element, i) => (
+                        <Card key={i} className="rounded-xl" style={{minWidth: "250px"}}>
+                          <CardHeader>
+                            <CardTitle>
+                              {`${element.month} ${element.year}`}
+                            </CardTitle>
+                            <CardDescription>
+                              <div className="mb-4">{`${element.institution}`}</div>
+                            </CardDescription>
+                            <div className="flex gap-2"><span className="font-medium">Your Value:</span><p className="mb-4 font-extralight" style={{color: "var(--color-blue)"}}>{` ${element.value}${element.unit}`}</p></div>
+                            <div className="flex gap-2"><span className="font-light">Upper Normal:</span><p className="mb-2 font-extralight" style={{color: "var(--color-green)"}}>{` ${element.rangeHigh}${element.unit}`}</p></div>
+                            <div className="flex gap-2"><span className="font-light">Lower Normal:</span><p className="mb-2 font-extralight" style={{color: "var(--color-red)"}}>{` ${element.rangeLow}${element.unit}`}</p></div>
+                          </CardHeader>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
                 </DrawerContent>
               </Drawer>
             ))}

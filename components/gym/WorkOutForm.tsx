@@ -10,12 +10,9 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { addItemToTable } from "@/actions/AWS"
+import { StrengthExerciseComponent } from "@/components/strength-exercise";
 
 const FormSchema = z.object({
-  category: z.string(),
-  type: z.string(),
-  dose: z.string().transform(Number),
-  depth: z.string().optional(),
   month: z.string(),
   day: z.string(),
   year: z.string(),
@@ -27,6 +24,12 @@ const FormSchema = z.object({
 export default function WorkOutForm({ onSuccess }: { onSuccess: () => void }) {
   const [buttonText, setButtonText] = useState<string>("Log Data")
 
+  const [exercises, setExercises] = useState<number[]>([]);
+
+  const addSet = () => {
+    setExercises((prev) => [...prev, prev.length + 1]);
+  };
+
   const currentDate = new Date()
   const currentYear = currentDate.getFullYear()
   const hour = currentDate.getHours() % 12 || 12
@@ -34,9 +37,6 @@ export default function WorkOutForm({ onSuccess }: { onSuccess: () => void }) {
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
-      category: "",
-      type: "",
-      dose: 0,
       month: (currentDate.getMonth() + 1).toString().padStart(2, '0'),
       day: currentDate.getDate().toString().padStart(2, '0'),
       year: currentYear.toString(),
@@ -73,7 +73,7 @@ export default function WorkOutForm({ onSuccess }: { onSuccess: () => void }) {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="w-2/3 space-y-6 flex flex-col justify-center">
-        <div className="flex mt-8 gap-6 items-center justify-center">
+        <div className="flex mt-8 gap-6 items-center justify-center"> {/* this div is the date and time */}
           <div className="flex gap-2 items-center">
             <p>Date:</p>
             <div className="flex space-x-3">
@@ -220,27 +220,6 @@ export default function WorkOutForm({ onSuccess }: { onSuccess: () => void }) {
             </div>
           </div>
         </div>
-        <FormField
-          control={form.control}
-          name="category"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Category</FormLabel>
-              <Select onValueChange={(value) => { field.onChange(value); }} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select an exercise type" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="strength">Resistance Training</SelectItem>
-                  <SelectItem value="cardio">Cardio</SelectItem>
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
         <Button variant='outline' type="button">{`Add Strength`}</Button>
         <Button variant='outline' type="button" style={{marginBottom: "2rem"}}>{`Add Cardio`}</Button>
         <Button type="submit">{buttonText}</Button>
