@@ -73,8 +73,8 @@ export default function Home() {
           </Link>
         </div>
       </div>
-      <div>
-        <h3 className="text-5xl font-regular tracking-normal mb-8">Your Week In Review</h3>
+      <div className="flex flex-col items-center lg:items-start">
+        <h3 className="text-5xl font-regular tracking-normal mb-8 text-center">Your Week In Review</h3>
         {data ?
         <WeeklyDataDisplayComponent data={data.summaryData} />
           : null}
