@@ -24,7 +24,7 @@ export function WeeklyDataDisplayComponent({ data }: { data: DataItem[] }) {
           <CardContent>
             <h3 className="font-semibold mb-2 underline">Hormones</h3>
             {(item.data).map(object => (
-              <div className="flex gap-2">
+              <div className="flex gap-2" id={object.type}>
                 <p>{object.dose}<span className="font-light">mg:</span></p>
                 {['cypionate', 'enanthate', 'propionate', 'cream'].includes(object.type) ?
                   <p>Testosterone</p> :
