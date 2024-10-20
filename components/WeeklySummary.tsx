@@ -19,7 +19,7 @@ export function WeeklyDataDisplayComponent({ data }: { data: DataItem[] }) {
       {data.map((item) => (
         <Card key={item.date} className={`w-full min-w-[300px] rounded-xl ${item.date == refDate ? "border-white border-2" : null}`}>
           <CardHeader>
-            <CardTitle>{new Date(item.date.slice(0, 4), item.date.slice(4, 6) - 1, item.date.slice(6)).toLocaleString('en-us', { weekday: 'long', month: 'short', day: 'numeric' })}</CardTitle>
+            <CardTitle>{new Date(parseInt(item.date.slice(0, 4)), parseInt(item.date.slice(4, 6)) - 1, parseInt(item.date.slice(6))).toLocaleString('en-us', { weekday: 'long', month: 'short', day: 'numeric' })}</CardTitle>
           </CardHeader>
           <CardContent>
             <h3 className="font-semibold mb-2 underline">Hormones</h3>
