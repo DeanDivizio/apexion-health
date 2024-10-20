@@ -146,28 +146,31 @@ export async function addItemToTable(formData: { [key: string]: any }, table: st
 
 type DataType = 'workouts' | 'medication'
 
-export async function getSummaryData(userID: string, table: string, startDate: string, endDate: string) {
-  if (userId) {
-  const params = {
-    TableName: `${table}`,
-    KeyConditionExpression: 'userID = :userID AND #date BETWEEN :startDate AND :endDate',
-    ExpressionAttributeNames: {
-      '#date': 'date',
-    },
-    ExpressionAttributeValues: {
-      ':userID': userID,
-      ':startDate': startDate,
-      ':endDate': endDate,
-    },
-  }
 
-  try {
-    const command = new QueryCommand(params)
-    const result = await docClient.send(command)
-    return result.Items || []
-  } catch (error) {
-    console.error(`Error fetching ${table} data:`, error)
-    return []
+export async function getSummaryData(userID: string, table: string, startDate: string, endDate: string) {
+  if (userID) {
+    if (userID == "user_2lX5gd5X7kYVpy9BARLCIBUyqXJ") {userID = "user_2mUbX7CVcH8FKa5kvUMsnkjjGbs"};
+    const params: QueryCommandInput = {
+      TableName: table,
+      KeyConditionExpression: `userID = :user AND #dateAttr BETWEEN :startDate AND :endDate`,
+      ExpressionAttributeNames: {
+        "#dateAttr": "date"  // Use ExpressionAttributeNames for reserved words
+      },
+      ExpressionAttributeValues: {
+        ':user': userID,
+        ':startDate': startDate,
+        ':endDate': endDate
+      }
+    };
+
+    try {
+      const command = new QueryCommand(params);
+      const data: QueryCommandOutput = await docClient.send(command);
+      return data.Items || [];
+    } catch (error) {
+      console.error('Error fetching items:', error);
+      throw error; // rethrow the error
+    }
   }
-}
+  return []; // Return empty array if no userID
 }

@@ -6,10 +6,16 @@ import { useUser } from "@clerk/nextjs";
 import HRTDrawer from "@/components/HRTDrawer";
 import Link from "next/link";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
+import { WeeklyDataDisplayComponent } from "@/components/WeeklySummary";
 
+type summaryDataFormat = {
+  data: object[],
+  userID:string,
+  date: number,
+}
 type homeData = {
   pinnedData: object;
-  summaryData: object;
+  summaryData: summaryDataFormat[];
 }
 const initHomeData = {
   pinnedData: {},
@@ -20,7 +26,7 @@ export default function Home() {
   const { user } = useUser();
   const userMeta: string[] | unknown = user?.publicMetadata.homeLabs;
 
-  const [data, setData] = useState<homeData>(initHomeData);
+  const [data, setData] = useState<homeData>();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [approvedIDs, setApprovedIDs] = useState<string[]>([]);
@@ -36,6 +42,7 @@ export default function Home() {
       try {
         const fetchedData: homeData = await homeFetch(["TESTOSTERONE", "COMPLETE BLOOD COUNT", "THYROID STIMULATING HORMONE"]);
         setData(fetchedData);
+        console.log(fetchedData)
       } catch (err) {
         setError('Failed to fetch data');
         console.error(err);
@@ -44,11 +51,12 @@ export default function Home() {
       }
     }
     dataFetch();
+    
   }, []);
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-start pb-12">
-      <div id="topSection" className="backdrop-blur-xl bg-black bg-opacity-15 w-full">
+      <div id="topSection" className="backdrop-blur-xl w-full mb-8">
         <div id="heading" className="pt-12 mb-12">
           <p className="text-center font-thin italic text-4xl">{`Welcome back, ${user?.firstName}`}</p>
         </div>
@@ -65,6 +73,12 @@ export default function Home() {
           </Link>
         </div>
       </div>
+      <div>
+        <h3 className="text-5xl font-regular tracking-normal mb-8">Your Week In Review</h3>
+        {data ?
+        <WeeklyDataDisplayComponent data={data.summaryData} />
+          : null}
+        </div>
       <div className="pt-12 px-4 md:px-8 xl:px-48">
         <Accordion type="single" collapsible defaultValue="item-1">
           <AccordionItem value="item-1">
