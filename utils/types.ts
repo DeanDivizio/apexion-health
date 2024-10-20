@@ -1,3 +1,5 @@
+import { object } from "zod";
+
 export interface Result {
     id: string;
     displayName: string;
@@ -54,7 +56,7 @@ export type MyAreaChartProps = {
   };
   
 export type RenderChartsProps = {
-    data: TestData;
+    data: TestData | object;
     approvedIDs?: string[];
     categorize?: boolean;
     categoryOrder?: string[];

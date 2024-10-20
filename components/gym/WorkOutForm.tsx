@@ -97,7 +97,7 @@ export default function WorkoutForm({ onSuccess }: { onSuccess: () => void }) {
         <form onSubmit={methods.handleSubmit(onSubmit)} className="w-2/3 space-y-6 flex flex-col justify-center">
           <Accordion type="single" collapsible>
             <AccordionItem value="dateTime">
-              <AccordionTrigger><p>{`Date & Time`}</p></AccordionTrigger>
+              <AccordionTrigger><p className="text-center w-full ">{`Date & Time`}</p></AccordionTrigger>
               <AccordionContent>
           <div className="flex flex-col md:flex-row mt-8 gap-6 items-center justify-center">
             <div className="flex gap-2 items-center justify-between">

@@ -143,3 +143,31 @@ export async function addItemToTable(formData: { [key: string]: any }, table: st
     throw err;
   }
 }
+
+type DataType = 'workouts' | 'medication'
+
+export async function getSummaryData(userID: string, table: string, startDate: string, endDate: string) {
+  if (userId) {
+  const params = {
+    TableName: `${table}`,
+    KeyConditionExpression: 'userID = :userID AND #date BETWEEN :startDate AND :endDate',
+    ExpressionAttributeNames: {
+      '#date': 'date',
+    },
+    ExpressionAttributeValues: {
+      ':userID': userID,
+      ':startDate': startDate,
+      ':endDate': endDate,
+    },
+  }
+
+  try {
+    const command = new QueryCommand(params)
+    const result = await docClient.send(command)
+    return result.Items || []
+  } catch (error) {
+    console.error(`Error fetching ${table} data:`, error)
+    return []
+  }
+}
+}

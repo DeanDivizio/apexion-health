@@ -1,9 +1,21 @@
 "use server";
-import { getItemsByPrimaryKeys, getAllItems } from "@/actions/AWS";
+import { getItemsByPrimaryKeys, getAllItems, getSummaryData } from "@/actions/AWS";
 import { Result, Test, IndividualResult } from "@/utils/types";
 import { auth } from '@clerk/nextjs/server';
 
 const { userId } = auth();
+
+type DataItem = {
+  date: string
+  [key: string]: any
+}
+
+type DataByDate = {
+  [date: string]: {
+    workouts: DataItem[]
+    medication: DataItem[]
+  }
+}
 
 // This takes data from AWS and separates the individual test results for averaging
 function separateResults(data: Test[]): IndividualResult[] { 
@@ -114,6 +126,32 @@ function formatDataForInividualGraph(data: any[]){
       return(transformedData);
   }
 
+async function summaryCardFetch (){
+  if (userId) {
+  const endDate = new Date()
+      const startDate = new Date(endDate)
+      startDate.setDate(startDate.getDate() - 6)
+
+      const formatDate = (date: Date) => date.toISOString().split('T')[0].replace(/-/g, '')
+      let userID = userId;
+
+      const workoutsPromise = getSummaryData(userID, 'workouts', formatDate(startDate), formatDate(endDate))
+      const hormonePromise = getSummaryData(userID, 'Apexion-Hormone', formatDate(startDate), formatDate(endDate))
+
+      const [workouts, medication] = await Promise.all([workoutsPromise, hormonePromise])
+
+      const newData: DataByDate = {}
+      for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+        const dateStr = formatDate(d)
+        newData[dateStr] = {
+          workouts: (workouts as DataItem[]).filter((w) => w.date === dateStr),
+          medication: (medication as DataItem[]).filter((m) => m.date === dateStr),
+        }
+      }
+      return newData;
+    }
+}  
+
 // Runs through needed functions to populate data on homepage. exported to allow calling on home page
   export async function homeFetch(tests: string[]) {
     if (userId) {
@@ -121,8 +159,9 @@ function formatDataForInividualGraph(data: any[]){
       let separatedData = separateResults(data);
       data = averageResultsByMonth(separatedData);
       data = formatDataForInividualGraph(data);
-      // console.log(data);
-      return(data);
+      let pinnedData = data
+      let summaryData = summaryCardFetch();
+      return({pinnedData, summaryData});
     } else throw new Error('You need to be signed in to view data.')
   }
 

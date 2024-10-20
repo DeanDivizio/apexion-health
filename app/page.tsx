@@ -7,11 +7,20 @@ import HRTDrawer from "@/components/HRTDrawer";
 import Link from "next/link";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 
+type homeData = {
+  pinnedData: object;
+  summaryData: object;
+}
+const initHomeData = {
+  pinnedData: {},
+  summaryData: {}
+}
+
 export default function Home() {
   const { user } = useUser();
   const userMeta: string[] | unknown = user?.publicMetadata.homeLabs;
 
-  const [data, setData] = useState({});
+  const [data, setData] = useState<homeData>(initHomeData);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [approvedIDs, setApprovedIDs] = useState<string[]>([]);
@@ -25,7 +34,7 @@ export default function Home() {
   useEffect(() => {
     async function dataFetch() {
       try {
-        const fetchedData = await homeFetch(["TESTOSTERONE", "COMPLETE BLOOD COUNT", "THYROID STIMULATING HORMONE"]);
+        const fetchedData: homeData = await homeFetch(["TESTOSTERONE", "COMPLETE BLOOD COUNT", "THYROID STIMULATING HORMONE"]);
         setData(fetchedData);
       } catch (err) {
         setError('Failed to fetch data');
@@ -72,7 +81,7 @@ export default function Home() {
                 ) : error ? (
                   <p>{error}</p>
                 ) : (
-                  <RenderCharts data={data} approvedIDs={approvedIDs} />
+                  <RenderCharts data={data.pinnedData} approvedIDs={approvedIDs} />
                 )}
               </div>
             </AccordionContent>
