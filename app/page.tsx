@@ -8,25 +8,25 @@ import Link from "next/link";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { WeeklyDataDisplayComponent } from "@/components/WeeklySummary";
 
+type DataItemPoint = {
+  dose: number,
+  type: string
+}
 type summaryDataFormat = {
-  data: object[],
-  userID:string,
-  date: number,
+  data: DataItemPoint[]
+  date: string
+  userID: string
 }
 type homeData = {
   pinnedData: object;
   summaryData: summaryDataFormat[];
-}
-const initHomeData = {
-  pinnedData: {},
-  summaryData: {}
 }
 
 export default function Home() {
   const { user } = useUser();
   const userMeta: string[] | unknown = user?.publicMetadata.homeLabs;
 
-  const [data, setData] = useState<homeData>();
+  const [data, setData] = useState<homeData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [approvedIDs, setApprovedIDs] = useState<string[]>([]);
@@ -40,7 +40,7 @@ export default function Home() {
   useEffect(() => {
     async function dataFetch() {
       try {
-        const fetchedData: homeData = await homeFetch(["TESTOSTERONE", "COMPLETE BLOOD COUNT", "THYROID STIMULATING HORMONE"]);
+        const fetchedData:any = await homeFetch(["TESTOSTERONE", "COMPLETE BLOOD COUNT", "THYROID STIMULATING HORMONE"]);
         setData(fetchedData);
         console.log(fetchedData)
       } catch (err) {
@@ -94,9 +94,9 @@ export default function Home() {
                   <p>Loading...</p>
                 ) : error ? (
                   <p>{error}</p>
-                ) : (
+                ) : data ? (
                   <RenderCharts data={data.pinnedData} approvedIDs={approvedIDs} />
-                )}
+                ): null}
               </div>
             </AccordionContent>
           </AccordionItem>
