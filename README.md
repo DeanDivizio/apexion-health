@@ -36,7 +36,9 @@ This is where it starts getting tough. Current plan is to find a way to access H
 This is only 4th because it requires a mix of first-party logic and 3-rd party integrations. Things like individual workout stats related to exercises, sets, reps, weight, etc can all be input manually. However, I'd also like to be able to access things like calories burned, respitory rate, blood oxygen levels, etc from fitness trackers and associate that data with gym sessions. This means I need my custom stuff fleshed out, but also need a dependable way of getting tracker data. (and since i wear an apple watch, that means i need health kit access).
 
 #### Update 10/24/24
-I added tracking for workouts manually. fitness tracker integration is going to require native apps. Having date, start and end times, then all exercises, reps, sets, and weights, is a great start. Still need to implement cardio tracking... god i hate cardio
+I added tracking for workouts manually. fitness tracker integration is going to require native apps. Having date, start and end times, then all exercises, reps, sets, and weights, is a great start. Still need to implement cardio tracking... god i hate cardio. 
+
+Just kidding apparently. Cardio is working now. five minutes after i made this update.
 
 ### Phase 5 - Optimization
 I'm sure that at this point there will be things I can do to improve performance and reliability. This is when I'll do them.
