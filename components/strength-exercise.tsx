@@ -6,11 +6,37 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGr
 import { Input } from "@/components/ui/input"
 import { X } from "lucide-react"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 export type StrengthExerciseForm = {
   exerciseType: string
   sets: { weight: number; reps: number }[]
 }
+
+const exercises = [
+  { group: "Upper Body", items: [
+    "Arnold Press", "Barbell Row", "Bench Press", "Bicep Curl", "Chest Fly", "Chest Press",
+    "Dumbbell Press", "Hammer Curl", "Incline Press", "Lateral Pulldown", "Overhead Press",
+    "Pec Fly", "Pull Up", "Push Up", "Rear Delt", "Seated Row", "Shoulder Press", "Shrugs",
+    "Tricep Extension", "Upright Row"
+  ]},
+  { group: "Lower Body", items: [
+    "Back Squat", "Box Jump", "Bulgarian Split Squat", "Calf Raise", "Deadlift", "Front Squat",
+    "Glute Bridge", "Goblet Squat", "Hack Squat", "Hip Thrust", "Jump Squat", "Kettlebell Swing",
+    "Lateral Lunge", "Leg Curl", "Leg Extension", "Leg Press", "Lunge", "Romanian Deadlift",
+    "Step Up", "Sumo Deadlift"
+  ]}
+]
 
 function SetForm({ exerciseIndex, setIndex, onRemove }: { exerciseIndex: number; setIndex: number; onRemove: () => void }) {
   const { control } = useFormContext()
@@ -57,8 +83,16 @@ function SetForm({ exerciseIndex, setIndex, onRemove }: { exerciseIndex: number;
   )
 }
 
-export default function StrengthExercise({ index, isOpen, onOpenChange }: { index: number; isOpen: boolean; onOpenChange: (open: boolean) => void }) {
+export default function StrengthExercise({ index, isOpen, onOpenChange, onDelete }: { index: number; isOpen: boolean; onOpenChange: (open: boolean) => void; onDelete: () => void }) {
   const { control } = useFormContext()
+
+  const getExerciseName = (value: string) => {
+    for (const group of exercises) {
+      const exercise = group.items.find(item => item.toLowerCase().replace(/\s+/g, '') === value)
+      if (exercise) return exercise
+    }
+    return value
+  }
   
   const { fields, append, remove } = useFieldArray({
     control,
@@ -86,7 +120,7 @@ export default function StrengthExercise({ index, isOpen, onOpenChange }: { inde
   return (
     <Accordion type="single" collapsible value={isOpen ? `item-${index}` : ""} onValueChange={(value) => onOpenChange(value === `item-${index}`)}>
       <AccordionItem value={`item-${index}`}>
-        <AccordionTrigger>{exerciseType || "New Exercise"}</AccordionTrigger>
+      <AccordionTrigger>{getExerciseName(exerciseType) || "New Exercise"}</AccordionTrigger>
         <AccordionContent>
           <div className="flex bg-neutral-900 flex-col md:flex-row border p-4 rounded-md">
             <div className="flex items-center mb-4">
@@ -103,52 +137,16 @@ export default function StrengthExercise({ index, isOpen, onOpenChange }: { inde
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectGroup>
-                          <SelectLabel>Upper Body</SelectLabel>
-                          <SelectItem value="arnoldPress">Arnold Press</SelectItem>
-                          <SelectItem value="barbellRow">Barbell Row</SelectItem>
-                          <SelectItem value="benchPress">Bench Press</SelectItem>
-                          <SelectItem value="bicepCurl">Bicep Curl</SelectItem>
-                          <SelectItem value="chestFly">Chest Fly</SelectItem>
-                          <SelectItem value="chestPress">Chest Press</SelectItem>
-                          <SelectItem value="dumbbellPress">Dumbbell Press</SelectItem>
-                          <SelectItem value="hammerCurl">Hammer Curl</SelectItem>
-                          <SelectItem value="inclinePress">Incline Press</SelectItem>
-                          <SelectItem value="latPull">Lateral Pulldown</SelectItem>
-                          <SelectItem value="overheadPress">Overhead Press</SelectItem>
-                          <SelectItem value="pecFly">Pec Fly</SelectItem>
-                          <SelectItem value="pullUp">Pull Up</SelectItem>
-                          <SelectItem value="pushUp">Push Up</SelectItem>
-                          <SelectItem value="rearDelt">Rear Delt</SelectItem>
-                          <SelectItem value="seatedRow">Seated Row</SelectItem>
-                          <SelectItem value="shoulderPress">Shoulder Press</SelectItem>
-                          <SelectItem value="shrugs">Shrugs</SelectItem>
-                          <SelectItem value="tricepExtension">Tricep Extension</SelectItem>
-                          <SelectItem value="uprightRow">Upright Row</SelectItem>
-                        </SelectGroup>
-                        <SelectGroup>
-                          <SelectLabel>Lower Body</SelectLabel>
-                          <SelectItem value="backSquat">Back Squat</SelectItem>
-                          <SelectItem value="boxJump">Box Jump</SelectItem>
-                          <SelectItem value="bulgarianSplitSquat">Bulgarian Split Squat</SelectItem>
-                          <SelectItem value="calfRaise">Calf Raise</SelectItem>
-                          <SelectItem value="deadlift">Deadlift</SelectItem>
-                          <SelectItem value="frontSquat">Front Squat</SelectItem>
-                          <SelectItem value="gluteBridge">Glute Bridge</SelectItem>
-                          <SelectItem value="gobletSquat">Goblet Squat</SelectItem>
-                          <SelectItem value="hackSquat">Hack Squat</SelectItem>
-                          <SelectItem value="hipThrust">Hip Thrust</SelectItem>
-                          <SelectItem value="jumpSquat">Jump Squat</SelectItem>
-                          <SelectItem value="kettlebellSwing">Kettlebell Swing</SelectItem>
-                          <SelectItem value="lateralLunge">Lateral Lunge</SelectItem>
-                          <SelectItem value="legCurl">Leg Curl</SelectItem>
-                          <SelectItem value="legExtension">Leg Extension</SelectItem>
-                          <SelectItem value="legPress">Leg Press</SelectItem>
-                          <SelectItem value="lunge">Lunge</SelectItem>
-                          <SelectItem value="romanianDeadlift">Romanian Deadlift</SelectItem>
-                          <SelectItem value="stepUp">Step Up</SelectItem>
-                          <SelectItem value="sumoDeadlift">Sumo Deadlift</SelectItem>
-                        </SelectGroup>
+                        {exercises.map((group) => (
+                          <SelectGroup key={group.group}>
+                            <SelectLabel>{group.group}</SelectLabel>
+                            {group.items.map((exercise) => (
+                              <SelectItem key={exercise} value={exercise.toLowerCase().replace(/\s+/g, '')}>
+                                {exercise}
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                        ))}
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -178,6 +176,24 @@ export default function StrengthExercise({ index, isOpen, onOpenChange }: { inde
               </Button>
             </div>
           </div>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="outline" className="mt-4 w-full bg-transparent border-red-500 font-thin">Delete Exercise</Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This action cannot be undone. This will permanently delete the exercise 
+                  {exerciseType && ` "${getExerciseName(exerciseType)}"`} and all its data.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={onDelete}>Delete</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </AccordionContent>
       </AccordionItem>
     </Accordion>
