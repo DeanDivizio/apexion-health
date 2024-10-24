@@ -359,7 +359,6 @@ export default function WorkoutForm({ onSuccess }: { onSuccess: () => void }) {
             </AccordionItem>
           </Accordion>
           {fields.map((field, index) => (
-            
             <StrengthExercise
               key={field.id}
               index={index}
