@@ -52,8 +52,6 @@ export default function Home() {
     
   }, []);
 
-  console.log("this is whats being passed to summary component", data?.summaryData)
-
   return (
     <main className="flex min-h-screen flex-col items-center justify-start pb-12">
       <div id="topSection" className="w-full mb-8">

@@ -2,6 +2,7 @@
 import { getItemsByPrimaryKeys, getAllItems, getSummaryData } from "@/actions/AWS";
 import { Result, Test, IndividualResult } from "@/utils/types";
 import { auth } from '@clerk/nextjs/server';
+import { error } from "console";
 
 const { userId } = auth();
 
@@ -155,16 +156,37 @@ async function summaryCardFetch() {
 
 // Runs through needed functions to populate data on homepage. exported to allow calling on home page
 export async function homeFetch(tests: string[]) {
-  if (userId) {
+  if (!userId) {
+    const errorMessage = 'You need to be signed in to view data.';
+    console.error(errorMessage);
+    throw new Error(errorMessage, { cause: 'Missing user ID' });
+  }
+
+  try {
     let data = await getItemsByPrimaryKeys(tests);
+    if (!data) {
+      const errorDataMessage = 'Failed to retrieve item data for tests.';
+      console.error(errorDataMessage);
+      throw new Error(errorDataMessage, { cause: 'Error fetching item data' });
+    }
+    
     let separatedData = separateResults(data);
     data = averageResultsByMonth(separatedData);
     data = formatDataForInividualGraph(data);
-    let pinnedData = data
+    let pinnedData = data;
     let summaryData = await summaryCardFetch();
-    console.log("output:", summaryData)
+    if (!summaryData) {
+      const errorSummaryMessage = 'Failed to retrieve summary card data.';
+      console.error(errorSummaryMessage);
+      throw new Error(errorSummaryMessage, { cause: 'Error fetching summary card data' });
+    }
+    
     return ({ pinnedData, summaryData });
-  } else throw new Error('You need to be signed in to view data.')
+  } catch (error) {
+    const fallbackErrorMessage = 'An unexpected error occurred while fetching home page data.';
+    console.error(fallbackErrorMessage);
+    throw new Error(fallbackErrorMessage, { cause: 'Unknown error' });
+  }
 }
 
 export async function categoryFetch(table?: string) {
