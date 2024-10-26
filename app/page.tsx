@@ -58,7 +58,7 @@ export default function Home() {
         <div id="heading" className="pt-12 mb-12">
           <p className="text-center font-thin italic text-4xl">{`Welcome back, ${user?.firstName}`}</p>
         </div>
-        <div id="homeButtons" className="pb-16 mb-8 px-4 flex flex-col md:flex-row justify-center gap-8">
+        <div id="homeButtons" className="pb-16 mb-8 px-4 md:px-16 2xl:px-24 grid grid-cols-1 md:grid-cols-2 3xl:grid-cols-4 justify-center gap-8">
           <HRTDrawer />
           <Link href={'/logworkout'} className="rounded bg-gradient-to-r from-blue-500 to-green-700 font-thin hover:font-light p-px flex items-center justify-center transition-all ease-in-out duration-300">
             <span className="bg-black w-full text-center px-8 sm:px-12 py-2 rounded text-2xl">Log Workout</span>

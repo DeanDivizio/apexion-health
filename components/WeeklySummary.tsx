@@ -24,7 +24,7 @@ export function WeeklyDataDisplayComponent({ data }: { data: SummaryData[] }) {
     >
       <CarouselContent className="-ml-2 md:-ml-4 h-full">
         {data.map((item) => (
-          <CarouselItem key={Number(item.date)} className="pl-2 md:pl-4 basis-full sm:basis-1/2 md:basis-1/3 lg:basis-1/4 xl:basis-1/6 min-w-[300px] h-[100%]">
+          <CarouselItem key={Number(item.date)} className="pl-2 md:pl-4 basis-full md:basis-1/2 lg:basis-1/3 2xl:basis-1/6 min-w-[300px] h-[100%]">
             <div className="p-1 h-full">
               <Card className={`w-full h-full rounded-xl p-4 ${item.date === refDate ? "border-primary border-2" : ""}`}>
                 <CardHeader className="p-3">
