@@ -55,7 +55,7 @@ export function WeeklyDataDisplayComponent({ data }: { data: SummaryData[] }) {
                         <div className="pl-2 border-l">
                         {
                           object.exercises.map((exercise: Exercises) => (
-                            <p className="text-base font-light">{getExerciseName(exercise.exerciseType)}</p>
+                            <p key={exercise.exerciseType} className="text-base font-light">{getExerciseName(exercise.exerciseType)}</p>
                           ))
                           }
                           </div>
