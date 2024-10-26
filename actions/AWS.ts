@@ -110,6 +110,7 @@ export async function addItemToTable(formData: { [key: string]: any }, table: st
   if (!userId) {
     throw new Error("User is not signed in.");
   }
+  
 
   const tableName = table;
   const date = formData.date || new Date().toISOString().split('T')[0].replace(/-/g, '');

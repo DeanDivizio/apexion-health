@@ -5,18 +5,6 @@ import { auth } from '@clerk/nextjs/server';
 
 const { userId } = auth();
 
-type DataItem = {
-  date: string
-  [key: string]: any
-}
-
-type DataByDate = {
-  [date: string]: {
-    // workouts: DataItem[]
-    hormones: DataItem[]
-  }
-}
-
 // This takes data from AWS and separates the individual test results for averaging
 function separateResults(data: Test[]): IndividualResult[] {
   // Helper function to get the month name from a month number
@@ -142,17 +130,21 @@ async function summaryCardFetch() {
 
       console.log("Fetching data for userID:", userID);
       const hormoneSummary = await getSummaryData(userID, 'Apexion-Hormone', formatDate(startDate), formatDate(endDate))
+      const gymSummary = await getSummaryData(userID, 'Apexion-Gym', formatDate(startDate), formatDate(endDate))
 
-     
+      // Combine the summaries into a single array of objects
+      const dataByDate: { [dateStr: string]: { userID: string; hormoneData: any; gymData: any; date: string } } = {}
+      for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+        const dateStr = formatDate(d)
+        dataByDate[dateStr] = {
+          userID,
+          date: dateStr,
+          hormoneData: hormoneSummary.find((summary) => summary.date === dateStr),
+          gymData: gymSummary.find((summary) => summary.date === dateStr),
+        }
+      }
 
-      // const newData: DataByDate = {}
-      // for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-      //   const dateStr = formatDate(d)
-      //   newData[dateStr] = {
-      //     hormones: (hormones as DataItem[]).filter((m) => m.date === dateStr),
-      //   }
-      // }
-      return hormoneSummary;
+      return Object.values(dataByDate);
     } catch (error) {
       console.error("Error in summaryCardFetch:", error);
       throw error;

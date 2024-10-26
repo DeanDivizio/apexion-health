@@ -141,7 +141,7 @@ export default function StrengthExercise({ index, isOpen, onOpenChange, onDelete
                           <SelectGroup key={group.group}>
                             <SelectLabel>{group.group}</SelectLabel>
                             {group.items.map((exercise) => (
-                              <SelectItem key={exercise} value={exercise.toLowerCase().replace(/\s+/g, '')}>
+                              <SelectItem key={exercise} value={exercise.charAt(0).toLowerCase() + exercise.slice(1).replace(/\s+/g, '')}>
                                 {exercise}
                               </SelectItem>
                             ))}

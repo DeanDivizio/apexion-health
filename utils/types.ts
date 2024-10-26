@@ -1,5 +1,3 @@
-import { object } from "zod";
-
 export interface Result {
     id: string;
     displayName: string;
@@ -141,4 +139,48 @@ export interface Estrogen_Form { //This will be updated later
   brand?: string;
   brandPlaceholder: "i.e. Cialis";
   dose: number;
+}
+
+
+// For summary
+
+export type SummaryData = {
+  date: String,
+  userID: String,
+  gymData?: {
+    date: String,
+    userID: String,
+    data: GymDataPoints[]
+  }
+  hormoneData?: HormoneDataType
+}
+
+export type GymDataPoints = {
+  startTime: String,
+  endTime: String,
+  exercises: Exercises[]
+}
+
+export type Exercises = {
+  exerciseType: string,
+  sets: Sets[],
+}
+
+type Sets = {
+  reps: Number,
+  weight: Number
+}
+
+export type HormoneDataType = {
+  data: HormoneAdministration[],
+  date: String,
+  userID: String
+}
+
+export type HormoneAdministration = {
+  category: String,
+  depth?: String,
+  dose: Number,
+  time: String,
+  type: String,
 }

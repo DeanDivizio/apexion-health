@@ -13,13 +13,12 @@ type DataItemPoint = {
   type: string
 }
 type summaryDataFormat = {
-  data: DataItemPoint[]
   date: string
   userID: string
 }
 type homeData = {
   pinnedData: object;
-  summaryData: summaryDataFormat[];
+  summaryData: [summaryDataFormat];
 }
 
 export default function Home() {
@@ -42,7 +41,6 @@ export default function Home() {
       try {
         const fetchedData:any = await homeFetch(["TESTOSTERONE", "COMPLETE BLOOD COUNT", "THYROID STIMULATING HORMONE"]);
         setData(fetchedData);
-        console.log(fetchedData)
       } catch (err) {
         setError('Failed to fetch data');
         console.error(err);
@@ -54,13 +52,15 @@ export default function Home() {
     
   }, []);
 
+  console.log("this is whats being passed to summary component", data?.summaryData)
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-start pb-12">
-      <div id="topSection" className="backdrop-blur-xl w-full mb-8">
+      <div id="topSection" className="w-full mb-8">
         <div id="heading" className="pt-12 mb-12">
           <p className="text-center font-thin italic text-4xl">{`Welcome back, ${user?.firstName}`}</p>
         </div>
-        <div id="homeButtons" className="pb-24 px-4 flex flex-col md:flex-row justify-center gap-8">
+        <div id="homeButtons" className="pb-16 mb-8 px-4 flex flex-col md:flex-row justify-center gap-8">
           <HRTDrawer />
           <Link href={'/logworkout'} className="rounded bg-gradient-to-r from-blue-500 to-green-700 font-thin hover:font-light p-px flex items-center justify-center transition-all ease-in-out duration-300">
             <span className="bg-black w-full text-center px-8 sm:px-12 py-2 rounded text-2xl">Log Workout</span>
@@ -74,19 +74,19 @@ export default function Home() {
         </div>
       </div>
       <div className="flex flex-col items-center lg:items-start">
-        <h3 className="text-5xl font-regular tracking-normal mb-8 text-center">Your Week In Review</h3>
+        <h3 className="text-5xl px-4 font-regular tracking-normal mb-8 text-center">Your Week In Review</h3>
         {data ?
         <WeeklyDataDisplayComponent data={data.summaryData} />
           : null}
         </div>
-      <div className="pt-12 px-4 md:px-8 xl:px-48">
+      {/* <div className="pt-12 px-4 md:px-8 xl:px-48">
         <Accordion type="single" collapsible defaultValue="item-1">
           <AccordionItem value="item-1">
             <AccordionTrigger style={{ minWidth: "400px", alignItems: "center" }}>
               <div className="w-full px-16">
                 <h3 className="text-5xl font-regular tracking-normal">Pinned Data</h3>
                 {/* <hr className="border-neutral-400"></hr> */}
-              </div>
+              {/* </div>
             </AccordionTrigger>
             <AccordionContent className="bg-neutral-950 bg-opacity-25 md:bg-opacity-0 py-4 w-full">
               <div id="homeCharts">
@@ -101,7 +101,7 @@ export default function Home() {
             </AccordionContent>
           </AccordionItem>
         </Accordion>
-      </div>
+      </div> */}
     </main>
   );
 }
