@@ -1,11 +1,9 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { homeFetch } from "@/actions/InternalLogic";
-import { RenderCharts } from "@/utils/ChartRendering";
 import { useUser } from "@clerk/nextjs";
 import HRTDrawer from "@/components/HRTDrawer";
 import Link from "next/link";
-import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { WeeklyDataDisplayComponent } from "@/components/WeeklySummary";
 
 type DataItemPoint = {
