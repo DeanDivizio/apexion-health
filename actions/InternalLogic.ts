@@ -4,7 +4,7 @@ import { Result, Test, IndividualResult } from "@/utils/types";
 import { auth } from '@clerk/nextjs/server';
 import { error } from "console";
 
-const { userId } = auth();
+
 
 // This takes data from AWS and separates the individual test results for averaging
 function separateResults(data: Test[]): IndividualResult[] {
@@ -116,6 +116,7 @@ function formatDataForInividualGraph(data: any[]) {
 }
 
 async function summaryCardFetch() {
+  const { userId } = await auth();
   if (userId) {
     try {
       const endDate = new Date()
@@ -156,6 +157,7 @@ async function summaryCardFetch() {
 
 // Runs through needed functions to populate data on homepage. exported to allow calling on home page
 export async function homeFetch(tests: string[]) {
+  const { userId } = await auth();
   if (!userId) {
     const errorMessage = 'You need to be signed in to view data.';
     console.error(errorMessage);
@@ -190,6 +192,7 @@ export async function homeFetch(tests: string[]) {
 }
 
 export async function categoryFetch(table?: string) {
+  const { userId } = await auth();
   if (userId) {
     let data = await getAllItems(table);
     let separatedData = separateResults(data);

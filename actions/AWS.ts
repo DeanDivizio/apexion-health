@@ -20,10 +20,11 @@ const client = new DynamoDBClient({
 const docClient = DynamoDBDocumentClient.from(client);
 
 // grab id of current user for auth. if null, user is not signed in
-const { userId } = auth();
+// const { userId } = auth();
 
 // Function to fetch all lab results of a given test type like "TESTOSTERONE" or "COMPLETE BLOOD COUNT"
 export async function getAllResultsOneLabType(labType: string) {
+  const { userId } = await auth();
    if (userId){
     const params = {
       TableName: "ClinicalLabs",
@@ -47,6 +48,7 @@ export async function getAllResultsOneLabType(labType: string) {
 
 // Function to fetch all lab results of a set of given test types like "TESTOSTERONE" or "COMPLETE BLOOD COUNT"
 export async function getItemsByPrimaryKeys(primaryKeyValues: string[], table?:string,){
+  const { userId } = await auth();
   if (userId){  
     const tableName = table ? table : 'ClinicalLabs';
     const partitionKeyName = 'LabType';
@@ -75,6 +77,7 @@ export async function getItemsByPrimaryKeys(primaryKeyValues: string[], table?:s
 
 // Gets all items in a given table - defaults to lab data
 export async function getAllItems(table?: string) {
+  const { userId } = await auth();
   if (userId){  
   const tableName = table || 'ClinicalLabs';
   const allItems: Array<any> = [];
@@ -106,7 +109,7 @@ export async function getAllItems(table?: string) {
 
 // Add items to table
 export async function addItemToTable(formData: { [key: string]: any }, table: string) {
-
+  const { userId } = await auth();
   if (!userId) {
     throw new Error("User is not signed in.");
   }
