@@ -92,6 +92,11 @@
   }
 }
 
+html,
+body {
+  overflow-x: hidden;
+}
+
 :root {
   background: #000000;
   --color-green: #27e476;
