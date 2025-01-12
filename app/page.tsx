@@ -5,6 +5,10 @@ import { useUser } from "@clerk/nextjs";
 import HRTDrawer from "@/components/HRTDrawer";
 import Link from "next/link";
 import { WeeklyDataDisplayComponent } from "@/components/WeeklySummary";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { RenderCharts } from "@/utils/ChartRendering";
+import PinnedData from "@/components/PinnedData";
+import Footer from "@/components/Footer";
 
 type DataItemPoint = {
   dose: number,
@@ -23,16 +27,10 @@ export default function Home() {
   const { user } = useUser();
   const userMeta: string[] | unknown = user?.publicMetadata.homeLabs;
 
-  const [data, setData] = useState<homeData | null>(null);
+  const [data, setData] = useState<homeData>();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [approvedIDs, setApprovedIDs] = useState<string[]>([]);
 
-  useEffect(() => {
-    if (Array.isArray(userMeta)) {
-      setApprovedIDs(userMeta);
-    }
-  }, [userMeta]);
 
   useEffect(() => {
     async function dataFetch() {
@@ -51,53 +49,21 @@ export default function Home() {
   }, []);
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-start pb-12">
-      <div id="topSection" className="w-full mb-8">
-        <div id="heading" className="pt-12 mb-12">
-          <p className="text-center font-thin italic text-4xl">{`Welcome back, ${user?.firstName}`}</p>
-        </div>
-        <div id="homeButtons" className="pb-16 mb-8 px-4 md:px-16 2xl:px-24 grid grid-cols-1 md:grid-cols-2 3xl:grid-cols-4 justify-center gap-8">
-          <HRTDrawer />
-          <Link href={'/logworkout'} className="rounded bg-gradient-to-r from-blue-500 to-green-700 font-thin hover:font-light p-px flex items-center justify-center transition-all ease-in-out duration-300">
-            <span className="bg-black w-full text-center px-8 sm:px-12 py-2 rounded text-2xl">Log Workout</span>
-          </Link>
-          <Link href={'/logworkout'} className="rounded bg-gradient-to-l from-blue-500 to-green-700 font-thin hover:font-light p-px flex items-center justify-center transition-all ease-in-out duration-300">
-            <span className="bg-black w-full text-center px-8 sm:px-12 py-2 rounded text-2xl">Meal Placeholder</span>
-          </Link>
-          <Link href={'/logworkout'} className="rounded bg-gradient-to-l from-blue-500 to-blue-700 font-thin hover:font-light p-px flex items-center justify-center transition-all ease-in-out duration-300">
-            <span className="bg-black w-full text-center px-8 sm:px-12 py-2 rounded text-2xl">Body Measure PH</span>
-          </Link>
-        </div>
+    <main className="flex px-4 pt-[3vh] h-auto md:h-[100vh] overflow-clip w-full flex-col items-center justify-start bg-transparent">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full md:h-[95vh]">
+        <div className="col-span-1 flex flex-col items-center lg:items-start h-[92vh] p-4 border-2 bg-neutral-800/50 backdrop-blur-xl rounded-xl overflow-y-scroll">
+          <h3 className="text-5xl w-full font-regular tracking-normal mt-4 md:mt-0 mb-8 text-center">Your Week In Review</h3>
+          {data ?
+          <WeeklyDataDisplayComponent isLoading={isLoading} data={data.summaryData} />
+            : null}
+          </div>
+        <div className="col-span-1 md:col-span-2 md:h-[92vh] overflow-y-scroll md:bg-neutral-800/50 md:p-4 rounded-xl backdrop-blur-xl">
+          <PinnedData title="Lab" color="blue" data={data?.pinnedData} isLoading={isLoading}/>
+          <PinnedData title="Gym" color="green" data={data?.pinnedData} isLoading={isLoading}/>
+          <PinnedData title="Body" color="blue" data={data?.pinnedData} isLoading={isLoading}/>
+          </div>
       </div>
-      <div className="flex flex-col items-center lg:items-start">
-        <h3 className="text-5xl px-4 font-regular tracking-normal mb-8 text-center">Your Week In Review</h3>
-        {data ?
-        <WeeklyDataDisplayComponent data={data.summaryData} />
-          : null}
-        </div>
-      {/* <div className="pt-12 px-4 md:px-8 xl:px-48">
-        <Accordion type="single" collapsible defaultValue="item-1">
-          <AccordionItem value="item-1">
-            <AccordionTrigger style={{ minWidth: "400px", alignItems: "center" }}>
-              <div className="w-full px-16">
-                <h3 className="text-5xl font-regular tracking-normal">Pinned Data</h3>
-                {/* <hr className="border-neutral-400"></hr> */}
-              {/* </div>
-            </AccordionTrigger>
-            <AccordionContent className="bg-neutral-950 bg-opacity-25 md:bg-opacity-0 py-4 w-full">
-              <div id="homeCharts">
-                {isLoading ? (
-                  <p>Loading...</p>
-                ) : error ? (
-                  <p>{error}</p>
-                ) : data ? (
-                  <RenderCharts data={data.pinnedData} approvedIDs={approvedIDs} />
-                ): null}
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
-      </div> */}
+      <Footer />
     </main>
   );
 }

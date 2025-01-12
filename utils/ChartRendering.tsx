@@ -6,6 +6,7 @@ import { MyAreaChart } from "@/components/AreaChart";
 import { RenderChartsProps, TestResult } from "./types";
 import { Drawer, DrawerContent, DrawerTrigger, DrawerTitle, DrawerDescription, DrawerHeader } from "@/components/ui/drawer";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 
 export function RenderCharts({ data, approvedIDs, categorize = false, categoryOrder = [] }: RenderChartsProps) {
   const pathname = usePathname();
@@ -63,13 +64,13 @@ export function RenderCharts({ data, approvedIDs, categorize = false, categoryOr
     return <div>No data available</div>;
   }
 
+  console.log(categorizedData);
+
   return (
-    <div className={`flex ${categorize ? "flex-col" : "flex-row flex-wrap justify-center"}`} style={{ gap: "4rem" }}>
-      {sortedCategories.map((labType) => (
-        <div key={labType} className="lab">
-          {categorize && <h2 className="text-2xl font-bold mb-4">{labType}</h2>}
-          {categorize && <hr className="my-4 mb-8 border-neutral-700" />}
-          <div className="flex flex-wrap justify-center gap-8">
+    <Carousel opts={{ align: "start" }} className="w-full">
+      <CarouselContent >
+        {sortedCategories.map((labType) => (
+          <CarouselItem key={labType} className="basis-1/5 pl-8 ">
             {categorizedData[labType]?.map(([key, value]) => (
               <Drawer key={key}>
                 <DrawerTrigger>
@@ -88,20 +89,20 @@ export function RenderCharts({ data, approvedIDs, categorize = false, categoryOr
                     <DrawerTitle>{value[0].displayName}</DrawerTitle>
                     <DrawerDescription>Individual Lab Results - Averaged by Month</DrawerDescription>
                   </DrawerHeader>
-                  <div className="flex md:justify-center pb-4 md:pb-12" style={{overflowX:"scroll", paddingBottom:"2rem"}}>
+                  <div className="flex md:justify-center pb-4 md:pb-12" style={{ overflowX: "scroll", paddingBottom: "2rem" }}>
                     <div className="flex gap-4 min-w-max">
                       {value.map((element, i) => (
-                        <Card key={i} className="rounded-xl" style={{minWidth: "250px"}}>
+                        <Card key={i} className="rounded-xl" style={{ minWidth: "250px" }}>
                           <CardHeader>
                             <CardTitle>
                               {`${element.month} ${element.year}`}
                             </CardTitle>
-                            <CardDescription>
-                              <div className="mb-4">{`${element.institution}`}</div>
+                            <CardDescription className="mb-4">
+                              {`${element.institution}`}
                             </CardDescription>
-                            <div className="flex gap-2"><span className="font-medium">Your Value:</span><p className="mb-4 font-extralight" style={{color: "var(--color-blue)"}}>{` ${element.value}${element.unit}`}</p></div>
-                            <div className="flex gap-2"><span className="font-light">Upper Normal:</span><p className="mb-2 font-extralight" style={{color: "var(--color-green)"}}>{` ${element.rangeHigh}${element.unit}`}</p></div>
-                            <div className="flex gap-2"><span className="font-light">Lower Normal:</span><p className="mb-2 font-extralight" style={{color: "var(--color-red)"}}>{` ${element.rangeLow}${element.unit}`}</p></div>
+                            <div className="flex gap-2"><span className="font-medium">Your Value:</span><p className="mb-4 font-extralight" style={{ color: "var(--color-blue)" }}>{` ${element.value}${element.unit}`}</p></div>
+                            <div className="flex gap-2"><span className="font-light">Upper Normal:</span><p className="mb-2 font-extralight" style={{ color: "var(--color-green)" }}>{` ${element.rangeHigh}${element.unit}`}</p></div>
+                            <div className="flex gap-2"><span className="font-light">Lower Normal:</span><p className="mb-2 font-extralight" style={{ color: "var(--color-red)" }}>{` ${element.rangeLow}${element.unit}`}</p></div>
                           </CardHeader>
                         </Card>
                       ))}
@@ -110,9 +111,12 @@ export function RenderCharts({ data, approvedIDs, categorize = false, categoryOr
                 </DrawerContent>
               </Drawer>
             ))}
-          </div>
-        </div>
-      ))}
-    </div>
+          </CarouselItem>
+        ))}
+      </CarouselContent>
+      <CarouselPrevious />
+      <CarouselNext />
+    </Carousel>
   );
 }
+

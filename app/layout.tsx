@@ -4,6 +4,10 @@ import "./globals.css";
 import { ClerkProvider } from '@clerk/nextjs'
 import Nav from "@/components/Nav";
 import AnimatedBG from "@/components/AnimatedBG";
+import { SidebarProvider } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/Sidebar";
+import Footer from "@/components/Footer";
+import MobileNav from "@/components/MobileNav";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -27,10 +31,13 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en">
-        <body className="max-w-[100vw]">
-          <Nav />
-          {children}
-          <AnimatedBG />
+        <body className="w-full md:h-screen bg-gradient-to-br from-blue-950/20 via-neutral-950 to-neutral-950">
+        <Nav />
+          <SidebarProvider defaultOpen={true}>
+            <AppSidebar />
+            {children}
+          </SidebarProvider>
+          <MobileNav />
         </body>
       </html>
     </ClerkProvider>

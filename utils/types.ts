@@ -145,7 +145,7 @@ export interface Estrogen_Form { //This will be updated later
 // For summary
 
 export type SummaryData = {
-  date: String,
+  date: string,
   userID: String,
   gymData?: {
     date: String,

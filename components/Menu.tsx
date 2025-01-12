@@ -23,8 +23,9 @@ export default function Menu() {
 
     return(
         <Sheet open={open} onOpenChange={setOpen}>
-            <SheetTrigger className="text-md md:text-lg text-neutral-300 font-extralight hover:font-normal tracking-wide px-3 md:px-4 py-1 border border-neutral-500 rounded duration-200 transition-all hover:text-neutral-50 hover:border-green-400">{isMobile ? <MenuIcon size={25}/> : 'Menu' }</SheetTrigger>
+            <SheetTrigger className="text-md md:text-lg text-neutral-300 font-extralight hover:font-normal tracking-wide md:px-4 py-1 rounded duration-200 transition-all hover:text-neutral-50 hover:border-green-400"><MenuIcon size={25}/></SheetTrigger>
             <SheetContent side={"left"} className=" flex flex-col justify-between pt-32 pb-6">
+               <SheetTitle className="hidden">Menu</SheetTitle>
                 <div className="flex flex-col mb-8">
                     <h3 className="text-3xl font-bold mb-4">View</h3>
                     <hr className="mb-4"></hr>

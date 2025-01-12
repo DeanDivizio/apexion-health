@@ -1,38 +1,46 @@
 'use client'
-
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel"
 import { SummaryData, GymDataPoints, Exercises, HormoneAdministration } from "@/utils/types";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
+import { useEffect, useState } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 
 const refDate = new Date().toISOString().split('T')[0].replace(/-/g, '');
 
-export function WeeklyDataDisplayComponent({ data }: { data: SummaryData[] }) {
+export function WeeklyDataDisplayComponent({ data, isLoading }: { data: SummaryData[], isLoading:any }) {
+  const [orderedData, setOrderedData] = useState<SummaryData[]>([]);
+  const [openItems, setOpenItems] = useState<string[]>([]);
 
   const getExerciseName = (value: string) => {
     const spacedValue = value.replace(/([A-Z])/g, ' $1');
     return spacedValue.charAt(0).toUpperCase() + spacedValue.slice(1);
   };
+  
+  // today on top. opens all by default
+  useEffect(() => {
+    setOrderedData(data.reverse());
+  }, [data]);
+  useEffect(()=>{
+    if (orderedData.length > 0) {
+      let items:string[] = [];
+      orderedData.forEach(item => items.push(String(item.date)));
+      setOpenItems(items);
+      setOrderedData(data.reverse());
+    }
+  },[orderedData])
 
-  return (
-    <Carousel
-      opts={{
-        align: "start",
-        loop: true,
-      }}
-      className="w-full max-w-sm md:max-w-2xl lg:max-w-4xl xl:max-w-[96vw] h-[400px]"
-    >
-      <CarouselContent className="-ml-2 md:-ml-4 h-full">
-        {data.map((item) => (
-          <CarouselItem key={Number(item.date)} className="pl-2 md:pl-4 basis-full md:basis-1/2 lg:basis-1/3 2xl:basis-1/6 min-w-[300px] h-[100%]">
-            <div className="p-1 h-full">
-              <Card className={`w-full h-full rounded-xl p-4 ${item.date === refDate ? "border-primary border-2" : ""}`}>
-                <CardHeader className="p-3">
-                  <CardTitle className="text-xl">
+  if (isLoading) {
+    return (
+      <Skeleton className="w-full bg-neutral-800 h-32 mb-4"/>
+    )
+  } else return (
+     <Accordion type="multiple" className="w-full" value={openItems} onValueChange={setOpenItems}>
+      {orderedData?.map((item) => (
+          <AccordionItem key={String(item.date)} value={String(item.date)} className="mb-4 ">
+                  <AccordionTrigger className="justify-center gap-4 text-xl py-4 px-6 bg-neutral-950 rounded-t-xl data-[state=open]:rounded-b-none data-[state=closed]:rounded-b-xl">
                     {new Date(parseInt(item.date.slice(0, 4)), parseInt(item.date.slice(4, 6)) - 1, parseInt(item.date.slice(6))).toLocaleString('en-us', { weekday: 'long', month: 'short', day: 'numeric' })}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-3">
+                  </AccordionTrigger>
+                <AccordionContent className="px-3 pt-4 pb-6 bg-neutral-950/35 backdrop-blur-xl rounded-b-xl">
                   <h3 className="font-semibold mb-2 text-base underline text-neutral-300">Hormones</h3>
                   {item.hormoneData && item.hormoneData.data.length > 0 ? (
                     item.hormoneData.data.map((object: any) => (
@@ -64,14 +72,9 @@ export function WeeklyDataDisplayComponent({ data }: { data: SummaryData[] }) {
                   ) : (
                     <p className="text-xs md:text-sm">No Workout recorded</p>
                   )}
-                </CardContent>
-              </Card>
-            </div>
-          </CarouselItem>
-        ))}
-      </CarouselContent>
-      <CarouselPrevious />
-      <CarouselNext />
-    </Carousel>
+                </AccordionContent>
+              </AccordionItem>
+      ))}
+    </Accordion>
   )
 }

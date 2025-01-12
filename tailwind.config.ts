@@ -15,7 +15,7 @@ const config = {
   		padding: '2rem',
   		screens: {
   			'2xl': '1400px',
-			'3xl': '1536px'
+  			'3xl': '1536px'
   		}
   	},
   	extend: {
@@ -52,6 +52,16 @@ const config = {
   			card: {
   				DEFAULT: 'hsl(var(--card))',
   				foreground: 'hsl(var(--card-foreground))'
+  			},
+  			sidebar: {
+  				DEFAULT: 'hsl(var(--sidebar-background))',
+  				foreground: 'hsl(var(--sidebar-foreground))',
+  				primary: 'hsl(var(--sidebar-primary))',
+  				'primary-foreground': 'hsl(var(--sidebar-primary-foreground))',
+  				accent: 'hsl(var(--sidebar-accent))',
+  				'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
+  				border: 'hsl(var(--sidebar-border))',
+  				ring: 'hsl(var(--sidebar-ring))'
   			}
   		},
   		borderRadius: {
@@ -75,15 +85,15 @@ const config = {
   				to: {
   					height: '0'
   				}
-  			},
+  			}
   		},
   		animation: {
   			'accordion-down': 'accordion-down 0.2s ease-out',
-  			'accordion-up': 'accordion-up 0.2s ease-out',
+  			'accordion-up': 'accordion-up 0.2s ease-out'
   		},
-		screens: {
-			'3xl': '1536px'
-		}
+  		screens: {
+  			'3xl': '1536px'
+  		}
   	}
   },
   plugins: [require("tailwindcss-animate")],
