@@ -12,7 +12,6 @@ import { addItemToTable } from "@/actions/AWS"
 import StrengthExercise from "@/components/strength-exercise"
 import CardioExercise from "@/components/gym/CardioExerciseEntry"
 import { Accordion, AccordionContent, AccordionTrigger, AccordionItem } from "../ui/accordion"
-import { connection } from "next/server"
 
 export const dynamic = 'force-dynamic';
 
@@ -45,40 +44,40 @@ const FormSchema = z.object({
 export default function WorkoutForm({ onSuccess }: { onSuccess: () => void }) {
   const [buttonText, setButtonText] = useState<string>("Log Data")
   const [openExercises, setOpenExercises] = useState<number[]>([])
-  // const [currentDate, setDate] = useState<any>();
-  // const [currentYear, setYear] = useState<any>()
-  // const [hour, setHour] = useState<any>();
-
-  // useEffect(()=>{
-  //   let newDate
-  //   newDate = new Date()
-  //     setDate(newDate)
-  //     setYear(currentDate?.getFullYear())
-  //     setHour(currentDate?.getHours() % 12 || 12)
-
-  // },[])
-
-
-  const currentDate = new Date()
-  const currentYear = currentDate.getFullYear()
-  const hour = currentDate.getHours() % 12 || 12
 
   const methods = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
-      month: (currentDate.getMonth() + 1).toString().padStart(2, '0'),
-      day: currentDate.getDate().toString().padStart(2, '0'),
-      year: currentYear.toString(),
-      startHour: hour.toString(),
-      startMinute: currentDate.getMinutes().toString().padStart(2, '0'),
-      startAmpm: currentDate.getHours() >= 12 ? 'PM' : 'AM',
+      month: '',
+      day: '',
+      year: '',
+      startHour: '',
+      startMinute: '',
+      startAmpm: '',
       useCurrentEndTime: true,
-      endHour: hour.toString(),
-      endMinute: currentDate.getMinutes().toString().padStart(2, '0'),
-      endAmpm: currentDate.getHours() >= 12 ? 'PM' : 'AM',
+      endHour: '',
+      endMinute: '',
+      endAmpm: '',
       exercises: []
     }
   })
+
+  useEffect(() => {
+    const now = new Date()
+    methods.reset({
+      month: (now.getMonth() + 1).toString().padStart(2, '0'),
+      day: now.getDate().toString().padStart(2, '0'),
+      year: now.getFullYear().toString(),
+      startHour: (now.getHours() % 12 || 12).toString(),
+      startMinute: now.getMinutes().toString().padStart(2, '0'),
+      startAmpm: now.getHours() >= 12 ? 'PM' : 'AM',
+      useCurrentEndTime: true,
+      endHour: (now.getHours() % 12 || 12).toString(),
+      endMinute: now.getMinutes().toString().padStart(2, '0'),
+      endAmpm: now.getHours() >= 12 ? 'PM' : 'AM',
+      exercises: []
+    })
+  }, [methods])
 
   const { fields, append, remove } = useFieldArray({
     control: methods.control,
@@ -208,7 +207,7 @@ export default function WorkoutForm({ onSuccess }: { onSuccess: () => void }) {
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                {Array.from({ length: 10 }, (_, i) => currentYear - i).map((year) => (
+                                {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i).map((year) => (
                                   <SelectItem key={year} value={year.toString()}>
                                     {year}
                                   </SelectItem>
@@ -412,3 +411,4 @@ export default function WorkoutForm({ onSuccess }: { onSuccess: () => void }) {
     </FormProvider>
   )
 }
+
