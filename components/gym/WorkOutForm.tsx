@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { useForm, useFieldArray, FormProvider } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -13,6 +13,8 @@ import StrengthExercise from "@/components/strength-exercise"
 import CardioExercise from "@/components/gym/CardioExerciseEntry"
 import { Accordion, AccordionContent, AccordionTrigger, AccordionItem } from "../ui/accordion"
 import { connection } from "next/server"
+
+export const dynamic = 'force-dynamic';
 
 const FormSchema = z.object({
   month: z.string(),
@@ -40,11 +42,23 @@ const FormSchema = z.object({
   )
 })
 
-export default async function WorkoutForm({ onSuccess }: { onSuccess: () => void }) {
+export default function WorkoutForm({ onSuccess }: { onSuccess: () => void }) {
   const [buttonText, setButtonText] = useState<string>("Log Data")
   const [openExercises, setOpenExercises] = useState<number[]>([])
+  // const [currentDate, setDate] = useState<any>();
+  // const [currentYear, setYear] = useState<any>()
+  // const [hour, setHour] = useState<any>();
 
-  await connection()
+  // useEffect(()=>{
+  //   let newDate
+  //   newDate = new Date()
+  //     setDate(newDate)
+  //     setYear(currentDate?.getFullYear())
+  //     setHour(currentDate?.getHours() % 12 || 12)
+
+  // },[])
+
+
   const currentDate = new Date()
   const currentYear = currentDate.getFullYear()
   const hour = currentDate.getHours() % 12 || 12
