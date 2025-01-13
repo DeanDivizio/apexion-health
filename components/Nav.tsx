@@ -1,5 +1,6 @@
 import { SignInButton, UserButton, SignedIn, SignedOut } from "@clerk/nextjs";
 import Menu from "./Menu";
+import { Suspense } from "react";
 
 export default function Nav() {
 
@@ -12,12 +13,14 @@ export default function Nav() {
                 <h2 className="text-4xl md:text4xl font-medium pb-2">Apexion</h2>
             </div>
             <div className="text-right order-3 lg:order-3">
-                <SignedOut>
-                    <SignInButton />
-                </SignedOut>
-                <SignedIn>
-                    <UserButton />
-                </SignedIn>
+                <Suspense>
+                    <SignedOut>
+                        <SignInButton />
+                    </SignedOut>
+                    <SignedIn>
+                        <UserButton />
+                    </SignedIn>
+                </Suspense>
             </div>
         </div>
     )

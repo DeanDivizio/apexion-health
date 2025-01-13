@@ -7,13 +7,8 @@ import {useState} from 'react';
   
   
 export default function Menu() {
-    const [isMobile, setIsMobile] = useState(false);
+
     const [open, setOpen] = useState(false);
-    if (window != undefined){
-        if (window.innerWidth < 768 && !isMobile) {
-        setIsMobile(true);
-        }
-    }
 
     function handleLinkClick() {
         setTimeout(() => {setOpen(false)}, 200)
