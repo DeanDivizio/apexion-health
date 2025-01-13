@@ -5,7 +5,7 @@ import { RenderCharts } from "@/utils/ChartRendering";
 import { useUser } from "@clerk/nextjs";
 
 export default function Labs() {
-
+"use cache"
   const { user } = useUser() //Clerk
   const [data, setData] = useState({});
   const [isLoading, setIsLoading] = useState(true);
