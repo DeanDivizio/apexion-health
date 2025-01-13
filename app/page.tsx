@@ -49,7 +49,7 @@ export default function Home() {
   }, []);
 
   return (
-    <main className="flex px-4 pt-[3vh] h-auto md:h-[100vh] overflow-clip w-full flex-col items-center justify-start bg-transparent">
+    <main className="flex px-4 pt-24 md:pt-[3vh] h-auto md:h-[100vh] overflow-clip w-full flex-col items-center justify-start bg-transparent">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full md:h-[95vh]">
         <div className="col-span-1 flex flex-col items-center lg:items-start h-[92vh] p-4 border-2 bg-neutral-800/50 backdrop-blur-xl rounded-xl overflow-y-scroll">
           <h3 className="text-5xl w-full font-regular tracking-normal mt-4 md:mt-0 mb-8 text-center">Your Week In Review</h3>
