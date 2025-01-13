@@ -12,6 +12,7 @@ import { addItemToTable } from "@/actions/AWS"
 import StrengthExercise from "@/components/strength-exercise"
 import CardioExercise from "@/components/gym/CardioExerciseEntry"
 import { Accordion, AccordionContent, AccordionTrigger, AccordionItem } from "../ui/accordion"
+import { connection } from "next/server"
 
 const FormSchema = z.object({
   month: z.string(),
@@ -39,10 +40,11 @@ const FormSchema = z.object({
   )
 })
 
-export default function WorkoutForm({ onSuccess }: { onSuccess: () => void }) {
+export default async function WorkoutForm({ onSuccess }: { onSuccess: () => void }) {
   const [buttonText, setButtonText] = useState<string>("Log Data")
   const [openExercises, setOpenExercises] = useState<number[]>([])
 
+  await connection()
   const currentDate = new Date()
   const currentYear = currentDate.getFullYear()
   const hour = currentDate.getHours() % 12 || 12
