@@ -14,9 +14,11 @@ export default function Nav() {
                 <h2 className="text-4xl md:text4xl font-medium pb-2">Apexion</h2>
             </div>
             <div className="text-right order-3 lg:order-3">
+                <Suspense>
                     <SignedOut>
                         <SignInButton />
                     </SignedOut>
+                    </Suspense>
                     <SignedIn>
                         <UserButton />
                     </SignedIn>
