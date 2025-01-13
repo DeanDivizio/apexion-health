@@ -31,7 +31,9 @@ export default function Labs() {
         <p className="text-center font-thin italic text-4xl">{`Your Labs, by Category`}</p>
       </div>
       <div id="homeCharts">
+        <Suspense>
         <RenderCharts data={data} approvedIDs={approvedIDs} categorize={true} categoryOrder={["Hormones - All", "COMPLETE BLOOD COUNT", "COMPREHENSIVE METABOLIC PANEL", "LIPID PANEL w/ CHOLESTEROL"]}/>
+        </Suspense>
       </div>
     </main>
   );
