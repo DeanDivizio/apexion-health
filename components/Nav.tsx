@@ -19,9 +19,11 @@ export default function Nav() {
                         <SignInButton />
                     </SignedOut>
                     </Suspense>
+                <Suspense>
                     <SignedIn>
                         <UserButton />
                     </SignedIn>
+                    </Suspense>    
             </div>
         </div>
     )
