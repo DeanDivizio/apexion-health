@@ -3,6 +3,7 @@ import { SummaryData, GymDataPoints, Exercises, HormoneAdministration } from "@/
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 
 const refDate = new Date().toISOString().split('T')[0].replace(/-/g, '');
@@ -10,6 +11,7 @@ const refDate = new Date().toISOString().split('T')[0].replace(/-/g, '');
 export function WeeklyDataDisplayComponent({ data, isLoading }: { data: SummaryData[], isLoading:any }) {
   const [orderedData, setOrderedData] = useState<SummaryData[]>([]);
   const [openItems, setOpenItems] = useState<string[]>([]);
+  const isMobile = useIsMobile();
 
   const getExerciseName = (value: string) => {
     const spacedValue = value.replace(/([A-Z])/g, ' $1');
@@ -23,8 +25,11 @@ export function WeeklyDataDisplayComponent({ data, isLoading }: { data: SummaryD
   useEffect(()=>{
     if (orderedData.length > 0) {
       let items:string[] = [];
+      if (isMobile) {
+        setOpenItems([String(orderedData[6].date), String(orderedData[5].date) ])
+      } else {
       orderedData.forEach(item => items.push(String(item.date)));
-      setOpenItems(items);
+      setOpenItems(items);}
       setOrderedData(data.reverse());
     }
   },[orderedData])
