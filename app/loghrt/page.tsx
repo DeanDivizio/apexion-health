@@ -1,9 +1,9 @@
 'use client';
-import WorkOutForm from "@/components/gym/WorkOutForm";
+import HRTForm from "@/components/HRTForm";
 import { useRouter } from "next/navigation";
 import { Suspense } from "react";
 
-export default function LogWorkoutPage(){
+export default function LogHRTPage(){
     const router = useRouter();
     function handleSuccess() {
         router.push('/');
@@ -12,7 +12,7 @@ export default function LogWorkoutPage(){
     return(
         <div className="w-full flex justify-center align-center">
             <Suspense fallback={<div>Loading...</div>}>
-            <WorkOutForm onSuccess={handleSuccess}/>
+            <HRTForm onSuccess={handleSuccess}/>
             </Suspense>
         </div>
     )

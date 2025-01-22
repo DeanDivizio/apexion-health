@@ -9,7 +9,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { addItemToTable } from "@/actions/AWS"
-import StrengthExercise from "@/components/strength-exercise"
+import StrengthExercise from "@/components/gym/strength-exercise"
 import CardioExercise from "@/components/gym/CardioExerciseEntry"
 import { Accordion, AccordionContent, AccordionTrigger, AccordionItem } from "../ui/accordion"
 
@@ -142,7 +142,7 @@ export default function WorkoutForm({ onSuccess }: { onSuccess: () => void }) {
   return (
     <FormProvider {...methods}>
       <Form {...methods}>
-        <form onSubmit={methods.handleSubmit(onSubmit)} className="w-2/3 space-y-6 flex flex-col justify-center">
+        <form onSubmit={methods.handleSubmit(onSubmit)} className="w-2/3 space-y-6 py-36 flex flex-col justify-start">
           <Accordion type="single" collapsible>
             <AccordionItem value="dateTime">
               <AccordionTrigger><p className="text-center w-full ">{`Date & Time`}</p></AccordionTrigger>

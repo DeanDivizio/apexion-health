@@ -30,7 +30,7 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en">
-        <body className="w-full md:h-screen bg-gradient-to-br from-blue-950/20 via-neutral-950 to-neutral-950">
+        <body className="w-full h-auto md:h-screen bg-gradient-to-br from-blue-950/20 via-neutral-950 to-neutral-950">
         <Nav />
           <SidebarProvider defaultOpen={true}>
             <AppSidebar />

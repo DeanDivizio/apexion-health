@@ -27,10 +27,11 @@ export function WeeklyDataDisplayComponent({ data, isLoading }: { data: SummaryD
       let items:string[] = [];
       if (isMobile) {
         setOpenItems([String(orderedData[6].date), String(orderedData[5].date) ])
+        setOrderedData(data.reverse());
       } else {
       orderedData.forEach(item => items.push(String(item.date)));
       setOpenItems(items);}
-      setOrderedData(data.reverse());
+      // setOrderedData(data.reverse());
     }
   },[orderedData])
 
@@ -46,11 +47,11 @@ export function WeeklyDataDisplayComponent({ data, isLoading }: { data: SummaryD
                     {new Date(parseInt(item.date.slice(0, 4)), parseInt(item.date.slice(4, 6)) - 1, parseInt(item.date.slice(6))).toLocaleString('en-us', { weekday: 'long', month: 'short', day: 'numeric' })}
                   </AccordionTrigger>
                 <AccordionContent className="px-3 pt-4 pb-6 bg-neutral-950/35 backdrop-blur-xl rounded-b-xl">
-                  <h3 className="font-semibold mb-2 text-base underline text-neutral-300">Hormones</h3>
+                  <h3 className="font-light border-b w-fit pr-2 mb-1 tracking-wide text-base text-neutral-300">Hormones</h3>
                   {item.hormoneData && item.hormoneData.data.length > 0 ? (
                     item.hormoneData.data.map((object: any) => (
                       <div className="flex gap-2 text-lg" key={object.type}>
-                        <p className="font-medium">{object.dose}<span className="font-light"> mg:</span></p>
+                        <p className="font-medium">{object.dose}<span className="font-extralight text-sm"> mg: </span></p>
                         {['cypionate', 'enanthate', 'propionate', 'cream'].includes(object.type) ?
                           <p>Testosterone</p> :
                           <p>{(object.type || '').charAt(0).toUpperCase() + (object.type || '').slice(1)}</p>
@@ -60,7 +61,7 @@ export function WeeklyDataDisplayComponent({ data, isLoading }: { data: SummaryD
                   ) : (
                     <p className="text-xs md:text-sm">No Hormone data recorded</p>
                   )}
-                  <h3 className="font-semibold mb-2 mt-4 text-base underline text-neutral-300">Gym Data</h3>
+                  <h3 className="font-light border-b w-fit pr-2 mb-1 tracking-wide text-base text-neutral-300 mt-3">Gym Data</h3>
                   {item.gymData && item.gymData.data.length > 0 ? (
                     item.gymData.data.map((object: GymDataPoints) => (
                       <div className="flex flex-col gap-2 text-lg" key={Number(object.startTime)}>

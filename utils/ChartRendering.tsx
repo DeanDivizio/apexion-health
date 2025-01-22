@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useMemo } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { MyAreaChart } from "@/components/AreaChart";
 import { RenderChartsProps, TestResult } from "./types";
@@ -9,9 +9,6 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 
 export function RenderCharts({ data, approvedIDs, categorize = false, categoryOrder = [] }: RenderChartsProps) {
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-
   const categorizedData = useMemo(() => {
     return Object.entries(data)
       .filter(([key]) => !approvedIDs || approvedIDs.includes(key))
@@ -63,8 +60,6 @@ export function RenderCharts({ data, approvedIDs, categorize = false, categoryOr
   if (Object.keys(data).length === 0) {
     return <div>No data available</div>;
   }
-
-  console.log(categorizedData);
 
   return (
     <Carousel opts={{ align: "start" }} className="w-full">

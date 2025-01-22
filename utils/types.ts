@@ -184,3 +184,22 @@ export type HormoneAdministration = {
   time: String,
   type: String,
 }
+
+export type GenericRingChart = {
+  title: string;
+  shortTitle: string;
+  description: string;
+  subtext: string;
+  unit: string;
+  goal?: number;
+  value: number;
+  shade: string;
+  subtextOrder: "unit first" | "unit last";
+}
+
+export type GenericIntAreachart = {
+  title: string;
+  description: string;
+  data: any;
+  chartConfig: any;
+}

@@ -24,7 +24,7 @@ export default function PinnedData({data, isLoading, title, color}: {data:any, i
       }, [data]);
 
     return(
-        <div className={`col-span-2 flex flex-col items-center h-fit md:px-4 py-8 bg-gradient-to-br ${color == "blue" ? "from-slate-950" : "from-green-950/20" } to-black border rounded-xl mb-4`}>
+        <div className={`col-span-2 flex flex-col items-center h-fit md:px-4 py-8 bg-gradient-to-br ${color == "blue" ? "from-slate-950/50" : "from-green-950/15" } to-black border rounded-xl mb-4`}>
               <div className="w-full">
                 <h3 className="text-5xl text-center font-regular tracking-wide mb-8">{title}</h3>
               </div>
