@@ -65,7 +65,7 @@ export default function MobileNav() {
             <LogButton open={open} setOpen={setOpen} />
             <Link href="/logworkout" className="flex justify-center"><Dumbbell /></Link>
             <Link href="/" className="flex justify-center"><Heart /></Link>
-            <div className={`${open ? "bg-black/20 backdrop-blur-lg":"bg-transparent backdrop-blur-none"} fixed w-[100vw] h-[100vh] -translate-y-full top-0 left-0 transition duration-1500 pointer-events-none`}></div>
+            <div className={`${open ? "bg-black/20 backdrop-blur-lg":"bg-transparent backdrop-blur-none"} fixed z-10 w-[100vw] h-[100vh] -translate-y-full top-0 left-0 transition duration-1500 pointer-events-none`}></div>
         </nav>
     )
 }

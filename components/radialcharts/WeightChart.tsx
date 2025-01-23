@@ -51,15 +51,15 @@ export function WeightChart() {
             data={chartData}
             startAngle={Math.abs(percentage * 3.6 - 270)}
             endAngle={270}
-            innerRadius={isMobile ? 64 : 80}
-            outerRadius={isMobile ? 90 : 110}
+            innerRadius={isMobile ? 54 : 80}
+            outerRadius={isMobile ? 72 : 110}
           >
             <PolarGrid
               gridType="circle"
               radialLines={false}
               stroke="none"
               className="first:fill-muted last:fill-background"
-              polarRadius={isMobile ? [69, 58] : [86, 74]}
+              polarRadius={isMobile ? [58, 50] : [86, 74]}
             />
             <RadialBar dataKey="number" background cornerRadius={10} />
             <PolarRadiusAxis tick={false} tickLine={false} axisLine={false}>

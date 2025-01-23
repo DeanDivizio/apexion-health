@@ -40,21 +40,21 @@ export function UniversalRingChart({ title, shortTitle, description, subtext, su
             <CardContent className="flex-1">
                 <ChartContainer
                     config={{ metric: { color: ringColor } }}
-                    className="mx-0 md:mx-auto aspect-square max-h-[200px] mb-4"
+                    className="mx-0 md:mx-auto aspect-square min-h-[100px] max-h-[250px] mb-4"
                     >
                     <RadialBarChart
                         data={chartData}
                         startAngle={270}
                         endAngle={goal && percentage ? (270 - (Math.abs(percentage * 3.6))) : (270)}
-                        innerRadius={isMobile ? 64 : 80}
-                        outerRadius={isMobile ? 90 : 110}
+                        innerRadius={isMobile ? 54 : 80}
+                        outerRadius={isMobile ? 72 : 110}
                         >
                         <PolarGrid
                             gridType="circle"
                             radialLines={false}
                             stroke="none"
                             className="first:fill-muted last:fill-background"
-                            polarRadius={isMobile ? [69, 58] : [86, 74]}
+                            polarRadius={isMobile ? [58, 50] : [86, 74]}
                         />
                         <RadialBar dataKey="number" background cornerRadius={10} />
                         <PolarRadiusAxis tick={false} tickLine={false} axisLine={false}>
@@ -71,7 +71,7 @@ export function UniversalRingChart({ title, shortTitle, description, subtext, su
                                                 <tspan
                                                     x={viewBox.cx}
                                                     y={viewBox.cy}
-                                                    className="fill-foreground text-4xl font-bold"
+                                                    className="fill-foreground text-3xl md:text-4xl font-bold"
                                                     >
                                                     {value}
                                                     </tspan>

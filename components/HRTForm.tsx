@@ -10,6 +10,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { addItemToTable } from "@/actions/AWS"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion"
 
 const FormSchema = z.object({
   category: z.string(),
@@ -90,154 +91,161 @@ export default function HRTForm({ onSuccess }: { onSuccess: () => void }) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="w-2/3 space-y-6 flex flex-col justify-center">
-        <div className="flex flex-col md:flex-row mt-8 mb-4 gap-6 items-around justify-center">
-          <div className="flex gap-2 items-center justify-around w-full">
-            <p>Date:</p>
-            <div className="flex space-x-3">
-              <FormField
-                control={form.control}
-                name="month"
-                render={({ field }) => (
-                  <FormItem>
-                    {/* <FormLabel>Month</FormLabel> */}
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Month" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
-                          <SelectItem key={month} value={month.toString().padStart(2, "0")}>
-                            {month.toString().padStart(2, "0")}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="day"
-                render={({ field }) => (
-                  <FormItem>
-                    {/* <FormLabel>Day</FormLabel> */}
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Day" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
-                          <SelectItem key={day} value={day.toString().padStart(2, "0")}>
-                            {day.toString().padStart(2, "0")}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="year"
-                render={({ field }) => (
-                  <FormItem>
-                    {/* <FormLabel>Year</FormLabel> */}
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Year" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {Array.from({ length: 10 }, (_, i) => currentYear - i).map((year) => (
-                          <SelectItem key={year} value={year.toString()}>
-                            {year}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </FormItem>
-                )}
-              />
-            </div>
-          </div>
-          <div className="flex gap-2 items-center justify-around w-full">
-            <p>Time:</p>
-            <div className="flex space-x-3">
-              <FormField
-                control={form.control}
-                name="hour"
-                render={({ field }) => (
-                  <FormItem>
-                    {/* <FormLabel>Hour</FormLabel> */}
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Hour" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {Array.from({ length: 12 }, (_, i) => i + 1).map((hour) => (
-                          <SelectItem key={hour} value={hour.toString()}>
-                            {hour}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="minute"
-                render={({ field }) => (
-                  <FormItem>
-                    {/* <FormLabel>Minute</FormLabel> */}
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Minute" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {Array.from({ length: 60 }, (_, i) => i).map((minute) => (
-                          <SelectItem key={minute} value={minute.toString().padStart(2, "0")}>
-                            {minute.toString().padStart(2, "0")}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="ampm"
-                render={({ field }) => (
-                  <FormItem>
-                    {/* <FormLabel>AM/PM</FormLabel> */}
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="AM/PM" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="AM">AM</SelectItem>
-                        <SelectItem value="PM">PM</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </FormItem>
-                )}
-              />
-            </div>
-          </div>
-        </div>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="w-2/3 space-y-6 pt-36 pb-24 flex flex-col justify-start">
+        <Accordion type="single" collapsible>
+          <AccordionItem value="dateTime" className="mb-6">
+            <AccordionTrigger className="bg-black p-4 border rounded-t data-[state=closed]:rounded-b text-sm font-light data-[state=closed]:justify-center gap-4">Date and Time</AccordionTrigger>
+            <AccordionContent>
+              <div className="flex flex-col md:flex-row mb-4 gap-6 items-around justify-center border-x border-b p-4 pb-8 rounded-b">
+                <div className="flex flex-col md:flex-row gap-2 items-center justify-around w-full">
+                  <p>Date:</p>
+                  <div className="flex space-x-3">
+                    <FormField
+                      control={form.control}
+                      name="month"
+                      render={({ field }) => (
+                        <FormItem>
+                          {/* <FormLabel>Month</FormLabel> */}
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Month" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
+                                <SelectItem key={month} value={month.toString().padStart(2, "0")}>
+                                  {month.toString().padStart(2, "0")}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="day"
+                      render={({ field }) => (
+                        <FormItem>
+                          {/* <FormLabel>Day</FormLabel> */}
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Day" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
+                                <SelectItem key={day} value={day.toString().padStart(2, "0")}>
+                                  {day.toString().padStart(2, "0")}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="year"
+                      render={({ field }) => (
+                        <FormItem>
+                          {/* <FormLabel>Year</FormLabel> */}
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Year" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {Array.from({ length: 10 }, (_, i) => currentYear - i).map((year) => (
+                                <SelectItem key={year} value={year.toString()}>
+                                  {year}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+                <div className="flex flex-col md:flex-row gap-2 items-center justify-around w-full">
+                  <p>Time:</p>
+                  <div className="flex space-x-3">
+                    <FormField
+                      control={form.control}
+                      name="hour"
+                      render={({ field }) => (
+                        <FormItem>
+                          {/* <FormLabel>Hour</FormLabel> */}
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Hour" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {Array.from({ length: 12 }, (_, i) => i + 1).map((hour) => (
+                                <SelectItem key={hour} value={hour.toString()}>
+                                  {hour}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="minute"
+                      render={({ field }) => (
+                        <FormItem>
+                          {/* <FormLabel>Minute</FormLabel> */}
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Minute" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {Array.from({ length: 60 }, (_, i) => i).map((minute) => (
+                                <SelectItem key={minute} value={minute.toString().padStart(2, "0")}>
+                                  {minute.toString().padStart(2, "0")}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="ampm"
+                      render={({ field }) => (
+                        <FormItem>
+                          {/* <FormLabel>AM/PM</FormLabel> */}
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="AM/PM" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="AM">AM</SelectItem>
+                              <SelectItem value="PM">PM</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
         <FormField
           control={form.control}
           name="category"
