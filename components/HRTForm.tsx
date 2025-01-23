@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
@@ -28,10 +28,7 @@ export default function HRTForm({ onSuccess }: { onSuccess: () => void }) {
   const [category, setCategory] = useState<string | null>(null)
   const [type, setType] = useState<string | null>(null)
   const [buttonText, setButtonText] = useState<string>("Log Data")
-
-  const currentDate = new Date()
-  const currentYear = currentDate.getFullYear()
-  const hour = currentDate.getHours() % 12 || 12
+  const [currentYear, setCurrentYear] = useState<number>(0)
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
@@ -39,14 +36,30 @@ export default function HRTForm({ onSuccess }: { onSuccess: () => void }) {
       category: "",
       type: "",
       dose: 0,
-      month: (currentDate.getMonth() + 1).toString().padStart(2, '0'),
-      day: currentDate.getDate().toString().padStart(2, '0'),
-      year: currentYear.toString(),
-      hour: hour.toString(),
-      minute: currentDate.getMinutes().toString().padStart(2, '0'),
-      ampm: currentDate.getHours() >= 12 ? 'PM' : 'AM',
+      month: "",
+      day: "",
+      year: "",
+      hour: "",
+      minute: "",
+      ampm: "",
     },
   })
+
+  useEffect(() => {
+    const now = new Date()
+    const year = now.getFullYear()
+    setCurrentYear(year)
+
+    form.reset({
+      ...form.getValues(),
+      month: (now.getMonth() + 1).toString().padStart(2, "0"),
+      day: now.getDate().toString().padStart(2, "0"),
+      year: year.toString(),
+      hour: (now.getHours() % 12 || 12).toString(),
+      minute: now.getMinutes().toString().padStart(2, "0"),
+      ampm: now.getHours() >= 12 ? "PM" : "AM",
+    })
+  }, [form])
 
   async function onSubmit(data: z.infer<typeof FormSchema>) {
     try {
@@ -59,15 +72,18 @@ export default function HRTForm({ onSuccess }: { onSuccess: () => void }) {
         time: formattedTime,
       }
       const cleanedData = Object.fromEntries(
-        Object.entries(formattedData).filter(([key]) => key !== 'day' && key !== 'month' && key !== 'year' && key !== 'hour' && key !== 'minute' && key !== 'ampm')
-      );
+        Object.entries(formattedData).filter(
+          ([key]) =>
+            key !== "day" && key !== "month" && key !== "year" && key !== "hour" && key !== "minute" && key !== "ampm",
+        ),
+      )
       await addItemToTable(cleanedData, "Apexion-Hormone")
       setButtonText("Sent!")
       setTimeout(() => {
         onSuccess()
       }, 500)
     } catch (error) {
-      console.error('An error occurred:', error)
+      console.error("An error occurred:", error)
       setButtonText("Error occurred")
     }
   }
@@ -75,8 +91,8 @@ export default function HRTForm({ onSuccess }: { onSuccess: () => void }) {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="w-2/3 space-y-6 flex flex-col justify-center">
-        <div className="flex flex-col md:flex-row mt-8 gap-6 items-center justify-center">
-          <div className="flex gap-2 items-center">
+        <div className="flex flex-col md:flex-row mt-8 mb-4 gap-6 items-around justify-center">
+          <div className="flex gap-2 items-center justify-around w-full">
             <p>Date:</p>
             <div className="flex space-x-3">
               <FormField
@@ -93,8 +109,8 @@ export default function HRTForm({ onSuccess }: { onSuccess: () => void }) {
                       </FormControl>
                       <SelectContent>
                         {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
-                          <SelectItem key={month} value={month.toString().padStart(2, '0')}>
-                            {month.toString().padStart(2, '0')}
+                          <SelectItem key={month} value={month.toString().padStart(2, "0")}>
+                            {month.toString().padStart(2, "0")}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -116,8 +132,8 @@ export default function HRTForm({ onSuccess }: { onSuccess: () => void }) {
                       </FormControl>
                       <SelectContent>
                         {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
-                          <SelectItem key={day} value={day.toString().padStart(2, '0')}>
-                            {day.toString().padStart(2, '0')}
+                          <SelectItem key={day} value={day.toString().padStart(2, "0")}>
+                            {day.toString().padStart(2, "0")}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -150,7 +166,7 @@ export default function HRTForm({ onSuccess }: { onSuccess: () => void }) {
               />
             </div>
           </div>
-          <div className="flex gap-2 items-center">
+          <div className="flex gap-2 items-center justify-around w-full">
             <p>Time:</p>
             <div className="flex space-x-3">
               <FormField
@@ -190,8 +206,8 @@ export default function HRTForm({ onSuccess }: { onSuccess: () => void }) {
                       </FormControl>
                       <SelectContent>
                         {Array.from({ length: 60 }, (_, i) => i).map((minute) => (
-                          <SelectItem key={minute} value={minute.toString().padStart(2, '0')}>
-                            {minute.toString().padStart(2, '0')}
+                          <SelectItem key={minute} value={minute.toString().padStart(2, "0")}>
+                            {minute.toString().padStart(2, "0")}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -228,7 +244,13 @@ export default function HRTForm({ onSuccess }: { onSuccess: () => void }) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Category</FormLabel>
-              <Select onValueChange={(value) => { setCategory(value); field.onChange(value); }} defaultValue={field.value}>
+              <Select
+                onValueChange={(value) => {
+                  setCategory(value)
+                  field.onChange(value)
+                }}
+                defaultValue={field.value}
+              >
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select a medication category" />
@@ -255,9 +277,7 @@ export default function HRTForm({ onSuccess }: { onSuccess: () => void }) {
               <FormControl>
                 <Input type="number" placeholder="0" {...field} />
               </FormControl>
-              <FormDescription>
-                {`Enter your dose in milligrams (mG)`}
-              </FormDescription>
+              <FormDescription>{`Enter your dose in milligrams (mG)`}</FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -269,7 +289,13 @@ export default function HRTForm({ onSuccess }: { onSuccess: () => void }) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Type</FormLabel>
-                <Select onValueChange={(value) => { setType(value); field.onChange(value); }} defaultValue={field.value}>
+                <Select
+                  onValueChange={(value) => {
+                    setType(value)
+                    field.onChange(value)
+                  }}
+                  defaultValue={field.value}
+                >
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder={`Select a your type of ${category}`} />
@@ -345,3 +371,4 @@ export default function HRTForm({ onSuccess }: { onSuccess: () => void }) {
     </Form>
   )
 }
+
