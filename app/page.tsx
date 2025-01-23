@@ -2,19 +2,15 @@
 import React, { useState, useEffect } from "react";
 import { homeFetch } from "@/actions/InternalLogic";
 import { useUser } from "@clerk/nextjs";
-import HRTDrawer from "@/components/HRTDrawer";
-import Link from "next/link";
 import { WeeklyDataDisplayComponent } from "@/components/WeeklySummary";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { RenderCharts } from "@/utils/ChartRendering";
 import PinnedData from "@/components/PinnedData";
 import Footer from "@/components/Footer";
 import { WeightChart } from "@/components/radialcharts/WeightChart";
-import { DailyCalorieRingChart } from "@/components/radialcharts/DailyCalorieRingChart";
-import { DailyProtein } from "@/components/radialcharts/DailyProtein";
 import { UniversalRingChart } from "@/components/radialcharts/UniversalRingChart";
 import { InteractiveAreaChart } from "@/components/InteractiveAreaChart";
 import { ChartConfig } from "@/components/ui/chart";
+import { useSubNavContext } from "@/context/SubNavOpenContext";
+import Defocuser from "@/components/Defocuser";
 
 type summaryDataFormat = {
   date: string
@@ -139,6 +135,8 @@ export default function Home() {
   const [data, setData] = useState<homeData>();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  //@ts-ignore
+  const {open} = useSubNavContext();
 
 
   useEffect(() => {
@@ -158,16 +156,17 @@ export default function Home() {
   }, []);
 
   return (
-    <main className="flex pb-12 md:pb-0 px-4 pt-24 md:pt-4 h-auto md:h-[100vh] overflow-clip w-full flex-col items-center justify-start bg-transparent">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full md:h-[95vh]">
-        <div className="col-span-1 order-2 md:order-1 flex flex-col items-center lg:items-start p-4 border-2 bg-neutral-800/50 backdrop-blur-xl rounded-xl overflow-y-scroll">
-          <h3 className="text-5xl w-full font-regular tracking-normal mt-4 md:mt-0 mb-8 text-center">Your Week In Review</h3>
+    <main className={`flex pb-12 md:pb-0 px-4 pt-24 md:pt-4 h-auto 3xl:h-[100vh] overflow-clip w-full flex-col items-center justify-start bg-transparent`}>
+      <Defocuser />
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 w-full xl:h-[95vh]">
+        <div className="col-span-1 order-2 xl:order-1 flex flex-col items-center lg:items-start p-4 border-2 bg-neutral-800/50 backdrop-blur-xl rounded-xl overflow-y-scroll">
+          <h3 className="text-5xl w-full font-regular tracking-normal mt-4 xl:mt-0 mb-8 text-center">Your Week In Review</h3>
           {data ?
           <WeeklyDataDisplayComponent isLoading={isLoading} data={data.summaryData} />
             : null}
           </div>
-        <div className="col-span-1 md:col-span-2 order-1 md:order-2 md:h-[95vh] overflow-y-scroll md:p-4 rounded-xl backdrop-blur-xl">
-          <div className="grid grid-cols-2 md:grid-cols-3 2xl:grid-cols-4 gap-4 justify-around mb-0">
+        <div className="col-span-1 xl:col-span-2 order-1 xl:order-2 xl:h-[95vh] overflow-y-scroll xl:p-4 rounded-xl backdrop-blur-xl">
+          <div className="grid grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 justify-around mb-0">
             <WeightChart />
             <UniversalRingChart 
               title="Today's Calorie Intake"
