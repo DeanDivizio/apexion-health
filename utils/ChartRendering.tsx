@@ -61,6 +61,61 @@ export function RenderCharts({ data, approvedIDs, categorize = false, categoryOr
     return <div>No data available</div>;
   }
 
+  if (categorize) {
+    return (
+      <div className={`flex flex-col overflow-y-visible`} style={{ gap: "4rem" }}>
+      {sortedCategories.map((labType) => (
+        <div key={labType} className="lab">
+          {categorize && <h2 className="text-2xl font-bold mb-4">{labType}</h2>}
+          {categorize && <hr className="my-4 mb-8 border-neutral-700" />}
+          <div className="flex flex-wrap justify-center gap-8">
+            {categorizedData[labType]?.map(([key, value]) => (
+              <Drawer key={key}>
+                <DrawerTrigger>
+                  <MyAreaChart
+                    data={value}
+                    xAxisKey="month"
+                    areas={[
+                      { key: "value", color: "url(#fillValue)", order: 3 },
+                      { key: "rangeHigh", color: "url(#fillHigh)", order: 2 },
+                      { key: "rangeLow", color: "url(#fillLow)", order: 1 },
+                    ]}
+                  />
+                </DrawerTrigger>
+                <DrawerContent className="flex flex-col gap-4 px-8 py-8">
+                  <DrawerHeader>
+                    <DrawerTitle>{value[0].displayName}</DrawerTitle>
+                    <DrawerDescription>Individual Lab Results - Averaged by Month</DrawerDescription>
+                  </DrawerHeader>
+                  <div className="flex md:justify-center pb-4 md:pb-12" style={{overflowX:"scroll", paddingBottom:"2rem"}}>
+                    <div className="flex gap-4 min-w-max">
+                      {value.map((element, i) => (
+                        <Card key={i} className="rounded-xl" style={{minWidth: "250px"}}>
+                          <CardHeader>
+                            <CardTitle>
+                              {`${element.month} ${element.year}`}
+                            </CardTitle>
+                            <CardDescription>
+                              <div className="mb-4">{`${element.institution}`}</div>
+                            </CardDescription>
+                            <div className="flex gap-2"><span className="font-medium">Your Value:</span><p className="mb-4 font-extralight" style={{color: "var(--color-blue)"}}>{` ${element.value}${element.unit}`}</p></div>
+                            <div className="flex gap-2"><span className="font-light">Upper Normal:</span><p className="mb-2 font-extralight" style={{color: "var(--color-green)"}}>{` ${element.rangeHigh}${element.unit}`}</p></div>
+                            <div className="flex gap-2"><span className="font-light">Lower Normal:</span><p className="mb-2 font-extralight" style={{color: "var(--color-red)"}}>{` ${element.rangeLow}${element.unit}`}</p></div>
+                          </CardHeader>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                </DrawerContent>
+              </Drawer>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+    )
+  }
+  
   return (
     <Carousel opts={{ align: "start" }} className="w-full">
       <CarouselContent >

@@ -55,10 +55,12 @@ export function AppSidebar() {
                         <SidebarMenu>
                             <hr className="mb-4 border-neutral-600"></hr>
                             <Link href={"/"} className="text-lg lg:text-2xl text-neutral-300 font-medium lg:font-semibold ml-2 mb-4 transition hover:text-blue-500">Home</Link>
-                            <Link href="/labs" className="text-lg lg:text-2xl text-neutral-300 font-medium lg:font-semibold ml-2 mb-2 transition hover:text-blue-500">Clinical Records</Link>
-                            <Link href="" className="text-lg lg:text-2xl text-neutral-300 font-medium lg:font-semibold ml-2 mb-2 transition hover:text-blue-500">Fitness</Link>
-                            <Link href="" className="text-lg lg:text-2xl text-neutral-300 font-medium lg:font-semibold ml-2 mb-2 transition hover:text-blue-500">Nutrition</Link>
-                            <Link href="" className="text-lg lg:text-2xl text-neutral-300 font-medium lg:font-semibold ml-2 mb-2 transition hover:text-blue-500">Body Measurements</Link>
+                            <div className="flex flex-col ml-2 pl-2 border-l-2 gap-2 border-green-950">
+                                <Link href="/labs" className="text-lg lg:text-2xl text-neutral-300 font-medium lg:font-semibold ml-2 mb-2 transition hover:text-purple-500">Clinical Records</Link>
+                                <Link href="" className="text-lg lg:text-2xl text-neutral-300 font-medium lg:font-semibold ml-2 mb-2 transition hover:text-purple-500">Fitness</Link>
+                                <Link href="" className="text-lg lg:text-2xl text-neutral-300 font-medium lg:font-semibold ml-2 mb-2 transition hover:text-purple-500">Nutrition</Link>
+                                <Link href="" className="text-lg lg:text-2xl text-neutral-300 font-medium lg:font-semibold ml-2 mb-2 transition hover:text-purple-500">Body Measurements</Link>
+                            </div>
                         </SidebarMenu>
                     </SidebarGroupContent>
                 </SidebarGroup>
@@ -69,13 +71,15 @@ export function AppSidebar() {
                         </SidebarMenu>
                     </SidebarGroupContent>
                 </SidebarGroup>
-                <SidebarGroup className="hidden xl:inline">
+                <SidebarGroup className="hidden xl:inline -translate-y-20">
                     <SidebarGroupContent>
+                        <SidebarGroupLabel className="text-neutral-600 text-lg">Log</SidebarGroupLabel>
+                        <hr className="mb-4 border-neutral-600"></hr>
                         <SidebarMenu className="h-full">
-                            <GradientButton link={"/loghrt"} text="Log HRT" />
-                            <GradientButton link={"/logworkout"} text="Log Workout" />
-                            <GradientButton link={"/logmeal"} text="Log Meal" />
-                            <GradientButton link={"/logbody"} text="Log Body Measurement" />
+                            <GradientButton color="green" link={"/loghrt"} text="HRT" />
+                            <GradientButton color="blue" link={"/logworkout"} text="Workout" />
+                            <GradientButton color="green" link={"/logmeal"} text="Meal" />
+                            <GradientButton color="blue" link={"/logbody"} text="Body Measurement" />
                         </SidebarMenu>
                     </SidebarGroupContent>
                 </SidebarGroup>

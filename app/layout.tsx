@@ -5,7 +5,6 @@ import { ClerkProvider } from '@clerk/nextjs'
 import Nav from "@/components/Nav";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/Sidebar";
-import Footer from "@/components/Footer";
 import MobileNav from "@/components/MobileNav";
 import {SubNavContextProvider} from "@/context/SubNavOpenContext"
 
@@ -31,7 +30,7 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en">
-        <body className="w-full h-auto md:h-screen bg-gradient-to-br from-blue-950/20 via-neutral-950 to-neutral-950">
+        <body className="w-full h-auto overflow-clip bg-gradient-to-br from-blue-950/20 via-neutral-950 to-neutral-950">
         <SubNavContextProvider>
         <Nav />
           <SidebarProvider defaultOpen={true}>

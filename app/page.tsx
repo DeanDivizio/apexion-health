@@ -132,7 +132,7 @@ export default function Home() {
   const { user } = useUser();
   const userMeta: string[] | unknown = user?.publicMetadata.homeLabs;
 
-  const [data, setData] = useState<homeData>();
+  const [data, setData] = useState<homeData>({pinnedData:{}, summaryData: [{date:"", userID:""}]}); // init with empty
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   //@ts-ignore
