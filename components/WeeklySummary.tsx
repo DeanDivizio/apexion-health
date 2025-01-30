@@ -9,7 +9,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 const refDate = new Date().toISOString().split('T')[0].replace(/-/g, '');
 
 export function WeeklyDataDisplayComponent({ data, isLoading }: { data: SummaryData[], isLoading:any }) {
-  const [orderedData, setOrderedData] = useState<SummaryData[]>([]);
+  const [orderedData, setOrderedData] = useState<SummaryData[]>(data);
   const [openItems, setOpenItems] = useState<string[]>([]);
   const isMobile = useIsMobile();
 
@@ -26,6 +26,7 @@ export function WeeklyDataDisplayComponent({ data, isLoading }: { data: SummaryD
     if (orderedData.length > 0) {
       let items:string[] = [];
       if (isMobile) {
+        console.log(orderedData)
         setOpenItems([String(orderedData[6].date), String(orderedData[5].date) ])
         setOrderedData(data.reverse());
       } else {

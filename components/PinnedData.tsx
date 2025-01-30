@@ -1,10 +1,8 @@
 "use client";
-
 import { RenderCharts } from "@/utils/ChartRendering";
 import { useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-
 
 export default function PinnedData({data, isLoading, title, color}: {data:any, isLoading:any, title:string, color:string}) {
 
@@ -17,7 +15,7 @@ export default function PinnedData({data, isLoading, title, color}: {data:any, i
         if (Array.isArray(userMeta)) {
           setApprovedIDs(userMeta);
         }
-        console.log(localData)
+        // console.log(localData)
       }, [userMeta]);
     useEffect(() => {
         setLocalData(data)
