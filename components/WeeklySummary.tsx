@@ -5,9 +5,6 @@ import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-
-const refDate = new Date().toISOString().split('T')[0].replace(/-/g, '');
-
 export function WeeklyDataDisplayComponent({ data, isLoading }: { data: SummaryData[], isLoading:any }) {
   const [orderedData, setOrderedData] = useState<SummaryData[]>(data);
   const [openItems, setOpenItems] = useState<string[]>([]);
@@ -18,11 +15,11 @@ export function WeeklyDataDisplayComponent({ data, isLoading }: { data: SummaryD
     return spacedValue.charAt(0).toUpperCase() + spacedValue.slice(1);
   };
   
-  // today on top. opens all by default
-  useEffect(() => {
-    setOrderedData(data.reverse());
-  }, [data]);
+
   useEffect(()=>{
+    const refDate = new Date().toISOString().split('T')[0].replace(/-/g, '');
+    setOrderedData(data.reverse());
+    console.log(orderedData)
     if (orderedData.length > 0) {
       let items:string[] = [];
       if (isMobile) {

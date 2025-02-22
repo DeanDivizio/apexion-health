@@ -145,7 +145,7 @@ async function summaryCardFetch() {
           gymData: gymSummary.find((summary) => summary.date === dateStr),
         }
       }
-
+      console.log(Object.values(dataByDate))
       return Object.values(dataByDate);
     } catch (error) {
       console.error("Error in summaryCardFetch:", error);
