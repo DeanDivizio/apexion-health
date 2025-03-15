@@ -140,9 +140,22 @@ export default function Home() {
 
 
   useEffect(() => {
+    const today = new Date();
+    const todayYear = today.getFullYear();
+    const todayMonth = String(today.getMonth() + 1).padStart(2, '0');
+    const todayDay = String(today.getDate()).padStart(2, '0');
+    const todayRef = todayYear+todayMonth+todayDay;
+
+    const oneWeekAgo = new Date(today.getTime() - (7 * 24 * 60 * 60 * 1000));
+    const oneWeekAgoYear = oneWeekAgo.getFullYear();
+    const oneWeekAgoMonth = String(oneWeekAgo.getMonth() + 1).padStart(2, '0');
+    const oneWeekAgoDay = String(oneWeekAgo.getDate()).padStart(2, '0');
+    const lastWeekRef = oneWeekAgoYear+oneWeekAgoMonth+oneWeekAgoDay;
+    // There has got to be a better way to handle dates
+    
     async function dataFetch() {
       try {
-        const fetchedData:any = await homeFetch(["TESTOSTERONE", "COMPLETE BLOOD COUNT", "THYROID STIMULATING HORMONE"]);
+        const fetchedData:any = await homeFetch({startDate: todayRef, endDate:lastWeekRef });
         setData(fetchedData);
       } catch (err) {
         setError('Failed to fetch data');
