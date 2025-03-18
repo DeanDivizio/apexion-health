@@ -5,8 +5,8 @@ import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-export function WeeklyDataDisplayComponent({ data, isLoading }: { data: SummaryData[], isLoading:any }) {
-  const [orderedData, setOrderedData] = useState<SummaryData[]>(data);
+export function WeeklyDataDisplayComponent({ data, isLoading }: { data: any[], isLoading:any }) {
+  const [orderedData, setOrderedData] = useState<any[]>(data);
   const [openItems, setOpenItems] = useState<string[]>([]);
   const isMobile = useIsMobile();
 
@@ -17,7 +17,6 @@ export function WeeklyDataDisplayComponent({ data, isLoading }: { data: SummaryD
   
 
   useEffect(()=>{
-    const refDate = new Date().toISOString().split('T')[0].replace(/-/g, '');
     setOrderedData(data.reverse());
     console.log(orderedData)
     if (orderedData.length > 0) {
@@ -39,10 +38,10 @@ export function WeeklyDataDisplayComponent({ data, isLoading }: { data: SummaryD
     )
   } else return (
      <Accordion type="multiple" className="w-full" value={openItems} onValueChange={setOpenItems}>
-      {orderedData?.map((item) => (
+      {data?.map((item) => (
           <AccordionItem key={String(item.date)} value={String(item.date)} className="mb-4 ">
                   <AccordionTrigger className="justify-center gap-4 text-xl py-4 px-6 bg-neutral-950 rounded-t-xl data-[state=open]:rounded-b-none data-[state=closed]:rounded-b-xl">
-                    {new Date(parseInt(item.date.slice(0, 4)), parseInt(item.date.slice(4, 6)), parseInt(item.date.slice(6))).toLocaleString('en-us', { weekday: 'long', month: 'short', day: 'numeric' })}
+                    {item.date}
                   </AccordionTrigger>
                 <AccordionContent className="px-3 pt-4 pb-6 bg-neutral-950/35 backdrop-blur-xl rounded-b-xl">
                   <h3 className="font-light border-b w-fit pr-2 mb-1 tracking-wide text-base text-neutral-300">Hormones</h3>
