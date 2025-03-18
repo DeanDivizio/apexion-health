@@ -17,38 +17,33 @@ export async function homeFetch({startDate, endDate}:{startDate:string, endDate:
     }
     try {
       // Fetch macro goals, daily macro stats, workout data, body measurements
-      let hormoneData:any = {};
-      let gymData:any = {};
-
-      Promise.all([
-        await getDataFromTable(userID, "Apexion-Hormone", startDate, endDate),
-        await getDataFromTable(userID, "Apexion-Gym", startDate, endDate)
-      ]).then((responses) => {
-        // console.log(responses)
-        hormoneData = responses[0];
-        gymData = responses[1];
+        const [hormoneData, gymData] = await Promise.all([
+          getDataFromTable(userID, "Apexion-Hormone", startDate, endDate),
+          getDataFromTable(userID, "Apexion-Gym", startDate, endDate)
+        ]);
         
         let summaryData = new Map()
+        //@ts-ignore
         hormoneData.forEach((item: { date: any; data: []}) => {
           const existingItem = summaryData.get(item.date)
           if (existingItem) {
             existingItem.hormone = item.data;
           } else {
-            summaryData.set(item.date, {date: item.date, hormone: item.data})
+            summaryData.set(item.date, {date: item.date, hormoneData: item.data})
           }
-        });
+        }); //@ts-ignore
         gymData.forEach((item: { date: any; data: []}) => {
           const existingItem = summaryData.get(item.date)
           if (existingItem) {
             existingItem.gym = item.data;
           } else {
-            summaryData.set(item.date, {date: item.date, gym: item.data})
+            summaryData.set(item.date, {date: item.date, gymData: item.data})
           }
         });
         const summary = Array.from(summaryData.values())
         console.log(summary)
         return(summary)
-      })
+      
       
     } catch (error) {
       const errorMessage = 'error occured in homeFetch';

@@ -45,8 +45,8 @@ export function WeeklyDataDisplayComponent({ data, isLoading }: { data: any[], i
                   </AccordionTrigger>
                 <AccordionContent className="px-3 pt-4 pb-6 bg-neutral-950/35 backdrop-blur-xl rounded-b-xl">
                   <h3 className="font-light border-b w-fit pr-2 mb-1 tracking-wide text-base text-neutral-300">Hormones</h3>
-                  {item.hormoneData && item.hormoneData.data.length > 0 ? (
-                    item.hormoneData.data.map((object: any) => (
+                  {item.hormoneData && item.hormoneData.length > 0 ? (
+                    item.hormoneData.map((object: any) => (
                       <div className="flex gap-2 text-lg" key={object.type}>
                         <p className="font-medium">{object.dose}<span className="font-extralight text-sm"> mg: </span></p>
                         {['cypionate', 'enanthate', 'propionate', 'cream'].includes(object.type) ?
@@ -59,8 +59,8 @@ export function WeeklyDataDisplayComponent({ data, isLoading }: { data: any[], i
                     <p className="text-xs md:text-sm">No Hormone data recorded</p>
                   )}
                   <h3 className="font-light border-b w-fit pr-2 mb-1 tracking-wide text-base text-neutral-300 mt-3">Gym Data</h3>
-                  {item.gymData && item.gymData.data.length > 0 ? (
-                    item.gymData.data.map((object: GymDataPoints) => (
+                  {item.gymData && item.gymData.length > 0 ? (
+                    item.gymData.map((object: GymDataPoints) => (
                       <div className="flex flex-col gap-2 text-lg" key={Number(object.startTime)}>
                         <h4 className="font-light text-base">{`${object.startTime} - ${object.endTime}`}</h4>
                         <div className="pl-2 border-l">

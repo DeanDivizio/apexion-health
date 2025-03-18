@@ -130,23 +130,19 @@ export default function Home() {
   //@ts-ignore
   const {open} = useSubNavContext();
 
-  useEffect( async () => {
+  useEffect( () => {
     const today = new Date();
     const todayYear = today.getFullYear();
     const todayMonth = String(today.getMonth() + 1).padStart(2, '0');
     const todayDay = String(today.getDate()).padStart(2, '0');
-    
+    let endDate:string = todayYear + todayMonth +todayDay;
     const oneWeekAgo = new Date(today.getTime() - (7 * 24 * 60 * 60 * 1000));
     const oneWeekAgoYear = oneWeekAgo.getFullYear();
     const oneWeekAgoMonth = String(oneWeekAgo.getMonth() + 1).padStart(2, '0');
     const oneWeekAgoDay = String(oneWeekAgo.getDate()).padStart(2, '0');
-    
-    function anotherwrapper() {
-      dataFetch();
-    }
-    async function dataFetch() {
-      let endDate:string = todayYear + todayMonth +todayDay;
-      let startDate:string = oneWeekAgoYear+oneWeekAgoMonth+oneWeekAgoDay;
+    let startDate:string = oneWeekAgoYear+oneWeekAgoMonth+oneWeekAgoDay;
+
+    async function dataFetch() {  
       try {
         const response = await homeFetch({startDate, endDate});
         console.log(response)
@@ -159,7 +155,7 @@ export default function Home() {
         setIsLoading(false);
       }
     }
-    anotherwrapper() 
+    dataFetch()
     // console.log(data)
   }, []);
 
