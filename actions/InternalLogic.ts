@@ -2,9 +2,6 @@
 import { getDataFromTable } from "@/actions/AWS";
 import { auth } from '@clerk/nextjs/server';
 
-// I'm rewriting all the logic on this page. any comments without a function need writing.
-
-
 // Runs through needed functions to populate data on homepage.
 export async function homeFetch({startDate, endDate}:{startDate:string, endDate:string}) {
   const { userId } = await auth();
@@ -40,10 +37,33 @@ export async function homeFetch({startDate, endDate}:{startDate:string, endDate:
             summaryData.set(item.date, {date: item.date, gymData: item.data})
           }
         });
-        const summary = Array.from(summaryData.values())
-        console.log(summary)
+        let summary = Array.from(summaryData.values())
+
+        function OrderData(data: any[]) {
+          let orderedData: any[] = [];
+          data.forEach((item) => {
+              if (orderedData.length === 0) {
+                  orderedData.push(item);
+              } else {
+                  let left = 0;
+                  let right = orderedData.length - 1;
+                  while (left <= right) {
+                      const mid = Math.floor((left + right) / 2);
+                      if (orderedData[mid].date < item.date) {
+                          left = mid + 1;
+                      } else {
+                          right = mid - 1;
+                      }
+                  }
+                  orderedData.splice(left, 0, item);
+              }
+          });
+          orderedData = orderedData.reverse()
+          return orderedData;
+        }
+
+        summary = OrderData(summary);
         return(summary)
-      
       
     } catch (error) {
       const errorMessage = 'error occured in homeFetch';
