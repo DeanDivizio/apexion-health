@@ -6,11 +6,13 @@ import { SignedIn, SignedOut, SignInButton, UserButton, useUser } from "@clerk/n
 import GradientButton from "./GradientButton";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useSubNavContext } from "@/context/SubNavOpenContext";
+import { useState } from "react";
 
 function LogButton({ open, setOpen }: { open: any, setOpen: any }) {
     function handleNavClick(state: boolean) {
         setTimeout(() => { setOpen(state) }, 60)
     }
+    
     return (
         <DropdownMenu open={open} onOpenChange={setOpen}>
             <DropdownMenuTrigger asChild >
@@ -42,26 +44,39 @@ export function AppSidebar() {
     //@ts-ignore
     const { open, setOpen } = useSubNavContext();
     const { user } = useUser();
-
+    const [logButtonHover, setLogButtonHover] = useState(false)
+    const [logOpen, setLogOpen] = useState(false);
+    const [viewOpen, setViewOpen] = useState(false);
+    function handleLogDehover(){
+        console.log("dehover")
+        setLogButtonHover(false);
+        setTimeout(()=>{
+            if (logButtonHover === false) {
+                setLogOpen(false)
+                console.log(logOpen)
+            }
+        }, 50)
+    } 
     return (
         <Sidebar>
             <SidebarHeader className="bg-neutral-950 pb-4 lg:pb-12">
                 <p className="w-full pt-4 text-center font-bold text-4xl tracking-wider text-transparent bg-gradient-to-r from-blue-800 to-green-500 bg-clip-text">Apexion</p>
             </SidebarHeader>
-            <SidebarContent className="bg-neutral-950 flex flex-col justify-between">
+            <SidebarContent className="bg-neutral-950 flex flex-col justify-center">
+                <Link href={"/"} className="text-lg lg:text-2xl text-neutral-300 font-medium lg:font-semibold ml-2 mb-4 transition hover:text-blue-500"> <GradientButton color="blue" trigger text="Home" className="text-center" bold /></Link>
                 <SidebarGroup className="">
-                    <SidebarGroupLabel className="text-neutral-600 text-sm">Go To:</SidebarGroupLabel>
                     <SidebarGroupContent>
-                        <SidebarMenu>
-                            <hr className="mb-4 border-neutral-600"></hr>
-                            <Link href={"/"} className="text-lg lg:text-2xl text-neutral-300 font-medium lg:font-semibold ml-2 mb-4 transition hover:text-blue-500">Home</Link>
-                            <div className="flex flex-col ml-2 pl-2 border-l-2 gap-2 border-green-950">
-                                <Link href="/labs" className="text-lg lg:text-2xl text-neutral-300 font-medium lg:font-semibold ml-2 mb-2 transition hover:text-purple-500">Clinical Records</Link>
-                                <Link href="" className="text-lg lg:text-2xl text-neutral-300 font-medium lg:font-semibold ml-2 mb-2 transition hover:text-purple-500">Fitness</Link>
-                                <Link href="" className="text-lg lg:text-2xl text-neutral-300 font-medium lg:font-semibold ml-2 mb-2 transition hover:text-purple-500">Nutrition</Link>
-                                <Link href="" className="text-lg lg:text-2xl text-neutral-300 font-medium lg:font-semibold ml-2 mb-2 transition hover:text-purple-500">Body Measurements</Link>
-                            </div>
-                        </SidebarMenu>
+                        <DropdownMenu >
+                            <DropdownMenuTrigger onMouseEnter={()=>{setLogOpen(true)}} onMouseLeave={()=>setLogOpen(false)} className="w-full">
+                                <GradientButton color="blue" trigger text="View ->" />
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent onMouseEnter={()=>{setLogOpen(true)}} onMouseLeave={()=>setLogOpen(false)} side="right">
+                                <DropdownMenuItem><Link href="/labs" className="text-lg lg:text-2xl text-neutral-300 font-medium lg:font-semibold ml-2 mb-2 transition hover:text-purple-500">Clinical Records</Link></DropdownMenuItem>
+                                <DropdownMenuItem><Link href="" className="text-lg lg:text-2xl text-neutral-300 font-medium lg:font-semibold ml-2 mb-2 transition hover:text-purple-500">Fitness</Link></DropdownMenuItem>
+                                <DropdownMenuItem><Link href="" className="text-lg lg:text-2xl text-neutral-300 font-medium lg:font-semibold ml-2 mb-2 transition hover:text-purple-500">Nutrition</Link></DropdownMenuItem>
+                                <DropdownMenuItem><Link href="" className="text-lg lg:text-2xl text-neutral-300 font-medium lg:font-semibold ml-2 mb-2 transition hover:text-purple-500">Body Measurements</Link></DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                     </SidebarGroupContent>
                 </SidebarGroup>
                 <SidebarGroup className="xl:hidden">
@@ -71,19 +86,23 @@ export function AppSidebar() {
                         </SidebarMenu>
                     </SidebarGroupContent>
                 </SidebarGroup>
-                <SidebarGroup className="hidden xl:inline -translate-y-20">
+                <SidebarGroup className="hidden xl:inline">
                     <SidebarGroupContent>
-                        <SidebarGroupLabel className="text-neutral-600 text-lg">Log</SidebarGroupLabel>
-                        <hr className="mb-4 border-neutral-600"></hr>
+                        <DropdownMenu >
+                            <DropdownMenuTrigger onMouseEnter={()=>{setLogOpen(true)}} onMouseLeave={()=>setLogOpen(false)} className="w-full" ><GradientButton color="green" trigger text="Log ->" /></DropdownMenuTrigger>
+                            <DropdownMenuContent onMouseEnter={()=>{setLogOpen(true)}} onMouseLeave={()=>setLogOpen(false)} side="right">
+                            <DropdownMenuItem><GradientButton color="green" link={"/loghrt"} text="HRT" className="w-full" /></DropdownMenuItem>
+                            <DropdownMenuItem><GradientButton color="blue" link={"/logworkout"} text="Workout" className="w-full"/></DropdownMenuItem>
+                            <DropdownMenuItem><GradientButton color="green" link={"/logmeal"} text="Meal" className="w-full"/></DropdownMenuItem>
+                            <DropdownMenuItem><GradientButton color="blue" link={"/logbody"} text="Body Measurement" className="w-full"/></DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                         <SidebarMenu className="h-full">
-                            <GradientButton color="green" link={"/loghrt"} text="HRT" />
-                            <GradientButton color="blue" link={"/logworkout"} text="Workout" />
-                            <GradientButton color="green" link={"/logmeal"} text="Meal" />
-                            <GradientButton color="blue" link={"/logbody"} text="Body Measurement" />
+                            
                         </SidebarMenu>
                     </SidebarGroupContent>
                 </SidebarGroup>
-                <SidebarGroup>
+                <SidebarGroup className="absolute bottom-0">
                     <SidebarGroupContent >
                         <SidebarMenu className="mb-2">
                             <Link href="" className="text-sm lg:text-lg text-neutral-300 font-semibold ml-2 mb-2 transition hover:text-blue-500 flex items-center gap-2"><Handshake className="h-5 w-5 lg:h-6 lg:w-6" />Support</Link>

@@ -164,7 +164,7 @@ export default function Home() {
       <Defocuser />
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 w-full xl:h-[95vh]">
         <div className="col-span-1 order-2 xl:order-1 flex flex-col items-center lg:items-start p-4 border-2 bg-neutral-800/50 backdrop-blur-xl rounded-xl overflow-y-scroll">
-          <h3 className="text-5xl w-full font-regular tracking-normal mt-4 xl:mt-0 mb-8 text-center">Your Week In Review</h3>
+          <h3 className="text-5xl w-full font-regular tracking-normal mt-4 xl:mt-0 mb-8 text-center">Recent Days</h3>
           {data ?
           //@ts-ignore
           <WeeklyDataDisplayComponent isLoading={isLoading} data={data} />

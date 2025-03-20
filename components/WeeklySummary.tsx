@@ -25,7 +25,7 @@ export function WeeklyDataDisplayComponent({ data, isLoading }: { data: any[], i
       orderedData.forEach(item => items.push(String(item.date)));
       setOpenItems(items);}
     }
-  },[])
+  },[orderedData])
 
   if (isLoading) {
     return (
