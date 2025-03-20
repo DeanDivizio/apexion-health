@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { Button } from "../ui_primitives/button";
 import { House, Syringe, Plus, Dumbbell, Heart  } from "lucide-react";
 import {
     DropdownMenu,

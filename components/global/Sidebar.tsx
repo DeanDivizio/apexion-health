@@ -6,7 +6,6 @@ import { SignedIn, SignedOut, SignInButton, UserButton, useUser } from "@clerk/n
 import GradientButton from "../ui/GradientButton";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui_primitives/dropdown-menu"
 import { useSubNavContext } from "@/context/SubNavOpenContext";
-import { useState } from "react";
 
 function LogButton({ open, setOpen }: { open: any, setOpen: any }) {
     function handleNavClick(state: boolean) {
@@ -44,33 +43,22 @@ export function AppSidebar() {
     //@ts-ignore
     const { open, setOpen } = useSubNavContext();
     const { user } = useUser();
-    const [logButtonHover, setLogButtonHover] = useState(false)
-    const [logOpen, setLogOpen] = useState(false);
-    const [viewOpen, setViewOpen] = useState(false);
-    function handleLogDehover(){
-        console.log("dehover")
-        setLogButtonHover(false);
-        setTimeout(()=>{
-            if (logButtonHover === false) {
-                setLogOpen(false)
-                console.log(logOpen)
-            }
-        }, 50)
-    } 
+ 
     return (
         <Sidebar>
             <SidebarHeader className="bg-neutral-950 pb-4 lg:pb-12">
-                <p className="w-full pt-4 text-center font-bold text-4xl tracking-wider text-transparent bg-gradient-to-r from-blue-800 to-green-500 bg-clip-text">Apexion</p>
+                <p className="w-full pt-4 text-center font-bold text-4xl tracking-wider text-transparent bg-gradient-to-br from-black from-20% via-blue-800 to-green-500 to-90% bg-clip-text">Apexion</p>
+                <hr />
             </SidebarHeader>
             <SidebarContent className="bg-neutral-950 flex flex-col justify-center">
                 <Link href={"/"} className="text-lg lg:text-2xl text-neutral-300 font-medium lg:font-semibold ml-2 mb-4 transition hover:text-blue-500"> <GradientButton color="blue" trigger text="Home" className="text-center" bold /></Link>
                 <SidebarGroup className="">
                     <SidebarGroupContent>
                         <DropdownMenu >
-                            <DropdownMenuTrigger onMouseEnter={()=>{setLogOpen(true)}} onMouseLeave={()=>setLogOpen(false)} className="w-full">
+                            <DropdownMenuTrigger className="w-full">
                                 <GradientButton color="blue" trigger text="View ->" />
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent onMouseEnter={()=>{setLogOpen(true)}} onMouseLeave={()=>setLogOpen(false)} side="right">
+                            <DropdownMenuContent side="right">
                                 <DropdownMenuItem><Link href="/labs" className="text-lg lg:text-2xl text-neutral-300 font-medium lg:font-semibold ml-2 mb-2 transition hover:text-purple-500">Clinical Records</Link></DropdownMenuItem>
                                 <DropdownMenuItem><Link href="" className="text-lg lg:text-2xl text-neutral-300 font-medium lg:font-semibold ml-2 mb-2 transition hover:text-purple-500">Fitness</Link></DropdownMenuItem>
                                 <DropdownMenuItem><Link href="" className="text-lg lg:text-2xl text-neutral-300 font-medium lg:font-semibold ml-2 mb-2 transition hover:text-purple-500">Nutrition</Link></DropdownMenuItem>
@@ -89,8 +77,8 @@ export function AppSidebar() {
                 <SidebarGroup className="hidden xl:inline">
                     <SidebarGroupContent>
                         <DropdownMenu >
-                            <DropdownMenuTrigger onMouseEnter={()=>{setLogOpen(true)}} onMouseLeave={()=>setLogOpen(false)} className="w-full" ><GradientButton color="green" trigger text="Log ->" /></DropdownMenuTrigger>
-                            <DropdownMenuContent onMouseEnter={()=>{setLogOpen(true)}} onMouseLeave={()=>setLogOpen(false)} side="right">
+                            <DropdownMenuTrigger className="w-full" ><GradientButton color="green" trigger text="Log ->" /></DropdownMenuTrigger>
+                            <DropdownMenuContent side="right">
                             <DropdownMenuItem><GradientButton color="green" link={"/loghrt"} text="HRT" className="w-full" /></DropdownMenuItem>
                             <DropdownMenuItem><GradientButton color="blue" link={"/logworkout"} text="Workout" className="w-full"/></DropdownMenuItem>
                             <DropdownMenuItem><GradientButton color="green" link={"/logmeal"} text="Meal" className="w-full"/></DropdownMenuItem>
