@@ -1,8 +1,8 @@
 'use client'
 import { GymDataPoints, Exercises, HormoneAdministration } from "@/utils/types";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../ui_primitives/accordion";
 import { useEffect, useState } from "react";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton } from "@/components/ui_primitives/skeleton";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 export function WeeklyDataDisplayComponent({ data, isLoading }: { data: any[], isLoading:any }) {

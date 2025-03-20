@@ -1,23 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { Button } from "./ui/button";
+import { Button } from "../ui_primitives/button";
 import { House, Syringe, Plus, Dumbbell, Heart  } from "lucide-react";
-import HRTDrawer from "./HRTDrawer";
 import {
     DropdownMenu,
     DropdownMenuContent,
-    DropdownMenuGroup,
     DropdownMenuItem,
     DropdownMenuLabel,
-    DropdownMenuPortal,
-    DropdownMenuSeparator,
-    DropdownMenuShortcut,
-    DropdownMenuSub,
-    DropdownMenuSubContent,
-    DropdownMenuSubTrigger,
     DropdownMenuTrigger,
-  } from "@/components/ui/dropdown-menu"
+  } from "@/components/ui_primitives/dropdown-menu"
 import { useState } from "react";
 
 

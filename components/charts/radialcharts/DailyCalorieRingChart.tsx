@@ -16,11 +16,10 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
-import { ChartConfig, ChartContainer } from "@/components/ui/chart"
-import { useIsMobile } from "@/hooks/use-mobile"
+} from "@/components/ui_primitives/card"
+import { ChartConfig, ChartContainer } from "@/components/ui_primitives/chart"
 const chartData = [
-  { metric: "weightlost", number: 20, fill: "var(--color-metric)" },
+  { metric: "todaycalories", number: 1850, fill: "var(--color-metric)" },
 ]
 
 const chartConfig = {
@@ -29,37 +28,35 @@ const chartConfig = {
   },
   metric: {
     label: "Weight Lost",
-    color: "hsl(var(--chart-4))",
+    color: "hsl(var(--chart-2))",
   },
 } satisfies ChartConfig
 
-export function WeightChart() {
-  const isMobile = useIsMobile();
-  let percentage = 50;
+export function DailyCalorieRingChart() {
   return (
-    <Card className="flex flex-col align-center w-full mb-4 rounded-xl bg-gradient-to-br from-blue00/10 to-neutral-950">
+    <Card className="flex flex-col max-w-fit mb-4 rounded-xl bg-gradient-to-br from-teal-900/10 to-neutral-950">
       <CardHeader className="items-center pb-0">
-        <CardTitle className="mb-4 ">Weight Loss Progress</CardTitle>
-        <CardDescription className="hidden md:relative">Total lost out of goal</CardDescription>
+        <CardTitle>{`Today's Calorie Intake`}</CardTitle>
+        <CardDescription>Intake compared to maintenence</CardDescription>
       </CardHeader>
       <CardContent className="flex-1 pb-0">
         <ChartContainer
           config={chartConfig}
-          className="mx-0 md:mx-auto aspect-square max-h-[220px] mb-4"
+          className="mx-auto aspect-square max-h-[250px]"
         >
           <RadialBarChart
             data={chartData}
-            startAngle={Math.abs(percentage * 3.6 - 270)}
-            endAngle={270}
-            innerRadius={isMobile ? 54 : 80}
-            outerRadius={isMobile ? 72 : 110}
+            startAngle={270}
+            endAngle={0}
+            innerRadius={80}
+            outerRadius={110}
           >
             <PolarGrid
               gridType="circle"
               radialLines={false}
               stroke="none"
               className="first:fill-muted last:fill-background"
-              polarRadius={isMobile ? [58, 50] : [86, 74]}
+              polarRadius={[86, 74]}
             />
             <RadialBar dataKey="number" background cornerRadius={10} />
             <PolarRadiusAxis tick={false} tickLine={false} axisLine={false}>
@@ -85,7 +82,7 @@ export function WeightChart() {
                           y={(viewBox.cy || 0) + 24}
                           className="fill-muted-foreground"
                         >
-                          Pounds
+                          Calories
                         </tspan>
                       </text>
                     )
@@ -96,9 +93,9 @@ export function WeightChart() {
           </RadialBarChart>
         </ChartContainer>
       </CardContent>
-      <CardFooter className="flex-col gap-2 pt-4 text-sm">
+      <CardFooter className="flex-col gap-2 text-sm">
         <div className="flex items-center gap-2 font-light text-neutral-500 leading-none">
-          Only 25 pounds left to reach your goal
+          Your maintenence calorie intake is 2200
         </div>
       </CardFooter>
     </Card>

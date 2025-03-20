@@ -1,10 +1,10 @@
 "use client";
 import { EarIcon, Handshake } from "lucide-react"
-import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarHeader } from "@/components/ui/sidebar"
+import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarHeader } from "@/components/ui_primitives/sidebar"
 import Link from "next/link"
 import { SignedIn, SignedOut, SignInButton, UserButton, useUser } from "@clerk/nextjs";
-import GradientButton from "./GradientButton";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import GradientButton from "../ui/GradientButton";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui_primitives/dropdown-menu"
 import { useSubNavContext } from "@/context/SubNavOpenContext";
 import { useState } from "react";
 

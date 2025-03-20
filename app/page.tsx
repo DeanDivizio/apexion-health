@@ -2,15 +2,15 @@
 import React, { useState, useEffect } from "react";
 import { homeFetch } from "@/actions/InternalLogic";
 import { useUser } from "@clerk/nextjs";
-import { WeeklyDataDisplayComponent } from "@/components/WeeklySummary";
-import PinnedData from "@/components/PinnedData";
-import Footer from "@/components/Footer";
-import { WeightChart } from "@/components/radialcharts/WeightChart";
-import { UniversalRingChart } from "@/components/radialcharts/UniversalRingChart";
-import { InteractiveAreaChart } from "@/components/InteractiveAreaChart";
-import { ChartConfig } from "@/components/ui/chart";
+import { WeeklyDataDisplayComponent } from "@/components/hrt/WeeklySummary";
+import PinnedData from "@/components/home/PinnedData";
+import Footer from "@/components/global/Footer";
+import { WeightChart } from "@/components/charts/radialcharts/WeightChart";
+import { UniversalRingChart } from "@/components/charts/radialcharts/UniversalRingChart";
+import { InteractiveAreaChart } from "@/components/charts/InteractiveAreaChart";
+import { ChartConfig } from "@/components/ui_primitives/chart";
 import { useSubNavContext } from "@/context/SubNavOpenContext";
-import Defocuser from "@/components/Defocuser";
+import Defocuser from "@/components/global/Defocuser";
 
 
 const demointareadata = [
