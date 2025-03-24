@@ -177,9 +177,13 @@ export default function Home() {
 
   useEffect(()=>{
     if(isLoaded) {
+      // @ts-ignore
     setCalorieLimit(user?.publicMetadata.markers.nutrition.calorieLimit);
+    // @ts-ignore
     setProteinGoal(user?.publicMetadata.markers.nutrition.proteinGoal);
+    // @ts-ignore
     setCarbGoal(user?.publicMetadata.markers.nutrition.carbGoal);
+    // @ts-ignore
     setFatGoal(user?.publicMetadata.markers.nutrition.fatGoal);
     }
   },[isLoaded])
