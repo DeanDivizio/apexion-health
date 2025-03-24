@@ -11,7 +11,7 @@ import { InteractiveAreaChart } from "@/components/charts/InteractiveAreaChart";
 import { ChartConfig } from "@/components/ui_primitives/chart";
 import { useSubNavContext } from "@/context/SubNavOpenContext";
 import Defocuser from "@/components/global/Defocuser";
-
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const demointareadata = [
   { date: "2024-04-01", desktop: 222, mobile: 150 },
@@ -123,6 +123,7 @@ const demochartConfig = {
 export default function Home() {
   const { user } = useUser();
   const userMeta: string[] | unknown = user?.publicMetadata.homeLabs;
+  const isMobile = useIsMobile();
 
   const [data, setData] = useState<any>([]); // init with empty
   const [isLoading, setIsLoading] = useState(true);
@@ -201,13 +202,13 @@ export default function Home() {
               goal={80}
               shade="green" />
             </div>
-          
-          <InteractiveAreaChart 
-            title="Nutrition Highlights"
-            description="Your macros over time"
-            data={demointareadata}
-            chartConfig={demochartConfig} />
-            <PinnedData title="Gym" color="green" data={data?.pinnedData} isLoading={isLoading}/>
+          {isMobile ? null :
+          <><InteractiveAreaChart
+              title="Nutrition Highlights"
+              description="Your macros over time"
+              data={demointareadata}
+              chartConfig={demochartConfig} /><PinnedData title="Gym" color="green" data={data?.pinnedData} isLoading={isLoading} /></>
+          }
         </div>
       </div>
       <Footer />
