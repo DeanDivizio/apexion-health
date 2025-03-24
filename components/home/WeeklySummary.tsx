@@ -5,18 +5,20 @@ import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui_primitives/skeleton";
 import { useIsMobile } from "@/hooks/use-mobile";
 
+
 export function WeeklyDataDisplayComponent({ data, isLoading }: { data: any[], isLoading: any }) {
   const [orderedData, setOrderedData] = useState<any[]>(data);
   const [openItems, setOpenItems] = useState<string[]>([]);
   const isMobile = useIsMobile();
+  
 
   const getExerciseName = (value: string) => {
     const spacedValue = value.replace(/([A-Z])/g, ' $1');
     return spacedValue.charAt(0).toUpperCase() + spacedValue.slice(1);
   };
 
-
   useEffect(() => {
+    setOrderedData(data)
     if (orderedData.length > 0) {
       let items: string[] = [];
       if (isMobile) {
@@ -27,7 +29,7 @@ export function WeeklyDataDisplayComponent({ data, isLoading }: { data: any[], i
       }
     }
 
-  }, [orderedData])
+  }, [data])
 
   if (isLoading) {
     return (
@@ -35,7 +37,7 @@ export function WeeklyDataDisplayComponent({ data, isLoading }: { data: any[], i
     )
   } else return (
     <Accordion type="multiple" className="w-full" value={openItems} onValueChange={setOpenItems}>
-      {data?.map((item) => (
+      {orderedData?.map((item) => (
         <AccordionItem key={String(item.date)} value={String(item.date)} className="mb-4 ">
           <AccordionTrigger className="justify-center gap-4 text-xl py-4 px-6 bg-neutral-950 rounded-t-xl data-[state=open]:rounded-b-none data-[state=closed]:rounded-b-xl">
             {new Date(parseInt(item.date.slice(0, 4)), parseInt(item.date.slice(4, 6)) - 1, parseInt(item.date.slice(6))).toLocaleString('en-us', { weekday: 'long', month: 'short', day: 'numeric' })}

@@ -18,7 +18,9 @@ export function UniversalRingChart({ title, shortTitle, description, subtext, su
             const newPercentage = (value / goal) * 100;
             setPercentage(newPercentage);
             let newRingColor: string;
-            if (newPercentage > 85) {
+            if (newPercentage > 100) {
+                newRingColor = "hsl(var(--destructive))"
+            } else if (newPercentage > 85) {
                 newRingColor = "hsl(var(--chart-2))";
             } else if (newPercentage > 50) {
                 newRingColor = "hsl(var(--chart-1))";
@@ -91,7 +93,7 @@ export function UniversalRingChart({ title, shortTitle, description, subtext, su
                     </RadialBarChart>
                 </ChartContainer>
             </CardContent>
-            <CardFooter className="hidden md:relative flex-col gap-2 text-sm">
+            <CardFooter className="hidden md:block text-center flex-col gap-2 text-sm">
                 <div className="leading-none text-neutral-500">
                     {goal && (subtextOrder == "unit first") ? (`${goal - value} ${subtext}`) : (`${subtext} ${goal} ${unit}`)}
                 </div>

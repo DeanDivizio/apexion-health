@@ -121,12 +121,20 @@ const demochartConfig = {
 } satisfies ChartConfig
 
 export default function Home() {
-  const { user } = useUser();
+  const { user, isLoaded } = useUser();
   const userMeta: string[] | unknown = user?.publicMetadata.homeLabs;
   const isMobile = useIsMobile();
 
   const [data, setData] = useState<any>([]); // init with empty
+  const [todayCalories, setTodayCalories] = useState(0);
+  const [todayProtein, setTodayProtein] = useState(0);
+  const [todayCarbs, setTodayCarbs] = useState(0);
+  const [todayFat, setTodayFat] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [calorieLimit, setCalorieLimit] = useState(0);
+  const [proteinGoal, setProteinGoal] = useState(0);
+  const [carbGoal, setCarbGoal] = useState(0);
+  const [fatGoal, setFatGoal] = useState(0);
   const [error, setError] = useState<string | null>(null);
   //@ts-ignore
   const {open} = useSubNavContext();
@@ -155,7 +163,26 @@ export default function Home() {
       }
     }
     dataFetch()
+    
   }, []);
+
+  useEffect(()=>{
+    if(data && data.length > 0) {
+    setTodayCalories(data[0].macros.calories);
+    setTodayProtein(data[0].macros.protein);
+    setTodayCarbs(data[0].macros.carbs);
+    setTodayFat(data[0].macros.fat);
+    }
+  }, [data])
+
+  useEffect(()=>{
+    if(isLoaded) {
+    setCalorieLimit(user?.publicMetadata.markers.nutrition.calorieLimit);
+    setProteinGoal(user?.publicMetadata.markers.nutrition.proteinGoal);
+    setCarbGoal(user?.publicMetadata.markers.nutrition.carbGoal);
+    setFatGoal(user?.publicMetadata.markers.nutrition.fatGoal);
+    }
+  },[isLoaded])
 
   return (
     <main className={`flex pb-12 md:pb-0 px-4 pt-24 md:pt-4 h-auto 3xl:h-[100vh] overflow-clip w-full flex-col items-center justify-start bg-transparent`}>
@@ -170,7 +197,7 @@ export default function Home() {
           </div>
         <div className="col-span-1 xl:col-span-2 order-1 xl:order-2 xl:h-[95vh] overflow-y-scroll xl:p-4 rounded-xl backdrop-blur-xl">
           <div className="grid grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 justify-around mb-0">
-            <WeightChart />
+            
             <UniversalRingChart 
               title="Today's Calorie Intake"
               shortTitle="Calories"
@@ -178,8 +205,8 @@ export default function Home() {
               subtextOrder="unit last"
               description="Intake compared to maintenence" 
               unit="Calories" 
-              value={1750} 
-              goal={2200}
+              value={todayCalories} 
+              goal={calorieLimit}
               shade="indigo" />
             <UniversalRingChart 
               title="Today's Protein Intake"
@@ -188,8 +215,8 @@ export default function Home() {
               subtextOrder="unit last"
               description="Intake compared to goal" 
               unit="grams" 
-              value={96} 
-              goal={100}
+              value={todayProtein} 
+              goal={proteinGoal}
               shade="purple" />
             <UniversalRingChart 
               title="Today's Carb Intake"
@@ -198,10 +225,20 @@ export default function Home() {
               subtextOrder="unit last"
               description="Intake compared to goal" 
               unit="Grams" 
-              value={50} 
-              goal={80}
+              value={todayCarbs} 
+              goal={carbGoal}
               shade="green" />
-            </div>
+            <UniversalRingChart 
+              title="Today's Fat Intake"
+              shortTitle="Fat"
+              subtext="Your daily fat goal is " 
+              subtextOrder="unit last"
+              description="Intake compared to goal" 
+              unit="Grams" 
+              value={todayFat} 
+              goal={fatGoal}
+              shade="purple" />
+              </div>
           {isMobile ? null :
           <><InteractiveAreaChart
               title="Nutrition Highlights"
