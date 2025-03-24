@@ -1,7 +1,7 @@
 'use client';
 import { useRouter } from "next/navigation";
 import { Suspense } from "react";
-import MedicationForm from "@/components/medsAndSupplements/MedicationForm";
+import SupplementForm from "@/components/supplements/SupplementForm";
 
 
 export default function LogMealPage(){
@@ -13,7 +13,7 @@ export default function LogMealPage(){
     return(
         <div className="w-full flex justify-center align-center">
             <Suspense fallback={<div>Loading...</div>}>
-                <MedicationForm onSuccess={handleSuccess}/>
+                <SupplementForm onSuccess={handleSuccess}/>
             </Suspense>
         </div>
     )

@@ -8,7 +8,7 @@ import { Button } from "@/components/ui_primitives/button"
 import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui_primitives/form"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui_primitives/select"
 import { addItemToTable } from "@/actions/AWS"
-import MedItem from "@/components/meds/MedItem"
+import SupplementItem from "@/components/supplements/SupplementItem"
 import { Accordion, AccordionContent, AccordionTrigger, AccordionItem } from "../ui_primitives/accordion"
 
 // i feel like force dynamic shouldnt be necessary
@@ -252,7 +252,7 @@ export default function SupplementForm({ onSuccess }: { onSuccess: () => void })
             </AccordionItem>
           </Accordion>
           {fields.map((field, index) => (
-              <MedItem
+              <SupplementItem
                 key={field.id}
                 index={index}
                 onDelete={() => onDelete(index)}

@@ -7,7 +7,7 @@ import { Input } from "@/components/ui_primitives/input"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui_primitives/accordion"
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui_primitives/alert-dialog"
 
-export default function MedItem({ index, onDelete }: { index: number; onDelete: () => void }) {
+export default function SupplementItem({ index, onDelete }: { index: number; onDelete: () => void }) {
     const { control } = useFormContext()
 
     return (
