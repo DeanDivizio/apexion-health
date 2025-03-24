@@ -8,7 +8,7 @@ import { Button } from "@/components/ui_primitives/button"
 import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui_primitives/form"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui_primitives/select"
 import { addItemToTable } from "@/actions/AWS"
-import MedItem from "@/components/medsAndSupplements/MedItem"
+import MedItem from "@/components/meds/MedItem"
 import { Accordion, AccordionContent, AccordionTrigger, AccordionItem } from "../ui_primitives/accordion"
 
 // i feel like force dynamic shouldnt be necessary
@@ -33,7 +33,6 @@ const FormSchema = z.object({
 
 export default function MedicationForm({ onSuccess }: { onSuccess: () => void }) {
   const [buttonText, setButtonText] = useState<string>("Log Data")
-  const [openFoodItems, setOpenFoodItems] = useState<number[]>([])
 
   const methods = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
@@ -97,7 +96,6 @@ export default function MedicationForm({ onSuccess }: { onSuccess: () => void })
   const addItem = () => {
     const newIndex = fields.length
     append({ name: "", dose: 0, method: "", unit: "milligrams"})
-    setOpenFoodItems(prev => [...prev, newIndex])
   }
 
 
@@ -261,7 +259,7 @@ export default function MedicationForm({ onSuccess }: { onSuccess: () => void })
               />
             ) 
           )}
-          <Button className="mt-8 mb-6" variant='outline' type="button" onClick={() => addItem()}>Add Food Item</Button>
+          <Button className="mt-8 mb-6" variant='outline' type="button" onClick={() => addItem()}>Add Medication</Button>
           <Button type="submit">{buttonText}</Button>
         </form>
       </Form>

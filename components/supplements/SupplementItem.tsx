@@ -16,7 +16,7 @@ export default function MedItem({ index, onDelete }: { index: number; onDelete: 
                 <AccordionTrigger className="flex flex-row mb-6">
                 <FormField
                         control={control}
-                        name={`meds.${index}.name`}
+                        name={`supplements.${index}.name`}
                         render={({ field }) => (
                             <FormItem className="flex-row flex items-center w-full">
                                 <FormControl>
@@ -33,7 +33,7 @@ export default function MedItem({ index, onDelete }: { index: number; onDelete: 
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8 mb-10 w-2/3 md:w-full">
                     <FormField
                         control={control}
-                        name={`meds.${index}.dose`}
+                        name={`supplements.${index}.dose`}
                         render={({ field }) => (
                             <FormItem className="flex flex-row items-baseline gap-4 ">
                                 <FormLabel className="font-extralight">Dose:</FormLabel>
@@ -46,7 +46,7 @@ export default function MedItem({ index, onDelete }: { index: number; onDelete: 
                     />
                     <FormField
                         control={control}
-                        name={`meds.${index}.unit`}
+                        name={`supplements.${index}.unit`}
                         render={({ field }) => (
                             <FormItem className="flex flex-row items-baseline gap-4 ">
                                 <FormLabel className="font-extralight">Unit:</FormLabel>
@@ -66,19 +66,16 @@ export default function MedItem({ index, onDelete }: { index: number; onDelete: 
                     />
                     <FormField
                         control={control}
-                        name={`meds.${index}.method`}
+                        name={`supplements.${index}.method`}
                         render={({ field }) => (
                             <FormItem className="flex flex-row items-baseline gap-4 ">
                                 <FormLabel className="font-extralight">Method:</FormLabel>
                                 <FormControl>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <SelectTrigger>{field.value}</SelectTrigger>
+                                <Select onValueChange={field.onChange} defaultValue={"pill-capsule"}>
+                                        <SelectTrigger>{field.value === "powder" ? "Powder" : `Pill / Capsule`}</SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="pill-capsule">{`Pill / Capsule`}</SelectItem>
-                                            <SelectItem value="inhaler">Inhaler</SelectItem>
-                                            <SelectItem value="nasalSpray">Nasal Spray</SelectItem>
-                                            <SelectItem value="cream">Cream</SelectItem>
-                                            <SelectItem value="injection">Injection</SelectItem>
+                                            <SelectItem value="powder">Powder</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </FormControl>

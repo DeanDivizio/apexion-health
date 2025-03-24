@@ -1,7 +1,7 @@
 'use client';
 import { useRouter } from "next/navigation";
 import { Suspense } from "react";
-import MedicationForm from "@/components/meds/MedicationForm";
+import MedicationForm from "@/components/medsAndSupplements/MedicationForm";
 
 
 export default function LogMealPage(){
