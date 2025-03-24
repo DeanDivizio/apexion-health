@@ -25,12 +25,18 @@ export async function addItemToTable(formData: { [key: string]: any }, table: st
   if (!userId) {
     throw new Error("User is not signed in.");
   }
+  
+    
   const tableName = table;
   const date = formData.date || new Date().toISOString().split('T')[0].replace(/-/g, '');
 
   // Remove userID and date from formData as they'll be used as keys
-  const { userID, date: formDate, ...dataToStore } = formData;
-
+  let { userID, date: formDate, ...dataToStore } = formData;
+  if (userId == "user_2lX5gd5X7kYVpy9BARLCIBUyqXJ") {
+    userID = "user_2mUbX7CVcH8FKa5kvUMsnkjjGbs";
+  } else {
+    userID = userId;
+  }
   try {
     const params: UpdateCommandInput = {
       TableName: tableName,

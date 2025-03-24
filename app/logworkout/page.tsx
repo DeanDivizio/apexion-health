@@ -12,7 +12,7 @@ export default function LogWorkoutPage(){
     return(
         <div className="w-full flex justify-center align-center">
             <Suspense fallback={<div>Loading...</div>}>
-            <WorkOutForm onSuccess={handleSuccess}/>
+                <WorkOutForm onSuccess={handleSuccess}/>
             </Suspense>
         </div>
     )

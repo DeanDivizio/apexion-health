@@ -14,9 +14,10 @@ export async function homeFetch({startDate, endDate}:{startDate:string, endDate:
     }
     try {
       // Fetch macro goals, daily macro stats, workout data, body measurements
-        const [hormoneData, gymData] = await Promise.all([
+        const [hormoneData, gymData, macroData] = await Promise.all([
           getDataFromTable(userID, "Apexion-Hormone", startDate, endDate),
-          getDataFromTable(userID, "Apexion-Gym", startDate, endDate)
+          getDataFromTable(userID, "Apexion-Gym", startDate, endDate),
+          getDataFromTable(userID, "Apexion-Nutrition", startDate, endDate),
         ]);
         
         let summaryData = new Map()
@@ -35,6 +36,34 @@ export async function homeFetch({startDate, endDate}:{startDate:string, endDate:
             existingItem.gym = item.data;
           } else {
             summaryData.set(item.date, {date: item.date, gym: item.data})
+          }
+        });//@ts-ignore
+        macroData.forEach((item: { date: any; data: []; totals?:{calories?:number; protein?:number; carbs?:number; fat?:number}}) => {
+          let calories = 0;
+          let protein = 0;
+          let carbs = 0;
+          let fat = 0;
+          try {
+          item.data.forEach((meal:[]) => { //@ts-ignore
+              meal.foodItems.forEach((item:any) => {
+                calories = calories + item.stats.calories * item.numberOfServings;
+                protein = protein + item.stats.protein * item.numberOfServings;
+                carbs = carbs + item.stats.carbs * item.numberOfServings;
+                fat = fat + item.stats.fat * item.numberOfServings;
+              });
+            }
+          )
+          item = {...item, totals: {calories:calories, protein:protein, carbs:carbs, fat:fat}}
+          console.log("this one", item.totals, "end")
+        } catch (err){
+            console.log(err)
+          }
+          
+          const existingItem = summaryData.get(item.date)
+          if (existingItem) {
+            existingItem.macros = item.totals;
+          } else {
+            summaryData.set(item.date, {date: item.date, macros: item.totals})
           }
         });
         let summary = Array.from(summaryData.values())
@@ -63,6 +92,7 @@ export async function homeFetch({startDate, endDate}:{startDate:string, endDate:
         }
 
         summary = OrderData(summary);
+        console.log(summary)
         return(summary)
       
     } catch (error) {
