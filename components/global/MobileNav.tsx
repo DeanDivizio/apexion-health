@@ -27,13 +27,19 @@ function LogButton({open, setOpen }:{open:any, setOpen:any}){
             <DropdownMenuContent className="px-8 py-4 rounded-xl bg-gradient-to-br from-green-950/10 to-black">
                 <DropdownMenuLabel className="text-2xl font-light w-full text-center mb-4">Log a...</DropdownMenuLabel>
                 <DropdownMenuItem className="p-px bg-gradient-to-r from-green-500 to-blue-600 flex flex-col items-center justify-center mb-8 rounded" onClick={()=>handleNavClick(false)}>
-                    <Link className="bg-black w-full text-center px-12 sm:px-16 py-2 rounded text-xl font-thin text-neutral-300" href={"/loghrt"}>Hormone Treatment</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem className="p-px bg-gradient-to-r from-green-500 to-blue-600 flex flex-col items-center justify-center mb-8 rounded" onClick={()=>handleNavClick(false)}>
                     <Link className="bg-black w-full text-center px-12 sm:px-16 py-2 rounded text-xl font-thin text-neutral-300" href={"/logmeal"}>Meal</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem className="p-px bg-gradient-to-r from-green-500 to-blue-600 flex flex-col items-center justify-center mb-8 rounded" onClick={()=>handleNavClick(false)}>
+                    <Link className="bg-black w-full text-center px-12 sm:px-16 py-2 rounded text-xl font-thin text-neutral-300" href={"/logmedication"}>Medication</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="p-px bg-gradient-to-r from-green-500 to-blue-600 flex flex-col items-center justify-center mb-8 rounded" onClick={()=>handleNavClick(false)}>
+                    <Link className="bg-black w-full text-center px-12 sm:px-16 py-2 rounded text-xl font-thin text-neutral-300" href={"/logsupplement"}>Supplement</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="p-px bg-gradient-to-r from-green-500 to-blue-600 flex flex-col items-center justify-center mb-8 rounded" onClick={()=>handleNavClick(false)}>
                     <Link className="bg-black w-full text-center px-12 sm:px-16 py-2 rounded text-xl font-thin text-neutral-300" href={"/logworkout"}>Workout</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="p-px bg-gradient-to-r from-green-500 to-blue-600 flex flex-col items-center justify-center mb-8 rounded" onClick={()=>handleNavClick(false)}>
+                    <Link className="bg-black w-full text-center px-12 sm:px-16 py-2 rounded text-xl font-thin text-neutral-300" href={"/loghrt"}>Hormone Treatment</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem className="p-px bg-gradient-to-r from-green-500 to-blue-600 flex flex-col items-center justify-center mb-8 rounded" onClick={()=>handleNavClick(false)}>
                     <Link className="bg-black w-full text-center px-12 sm:px-16 py-2 rounded text-xl font-thin text-neutral-300" href={"/logbody"}>Body Measurment</Link>
