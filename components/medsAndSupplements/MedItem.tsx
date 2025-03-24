@@ -52,7 +52,7 @@ export default function MedItem({ index, onDelete }: { index: number; onDelete: 
                                 <FormLabel className="font-extralight">Unit:</FormLabel>
                                 <FormControl>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <SelectTrigger>Milligrams</SelectTrigger>
+                                        <SelectTrigger>{field.value}</SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="grams">Grams</SelectItem>
                                             <SelectItem value="milligrams">Milligrams</SelectItem>
@@ -69,10 +69,10 @@ export default function MedItem({ index, onDelete }: { index: number; onDelete: 
                         name={`meds.${index}.method`}
                         render={({ field }) => (
                             <FormItem className="flex flex-row items-baseline gap-4 ">
-                                <FormLabel className="font-extralight">Carbs:</FormLabel>
+                                <FormLabel className="font-extralight">Method:</FormLabel>
                                 <FormControl>
                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <SelectTrigger>Grams</SelectTrigger>
+                                        <SelectTrigger>{field.value}</SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="pill-capsule">{`Pill / Capsule`}</SelectItem>
                                             <SelectItem value="inhaler">Inhaler</SelectItem>
