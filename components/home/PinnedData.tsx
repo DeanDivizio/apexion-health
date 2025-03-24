@@ -2,7 +2,7 @@
 import { RenderCharts } from "@/utils/ChartRendering";
 import { useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton } from "@/components/ui_primitives/skeleton";
 
 export default function PinnedData({data, isLoading, title, color}: {data:any, isLoading:any, title:string, color:string}) {
 

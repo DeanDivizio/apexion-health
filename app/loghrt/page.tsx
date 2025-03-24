@@ -1,5 +1,5 @@
 'use client';
-import HRTForm from "@/components/HRTForm";
+import HRTForm from "@/components/hrt/HRTForm";
 import { useRouter } from "next/navigation";
 import { Suspense } from "react";
 

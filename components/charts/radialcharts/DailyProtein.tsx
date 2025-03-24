@@ -1,6 +1,5 @@
 "use client"
 
-import { TrendingUp } from "lucide-react"
 import {
   Label,
   PolarGrid,
@@ -16,8 +15,8 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
-import { ChartConfig, ChartContainer } from "@/components/ui/chart"
+} from "@/components/ui_primitives/card"
+import { ChartConfig, ChartContainer } from "@/components/ui_primitives/chart"
 const chartData = [
   { metric: "todayprotein", number: 85, fill: "var(--color-metric)" },
 ]

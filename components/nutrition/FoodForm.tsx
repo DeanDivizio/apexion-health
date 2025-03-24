@@ -7,43 +7,38 @@ import { z } from "zod"
 import { Button } from "@/components/ui_primitives/button"
 import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui_primitives/form"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui_primitives/select"
-import { Checkbox } from "@/components/ui_primitives/checkbox"
 import { addItemToTable } from "@/actions/AWS"
-import StrengthExercise from "@/components/gym/strength-exercise"
-import CardioExercise from "@/components/gym/CardioExerciseEntry"
+import FoodItem from "./FoodItem"
 import { Accordion, AccordionContent, AccordionTrigger, AccordionItem } from "../ui_primitives/accordion"
 
+// i feel like force dynamic shouldnt be necessary
 export const dynamic = 'force-dynamic';
 
 const FormSchema = z.object({
   month: z.string(),
   day: z.string(),
   year: z.string(),
-  startHour: z.string(),
-  startMinute: z.string(),
-  startAmpm: z.string(),
-  useCurrentEndTime: z.boolean(),
-  endHour: z.string().optional(),
-  endMinute: z.string().optional(),
-  endAmpm: z.string().optional(),
-  exercises: z.array(
+  hour: z.string(),
+  minute: z.string(),
+  ampm: z.string(),
+  mealLabel: z.string().optional().or(z.literal('Breakfast')).or(z.literal('Lunch')).or(z.literal('Dinner')).or(z.literal(`Other`)),
+  foodItems: z.array(
     z.object({
-      type: z.enum(["strength", "cardio"]),
-      exerciseType: z.string(),
-      sets: z.array(z.object({
-        weight: z.number(),
-        reps: z.number()
-      })).optional(),
-      duration: z.number().optional(),
-      distance: z.number().optional(),
-      unit: z.enum(["km", "mi"]).optional()
+      name: z.string(),
+      stats: z.object({
+        calories: z.number(),
+        protein: z.number(),
+        carbs: z.number(),
+        fat: z.number()
+      }),
+      numberOfServings: z.number(),
     })
   )
 })
 
-export default function WorkoutForm({ onSuccess }: { onSuccess: () => void }) {
+export default function FoodForm({ onSuccess }: { onSuccess: () => void }) {
   const [buttonText, setButtonText] = useState<string>("Log Data")
-  const [openExercises, setOpenExercises] = useState<number[]>([])
+  const [openFoodItems, setOpenFoodItems] = useState<number[]>([])
 
   const methods = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
@@ -51,14 +46,10 @@ export default function WorkoutForm({ onSuccess }: { onSuccess: () => void }) {
       month: '',
       day: '',
       year: '',
-      startHour: '',
-      startMinute: '',
-      startAmpm: '',
-      useCurrentEndTime: true,
-      endHour: '',
-      endMinute: '',
-      endAmpm: '',
-      exercises: []
+      hour: '',
+      minute: '',
+      ampm: '',
+      foodItems: []
     }
   })
 
@@ -68,49 +59,37 @@ export default function WorkoutForm({ onSuccess }: { onSuccess: () => void }) {
       month: (now.getMonth() + 1).toString().padStart(2, '0'),
       day: now.getDate().toString().padStart(2, '0'),
       year: now.getFullYear().toString(),
-      startHour: (now.getHours() % 12 || 12).toString(),
-      startMinute: now.getMinutes().toString().padStart(2, '0'),
-      startAmpm: now.getHours() >= 12 ? 'PM' : 'AM',
-      useCurrentEndTime: true,
-      endHour: (now.getHours() % 12 || 12).toString(),
-      endMinute: now.getMinutes().toString().padStart(2, '0'),
-      endAmpm: now.getHours() >= 12 ? 'PM' : 'AM',
-      exercises: []
+      hour: (now.getHours() % 12 || 12).toString(),
+      minute: now.getMinutes().toString().padStart(2, '0'),
+      ampm: now.getHours() >= 12 ? 'PM' : 'AM',
+      foodItems: []
     })
   }, [methods])
 
   const { fields, append, remove } = useFieldArray({
     control: methods.control,
-    name: "exercises"
+    name: "foodItems"
   })
 
   const onDelete = (index: number) => {
     remove(index)
-    setOpenExercises(prev => prev.filter(i => i !== index).map(i => i > index ? i - 1 : i))
+    setOpenFoodItems(prev => prev.filter(i => i !== index).map(i => i > index ? i - 1 : i))
   }
 
   async function onSubmit(data: z.infer<typeof FormSchema>) {
     try {
       setButtonText("sending...")
       const formattedDate = `${data.year}${data.month}${data.day}`
-      const formattedStartTime = `${data.startHour}:${data.startMinute} ${data.startAmpm}`
-      let formattedEndTime
-      if (data.useCurrentEndTime) {
-        const now = new Date()
-        formattedEndTime = `${now.getHours() % 12 || 12}:${now.getMinutes().toString().padStart(2, '0')} ${now.getHours() >= 12 ? 'PM' : 'AM'}`
-      } else {
-        formattedEndTime = `${data.endHour}:${data.endMinute} ${data.endAmpm}`
-      }
+      const formattedTime = `${data.hour}:${data.minute} ${data.ampm}`
       const formattedData = {
         ...data,
         date: formattedDate,
-        startTime: formattedStartTime,
-        endTime: formattedEndTime,
+        time: formattedTime,
       }
       const cleanedData = Object.fromEntries(
-        Object.entries(formattedData).filter(([key]) => !['day', 'month', 'year', 'startHour', 'startMinute', 'startAmpm', 'endHour', 'endMinute', 'endAmpm', 'useCurrentEndTime'].includes(key))
+        Object.entries(formattedData).filter(([key]) => !['day', 'month', 'year', 'hour', 'minute', 'ampm'].includes(key))
       )
-      await addItemToTable(cleanedData, "Apexion-Gym")
+      await addItemToTable(cleanedData, "Apexion-Nutrition")
       setButtonText("Sent!")
       setTimeout(() => {
         onSuccess()
@@ -121,18 +100,14 @@ export default function WorkoutForm({ onSuccess }: { onSuccess: () => void }) {
     }
   }
 
-  const addExercise = (type: "strength" | "cardio") => {
+  const addItem = () => {
     const newIndex = fields.length
-    if (type === "strength") {
-      append({ type, exerciseType: "", sets: [{ weight: 0, reps: 1 }] })
-    } else {
-      append({ type, exerciseType: "", duration: 0, distance: 0, unit: "km" })
-    }
-    setOpenExercises(prev => [...prev, newIndex])
+    append({ name: "", stats: {calories: 0, protein: 0, carbs: 0, fat: 0}, numberOfServings: 1})
+    setOpenFoodItems(prev => [...prev, newIndex])
   }
 
   const handleOpenChange = (index: number, open: boolean) => {
-    setOpenExercises(prev => 
+    setOpenFoodItems(prev => 
       open 
         ? [...prev, index]
         : prev.filter(i => i !== index)
@@ -142,10 +117,10 @@ export default function WorkoutForm({ onSuccess }: { onSuccess: () => void }) {
   return (
     <FormProvider {...methods}>
       <Form {...methods}>
-        <form onSubmit={methods.handleSubmit(onSubmit)} className="w-2/3 space-y-6 py-36 flex flex-col justify-start">
+        <form onSubmit={methods.handleSubmit(onSubmit)} className="w-3/4 2xl:w-1/2 py-36 flex flex-col justify-start">
           <Accordion type="single" collapsible>
-            <AccordionItem value="dateTime">
-              <AccordionTrigger><p className="text-center w-full ">{`Date & Time`}</p></AccordionTrigger>
+            <AccordionItem value="dateTime" className="mb-6">
+              <AccordionTrigger><p className="text-center w-full ">{`Date, Time, & Label`}</p></AccordionTrigger>
               <AccordionContent>
               <div className="flex flex-col md:flex-row mt-8 gap-6 items-center justify-center">
                   <div className="flex gap-2 items-center justify-between">
@@ -220,11 +195,11 @@ export default function WorkoutForm({ onSuccess }: { onSuccess: () => void }) {
                     </div>
                   </div>
                   <div className="flex gap-2 items-center justify-between">
-                    <p>Start Time:</p>
+                    <p>Time:</p>
                     <div className="flex space-x-3">
                       <FormField
                         control={methods.control}
-                        name="startHour"
+                        name="hour"
                         render={({ field }) => (
                           <FormItem>
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
@@ -246,7 +221,7 @@ export default function WorkoutForm({ onSuccess }: { onSuccess: () => void }) {
                       />
                       <FormField
                         control={methods.control}
-                        name="startMinute"
+                        name="minute"
                         render={({ field }) => (
                           <FormItem>
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
@@ -268,7 +243,7 @@ export default function WorkoutForm({ onSuccess }: { onSuccess: () => void }) {
                       />
                       <FormField
                         control={methods.control}
-                        name="startAmpm"
+                        name="ampm"
                         render={({ field }) => (
                           <FormItem>
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
@@ -287,124 +262,45 @@ export default function WorkoutForm({ onSuccess }: { onSuccess: () => void }) {
                       />
                     </div>
                   </div>
-                  <div className="flex flex-col gap-2 items-start justify-between">
-                    <div className="flex items-center space-x-2">
+                  <div className="flex gap-2 items-center justify-between">
+                    <p>{`Meal (optional)`}</p>
+                    <div className="flex space-x-3">
                       <FormField
                         control={methods.control}
-                        name="useCurrentEndTime"
+                        name="mealLabel"
                         render={({ field }) => (
-                          <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                            <FormControl>
-                              <Checkbox
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                            <div className="space-y-1 leading-none">
-                              <FormLabel>
-                                Use the current time when the form is submitted as end time
-                              </FormLabel>
-                            </div>
+                          <FormItem>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="None" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                  <SelectItem key={"Breakfast"} value={"Breakfast"} >Breakfast</SelectItem>
+                                  <SelectItem key={"Lunch"} value={"Lunch"} >Lunch</SelectItem>
+                                  <SelectItem key={"Dinner"} value={"Dinner"} >Dinner</SelectItem>
+                                  <SelectItem key={"Other"} value={"Other"} >Other</SelectItem>
+                              </SelectContent>
+                            </Select>
                           </FormItem>
                         )}
                       />
                     </div>
-                    {!methods.watch("useCurrentEndTime") && (
-                      <div className="flex gap-2 items-center justify-between">
-                        <p>End Time:</p>
-                        <div className="flex space-x-3">
-                          <FormField
-                            control={methods.control}
-                            name="endHour"
-                            render={({ field }) => (
-                              <FormItem>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                  <FormControl>
-                                    <SelectTrigger>
-                                      <SelectValue placeholder="Hour" />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                    {Array.from({ length: 12 }, (_, i) => i + 1).map((hour) => (
-                                      <SelectItem key={hour} value={hour.toString()}>
-                                        {hour}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={methods.control}
-                            name="endMinute"
-                            render={({ field }) => (
-                              <FormItem>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                  <FormControl>
-                                    <SelectTrigger>
-                                      <SelectValue placeholder="Minute" />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                    {Array.from({ length: 60 }, (_, i) => i).map((minute) => (
-                                      <SelectItem key={minute} value={minute.toString().padStart(2, '0')}>
-                                        {minute.toString().padStart(2, '0')}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={methods.control}
-                            name="endAmpm"
-                            render={({ field }) => (
-                              <FormItem>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                  <FormControl>
-                                    <SelectTrigger>
-                                      <SelectValue placeholder="AM/PM" />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                    <SelectItem value="AM">AM</SelectItem>
-                                    <SelectItem value="PM">PM</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-                      </div>
-                    )}
                   </div>
                 </div>
               </AccordionContent>
             </AccordionItem>
           </Accordion>
           {fields.map((field, index) => (
-            field.type === "strength" ? (
-              <StrengthExercise
+              <FoodItem
                 key={field.id}
                 index={index}
-                isOpen={openExercises.includes(index)}
-                onOpenChange={(open) => handleOpenChange(index, open)}
                 onDelete={() => onDelete(index)}
               />
-            ) : (
-              <CardioExercise
-                key={field.id}
-                index={index}
-                isOpen={openExercises.includes(index)}
-                onOpenChange={(open) => handleOpenChange(index, open)}
-                onDelete={() => onDelete(index)}
-              />
-            )
-          ))}
-          <Button variant='outline' type="button" onClick={() => addExercise("strength")}>Add Strength Exercise</Button>
-          <Button variant='outline' type="button" onClick={() => addExercise("cardio")} style={{marginBottom: "2rem"}}>Add Cardio</Button>
+            ) 
+          )}
+          <Button className="mt-8 mb-6" variant='outline' type="button" onClick={() => addItem()}>Add Food Item</Button>
           <Button type="submit">{buttonText}</Button>
         </form>
       </Form>

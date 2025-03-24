@@ -1,12 +1,11 @@
 "use client";
 
 import { useMemo } from "react";
-import { usePathname, useSearchParams } from "next/navigation";
-import { MyAreaChart } from "@/components/AreaChart";
+import { MyAreaChart } from "@/components/charts/AreaChart";
 import { RenderChartsProps, TestResult } from "./types";
-import { Drawer, DrawerContent, DrawerTrigger, DrawerTitle, DrawerDescription, DrawerHeader } from "@/components/ui/drawer";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
+import { Drawer, DrawerContent, DrawerTrigger, DrawerTitle, DrawerDescription, DrawerHeader } from "@/components/ui_primitives/drawer";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui_primitives/card";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui_primitives/carousel";
 
 export function RenderCharts({ data, approvedIDs, categorize = false, categoryOrder = [] }: RenderChartsProps) {
   const categorizedData = useMemo(() => {

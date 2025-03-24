@@ -1,16 +1,20 @@
 'use client';
 import { useRouter } from "next/navigation";
+import { Suspense } from "react";
+import FoodForm from "@/components/nutrition/FoodForm";
 
 
-export default function LogWorkoutPage(){
+export default function LogMealPage(){
     const router = useRouter();
     function handleSuccess() {
         router.push('/');
     }
 
     return(
-        <div className="flex justify-center">
-            <h1>This is where the ui will go</h1>
+        <div className="w-full flex justify-center align-center">
+            <Suspense fallback={<div>Loading...</div>}>
+                <FoodForm onSuccess={handleSuccess}/>
+            </Suspense>
         </div>
     )
 }

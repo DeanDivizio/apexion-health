@@ -2,24 +2,16 @@
 import React, { useState, useEffect } from "react";
 import { homeFetch } from "@/actions/InternalLogic";
 import { useUser } from "@clerk/nextjs";
-import { WeeklyDataDisplayComponent } from "@/components/WeeklySummary";
-import PinnedData from "@/components/PinnedData";
-import Footer from "@/components/Footer";
-import { WeightChart } from "@/components/radialcharts/WeightChart";
-import { UniversalRingChart } from "@/components/radialcharts/UniversalRingChart";
-import { InteractiveAreaChart } from "@/components/InteractiveAreaChart";
-import { ChartConfig } from "@/components/ui/chart";
+import { WeeklyDataDisplayComponent } from "@/components/home/WeeklySummary";
+import PinnedData from "@/components/home/PinnedData";
+import Footer from "@/components/global/Footer";
+import { WeightChart } from "@/components/charts/radialcharts/WeightChart";
+import { UniversalRingChart } from "@/components/charts/radialcharts/UniversalRingChart";
+import { InteractiveAreaChart } from "@/components/charts/InteractiveAreaChart";
+import { ChartConfig } from "@/components/ui_primitives/chart";
 import { useSubNavContext } from "@/context/SubNavOpenContext";
-import Defocuser from "@/components/Defocuser";
+import Defocuser from "@/components/global/Defocuser";
 
-type summaryDataFormat = {
-  date: string
-  userID: string
-}
-type homeData = {
-  pinnedData: object;
-  summaryData: [summaryDataFormat];
-}
 
 const demointareadata = [
   { date: "2024-04-01", desktop: 222, mobile: 150 },
@@ -132,18 +124,28 @@ export default function Home() {
   const { user } = useUser();
   const userMeta: string[] | unknown = user?.publicMetadata.homeLabs;
 
-  const [data, setData] = useState<homeData>({pinnedData:{}, summaryData: [{date:"", userID:""}]}); // init with empty
+  const [data, setData] = useState<any>([]); // init with empty
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   //@ts-ignore
   const {open} = useSubNavContext();
 
+  useEffect( () => {
+    const today = new Date();
+    const todayYear = today.getFullYear();
+    const todayMonth = String(today.getMonth() + 1).padStart(2, '0');
+    const todayDay = String(today.getDate()).padStart(2, '0');
+    let endDate:string = todayYear + todayMonth +todayDay;
+    const oneWeekAgo = new Date(today.getTime() - (7 * 24 * 60 * 60 * 1000));
+    const oneWeekAgoYear = oneWeekAgo.getFullYear();
+    const oneWeekAgoMonth = String(oneWeekAgo.getMonth() + 1).padStart(2, '0');
+    const oneWeekAgoDay = String(oneWeekAgo.getDate()).padStart(2, '0');
+    let startDate:string = oneWeekAgoYear+oneWeekAgoMonth+oneWeekAgoDay;
 
-  useEffect(() => {
-    async function dataFetch() {
+    async function dataFetch() {  
       try {
-        const fetchedData:any = await homeFetch(["TESTOSTERONE", "COMPLETE BLOOD COUNT", "THYROID STIMULATING HORMONE"]);
-        setData(fetchedData);
+        const response = await homeFetch({startDate, endDate});
+        setData(response);
       } catch (err) {
         setError('Failed to fetch data');
         console.error(err);
@@ -151,8 +153,7 @@ export default function Home() {
         setIsLoading(false);
       }
     }
-    dataFetch();
-    console.log(data)
+    dataFetch()
   }, []);
 
   return (
@@ -160,9 +161,10 @@ export default function Home() {
       <Defocuser />
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 w-full xl:h-[95vh]">
         <div className="col-span-1 order-2 xl:order-1 flex flex-col items-center lg:items-start p-4 border-2 bg-neutral-800/50 backdrop-blur-xl rounded-xl overflow-y-scroll">
-          <h3 className="text-5xl w-full font-regular tracking-normal mt-4 xl:mt-0 mb-8 text-center">Your Week In Review</h3>
+          <h3 className="text-5xl w-full font-regular tracking-normal mt-4 xl:mt-0 mb-8 text-center">Recent Days</h3>
           {data ?
-          <WeeklyDataDisplayComponent isLoading={isLoading} data={data.summaryData} />
+          //@ts-ignore
+          <WeeklyDataDisplayComponent isLoading={isLoading} data={data} />
             : null}
           </div>
         <div className="col-span-1 xl:col-span-2 order-1 xl:order-2 xl:h-[95vh] overflow-y-scroll xl:p-4 rounded-xl backdrop-blur-xl">
