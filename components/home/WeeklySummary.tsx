@@ -81,8 +81,7 @@ export function WeeklyDataDisplayComponent({ data, isLoading }: { data: any[], i
               <h3 className="font-light border-b border-blue-900 w-fit pr-2 mb-1 tracking-wide text-base text-neutral-300">Medications</h3>
               {item.meds && item.meds.length > 0 ? (
                 item.meds.map((object: any) => (
-                  <div className="flex flex-col gap-2 text-lg" key={Number(object.startTime)}>
-                    <h4 className="font-light text-base">{`${object.startTime} - ${object.endTime}`}</h4>
+                  <div className="flex flex-col gap-2 text-lg" key={Number(object.time)}>
                     <div className="pl-2 border-l">
                       {
                         object.exercises.map((exercise: Exercises) => (
