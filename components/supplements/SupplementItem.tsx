@@ -20,7 +20,7 @@ export default function SupplementItem({ index, onDelete }: { index: number; onD
                         render={({ field }) => (
                             <FormItem className="flex-row flex items-center w-full">
                                 <FormControl>
-                                    <Input className="w-full mx-4" type="string" placeholder="Medication Name"{...field} />
+                                    <Input className="w-full mx-4" type="string" placeholder="Supplement Name"{...field} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>

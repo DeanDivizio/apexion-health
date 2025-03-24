@@ -25,8 +25,8 @@ const FormSchema = z.object({
     z.object({
       name: z.string(),
       dose: z.number(),
-      unit: z.string().or(z.literal(`grams`)).or(z.literal(`milligrams`)).or(z.literal(`picograms`)),
-      method: z.string().or(z.literal('Pill / Capsule')).or(z.literal('Powder')),
+      unit: z.literal("").or(z.literal(`grams`)).or(z.literal(`milligrams`)).or(z.literal(`picograms`)),
+      method: z.literal("").or(z.literal('pill-capsule')).or(z.literal('powder')),
       }),
     )
   });
@@ -95,7 +95,7 @@ export default function SupplementForm({ onSuccess }: { onSuccess: () => void })
 
   const addItem = () => {
     const newIndex = fields.length
-    append({ name: "", dose: 0, method: "pill-calsule", unit: "milligrams"})
+    append({ name: "", dose: 0, method: "pill-capsule", unit: "milligrams"})
   }
 
 
