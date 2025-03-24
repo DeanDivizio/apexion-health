@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { homeFetch } from "@/actions/InternalLogic";
 import { useUser } from "@clerk/nextjs";
-import { WeeklyDataDisplayComponent } from "@/components/hrt/WeeklySummary";
+import { WeeklyDataDisplayComponent } from "@/components/home/WeeklySummary";
 import PinnedData from "@/components/home/PinnedData";
 import Footer from "@/components/global/Footer";
 import { WeightChart } from "@/components/charts/radialcharts/WeightChart";
@@ -145,9 +145,7 @@ export default function Home() {
     async function dataFetch() {  
       try {
         const response = await homeFetch({startDate, endDate});
-        console.log(response)
         setData(response);
-        console.log(data)
       } catch (err) {
         setError('Failed to fetch data');
         console.error(err);
@@ -156,7 +154,6 @@ export default function Home() {
       }
     }
     dataFetch()
-    // console.log(data)
   }, []);
 
   return (

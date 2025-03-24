@@ -34,7 +34,7 @@ export async function homeFetch({startDate, endDate}:{startDate:string, endDate:
           if (existingItem) {
             existingItem.gym = item.data;
           } else {
-            summaryData.set(item.date, {date: item.date, gymData: item.data})
+            summaryData.set(item.date, {date: item.date, gym: item.data})
           }
         });
         let summary = Array.from(summaryData.values())
