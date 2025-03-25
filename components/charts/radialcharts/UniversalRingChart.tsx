@@ -93,7 +93,7 @@ export function UniversalRingChart({ title, shortTitle, description, subtext, su
                     </RadialBarChart>
                 </ChartContainer>
             </CardContent>
-            <CardFooter className="hidden md:block text-center flex-col gap-2 text-sm">
+            <CardFooter className="text-center flex-col gap-2 text-sm">
                 <div className="leading-none text-neutral-500">
                     {goal && (subtextOrder == "unit first") ? (`${goal - value} ${subtext}`) : (`${subtext} ${goal} ${unit}`)}
                 </div>
