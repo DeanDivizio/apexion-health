@@ -56,7 +56,7 @@ export default function SupplementItem({ index, onDelete }: { index: number; onD
                                         <SelectContent>
                                             <SelectItem value="grams">Grams</SelectItem>
                                             <SelectItem value="milligrams">Milligrams</SelectItem>
-                                            <SelectItem value="picograms">Picograms</SelectItem>
+                                            <SelectItem value="micrograms">Micrograms</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </FormControl>

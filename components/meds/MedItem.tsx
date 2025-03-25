@@ -56,7 +56,7 @@ export default function MedItem({ index, onDelete }: { index: number; onDelete: 
                                         <SelectContent>
                                             <SelectItem value="grams">Grams</SelectItem>
                                             <SelectItem value="milligrams">Milligrams</SelectItem>
-                                            <SelectItem value="picograms">Picograms</SelectItem>
+                                            <SelectItem value="micrograms">Micrograms</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </FormControl>

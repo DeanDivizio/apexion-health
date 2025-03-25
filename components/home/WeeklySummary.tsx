@@ -86,7 +86,7 @@ export function WeeklyDataDisplayComponent({ data, isLoading }: { data: any[], i
                     <div className="pl-2 border-l">
                       {
                         object.meds.map((med: any) => (
-                          <p key={med.name} className="text-base font-light">{`${med.name}:`}<span className="font-semibold pl-2 pr-1">{med.dose}</span>{med.unit == "milligrams" ? "mg" : med.unit == "grams" ? "g" : "pg"}</p>
+                          <p key={med.name} className="text-base font-light">{`${med.name}:`}<span className="font-semibold pl-2 pr-1">{med.dose}</span>{med.unit == "milligrams" ? "mg" : med.unit == "grams" ? "g" : "mcg"}</p>
                         ))
                       }
                     </div>
@@ -105,7 +105,7 @@ export function WeeklyDataDisplayComponent({ data, isLoading }: { data: any[], i
                     <div className="pl-2 border-l">
                       {
                         object.supplements.map((supp: any) => (
-                          <p key={supp.name} className="text-base font-light">{`${supp.name}:`}<span className="font-semibold pl-2 pr-1">{supp.dose}</span>{supp.unit == "milligrams" ? "mg" : supp.unit == "grams" ? "g" : "pg"}</p>
+                          <p key={supp.name} className="text-base font-light">{`${supp.name}:`}<span className="font-semibold pl-2 pr-1">{supp.dose}</span>{supp.unit == "milligrams" ? "mg" : supp.unit == "grams" ? "g" : "mcg"}</p>
                         ))
                       }
                     </div>

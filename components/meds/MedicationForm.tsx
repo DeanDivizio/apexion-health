@@ -25,7 +25,7 @@ const FormSchema = z.object({
     z.object({
       name: z.string(),
       dose: z.number(),
-      unit: z.literal("").or(z.literal(`grams`)).or(z.literal(`milligrams`)).or(z.literal(`picograms`)),
+      unit: z.literal("").or(z.literal(`grams`)).or(z.literal(`milligrams`)).or(z.literal(`micrograms`)),
       method: z.literal("").or(z.literal('pill-capsule')).or(z.literal('injection')).or(z.literal('inhaler')).or(z.literal(`nasal`)).or(z.literal(`cream`)),
       }),
     )
