@@ -82,6 +82,7 @@ export function WeeklyDataDisplayComponent({ data, isLoading }: { data: any[], i
               {item.meds && item.meds.length > 0 ? (
                 item.meds.map((object: any) => (
                   <div className="flex flex-col gap-2 text-lg" key={Number(object.time)}>
+                    <h4 className="font-light text-base">{`${object.time}`}</h4>
                     <div className="pl-2 border-l">
                       {
                         object.meds.map((med: any) => (
