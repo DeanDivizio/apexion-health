@@ -84,8 +84,8 @@ export function WeeklyDataDisplayComponent({ data, isLoading }: { data: any[], i
                   <div className="flex flex-col gap-2 text-lg" key={Number(object.time)}>
                     <div className="pl-2 border-l">
                       {
-                        object.exercises.map((exercise: Exercises) => (
-                          <p key={exercise.exerciseType} className="text-base font-light">{getExerciseName(exercise.exerciseType)}</p>
+                        object.meds.map((med: any) => (
+                          <p key={med.name} className="text-base font-light">{`${med.name}:`}<span className="font-semibold pl-2 pr-1">{med.dose}</span>{med.unit == "milligrams" ? "mg" : med.unit == "grams" ? "g" : "pg"}</p>
                         ))
                       }
                     </div>
@@ -97,14 +97,14 @@ export function WeeklyDataDisplayComponent({ data, isLoading }: { data: any[], i
             </div>
             <div className="mb-6">
               <h3 className="font-light border-b border-blue-900 w-fit pr-2 mb-1 tracking-wide text-base text-neutral-300">Supplements</h3>
-              {item.supplements && item.supplements.length > 0 ? (
-                item.supplements.map((object: any) => (
-                  <div className="flex flex-col gap-2 text-lg" key={Number(object.startTime)}>
-                    <h4 className="font-light text-base">{`${object.startTime} - ${object.endTime}`}</h4>
+              {item.supps && item.supps.length > 0 ? (
+                item.supps.map((object: any) => (
+                  <div className="flex flex-col gap-2 text-lg" key={object.time}>
+                    <h4 className="font-light text-base">{`${object.time}`}</h4>
                     <div className="pl-2 border-l">
                       {
-                        object.exercises.map((exercise: Exercises) => (
-                          <p key={exercise.exerciseType} className="text-base font-light">{getExerciseName(exercise.exerciseType)}</p>
+                        object.supplements.map((supp: any) => (
+                          <p key={supp.name} className="text-base font-light">{`${supp.name}:`}<span className="font-semibold pl-2 pr-1">{supp.dose}</span>{supp.unit == "milligrams" ? "mg" : supp.unit == "grams" ? "g" : "pg"}</p>
                         ))
                       }
                     </div>

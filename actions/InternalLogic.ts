@@ -14,12 +14,14 @@ export async function homeFetch({startDate, endDate}:{startDate:string, endDate:
     }
     try {
       // Fetch macro goals, daily macro stats, workout data, body measurements
-        const [hormoneData, gymData, macroData] = await Promise.all([
+        const [hormoneData, gymData, macroData, medData, suppData] = await Promise.all([
           getDataFromTable(userID, "Apexion-Hormone", startDate, endDate),
           getDataFromTable(userID, "Apexion-Gym", startDate, endDate),
           getDataFromTable(userID, "Apexion-Nutrition", startDate, endDate),
+          getDataFromTable(userID, "Apexion-Medication", startDate, endDate),
+          getDataFromTable(userID, "Apexion-Supplements", startDate, endDate),
         ]);
-        
+        console.log(medData[0].data)
         let summaryData = new Map()
         //@ts-ignore
         hormoneData.forEach((item: { date: any; data: []}) => {
@@ -54,7 +56,6 @@ export async function homeFetch({startDate, endDate}:{startDate:string, endDate:
             }
           )
           item = {...item, totals: {calories:calories, protein:protein, carbs:carbs, fat:fat}}
-          console.log("this one", item.totals, "end")
         } catch (err){
             console.log(err)
           }
@@ -64,6 +65,22 @@ export async function homeFetch({startDate, endDate}:{startDate:string, endDate:
             existingItem.macros = item.totals;
           } else {
             summaryData.set(item.date, {date: item.date, macros: item.totals})
+          }
+        }); //@ts-ignore
+        medData.forEach((item: { date: any; data: []}) => {
+          const existingItem = summaryData.get(item.date)
+          if (existingItem) {
+            existingItem.meds = item.data;
+          } else {
+            summaryData.set(item.date, {date: item.date, meds: item.data})
+          }
+        });//@ts-ignore
+        suppData.forEach((item: { date: any; data: []}) => {
+          const existingItem = summaryData.get(item.date)
+          if (existingItem) {
+            existingItem.supps = item.data;
+          } else {
+            summaryData.set(item.date, {date: item.date, supps: item.data})
           }
         });
         let summary = Array.from(summaryData.values())
@@ -92,7 +109,7 @@ export async function homeFetch({startDate, endDate}:{startDate:string, endDate:
         }
 
         summary = OrderData(summary);
-        console.log(summary)
+        console.log(summary[0].supps)
         return(summary)
       
     } catch (error) {
