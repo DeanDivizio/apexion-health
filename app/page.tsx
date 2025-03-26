@@ -168,10 +168,12 @@ export default function Home() {
 
   useEffect(()=>{
     if(data && data.length > 0) {
+      if (data[0].macros) {
     setTodayCalories(data[0].macros.calories);
     setTodayProtein(data[0].macros.protein);
     setTodayCarbs(data[0].macros.carbs);
     setTodayFat(data[0].macros.fat);
+      }
     }
   }, [data])
 
