@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { homeFetch } from "@/actions/InternalLogic";
 import { useUser } from "@clerk/nextjs";
 import { WeeklyDataDisplayComponent } from "@/components/home/WeeklySummary";
@@ -167,7 +167,7 @@ export default function Home() {
   }, []);
 
   useEffect(()=>{
-    if(data && data.length && data.length.macros> 0) {
+    if(data && data.length > 0) {
     setTodayCalories(data[0].macros.calories);
     setTodayProtein(data[0].macros.protein);
     setTodayCarbs(data[0].macros.carbs);

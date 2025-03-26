@@ -16,7 +16,7 @@ export type StrengthExerciseForm = {
 const exercises = [
   { group: "Upper Body", items: [
     "Arnold Press", "Barbell Row", "Bench Press", "Bicep Curl", "Chest Fly", "Chest Press",
-    "Dumbbell Press", "Hammer Curl", "Incline Press", "Lateral Pulldown", "Overhead Press",
+    "Dumbbell Press", "Egyptian Lateral Raise", "Hammer Curl", "Incline Press", "Lateral Pulldown", "Overhead Press",
     "Pec Fly", "Pull Up", "Push Up", "Rear Delt", "Seated Row", "Shoulder Press", "Shrugs",
     "Tricep Extension", "Upright Row"
   ]},
