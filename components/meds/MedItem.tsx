@@ -2,7 +2,7 @@ import React from "react"
 import { useFormContext } from "react-hook-form"
 import { Button } from "@/components/ui_primitives/button"
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui_primitives/form"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from "@/components/ui_primitives/select"
+import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui_primitives/select"
 import { Input } from "@/components/ui_primitives/input"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui_primitives/accordion"
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui_primitives/alert-dialog"
@@ -11,9 +11,9 @@ export default function MedItem({ index, onDelete }: { index: number; onDelete: 
     const { control } = useFormContext()
 
     return (
-        <Accordion type={"single"} collapsible defaultValue={`item-${index}`} className={`border rounded shadow-lg px-4 py-2 bg-gradient-to-br ${index % 2 != 0 ? "from-green-950/25" : "from-blue-950/25"} to-neutral-950 to-80% mb-6`}>
+        <Accordion type={"single"} collapsible defaultValue={`item-${index}`} className={`border rounded shadow-lg py-2 bg-gradient-to-br ${index % 2 != 0 ? "from-green-950/25" : "from-blue-950/25"} to-neutral-950 to-80% mb-6`}>
             <AccordionItem value={`item-${index}`}>
-                <AccordionTrigger className="flex flex-row mb-6">
+                <AccordionTrigger className="flex flex-row px-4 mb-6">
                 <FormField
                         control={control}
                         name={`meds.${index}.name`}
@@ -68,11 +68,13 @@ export default function MedItem({ index, onDelete }: { index: number; onDelete: 
                         control={control}
                         name={`meds.${index}.method`}
                         render={({ field }) => (
-                            <FormItem className="flex flex-row items-baseline gap-4 ">
+                            <FormItem className="flex flex-row items-center gap-4 ">
                                 <FormLabel className="font-extralight">Method:</FormLabel>
                                 <FormControl>
+                                    {/*@ts-ignore*/}
                                 <Select onValueChange={field.onChange} >
-                                        <SelectTrigger>{"Select..."}</SelectTrigger>
+                                    {/*start here. fix trigger label*/}
+                                        <SelectTrigger>{field.value === `inhaler`? "Inhaler" : field.value == `nasalSpray` ? "Nasal Spray" : field.value == "cream" ? "Cream" :field.value == "injection" ? "Injection" : "Pill / Capsule"}</SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="pill-capsule">{`Pill / Capsule`}</SelectItem>
                                             <SelectItem value="inhaler">Inhaler</SelectItem>

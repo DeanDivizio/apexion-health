@@ -142,7 +142,7 @@ export default function WorkoutForm({ onSuccess }: { onSuccess: () => void }) {
   return (
     <FormProvider {...methods}>
       <Form {...methods}>
-        <form onSubmit={methods.handleSubmit(onSubmit)} className="w-2/3 space-y-6 py-36 flex flex-col justify-start">
+        <form onSubmit={methods.handleSubmit(onSubmit)} className="w-5/6 2xl:w-1/2 py-36 flex flex-col justify-start">
           <Accordion type="single" collapsible>
             <AccordionItem value="dateTime">
               <AccordionTrigger><p className="text-center w-full ">{`Date & Time`}</p></AccordionTrigger>
@@ -403,7 +403,7 @@ export default function WorkoutForm({ onSuccess }: { onSuccess: () => void }) {
               />
             )
           ))}
-          <Button variant='outline' type="button" onClick={() => addExercise("strength")}>Add Strength Exercise</Button>
+          <Button variant='outline' type="button" onClick={() => addExercise("strength")} className="mt-4 mb-4">Add Strength Exercise</Button>
           <Button variant='outline' type="button" onClick={() => addExercise("cardio")} style={{marginBottom: "2rem"}}>Add Cardio</Button>
           <Button type="submit">{buttonText}</Button>
         </form>

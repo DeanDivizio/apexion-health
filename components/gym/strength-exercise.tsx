@@ -14,18 +14,22 @@ export type StrengthExerciseForm = {
 }
 
 const exercises = [
-  { group: "Upper Body", items: [
-    "Arnold Press", "Barbell Row", "Bench Press", "Bicep Curl", "Chest Fly", "Chest Press",
-    "Dumbbell Press", "Egyptian Lateral Raise", "Hammer Curl", "Incline Press", "Lateral Pulldown", "Overhead Press",
-    "Pec Fly", "Pull Up", "Push Up", "Rear Delt", "Seated Row", "Shoulder Press", "Shrugs",
-    "Tricep Extension", "Upright Row"
-  ]},
-  { group: "Lower Body", items: [
-    "Back Squat", "Box Jump", "Bulgarian Split Squat", "Calf Raise", "Deadlift", "Front Squat",
-    "Glute Bridge", "Goblet Squat", "Hack Squat", "Hip Thrust", "Jump Squat", "Kettlebell Swing",
-    "Lateral Lunge", "Leg Curl", "Leg Extension", "Leg Press", "Lunge", "Romanian Deadlift",
-    "Step Up", "Sumo Deadlift"
-  ]}
+  {
+    group: "Upper Body", items: [
+      "Arnold Press", "Barbell Row", "Bench Press", "Bicep Curl", "Chest Fly", "Chest Press",
+      "Dumbbell Press", "Egyptian Lateral Raise", "Hammer Curl", "Incline Press", "Lateral Pulldown", "Overhead Press",
+      "Pec Fly", "Pull Up", "Push Up", "Rear Delt", "Seated Row", "Shoulder Press", "Shrugs",
+      "Tricep Extension", "Upright Row"
+    ]
+  },
+  {
+    group: "Lower Body", items: [
+      "Back Squat", "Box Jump", "Bulgarian Split Squat", "Calf Raise", "Deadlift", "Front Squat",
+      "Glute Bridge", "Goblet Squat", "Hack Squat", "Hip Thrust", "Jump Squat", "Kettlebell Swing",
+      "Lateral Lunge", "Leg Curl", "Leg Extension", "Leg Press", "Lunge", "Romanian Deadlift",
+      "Step Up", "Sumo Deadlift"
+    ]
+  }
 ]
 
 function SetForm({ exerciseIndex, setIndex, onRemove }: { exerciseIndex: number; setIndex: number; onRemove: () => void }) {
@@ -78,12 +82,12 @@ export default function StrengthExercise({ index, isOpen, onOpenChange, onDelete
 
   const getExerciseName = (value: string) => {
     for (const group of exercises) {
-      const exercise = group.items.find(item => item.toLowerCase().replace(/\s+/g, '') === value)
+      const exercise = group.items.find(item => item.toLowerCase().replace(/\s+/g, '') === value.toLowerCase())
       if (exercise) return exercise
     }
     return value
   }
-  
+
   const { fields, append, remove } = useFieldArray({
     control,
     name: `exercises.${index}.sets`,
@@ -101,18 +105,19 @@ export default function StrengthExercise({ index, isOpen, onOpenChange, onDelete
 
   const addSet = () => {
     const lastSet = sets[sets.length - 1]
-    const newSet = lastSet 
+    const newSet = lastSet
       ? { weight: lastSet.weight, reps: lastSet.reps }
       : { weight: 0, reps: 1 }
     append(newSet)
   }
 
   return (
-    <Accordion type="single" collapsible value={isOpen ? `item-${index}` : ""} onValueChange={(value) => onOpenChange(value === `item-${index}`)}>
+    <Accordion type="single" collapsible value={isOpen ? `item-${index}` : ""} onValueChange={(value) => onOpenChange(value === `item-${index}`)}
+      className={`border rounded shadow-lg py-2 bg-gradient-to-br ${index % 2 != 0 ? "from-green-950/25" : "from-blue-950/25"} to-neutral-950 to-80% mb-6 justify-center`}>
       <AccordionItem value={`item-${index}`}>
-      <AccordionTrigger>{getExerciseName(exerciseType) || "New Exercise"}</AccordionTrigger>
-        <AccordionContent>
-          <div className="flex bg-neutral-900 flex-col md:flex-row border p-4 rounded-md">
+        <AccordionTrigger className="px-4">{getExerciseName(exerciseType) || "New Exercise"}</AccordionTrigger>
+        <AccordionContent className="px-4">
+          <div className="flex flex-col md:flex-row py-4 rounded-md">
             <div className="flex items-center mb-4">
               <FormField
                 control={control}
@@ -148,10 +153,10 @@ export default function StrengthExercise({ index, isOpen, onOpenChange, onDelete
             <div className="flex-1">
               <div className="space-y-4">
                 {fields.map((field, setIndex) => (
-                  <SetForm 
-                    key={field.id} 
-                    exerciseIndex={index} 
-                    setIndex={setIndex} 
+                  <SetForm
+                    key={field.id}
+                    exerciseIndex={index}
+                    setIndex={setIndex}
                     onRemove={() => remove(setIndex)}
                   />
                 ))}
@@ -160,7 +165,7 @@ export default function StrengthExercise({ index, isOpen, onOpenChange, onDelete
                 type="button"
                 variant="secondary"
                 onClick={addSet}
-                className="mt-8 w-full"
+                className="mt-8 mb-8 w-full"
               >
                 Add Set
               </Button>
@@ -168,20 +173,17 @@ export default function StrengthExercise({ index, isOpen, onOpenChange, onDelete
           </div>
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button variant="outline" className="mt-4 w-full bg-transparent border-red-500 font-thin">Delete Exercise</Button>
+              <Button variant={"destructive"} className="w-full">
+                {"Delete exercise"}
+              </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This action cannot be undone. This will permanently delete the exercise 
-                  {exerciseType && ` "${getExerciseName(exerciseType)}"`} and all its data.
-                </AlertDialogDescription>
+                <AlertDialogTitle className="text-2xl text-center">{`Are you sure?`}</AlertDialogTitle>
+                <AlertDialogDescription>{`This will delete the current exercise and cannot be undone.`}</AlertDialogDescription>
               </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={onDelete}>Delete</AlertDialogAction>
-              </AlertDialogFooter>
+              <Button variant={"destructive"} onClick={onDelete}>Delete</Button>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
             </AlertDialogContent>
           </AlertDialog>
         </AccordionContent>

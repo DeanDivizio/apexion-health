@@ -11,7 +11,8 @@ export default function SupplementItem({ index, onDelete }: { index: number; onD
     const { control } = useFormContext()
 
     return (
-        <Accordion type={"single"} collapsible defaultValue={`item-${index}`} className={`border rounded shadow-lg px-4 py-2 bg-gradient-to-br ${index % 2 != 0 ? "from-green-950/25" : "from-blue-950/25"} to-neutral-950 to-80% mb-6`}>
+        <Accordion type={"single"} collapsible defaultValue={`item-${index}`} 
+            className={`border rounded shadow-lg px-4 py-2 bg-gradient-to-br ${index % 2 != 0 ? "from-green-950/25" : "from-blue-950/25"} to-neutral-950 to-80% mb-6`}>
             <AccordionItem value={`item-${index}`}>
                 <AccordionTrigger className="flex flex-row mb-6">
                 <FormField
@@ -30,7 +31,7 @@ export default function SupplementItem({ index, onDelete }: { index: number; onD
                 <AccordionContent className="flex flex-wrap justify-center md:justify-between items-center">
                     <p className="text-center w-full mb-2">{`Dose & Details`}</p>
                     <hr className="w-full mb-4"></hr>
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8 mb-10 w-2/3 md:w-full">
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8 mb-10 w-5/6 md:w-full">
                     <FormField
                         control={control}
                         name={`supplements.${index}.dose`}

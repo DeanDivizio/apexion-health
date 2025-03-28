@@ -195,6 +195,7 @@ export type GenericRingChart = {
   value: number;
   shade: string;
   subtextOrder: "unit first" | "unit last";
+  overOkay?: boolean;
 }
 
 export type GenericIntAreachart = {

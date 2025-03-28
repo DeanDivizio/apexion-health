@@ -223,7 +223,8 @@ export default function Home() {
               unit="grams" 
               value={todayProtein} 
               goal={proteinGoal}
-              shade="purple" />
+              shade="purple"
+              overOkay />
             <UniversalRingChart 
               title="Today's Carb Intake"
               shortTitle="Carbs"

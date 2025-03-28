@@ -6,7 +6,7 @@ import { useEffect, useState } from "react"
 import { GenericRingChart } from "@/utils/types"
 import { useIsMobile } from "@/hooks/use-mobile"
 
-export function UniversalRingChart({ title, shortTitle, description, subtext, subtextOrder, unit, goal, value, shade }: GenericRingChart) {
+export function UniversalRingChart({ title, shortTitle, description, subtext, subtextOrder, unit, goal, value, shade, overOkay }: GenericRingChart) {
     const [percentage, setPercentage] = useState<number>(100)
     const [ringColor, setRingColor] = useState<string>("hsl(var(--chart-2))")
     let chartData = [
@@ -19,7 +19,11 @@ export function UniversalRingChart({ title, shortTitle, description, subtext, su
             setPercentage(newPercentage);
             let newRingColor: string;
             if (newPercentage > 100) {
-                newRingColor = "hsl(var(--destructive))"
+                if (overOkay){
+                    newRingColor = "hsl(var(--chart-2))";
+                } else {
+                    newRingColor = "hsl(var(--destructive))"
+                }
             } else if (newPercentage > 85) {
                 newRingColor = "hsl(var(--chart-2))";
             } else if (newPercentage > 50) {

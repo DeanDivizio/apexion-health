@@ -102,10 +102,10 @@ export default function SupplementForm({ onSuccess }: { onSuccess: () => void })
   return (
     <FormProvider {...methods}>
       <Form {...methods}>
-        <form onSubmit={methods.handleSubmit(onSubmit)} className="w-3/4 2xl:w-1/2 py-36 flex flex-col justify-start">
+        <form onSubmit={methods.handleSubmit(onSubmit)} className="w-5/6 2xl:w-1/2 py-36 flex flex-col justify-start">
           <Accordion type="single" collapsible>
             <AccordionItem value="dateTime" className="mb-6">
-              <AccordionTrigger><p className="text-center w-full ">{`Date, Time, & Label`}</p></AccordionTrigger>
+              <AccordionTrigger><p className="text-center w-full ">{`Date & Time`}</p></AccordionTrigger>
               <AccordionContent>
               <div className="flex flex-col md:flex-row mt-8 gap-6 items-center justify-center">
                   <div className="flex gap-2 items-center justify-between">
