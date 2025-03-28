@@ -144,16 +144,14 @@ export interface Estrogen_Form { //This will be updated later
 
 // For summary
 
-export type SummaryData = {
+export type SummaryData = [{
   date: string,
-  userID: String,
-  gymData?: {
-    date: String,
-    userID: String,
-    data: GymDataPoints[]
-  }
-  hormoneData?: HormoneDataType
-}
+  gym?: GymDataPoints[],
+  hormoneData?: HormoneDataObject[],
+  macros?: MacrosObject,
+  meds?: MedicationObject[],
+  supps?: SupplementObject[]
+}]
 
 export type GymDataPoints = {
   startTime: String,
@@ -171,21 +169,50 @@ type Sets = {
   weight: Number
 }
 
-export type HormoneDataType = {
-  data: HormoneAdministration[],
-  date: String,
-  userID: String
+export type HormoneDataObject = {
+  type: string,
+  dose: number
+  time: string,
+  depth: string,
+  category: string
 }
 
-export type HormoneAdministration = {
-  category: String,
-  depth?: String,
-  dose: Number,
-  time: String,
-  type: String,
+export type MacrosObject = {
+  calories: number,
+  protein: number,
+  fat: number,
+  carbs: number
 }
 
-export type GenericRingChart = {
+export type MedicationObject = {
+    time: string,
+    meds: [
+      {
+        name: string,
+        dose: number,
+        unit: string,
+        method: string
+      }
+    ]
+}
+
+export type SupplementObject = {
+  time: string,
+    meds: [
+      {
+        name: string,
+        dose: number,
+        unit: string,
+        method: string
+      }
+    ]
+}
+
+
+
+
+
+export type UniversalRingChart = {
   title: string;
   shortTitle: string;
   description: string;

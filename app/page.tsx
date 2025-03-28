@@ -5,13 +5,12 @@ import { useUser } from "@clerk/nextjs";
 import { WeeklyDataDisplayComponent } from "@/components/home/WeeklySummary";
 import PinnedData from "@/components/home/PinnedData";
 import Footer from "@/components/global/Footer";
-import { WeightChart } from "@/components/charts/radialcharts/WeightChart";
 import { UniversalRingChart } from "@/components/charts/radialcharts/UniversalRingChart";
 import { InteractiveAreaChart } from "@/components/charts/InteractiveAreaChart";
 import { ChartConfig } from "@/components/ui_primitives/chart";
-import { useSubNavContext } from "@/context/SubNavOpenContext";
 import Defocuser from "@/components/global/Defocuser";
 import { useIsMobile } from "@/hooks/use-mobile";
+import type { SummaryData } from "@/utils/types";
 
 const demointareadata = [
   { date: "2024-04-01", desktop: 222, mobile: 150 },
@@ -122,10 +121,8 @@ const demochartConfig = {
 
 export default function Home() {
   const { user, isLoaded } = useUser();
-  const userMeta: string[] | unknown = user?.publicMetadata.homeLabs;
   const isMobile = useIsMobile();
-
-  const [data, setData] = useState<any>([]); // init with empty
+  const [data, setData] = useState<SummaryData>();
   const [todayCalories, setTodayCalories] = useState(0);
   const [todayProtein, setTodayProtein] = useState(0);
   const [todayCarbs, setTodayCarbs] = useState(0);
@@ -135,9 +132,6 @@ export default function Home() {
   const [proteinGoal, setProteinGoal] = useState(0);
   const [carbGoal, setCarbGoal] = useState(0);
   const [fatGoal, setFatGoal] = useState(0);
-  const [error, setError] = useState<string | null>(null);
-  //@ts-ignore
-  const {open} = useSubNavContext();
 
   useEffect( () => {
     const today = new Date();
@@ -153,15 +147,16 @@ export default function Home() {
 
     async function dataFetch() {  
       try {
-        const response = await homeFetch({startDate, endDate});
+        // @ts-ignore
+        const response:SummaryData = await homeFetch({startDate, endDate});
         setData(response);
       } catch (err) {
-        setError('Failed to fetch data');
         console.error(err);
       } finally {
         setIsLoading(false);
       }
     }
+
     dataFetch()
     
   }, []);
@@ -203,7 +198,6 @@ export default function Home() {
           </div>
         <div className="col-span-1 xl:col-span-2 order-1 xl:order-2 xl:h-[95vh] overflow-y-scroll xl:p-4 rounded-xl backdrop-blur-xl">
           <div className="grid grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 justify-around mb-0">
-            
             <UniversalRingChart 
               title="Today's Calorie Intake"
               shortTitle="Calories"
@@ -246,13 +240,13 @@ export default function Home() {
               goal={fatGoal}
               shade="purple" />
               </div>
-          {isMobile ? null :
+          {/* {isMobile ? null :
           <><InteractiveAreaChart
               title="Nutrition Highlights"
               description="Your macros over time"
               data={demointareadata}
               chartConfig={demochartConfig} /><PinnedData title="Gym" color="green" data={data?.pinnedData} isLoading={isLoading} /></>
-          }
+          } */}
         </div>
       </div>
       <Footer />

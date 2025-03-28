@@ -1,5 +1,6 @@
 "use server";
 import { getDataFromTable } from "@/actions/AWS";
+import { MacrosObject, SummaryData } from "@/utils/types";
 import { auth } from '@clerk/nextjs/server';
 
 // Runs through needed functions to populate data on homepage.
@@ -24,7 +25,7 @@ export async function homeFetch({startDate, endDate}:{startDate:string, endDate:
         console.log(medData[0].data)
         let summaryData = new Map()
         //@ts-ignore
-        hormoneData.forEach((item: { date: any; data: []}) => {
+        hormoneData.forEach((item: { date: string; data: []}) => {
           const existingItem = summaryData.get(item.date)
           if (existingItem) {
             existingItem.hormone = item.data;
@@ -32,7 +33,7 @@ export async function homeFetch({startDate, endDate}:{startDate:string, endDate:
             summaryData.set(item.date, {date: item.date, hormoneData: item.data})
           }
         }); //@ts-ignore
-        gymData.forEach((item: { date: any; data: []}) => {
+        gymData.forEach((item: { date: string; data: []}) => {
           const existingItem = summaryData.get(item.date)
           if (existingItem) {
             existingItem.gym = item.data;
@@ -40,7 +41,7 @@ export async function homeFetch({startDate, endDate}:{startDate:string, endDate:
             summaryData.set(item.date, {date: item.date, gym: item.data})
           }
         });//@ts-ignore
-        macroData.forEach((item: { date: any; data: []; totals?:{calories?:number; protein?:number; carbs?:number; fat?:number}}) => {
+        macroData.forEach((item: { date: string; data: []; totals?:Macros}) => {
           let calories = 0;
           let protein = 0;
           let carbs = 0;
@@ -67,7 +68,7 @@ export async function homeFetch({startDate, endDate}:{startDate:string, endDate:
             summaryData.set(item.date, {date: item.date, macros: item.totals})
           }
         }); //@ts-ignore
-        medData.forEach((item: { date: any; data: []}) => {
+        medData.forEach((item: { date: string; data: []}) => {
           const existingItem = summaryData.get(item.date)
           if (existingItem) {
             existingItem.meds = item.data;
@@ -75,7 +76,7 @@ export async function homeFetch({startDate, endDate}:{startDate:string, endDate:
             summaryData.set(item.date, {date: item.date, meds: item.data})
           }
         });//@ts-ignore
-        suppData.forEach((item: { date: any; data: []}) => {
+        suppData.forEach((item: { date: string; data: []}) => {
           const existingItem = summaryData.get(item.date)
           if (existingItem) {
             existingItem.supps = item.data;
@@ -109,7 +110,6 @@ export async function homeFetch({startDate, endDate}:{startDate:string, endDate:
         }
 
         summary = OrderData(summary);
-        console.log(summary[0].supps)
         return(summary)
       
     } catch (error) {

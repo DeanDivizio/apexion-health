@@ -1,18 +1,20 @@
 "use client"
 import { Label, PolarGrid, PolarRadiusAxis, RadialBar, RadialBarChart } from "recharts"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui_primitives/card"
-import { ChartConfig, ChartContainer } from "@/components/ui_primitives/chart"
+import { ChartContainer } from "@/components/ui_primitives/chart"
 import { useEffect, useState } from "react"
-import { GenericRingChart } from "@/utils/types"
+import type { UniversalRingChart } from "@/utils/types"
 import { useIsMobile } from "@/hooks/use-mobile"
 
-export function UniversalRingChart({ title, shortTitle, description, subtext, subtextOrder, unit, goal, value, shade, overOkay }: GenericRingChart) {
+export function UniversalRingChart({ title, shortTitle, description, subtext, subtextOrder, unit, goal, value, shade, overOkay }: UniversalRingChart) {
     const [percentage, setPercentage] = useState<number>(100)
     const [ringColor, setRingColor] = useState<string>("hsl(var(--chart-2))")
+    const isMobile = useIsMobile();
+
     let chartData = [
         { metric: "metric", number: value, fill: ringColor },
     ]
-    const isMobile = useIsMobile();
+
     useEffect(() => {
         if (goal && value !== undefined) {
             const newPercentage = (value / goal) * 100;
