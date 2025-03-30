@@ -21,7 +21,10 @@ const exercises = [
       "Pec Fly", "Pull Up", "Push Up", "Rear Delt", "Seated Row", "Shoulder Press", "Shrugs",
       "Tricep Extension", "Upright Row"
     ]
-  },
+  },{
+    group: "Core", items: [
+      "Abdominal Crunch", "Back Extension", 
+    ]},
   {
     group: "Lower Body", items: [
       "Back Squat", "Box Jump", "Bulgarian Split Squat", "Calf Raise", "Deadlift", "Front Squat",
@@ -133,8 +136,8 @@ export default function StrengthExercise({ index, isOpen, onOpenChange, onDelete
                       </FormControl>
                       <SelectContent>
                         {exercises.map((group) => (
-                          <SelectGroup key={group.group}>
-                            <SelectLabel>{group.group}</SelectLabel>
+                          <SelectGroup key={group.group} className="mb-6">
+                            <SelectLabel className="font-medium text-lg">{group.group}</SelectLabel>
                             {group.items.map((exercise) => (
                               <SelectItem key={exercise} value={exercise.charAt(0).toLowerCase() + exercise.slice(1).replace(/\s+/g, '')}>
                                 {exercise}
