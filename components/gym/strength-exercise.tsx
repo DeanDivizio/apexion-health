@@ -109,7 +109,7 @@ export default function StrengthExercise({ index, isOpen, onOpenChange, onDelete
   const addSet = () => {
     const lastSet = sets[sets.length - 1]
     const newSet = lastSet
-      ? { weight: lastSet.weight, reps: lastSet.reps }
+      ? { weight: lastSet.weight, reps: 0 }
       : { weight: 0, reps: 1 }
     append(newSet)
   }
