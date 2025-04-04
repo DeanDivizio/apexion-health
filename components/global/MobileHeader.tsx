@@ -1,6 +1,6 @@
 "use client";
 
-import { SignIn, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
+import { SignIn, SignedIn, SignedOut, UserButton, SignInButton } from "@clerk/nextjs";
 
 export default function MobileHeader() {
 
@@ -11,7 +11,7 @@ export default function MobileHeader() {
                 <UserButton />
             </SignedIn>
             <SignedOut>
-                <SignIn />
+                <SignInButton />
             </SignedOut>
         </header>
     )

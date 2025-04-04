@@ -4,6 +4,7 @@ import { Button } from "@/components/ui_primitives/button"
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui_primitives/form"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from "@/components/ui_primitives/select"
 import { Input } from "@/components/ui_primitives/input"
+import NumberInput from "../ui/NumberInput"
 import { X } from "lucide-react"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui_primitives/accordion"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui_primitives/alert-dialog"
@@ -47,7 +48,7 @@ function SetForm({ exerciseIndex, setIndex, onRemove }: { exerciseIndex: number;
           <FormItem>
             <FormLabel className="font-extralight">Weight:</FormLabel>
             <FormControl>
-              <Input type="number" {...field} onChange={(e) => field.onChange(parseFloat(e.target.value))} />
+              <Input type="number" inputMode="decimal" pattern="[0-9]*" {...field} onChange={(e) => field.onChange(parseFloat(e.target.value))} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -60,7 +61,7 @@ function SetForm({ exerciseIndex, setIndex, onRemove }: { exerciseIndex: number;
           <FormItem>
             <FormLabel className="font-extralight">Reps:</FormLabel>
             <FormControl>
-              <Input type="number" {...field} onChange={(e) => field.onChange(parseInt(e.target.value, 10))} />
+              <Input type="number" inputMode="decimal" pattern="[0-9]*" {...field} onChange={(e) => field.onChange(parseFloat(e.target.value))} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -110,7 +111,7 @@ export default function StrengthExercise({ index, isOpen, onOpenChange, onDelete
     const lastSet = sets[sets.length - 1]
     const newSet = lastSet
       ? { weight: lastSet.weight, reps: 0 }
-      : { weight: 0, reps: 1 }
+      : { }
     append(newSet)
   }
 
