@@ -231,3 +231,15 @@ export type GenericIntAreachart = {
   data: any;
   chartConfig: any;
 }
+
+
+
+
+
+
+
+/*********************************FOR THE WORKOUT FORM************************************ */
+export type ExerciseGroup = {
+  group: string;
+  items: string[];
+}

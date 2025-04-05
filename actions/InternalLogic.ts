@@ -22,7 +22,6 @@ export async function homeFetch({startDate, endDate}:{startDate:string, endDate:
           getDataFromTable(userID, "Apexion-Medication", startDate, endDate),
           getDataFromTable(userID, "Apexion-Supplements", startDate, endDate),
         ]);
-        console.log(medData[0].data)
         let summaryData = new Map()
         //@ts-ignore
         hormoneData.forEach((item: { date: string; data: []}) => {

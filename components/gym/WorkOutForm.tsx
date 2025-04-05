@@ -12,8 +12,12 @@ import { addItemToTable } from "@/actions/AWS"
 import StrengthExercise from "@/components/gym/strength-exercise"
 import CardioExercise from "@/components/gym/CardioExerciseEntry"
 import { Accordion, AccordionContent, AccordionTrigger, AccordionItem } from "../ui_primitives/accordion"
+import type { ExerciseGroup } from "@/utils/types"
+import { useUser } from "@clerk/nextjs"
+import { quickSort } from "@/lib/utils"
 
 export const dynamic = 'force-dynamic';
+
 
 const FormSchema = z.object({
   month: z.string(),
@@ -34,6 +38,10 @@ const FormSchema = z.object({
         weight: z.number(),
         reps: z.number()
       })).optional(),
+      modifications: z.object({
+        grip: z.enum(["Rotated Neutral", "Pronated (upward)", "Supinated (downward)", "Normal"]).optional(),
+        movementPlane: z.enum(["Inlcined", "Declined", "Prone", "Supine", "Normal"]).optional(),
+      }).optional(),
       duration: z.number().optional(),
       distance: z.number().optional(),
       unit: z.enum(["km", "mi"]).optional()
@@ -41,9 +49,61 @@ const FormSchema = z.object({
   )
 })
 
+// default list of exercises
+const exercises: ExerciseGroup[] = [
+  {
+    group: "Upper Body", items: [
+      "Bench Press", "Bicep Curl", "Chest Press",
+      "Lateral Raise", "Lateral Pulldown", "Pec Fly",
+      "Pull Up", "Push Up", "Rear Delt", 
+      "Seated Row", "Tricep Extension"
+    ]
+  },{
+    group: "Core", items: [
+      "Abdominal Crunch", "Back Extension", 
+    ]},
+  {
+    group: "Lower Body", items: [
+      "Back Squat", "Calf Raise", "Deadlift",
+      "Front Squat", "Hip Thrust", "Kettlebell Swing",
+      "Lateral Lunge", "Leg Curl", "Leg Extension",
+      "Leg Press", "Lunge",
+    ]
+  }
+]
+
 export default function WorkoutForm({ onSuccess }: { onSuccess: () => void }) {
   const [buttonText, setButtonText] = useState<string>("Log Data")
   const [openExercises, setOpenExercises] = useState<number[]>([])
+  const { user, isLoaded } = useUser();
+
+  function MergeExercises() {
+    // @ts-ignore
+    user?.publicMetadata?.customExercises.upperBody.forEach(exercise => {
+      exercises[0].items.push(exercise)
+    }); 
+    // @ts-ignore
+    user?.publicMetadata?.customExercises.core.forEach(exercise => {
+      if (exercise != undefined ){
+        exercises[1].items.push(exercise)
+      }
+    }); 
+    // @ts-ignore
+    user?.publicMetadata?.customExercises.lowerBody.forEach(exercise => {
+      if (exercise != undefined ){
+        exercises[2].items.push(exercise)
+      }
+    }); 
+    exercises[0].items = quickSort(exercises[0].items)
+    exercises[1].items = quickSort(exercises[1].items)
+    exercises[2].items = quickSort(exercises[2].items)
+  }
+
+  useEffect(() => {
+    if (isLoaded) {
+    MergeExercises()
+    }
+  }, [isLoaded])
 
   const methods = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
@@ -392,6 +452,7 @@ export default function WorkoutForm({ onSuccess }: { onSuccess: () => void }) {
                 isOpen={openExercises.includes(index)}
                 onOpenChange={(open) => handleOpenChange(index, open)}
                 onDelete={() => onDelete(index)}
+                exercises={exercises}
               />
             ) : (
               <CardioExercise
