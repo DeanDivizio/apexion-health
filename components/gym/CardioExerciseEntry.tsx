@@ -75,7 +75,7 @@ export default function CardioExercise({ index, isOpen, onOpenChange, onDelete }
                   <FormItem>
                     <FormLabel>Duration (minutes)</FormLabel>
                     <FormControl>
-                      <Input type="number" {...field} onChange={(e) => field.onChange(parseFloat(e.target.value))} />
+                      <Input t9 {...field} onChange={(e) => field.onChange(parseFloat(e.target.value))} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -88,7 +88,7 @@ export default function CardioExercise({ index, isOpen, onOpenChange, onDelete }
                   <FormItem>
                     <FormLabel>Distance</FormLabel>
                     <FormControl>
-                      <Input type="number" {...field} onChange={(e) => field.onChange(parseFloat(e.target.value))} />
+                      <Input t9 {...field} onChange={(e) => field.onChange(parseFloat(e.target.value))} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

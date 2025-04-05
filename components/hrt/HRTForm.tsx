@@ -283,7 +283,7 @@ export default function HRTForm({ onSuccess }: { onSuccess: () => void }) {
             <FormItem>
               <FormLabel>Dose</FormLabel>
               <FormControl>
-                <Input type="number" placeholder="0" {...field} />
+                <Input t9 placeholder="0" {...field} />
               </FormControl>
               <FormDescription>{`Enter your dose in milligrams (mG)`}</FormDescription>
               <FormMessage />

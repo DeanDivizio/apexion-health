@@ -39,7 +39,7 @@ export default function SupplementItem({ index, onDelete }: { index: number; onD
                             <FormItem className="flex flex-row items-baseline gap-4 ">
                                 <FormLabel className="font-extralight">Dose:</FormLabel>
                                 <FormControl>
-                                    <Input type="number" {...field} onChange={(e) => field.onChange(parseInt(e.target.value))} />
+                                    <Input t9 {...field} onChange={(e) => field.onChange(parseInt(e.target.value))} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>

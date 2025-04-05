@@ -1,13 +1,13 @@
-import React from "react"
+import React, { useState } from "react"
 import { useFormContext, useFieldArray, useWatch } from "react-hook-form"
 import { Button } from "@/components/ui_primitives/button"
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui_primitives/form"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from "@/components/ui_primitives/select"
 import { Input } from "@/components/ui_primitives/input"
-import NumberInput from "../ui/NumberInput"
-import { X } from "lucide-react"
+import { EllipsisVertical } from "lucide-react"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui_primitives/accordion"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui_primitives/alert-dialog"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui_primitives/dropdown-menu"
 
 export type StrengthExerciseForm = {
   exerciseType: string
@@ -31,24 +31,25 @@ const exercises = [
       "Back Squat", "Box Jump", "Bulgarian Split Squat", "Calf Raise", "Deadlift", "Front Squat",
       "Glute Bridge", "Goblet Squat", "Hack Squat", "Hip Thrust", "Jump Squat", "Kettlebell Swing",
       "Lateral Lunge", "Leg Curl", "Leg Extension", "Leg Press", "Lunge", "Romanian Deadlift",
-      "Step Up", "Sumo Deadlift"
+      "Step Up", "Sumo Deadlift", 
     ]
   }
 ]
 
 function SetForm({ exerciseIndex, setIndex, onRemove }: { exerciseIndex: number; setIndex: number; onRemove: () => void }) {
   const { control } = useFormContext()
+  const [ isLRSplit, setISLRSplit ] = useState<boolean>(false)
 
   return (
-    <div className="flex space-x-4 mb-1 items-end">
+    <div className={`grid grid-cols-10 gap-2 items-end`}>
       <FormField
         control={control}
         name={`exercises.${exerciseIndex}.sets.${setIndex}.weight`}
         render={({ field }) => (
-          <FormItem>
-            <FormLabel className="font-extralight">Weight:</FormLabel>
+          <FormItem className={` ${isLRSplit ? "col-span-3" : "col-span-4"}`}>
+            <FormLabel className="font-base">Weight</FormLabel>
             <FormControl>
-              <Input type="number" inputMode="decimal" pattern="[0-9]*" {...field} onChange={(e) => field.onChange(parseFloat(e.target.value))} />
+              <Input t9 {...field} onChange={(e) => field.onChange(parseFloat(e.target.value))} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -58,25 +59,61 @@ function SetForm({ exerciseIndex, setIndex, onRemove }: { exerciseIndex: number;
         control={control}
         name={`exercises.${exerciseIndex}.sets.${setIndex}.reps`}
         render={({ field }) => (
-          <FormItem>
-            <FormLabel className="font-extralight">Reps:</FormLabel>
+          <FormItem className={isLRSplit ? "col-span-3" : "col-span-4"}>
+            <FormLabel className="font-extralight">{isLRSplit ? "Reps: Left": "Reps"}</FormLabel>
             <FormControl>
-              <Input type="number" inputMode="decimal" pattern="[0-9]*" {...field} onChange={(e) => field.onChange(parseFloat(e.target.value))} />
+              <Input t9 {...field} onChange={(e) => field.onChange(parseFloat(e.target.value))} />
             </FormControl>
             <FormMessage />
           </FormItem>
         )}
       />
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        onClick={onRemove}
-        className="h-10 w-10"
-      >
-        <X className="h-4 w-4" />
-        <span className="sr-only">Remove set</span>
-      </Button>
+      {isLRSplit && <FormField
+        control={control}
+        name={`exercises.${exerciseIndex}.sets.${setIndex}.repsRight`}
+        render={({ field }) => (
+          <FormItem className={isLRSplit ? "col-span-3" : "col-span-4"}>
+            <FormLabel className="font-extralight">{`Reps: Right`}</FormLabel>
+            <FormControl>
+              <Input t9 {...field} onChange={(e) => field.onChange(parseFloat(e.target.value))} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />}
+      <div className={`w-full ${isLRSplit ? "col-span-1" : "col-span-2"} flex justify-end`}>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button size="icon" variant="ghost" className="flex justify-end">
+              <EllipsisVertical className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={()=>setISLRSplit(!isLRSplit)}
+              >
+                {`Split L/R Reps`}
+              </Button>
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={onRemove}
+              >
+                Delete Set
+              </Button>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+      <div>
+
+      </div>
+      
     </div>
   )
 }
@@ -154,8 +191,8 @@ export default function StrengthExercise({ index, isOpen, onOpenChange, onDelete
               />
             </div>
 
-            <div className="flex-1">
-              <div className="space-y-4">
+            <div className="flex-1 py-4">
+              <div className="space-y-6 mb-4">
                 {fields.map((field, setIndex) => (
                   <SetForm
                     key={field.id}
@@ -169,12 +206,13 @@ export default function StrengthExercise({ index, isOpen, onOpenChange, onDelete
                 type="button"
                 variant="secondary"
                 onClick={addSet}
-                className="mt-8 mb-8 w-full"
+                className="mt-8 mb-4 w-full"
               >
                 Add Set
               </Button>
             </div>
           </div>
+          <hr className="border-neutral-400 mb-8 w-[36%] ml-[32%]"></hr>
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant={"destructive"} className="w-full">

@@ -38,7 +38,7 @@ export default function FoodItem({ index, onDelete }: { index: number; onDelete:
                             <FormItem className="flex flex-row items-baseline gap-4 ">
                                 <FormLabel className="font-extralight">Calories:</FormLabel>
                                 <FormControl>
-                                    <Input type="number" {...field} onChange={(e) => field.onChange(parseInt(e.target.value))} />
+                                    <Input t9 {...field} onChange={(e) => field.onChange(parseInt(e.target.value))} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -51,7 +51,7 @@ export default function FoodItem({ index, onDelete }: { index: number; onDelete:
                             <FormItem className="flex flex-row items-baseline gap-4 ">
                                 <FormLabel className="font-extralight">Protein:</FormLabel>
                                 <FormControl>
-                                    <Input type="number" {...field} onChange={(e) => field.onChange(parseInt(e.target.value))} />
+                                    <Input t9 {...field} onChange={(e) => field.onChange(parseInt(e.target.value))} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -64,7 +64,7 @@ export default function FoodItem({ index, onDelete }: { index: number; onDelete:
                             <FormItem className="flex flex-row items-baseline gap-4 ">
                                 <FormLabel className="font-extralight">Carbs:</FormLabel>
                                 <FormControl>
-                                    <Input type="number" {...field} onChange={(e) => field.onChange(parseInt(e.target.value))} />
+                                    <Input t9 {...field} onChange={(e) => field.onChange(parseInt(e.target.value))} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -77,7 +77,7 @@ export default function FoodItem({ index, onDelete }: { index: number; onDelete:
                             <FormItem className="flex flex-row items-baseline gap-4 ">
                                 <FormLabel className="font-extralight">Fat:</FormLabel>
                                 <FormControl>
-                                    <Input type="number" {...field} onChange={(e) => field.onChange(parseInt(e.target.value))} />
+                                    <Input t9 {...field} onChange={(e) => field.onChange(parseInt(e.target.value))} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -91,7 +91,7 @@ export default function FoodItem({ index, onDelete }: { index: number; onDelete:
                             <FormItem className="flex flex-row items-baseline gap-4 border-t border-r border-b md:border-b-transparent border-l md:border-l-transparent p-2 pb-4 px-4 mb-8 md:mb-0 bg-gradient-to-bl from-neutral-800/30 to-neutral-900/30">
                                 <FormLabel className="font-semibold ">Servings:</FormLabel>
                                 <FormControl className="max-w-20">
-                                    <Input type="number" {...field} onChange={(e) => field.onChange(parseInt(e.target.value))} />
+                                    <Input t9 {...field} onChange={(e) => field.onChange(parseInt(e.target.value))} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
