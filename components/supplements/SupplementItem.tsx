@@ -21,7 +21,20 @@ export default function SupplementItem({ index, onDelete }: { index: number; onD
                         render={({ field }) => (
                             <FormItem className="flex-row flex items-center w-full">
                                 <FormControl>
-                                    <Input className="w-full mx-4" type="string" placeholder="Supplement Name"{...field} />
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <SelectTrigger>{field.value}</SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="alphaGPC">{`Alpha-GPC`}</SelectItem>
+                                            <SelectItem value="creatine">Creatine</SelectItem>
+                                            <SelectItem value="fadogiaAgrestis">Fadogia Agrestis</SelectItem>
+                                            <SelectItem value="inositol">Inositol</SelectItem>
+                                            <SelectItem value="omega3">{`Omega-3's`}</SelectItem>
+                                            <SelectItem value="rhodiolaRosea">Rhodiola Rosea</SelectItem>
+                                            <SelectItem value="tongkatAli">Tongkat Ali</SelectItem>
+                                            <SelectItem value="tyrosine">Tyrosine</SelectItem>
+                                            <SelectItem value="vitaminD">Vitamin D</SelectItem>
+                                        </SelectContent>
+                                    </Select>
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
