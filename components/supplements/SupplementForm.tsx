@@ -95,7 +95,7 @@ export default function SupplementForm({ onSuccess }: { onSuccess: () => void })
 
   const addItem = () => {
     const newIndex = fields.length
-    append({ name: "", dose: 0, method: "pill-capsule", unit: "milligrams"})
+    append({ name: "Select...", dose: 0,  method: "pill-capsule", unit: "milligrams"})
   }
 
 

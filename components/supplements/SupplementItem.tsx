@@ -1,5 +1,6 @@
-import React from "react"
-import { useFormContext } from "react-hook-form"
+"use client"
+import React, {useState, useEffect} from "react"
+import { useFormContext, useWatch } from "react-hook-form"
 import { Button } from "@/components/ui_primitives/button"
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui_primitives/form"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from "@/components/ui_primitives/select"
@@ -9,30 +10,38 @@ import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescript
 
 export default function SupplementItem({ index, onDelete }: { index: number; onDelete: () => void }) {
     const { control } = useFormContext()
+    const [itemName, setItemName] = useState("Select Supplement Below")  
+    const supplementType = useWatch({ control, name: `supplements.${index}.name` });
+    useEffect(() => { 
+        setItemName(supplementType)
+    }, [supplementType])   
 
     return (
         <Accordion type={"single"} collapsible defaultValue={`item-${index}`} 
             className={`border rounded shadow-lg px-4 py-2 bg-gradient-to-br ${index % 2 != 0 ? "from-green-950/25" : "from-blue-950/25"} to-neutral-950 to-80% mb-6`}>
             <AccordionItem value={`item-${index}`}>
                 <AccordionTrigger className="flex flex-row mb-6">
+                {itemName}
+                </AccordionTrigger>
+                <AccordionContent className="flex flex-wrap justify-center md:justify-between items-center">
                 <FormField
                         control={control}
                         name={`supplements.${index}.name`}
                         render={({ field }) => (
                             <FormItem className="flex-row flex items-center w-full">
                                 <FormControl>
-                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <SelectTrigger>{field.value}</SelectTrigger>
+                                    <Select onValueChange={field.onChange} defaultValue={"Select..."}>
+                                        <SelectTrigger className="mb-8">{field.value}</SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="alphaGPC">{`Alpha-GPC`}</SelectItem>
-                                            <SelectItem value="creatine">Creatine</SelectItem>
-                                            <SelectItem value="fadogiaAgrestis">Fadogia Agrestis</SelectItem>
-                                            <SelectItem value="inositol">Inositol</SelectItem>
-                                            <SelectItem value="omega3">{`Omega-3's`}</SelectItem>
-                                            <SelectItem value="rhodiolaRosea">Rhodiola Rosea</SelectItem>
-                                            <SelectItem value="tongkatAli">Tongkat Ali</SelectItem>
-                                            <SelectItem value="tyrosine">Tyrosine</SelectItem>
-                                            <SelectItem value="vitaminD">Vitamin D</SelectItem>
+                                            <SelectItem value="Alpha-GPC">{`Alpha-GPC`}</SelectItem>
+                                            <SelectItem value="Creatine">Creatine</SelectItem>
+                                            <SelectItem value="Fadogia Agrestis">Fadogia Agrestis</SelectItem>
+                                            <SelectItem value="Inositol">Inositol</SelectItem>
+                                            <SelectItem value="Omega-3">{`Omega-3's`}</SelectItem>
+                                            <SelectItem value="Rhodiola Rosea">Rhodiola Rosea</SelectItem>
+                                            <SelectItem value="Tongkat Ali">Tongkat Ali</SelectItem>
+                                            <SelectItem value="Tyrosine">Tyrosine</SelectItem>
+                                            <SelectItem value="Vitamin D">Vitamin D</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </FormControl>
@@ -40,8 +49,6 @@ export default function SupplementItem({ index, onDelete }: { index: number; onD
                             </FormItem>
                         )}
                     />
-                </AccordionTrigger>
-                <AccordionContent className="flex flex-wrap justify-center md:justify-between items-center">
                     <p className="text-center w-full mb-2">{`Dose & Details`}</p>
                     <hr className="w-full mb-4"></hr>
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8 mb-10 w-5/6 md:w-full">
