@@ -10,13 +10,13 @@ import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescript
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui_primitives/dropdown-menu"
 import { ExerciseGroup } from "@/utils/types"
 
-export type StrengthExerciseForm = {
-  exerciseType: string
-  sets: { weight: number; reps: number }[]
-  modifications?: { grip?: "Rotated Neutral" | "Pronated" | "Supinated" | "Normal", movementPlane?: "Inlcined" | "Declined" | "Prone" | "Supine" | "Normal" }
-}
+// export type StrengthExerciseForm = {
+//   exerciseType: string
+//   sets: { weight: number; reps: number }[]
+//   modifications?: { grip?: "Rotated Neutral" | "Pronated" | "Supinated" | "Normal", movementPlane?: "Inlcined" | "Declined" | "Prone" | "Supine" | "Normal" }
+// }
 
-function SetForm({ exerciseIndex, setIndex, onRemove, exercises }: { exerciseIndex: number; setIndex: number; onRemove: () => void, exercises: ExerciseGroup[] }) {
+function SetForm({ exerciseIndex, setIndex, onRemove }: { exerciseIndex: number; setIndex: number; onRemove: () => void, }) {
   const { control } = useFormContext()
   const [isLRSplit, setISLRSplit] = useState<boolean>(false)
 
@@ -98,10 +98,24 @@ function SetForm({ exerciseIndex, setIndex, onRemove, exercises }: { exerciseInd
   )
 }
 
-export default function StrengthExercise({ index, isOpen, onOpenChange, onDelete, exercises }: { index: number; isOpen: boolean; onOpenChange: (open: boolean) => void; onDelete: () => void, exercises: ExerciseGroup[] }) {
+export default function StrengthExercise({ index, isOpen, onOpenChange, onDelete, exercises }:
+  { index: number; isOpen: boolean; onOpenChange: (open: boolean) => void; onDelete: () => void, exercises: ExerciseGroup[] }){
+  
+/**********************FORM LOGIC**************************/
   const { control } = useFormContext()
-  const [triggerText, setTriggerText] = useState<string>(`New Exercise`)
+  const { fields, append, remove } = useFieldArray({control, name: `exercises.${index}.sets`,})
+  function WatchTheseThings(index:number) {
+    const sets = useWatch({ control, name: `exercises.${index}.sets` });
+    const exerciseType = useWatch({ control, name: `exercises.${index}.exerciseType` });
+    const mod_grip = useWatch({ control, name: `exercises.${index}.modifications.grip` });
+    const mod_plane = useWatch({ control, name: `exercises.${index}.modifications.movementPlane` });
+    return { sets, exerciseType, mod_grip, mod_plane };
+  }
+  const { sets, exerciseType, mod_grip, mod_plane } = WatchTheseThings(index);
+/********************************************************* */
 
+/***********************NAME UPDATING**************************/
+  const [exerciseName, setExerciseName] = useState<string>(`New Exercise`)
   const getExerciseName = (value: string) => {
     for (const group of exercises) {
       const exercise = group.items.find(item => item.toLowerCase().replace(/\s+/g, '') === value.toLowerCase())
@@ -109,30 +123,11 @@ export default function StrengthExercise({ index, isOpen, onOpenChange, onDelete
     }
     return value.toString()
   }
-
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: `exercises.${index}.sets`,
-  })
-
-  const sets = useWatch({
-    control,
-    name: `exercises.${index}.sets`,
-  })
-
-  const exerciseType = useWatch({
-    control,
-    name: `exercises.${index}.exerciseType`,
-  })
-  const mod_grip = useWatch({
-    control,
-    name: `exercises.${index}.modifications.grip`,
-  })
-  const mod_plane = useWatch({
-    control,
-    name: `exercises.${index}.modifications.movementPlane`,
-  })
-
+  useEffect(() => {
+    if (exerciseType) { setExerciseName(getExerciseName(exerciseType).toString()) }
+  }, [exerciseType])
+/********************************************************* */
+  
   const addSet = () => {
     const lastSet = sets[sets.length - 1]
     const newSet = lastSet
@@ -140,22 +135,13 @@ export default function StrengthExercise({ index, isOpen, onOpenChange, onDelete
       : {}
     append(newSet)
   }
-  let name:string = "";
-  useEffect(() => {
-    
-    if (exerciseType) {
-      if (name === "") { name = getExerciseName(exerciseType).toString() 
-        setTriggerText(name)
-      }
-    }
-  }, [exerciseType])
 
   return (
     <Accordion type="single" collapsible value={isOpen ? `item-${index}` : ""} onValueChange={(value) => onOpenChange(value === `item-${index}`)}
       className={`border rounded shadow-lg py-2 bg-gradient-to-br ${index % 2 != 0 ? "from-green-950/25" : "from-blue-950/25"} to-neutral-950 to-80% mb-6 justify-center`}>
       <AccordionItem value={`item-${index}`}>
         <AccordionTrigger className="px-3">
-          <div className="justify-start items-baseline flex">{`${triggerText}`} 
+          <div className="justify-start items-baseline flex">{`${exerciseName}`} 
             <span className="px-2">
               {mod_grip != undefined && mod_grip != "Normal" || mod_plane != undefined && mod_plane != "Normal" ? " // " : ""}
             </span>
@@ -258,8 +244,20 @@ export default function StrengthExercise({ index, isOpen, onOpenChange, onDelete
                 )}
               />
             </div>
-
-            <div className="flex-1 py-4">
+            <div id={`${index}_reference`} className="mb-6">
+              <div className="flex gap-2 mb-2">
+                <p className="font-xs text-neutral-200 font-medium">{`Previous: `}</p>
+                <p className="font-xs text-neutral-400 font-light">{`10@180,`}</p>
+                <p className="font-xs text-neutral-400 font-light">{`10@240,`}</p>
+                <p className="font-xs text-neutral-400 font-light">{`8@220`}</p>
+              </div>
+              <div className="flex gap-2 ">
+                <p className="font-xs text-neutral-200 font-medium">{`Personal Record: `}</p>
+                <p className="font-xs text-neutral-400 font-light">{`10@245`}</p>
+              </div>
+            </div>
+            <hr className="mb-2"></hr>
+            <div id={`${index}_setSection`} className="flex-1 py-4">
               <div className="space-y-6 mb-4">
                 {fields.map((field, setIndex) => (
                   <SetForm
@@ -267,7 +265,6 @@ export default function StrengthExercise({ index, isOpen, onOpenChange, onDelete
                     exerciseIndex={index}
                     setIndex={setIndex}
                     onRemove={() => remove(setIndex)}
-                    exercises={exercises}
                   />
                 ))}
               </div>

@@ -1,7 +1,8 @@
 "use server";
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, ScanCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
-
+import { auth } from '@clerk/nextjs/server'
+import { getDataFromTable } from '../actions' 
 
 const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
 const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
@@ -19,7 +20,7 @@ const oldTableName = "ClinicalLabs"
 const newTableName = "Apexion-Labs"
 const docClient = DynamoDBDocumentClient.from(client);
 
-// this was exported when used. not exported now for security
+/*********************************CLINICAL LABS DATA MIGRATION**********************************/
 async function migrateData() {
     const transformItem = (item) => {
         return {
@@ -67,8 +68,20 @@ async function migrateData() {
 
     console.log("Migration completed successfully.");
 }
-// the issue is you can only have one instance of a primary + secondary key. userID + labType has multiple instances becuase
-// the same user can have multiples of the same test done just on different dates... thats kinda the whole point
-// sort key needs to be different. maybe concat type and date? date plus type would let me slice at location 8 to split the string
-// into date and type.
-// i need more coffee
+
+/************************************INIT PR AND LAST SESSION************ */
+export async function initPrAndLastSession() {
+    const {userID} = await auth();
+    const allGymData = await getDataFromTable(userID, 'Apexion-Gym', 20000000, 30000000); 
+    let gymMarkers = []; 
+    allGymData.forEach(workout => {
+        /* gym markers is an array of objects with three keys. the first is the exercise string. the second is mostRecentSession which is the most recent session of that exercise 
+        represented as an array of objects containing weight, reps and an optional repsRight key. the third is recordSet, which is an object that tracks the highest set by volume (weight times reps)
+        and records the relevant data to weight, reps, totalVolume, and date keys. 
+        The rest of this forEach loop should iterate through every workout in allGymData array and use it to populate gymMarkers */   
+        
+        
+    });
+
+
+}

@@ -142,7 +142,7 @@ export interface Estrogen_Form { //This will be updated later
 }
 
 
-// For summary
+/**********************************FOR SUMMARY ON HOMEPAGE ********************************* */
 
 export type SummaryData = [{
   date: string,
@@ -210,8 +210,7 @@ export type SupplementObject = {
 
 
 
-
-
+/*********************************FOR CHARTS AND GRAPHS ************************************ */
 export type UniversalRingChart = {
   title: string;
   shortTitle: string;
@@ -234,12 +233,41 @@ export type GenericIntAreachart = {
 
 
 
-
-
-
-
 /*********************************FOR THE WORKOUT FORM************************************ */
 export type ExerciseGroup = {
   group: string;
   items: string[];
 }
+
+
+/*********************************CLERK USER METADATA************************************* */ 
+ export type ClerkUserMetadata = {   
+  markers: {
+    nutrition?: {
+      fatGoal:number
+      carbGoal:number
+      proteinGoal:number
+      calorieLimit:number
+    },
+    gym?: [{
+      exercise: string,
+      mostRecentSession: [{
+        weight: number,
+        reps: number,
+        repsRight?: number
+      }],
+      recordSet: {
+        weight: number,
+        reps: number,
+        totalVolume: number,
+        date: string
+      }
+    }]
+  },
+  homeLabs: string[],
+  customExercises: {
+    core: string[],
+    lowerBody: string[],
+    upperBody: string[]
+  }
+} | undefined

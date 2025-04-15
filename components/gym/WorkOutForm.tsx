@@ -12,7 +12,7 @@ import { addItemToTable } from "@/actions/AWS"
 import StrengthExercise from "@/components/gym/strength-exercise"
 import CardioExercise from "@/components/gym/CardioExerciseEntry"
 import { Accordion, AccordionContent, AccordionTrigger, AccordionItem } from "../ui_primitives/accordion"
-import type { ExerciseGroup } from "@/utils/types"
+import type { ExerciseGroup, ClerkUserMetadata } from "@/utils/types"
 import { useUser } from "@clerk/nextjs"
 import { quickSort } from "@/lib/utils"
 
@@ -76,6 +76,7 @@ export default function WorkoutForm({ onSuccess }: { onSuccess: () => void }) {
   const [buttonText, setButtonText] = useState<string>("Log Data")
   const [openExercises, setOpenExercises] = useState<number[]>([])
   const { user, isLoaded } = useUser();
+  const [ userMeta, setUserMeta] = useState<ClerkUserMetadata | {}>({}) 
 
   function MergeExercises() {
     // @ts-ignore
@@ -101,6 +102,7 @@ export default function WorkoutForm({ onSuccess }: { onSuccess: () => void }) {
 
   useEffect(() => {
     if (isLoaded) {
+      setUserMeta(user?.publicMetadata)
     MergeExercises()
     }
   }, [isLoaded])
@@ -202,8 +204,8 @@ export default function WorkoutForm({ onSuccess }: { onSuccess: () => void }) {
   return (
     <FormProvider {...methods}>
       <Form {...methods}>
-        <form onSubmit={methods.handleSubmit(onSubmit)} className="w-5/6 2xl:w-1/2 py-36 flex flex-col justify-start">
-          <Accordion type="single" collapsible>
+        <form onSubmit={methods.handleSubmit(onSubmit)} className="w-11/12 2xl:w-1/2 pt-24 pb-36 flex flex-col justify-start">
+          <Accordion type="single" collapsible className="mb-8">
             <AccordionItem value="dateTime">
               <AccordionTrigger><p className="text-center w-full ">{`Date & Time`}</p></AccordionTrigger>
               <AccordionContent>
