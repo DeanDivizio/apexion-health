@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useForm, useFieldArray, FormProvider } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -16,8 +16,7 @@ import type { ExerciseGroup, ClerkUserMetadata } from "@/utils/types"
 import { useUser } from "@clerk/nextjs"
 import { quickSort } from "@/lib/utils"
 
-export const dynamic = 'force-dynamic';
-
+export const dynamic = "force-dynamic"
 
 const FormSchema = z.object({
   month: z.string(),
@@ -34,121 +33,148 @@ const FormSchema = z.object({
     z.object({
       type: z.enum(["strength", "cardio"]),
       exerciseType: z.string(),
-      sets: z.array(z.object({
-        weight: z.number(),
-        reps: z.number()
-      })).optional(),
-      modifications: z.object({
-        grip: z.enum(["Rotated Neutral", "Pronated (upward)", "Supinated (downward)", "Normal"]).optional(),
-        movementPlane: z.enum(["Inlcined", "Declined", "Prone", "Supine", "Normal"]).optional(),
-      }).optional(),
+      sets: z
+        .array(
+          z.object({
+            weight: z.number(),
+            reps: z.number(),
+          }),
+        )
+        .optional(),
+      modifications: z
+        .object({
+          grip: z.enum(["Rotated Neutral", "Pronated", "Supinated", "Normal"]).optional(),
+          movementPlane: z.enum(["Inlcined", "Declined", "Prone", "Supine", "Normal"]).optional(),
+        })
+        .optional(),
       duration: z.number().optional(),
       distance: z.number().optional(),
-      unit: z.enum(["km", "mi"]).optional()
-    })
-  )
+      unit: z.enum(["km", "mi"]).optional(),
+    }),
+  ),
 })
 
 // default list of exercises
 const exercises: ExerciseGroup[] = [
   {
-    group: "Upper Body", items: [
-      "Bench Press", "Bicep Curl", "Chest Press",
-      "Lateral Raise", "Lateral Pulldown", "Pec Fly",
-      "Pull Up", "Push Up", "Rear Delt", 
-      "Seated Row", "Tricep Extension"
-    ]
-  },{
-    group: "Core", items: [
-      "Abdominal Crunch", "Back Extension", 
-    ]},
+    group: "Upper Body",
+    items: [
+      "Bench Press",
+      "Bicep Curl",
+      "Chest Press",
+      "Lateral Raise",
+      "Lateral Pulldown",
+      "Pec Fly",
+      "Pull Up",
+      "Push Up",
+      "Rear Delt",
+      "Seated Row",
+      "Tricep Extension",
+    ],
+  },
   {
-    group: "Lower Body", items: [
-      "Back Squat", "Calf Raise", "Deadlift",
-      "Front Squat", "Hip Thrust", "Kettlebell Swing",
-      "Lateral Lunge", "Leg Curl", "Leg Extension",
-      "Leg Press", "Lunge",
-    ]
-  }
+    group: "Core",
+    items: ["Abdominal Crunch", "Back Extension"],
+  },
+  {
+    group: "Lower Body",
+    items: [
+      "Back Squat",
+      "Calf Raise",
+      "Deadlift",
+      "Front Squat",
+      "Hip Thrust",
+      "Kettlebell Swing",
+      "Lateral Lunge",
+      "Leg Curl",
+      "Leg Extension",
+      "Leg Press",
+      "Lunge",
+    ],
+  },
 ]
 
 export default function WorkoutForm({ onSuccess }: { onSuccess: () => void }) {
   const [buttonText, setButtonText] = useState<string>("Log Data")
   const [openExercises, setOpenExercises] = useState<number[]>([])
-  const { user, isLoaded } = useUser();
-  const [ userMeta, setUserMeta] = useState<ClerkUserMetadata | {}>({}) 
+  const { user, isLoaded } = useUser()
+  const [userMeta, setUserMeta] = useState<ClerkUserMetadata | {}>({})
 
-  function MergeExercises() {
+  const MergeExercises = useCallback(() => {
+    // Helper function to add exercises without duplicates
+    const addUniqueExercises = (targetArray: string[], newExercises: string[]) => {
+      if (!newExercises) return
+
+      newExercises.forEach((exercise) => {
+        if (exercise !== undefined && !targetArray.includes(exercise)) {
+          targetArray.push(exercise)
+        }
+      })
+    }
+
+    // Add unique exercises to each category
     // @ts-ignore
-    user?.publicMetadata?.customExercises.upperBody.forEach(exercise => {
-      exercises[0].items.push(exercise)
-    }); 
+    addUniqueExercises(exercises[0].items, user?.publicMetadata?.customExercises?.upperBody)
     // @ts-ignore
-    user?.publicMetadata?.customExercises.core.forEach(exercise => {
-      if (exercise != undefined ){
-        exercises[1].items.push(exercise)
-      }
-    }); 
+    addUniqueExercises(exercises[1].items, user?.publicMetadata?.customExercises?.core)
     // @ts-ignore
-    user?.publicMetadata?.customExercises.lowerBody.forEach(exercise => {
-      if (exercise != undefined ){
-        exercises[2].items.push(exercise)
-      }
-    }); 
+    addUniqueExercises(exercises[2].items, user?.publicMetadata?.customExercises?.lowerBody)
+
+    // Sort the arrays
     exercises[0].items = quickSort(exercises[0].items)
     exercises[1].items = quickSort(exercises[1].items)
     exercises[2].items = quickSort(exercises[2].items)
-  }
+  }, [user?.publicMetadata])
 
   useEffect(() => {
-    if (isLoaded) {
-      setUserMeta(user?.publicMetadata)
-    MergeExercises()
+    if (isLoaded && user?.publicMetadata) {
+      setUserMeta(user.publicMetadata)
+      MergeExercises()
     }
-  }, [isLoaded])
+  }, [isLoaded, user?.publicMetadata, MergeExercises])
 
   const methods = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
-      month: '',
-      day: '',
-      year: '',
-      startHour: '',
-      startMinute: '',
-      startAmpm: '',
+      month: "",
+      day: "",
+      year: "",
+      startHour: "",
+      startMinute: "",
+      startAmpm: "",
       useCurrentEndTime: true,
-      endHour: '',
-      endMinute: '',
-      endAmpm: '',
-      exercises: []
-    }
+      endHour: "",
+      endMinute: "",
+      endAmpm: "",
+      exercises: [],
+    },
   })
 
   useEffect(() => {
     const now = new Date()
     methods.reset({
-      month: (now.getMonth() + 1).toString().padStart(2, '0'),
-      day: now.getDate().toString().padStart(2, '0'),
+      month: (now.getMonth() + 1).toString().padStart(2, "0"),
+      day: now.getDate().toString().padStart(2, "0"),
       year: now.getFullYear().toString(),
       startHour: (now.getHours() % 12 || 12).toString(),
-      startMinute: now.getMinutes().toString().padStart(2, '0'),
-      startAmpm: now.getHours() >= 12 ? 'PM' : 'AM',
+      startMinute: now.getMinutes().toString().padStart(2, "0"),
+      startAmpm: now.getHours() >= 12 ? "PM" : "AM",
       useCurrentEndTime: true,
       endHour: (now.getHours() % 12 || 12).toString(),
-      endMinute: now.getMinutes().toString().padStart(2, '0'),
-      endAmpm: now.getHours() >= 12 ? 'PM' : 'AM',
-      exercises: []
+      endMinute: now.getMinutes().toString().padStart(2, "0"),
+      endAmpm: now.getHours() >= 12 ? "PM" : "AM",
+      exercises: [],
     })
   }, [methods])
 
   const { fields, append, remove } = useFieldArray({
     control: methods.control,
-    name: "exercises"
+    name: "exercises",
   })
 
   const onDelete = (index: number) => {
     remove(index)
-    setOpenExercises(prev => prev.filter(i => i !== index).map(i => i > index ? i - 1 : i))
+    setOpenExercises((prev) => prev.filter((i) => i !== index).map((i) => (i > index ? i - 1 : i)))
   }
 
   async function onSubmit(data: z.infer<typeof FormSchema>) {
@@ -159,7 +185,7 @@ export default function WorkoutForm({ onSuccess }: { onSuccess: () => void }) {
       let formattedEndTime
       if (data.useCurrentEndTime) {
         const now = new Date()
-        formattedEndTime = `${now.getHours() % 12 || 12}:${now.getMinutes().toString().padStart(2, '0')} ${now.getHours() >= 12 ? 'PM' : 'AM'}`
+        formattedEndTime = `${now.getHours() % 12 || 12}:${now.getMinutes().toString().padStart(2, "0")} ${now.getHours() >= 12 ? "PM" : "AM"}`
       } else {
         formattedEndTime = `${data.endHour}:${data.endMinute} ${data.endAmpm}`
       }
@@ -170,7 +196,21 @@ export default function WorkoutForm({ onSuccess }: { onSuccess: () => void }) {
         endTime: formattedEndTime,
       }
       const cleanedData = Object.fromEntries(
-        Object.entries(formattedData).filter(([key]) => !['day', 'month', 'year', 'startHour', 'startMinute', 'startAmpm', 'endHour', 'endMinute', 'endAmpm', 'useCurrentEndTime'].includes(key))
+        Object.entries(formattedData).filter(
+          ([key]) =>
+            ![
+              "day",
+              "month",
+              "year",
+              "startHour",
+              "startMinute",
+              "startAmpm",
+              "endHour",
+              "endMinute",
+              "endAmpm",
+              "useCurrentEndTime",
+            ].includes(key),
+        ),
       )
       await addItemToTable(cleanedData, "Apexion-Gym")
       setButtonText("Sent!")
@@ -178,7 +218,7 @@ export default function WorkoutForm({ onSuccess }: { onSuccess: () => void }) {
         onSuccess()
       }, 500)
     } catch (error) {
-      console.error('An error occurred:', error)
+      console.error("An error occurred:", error)
       setButtonText("Error occurred")
     }
   }
@@ -190,26 +230,27 @@ export default function WorkoutForm({ onSuccess }: { onSuccess: () => void }) {
     } else {
       append({ type, exerciseType: "", duration: 0, distance: 0, unit: "km" })
     }
-    setOpenExercises(prev => [...prev, newIndex])
+    setOpenExercises((prev) => [...prev, newIndex])
   }
 
   const handleOpenChange = (index: number, open: boolean) => {
-    setOpenExercises(prev => 
-      open 
-        ? [...prev, index]
-        : prev.filter(i => i !== index)
-    )
+    setOpenExercises((prev) => (open ? [...prev, index] : prev.filter((i) => i !== index)))
   }
 
   return (
     <FormProvider {...methods}>
       <Form {...methods}>
-        <form onSubmit={methods.handleSubmit(onSubmit)} className="w-11/12 2xl:w-1/2 pt-24 pb-36 flex flex-col justify-start">
+        <form
+          onSubmit={methods.handleSubmit(onSubmit)}
+          className="w-11/12 2xl:w-1/2 pt-24 pb-36 flex flex-col justify-start"
+        >
           <Accordion type="single" collapsible className="mb-8">
             <AccordionItem value="dateTime">
-              <AccordionTrigger><p className="text-center w-full ">{`Date & Time`}</p></AccordionTrigger>
+              <AccordionTrigger>
+                <p className="text-center w-full ">{`Date & Time`}</p>
+              </AccordionTrigger>
               <AccordionContent>
-              <div className="flex flex-col md:flex-row mt-8 gap-6 items-center justify-center">
+                <div className="flex flex-col md:flex-row mt-8 gap-6 items-center justify-center">
                   <div className="flex gap-2 items-center justify-between">
                     <p>Date:</p>
                     <div className="flex space-x-3">
@@ -226,8 +267,8 @@ export default function WorkoutForm({ onSuccess }: { onSuccess: () => void }) {
                               </FormControl>
                               <SelectContent>
                                 {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
-                                  <SelectItem key={month} value={month.toString().padStart(2, '0')}>
-                                    {month.toString().padStart(2, '0')}
+                                  <SelectItem key={month} value={month.toString().padStart(2, "0")}>
+                                    {month.toString().padStart(2, "0")}
                                   </SelectItem>
                                 ))}
                               </SelectContent>
@@ -248,8 +289,8 @@ export default function WorkoutForm({ onSuccess }: { onSuccess: () => void }) {
                               </FormControl>
                               <SelectContent>
                                 {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
-                                  <SelectItem key={day} value={day.toString().padStart(2, '0')}>
-                                    {day.toString().padStart(2, '0')}
+                                  <SelectItem key={day} value={day.toString().padStart(2, "0")}>
+                                    {day.toString().padStart(2, "0")}
                                   </SelectItem>
                                 ))}
                               </SelectContent>
@@ -319,8 +360,8 @@ export default function WorkoutForm({ onSuccess }: { onSuccess: () => void }) {
                               </FormControl>
                               <SelectContent>
                                 {Array.from({ length: 60 }, (_, i) => i).map((minute) => (
-                                  <SelectItem key={minute} value={minute.toString().padStart(2, '0')}>
-                                    {minute.toString().padStart(2, '0')}
+                                  <SelectItem key={minute} value={minute.toString().padStart(2, "0")}>
+                                    {minute.toString().padStart(2, "0")}
                                   </SelectItem>
                                 ))}
                               </SelectContent>
@@ -357,15 +398,10 @@ export default function WorkoutForm({ onSuccess }: { onSuccess: () => void }) {
                         render={({ field }) => (
                           <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                             <FormControl>
-                              <Checkbox
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
+                              <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                             </FormControl>
                             <div className="space-y-1 leading-none">
-                              <FormLabel>
-                                Use the current time when the form is submitted as end time
-                              </FormLabel>
+                              <FormLabel>Use the current time when the form is submitted as end time</FormLabel>
                             </div>
                           </FormItem>
                         )}
@@ -410,8 +446,8 @@ export default function WorkoutForm({ onSuccess }: { onSuccess: () => void }) {
                                   </FormControl>
                                   <SelectContent>
                                     {Array.from({ length: 60 }, (_, i) => i).map((minute) => (
-                                      <SelectItem key={minute} value={minute.toString().padStart(2, '0')}>
-                                        {minute.toString().padStart(2, '0')}
+                                      <SelectItem key={minute} value={minute.toString().padStart(2, "0")}>
+                                        {minute.toString().padStart(2, "0")}
                                       </SelectItem>
                                     ))}
                                   </SelectContent>
@@ -446,7 +482,7 @@ export default function WorkoutForm({ onSuccess }: { onSuccess: () => void }) {
               </AccordionContent>
             </AccordionItem>
           </Accordion>
-          {fields.map((field, index) => (
+          {fields.map((field, index) =>
             field.type === "strength" ? (
               <StrengthExercise
                 key={field.id}
@@ -464,14 +500,22 @@ export default function WorkoutForm({ onSuccess }: { onSuccess: () => void }) {
                 onOpenChange={(open) => handleOpenChange(index, open)}
                 onDelete={() => onDelete(index)}
               />
-            )
-          ))}
-          <Button variant='outline' type="button" onClick={() => addExercise("strength")} className="mt-4 mb-4">Add Strength Exercise</Button>
-          <Button variant='outline' type="button" onClick={() => addExercise("cardio")} style={{marginBottom: "2rem"}}>Add Cardio</Button>
+            ),
+          )}
+          <Button variant="outline" type="button" onClick={() => addExercise("strength")} className="mt-4 mb-4">
+            Add Strength Exercise
+          </Button>
+          <Button
+            variant="outline"
+            type="button"
+            onClick={() => addExercise("cardio")}
+            style={{ marginBottom: "2rem" }}
+          >
+            Add Cardio
+          </Button>
           <Button type="submit">{buttonText}</Button>
         </form>
       </Form>
     </FormProvider>
   )
 }
-

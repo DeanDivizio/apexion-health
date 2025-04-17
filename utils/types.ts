@@ -251,17 +251,18 @@ export type ExerciseGroup = {
     },
     gym?: [{
       exercise: string,
-      mostRecentSession: [{
+      mostRecentSession?: [{
         weight: number,
         reps: number,
         repsRight?: number
       }],
-      recordSet: {
+      recordSet?: {
         weight: number,
         reps: number,
         totalVolume: number,
         date: string
-      }
+      },
+      notes?:string,
     }]
   },
   homeLabs: string[],
