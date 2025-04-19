@@ -16,28 +16,22 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui_primitives/alert-dialog"
+import { capitalize } from "@/lib/utils"
 
-const cardioExercises = [
-  "Running",
-  "Cycling",
-  "Swimming",
-  "Rowing",
-  "Elliptical",
-  "Stair Climber",
-  "Jump Rope",
-  "Walking",
-  "Hiking",
-]
 
-export default function CardioExercise({ index, isOpen, onOpenChange, onDelete }: { index: number; isOpen: boolean; onOpenChange: (open: boolean) => void; onDelete: () => void }) {
+
+export default function CardioExercise({ index, isOpen, onOpenChange, onDelete, exercises, gymMeta }: { index: number; isOpen: boolean; onOpenChange: (open: boolean) => void; onDelete: () => void, exercises: any, gymMeta: any }) {
   const { control, watch } = useFormContext()
+  const cardioExercises = [
+    ...exercises[3].items,
+  ]
 
   const exerciseType = watch(`exercises.${index}.exerciseType`)
 
   return (
     <Accordion type="single" collapsible value={isOpen ? `item-${index}` : ""} onValueChange={(value) => onOpenChange(value === `item-${index}`)}>
       <AccordionItem value={`item-${index}`}>
-        <AccordionTrigger>{exerciseType || "New Cardio Exercise"}</AccordionTrigger>
+        <AccordionTrigger>{capitalize(exerciseType) || "New Cardio Exercise"}</AccordionTrigger>
         <AccordionContent>
           <div className="flex bg-neutral-900 flex-col md:flex-row border p-4 rounded-md">
             <div className="flex items-center mb-4">
@@ -56,7 +50,7 @@ export default function CardioExercise({ index, isOpen, onOpenChange, onDelete }
                       <SelectContent>
                         {cardioExercises.map((exercise) => (
                           <SelectItem key={exercise} value={exercise}>
-                            {exercise}
+                            {capitalize(exercise)}
                           </SelectItem>
                         ))}
                       </SelectContent>

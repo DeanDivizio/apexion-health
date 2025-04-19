@@ -23,3 +23,29 @@ export function quickSort(arr: string[]): string[] {
   }
   return [...quickSort(leftArr), pivotValue, ...quickSort(rightArr)];
 }
+
+export function capitalize(str: string) {
+  return str.replace(/\B([A-Z])/g, " $1").replace(/^./, function(str){ return str.toUpperCase(); })
+}
+
+export function spellOutDate(dateStr: string): string {
+  const year = dateStr.substring(0, 4);
+  const month = dateStr.substring(4, 6);
+  const day = dateStr.substring(6, 8);
+  const date = new Date(`${year}-${month}-${day}`);
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const monthName = monthNames[date.getMonth()];
+  return `${monthName}. ${parseInt(day)}, ${year}`;
+}
+
+export function toCamelCase(str: string): string {
+  return str
+    .toLowerCase()
+    .split(' ')
+    .map((word, index) => 
+      index === 0 
+        ? word
+        : word.charAt(0).toUpperCase() + word.slice(1)
+    )
+    .join('');
+}

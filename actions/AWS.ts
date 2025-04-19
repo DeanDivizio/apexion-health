@@ -1,6 +1,7 @@
 "use server";
+import { toCamelCase } from '@/lib/utils';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, QueryCommand, QueryCommandInput, QueryCommandOutput, ScanCommand, ScanCommandInput, ScanCommandOutput, UpdateCommand, UpdateCommandInput } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, QueryCommand, QueryCommandInput, QueryCommandOutput, ScanCommand, ScanCommandInput, ScanCommandOutput, UpdateCommand, UpdateCommandInput, GetCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
 import { auth } from "@clerk/nextjs/server"
 
 // from here to line 20 is just AWS SDK setup
@@ -17,7 +18,11 @@ const client = new DynamoDBClient({
   },
   region,
 });
-const docClient = DynamoDBDocumentClient.from(client);
+const docClient = DynamoDBDocumentClient.from(client, {
+  marshallOptions: {
+    removeUndefinedValues: true
+  }
+});
 
 
 export async function addItemToTable(formData: { [key: string]: any }, table: string) {
@@ -25,8 +30,8 @@ export async function addItemToTable(formData: { [key: string]: any }, table: st
   if (!userId) {
     throw new Error("User is not signed in.");
   }
-  
-    
+
+
   const tableName = table;
   const date = formData.date || new Date().toISOString().split('T')[0].replace(/-/g, '');
 
@@ -64,29 +69,147 @@ export async function addItemToTable(formData: { [key: string]: any }, table: st
   }
 }
 
-export async function getDataFromTable(userID: string, table: string, startDate: string, endDate: string) {
-    if (userID) {
-      const params: QueryCommandInput = {
-        TableName: table,
-        KeyConditionExpression: `userID = :user AND #dateAttr BETWEEN :startDate AND :endDate`,
-        ExpressionAttributeNames: {
-          "#dateAttr": "date"  // date is a reserved word
-        },
-        ExpressionAttributeValues: {
-          ':user': userID,
-          ':startDate': startDate,
-          ':endDate': endDate
-        }
-      };
-  
-      try {
-        const command = new QueryCommand(params);
-        const data: QueryCommandOutput = await docClient.send(command);
-        return data.Items || [];
-      } catch (error) {
-        console.error('Error fetching items:', error);
-        throw error; // rethrow the error
-      }
-    }
-    return []; // Return empty array if no userID
+export async function genericAddItemToTable(data: any, table: string) {
+  const { userId } = await auth();
+  if (!userId) {
+    throw new Error("User is not signed in.");
   }
+
+  const tableName = table;
+
+  let userID;
+  if (userId == "user_2lX5gd5X7kYVpy9BARLCIBUyqXJ") {
+    userID = "user_2mUbX7CVcH8FKa5kvUMsnkjjGbs";
+  } else {
+    userID = userId;
+  }
+
+  try {
+    const params: UpdateCommandInput = {
+      TableName: tableName,
+      Key: {
+        userID: userID
+      },
+      UpdateExpression: "SET #data = :newData",
+      ExpressionAttributeNames: {
+        "#data": "data"
+      },
+      ExpressionAttributeValues: {
+        ":newData": data
+      },
+      ReturnValues: "ALL_NEW"
+    };
+
+    const result = await docClient.send(new UpdateCommand(params));
+    console.log("Operation successful:", result);
+    return result;
+  } catch (err) {
+    console.error(`Error in DynamoDB operation:`, err);
+    throw err;
+  }
+}
+
+export async function getDataFromTable(userID: string, table: string, startDate: string, endDate: string) {
+  if (userID) {
+    const params: QueryCommandInput = {
+      TableName: table,
+      KeyConditionExpression: `userID = :user AND #dateAttr BETWEEN :startDate AND :endDate`,
+      ExpressionAttributeNames: {
+        "#dateAttr": "date"  // date is a reserved word
+      },
+      ExpressionAttributeValues: {
+        ':user': userID,
+        ':startDate': startDate,
+        ':endDate': endDate
+      }
+    };
+
+    try {
+      const command = new QueryCommand(params);
+      const data: QueryCommandOutput = await docClient.send(command);
+      return data.Items || [];
+    } catch (error) {
+      console.error('Error fetching items:', error);
+    }
+  }
+  return [];
+}
+
+export async function getAllDataFromTableByUser(userID: string, table: string) {
+  if (userID) {
+    const params: QueryCommandInput = {
+      TableName: table,
+      KeyConditionExpression: `userID = :user AND #dateAttr BETWEEN :startDate AND :endDate`,
+      ExpressionAttributeNames: {
+        "#dateAttr": "date"  // date is a reserved word
+      },
+      ExpressionAttributeValues: {
+        ':user': userID,
+        ':startDate': 20000000,
+        ':endDate': 30000000
+      }
+    };
+
+    try {
+      const command = new QueryCommand(params);
+      const data: QueryCommandOutput = await docClient.send(command);
+      return data.Items || [];
+    } catch (error) {
+      console.error('Error fetching items:', error);
+    }
+  }
+  return [];
+}
+
+export async function getGymMeta_CACHED(userID: string) {
+  const params: QueryCommandInput = {
+    TableName: 'Apexion-Gym_UserMeta',
+    KeyConditionExpression: `userID = :user`,
+    ExpressionAttributeValues: {
+      ':user': userID,
+    }
+  };
+
+  try {
+    const command = new QueryCommand(params);
+    const data: QueryCommandOutput = await docClient.send(command);
+    return data.Items || [];
+  } catch (error) {
+    console.error('Error fetching items:', error);
+    return [];
+  }
+}
+
+export async function updateGymMeta(gymMeta: any) {
+  const { userId } = await auth();
+  if (!userId) {
+    throw new Error("User is not signed in.");
+  }
+  const tableName = "Apexion-Gym_UserMeta";
+  let userID;
+  if (userId == "user_2lX5gd5X7kYVpy9BARLCIBUyqXJ") {
+    userID = "user_2mUbX7CVcH8FKa5kvUMsnkjjGbs";
+  } else {
+    userID = userId;
+  }
+  try {
+    const params: UpdateCommandInput = {
+      TableName: tableName,
+      Key: {
+        userID: userID
+      },
+      UpdateExpression: "SET customExercises = :customExercises, exerciseData = :exerciseData",
+      ExpressionAttributeValues: {
+        ":customExercises": gymMeta.customExercises,
+        ":exerciseData": gymMeta.exerciseData
+      },
+      ReturnValues: "ALL_NEW"
+    };
+    const result = await docClient.send(new UpdateCommand(params));
+    console.log("Operation successful:", result);
+    return result;
+  } catch (err) {
+    console.error(`Error in DynamoDB operation:`, err);
+    throw err;
+  }
+}

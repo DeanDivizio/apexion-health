@@ -1,7 +1,8 @@
 "use server";
-import { getDataFromTable } from "@/actions/AWS";
-import { MacrosObject, SummaryData } from "@/utils/types";
+import { addItemToTable, genericAddItemToTable, getDataFromTable, getGymMeta_CACHED, updateGymMeta } from "@/actions/AWS";
+import { ExerciseGroup } from "@/utils/types";
 import { auth } from '@clerk/nextjs/server';
+import { unstable_cacheTag as cacheTag, revalidateTag } from 'next/cache'
 
 // Runs through needed functions to populate data on homepage.
 export async function homeFetch({startDate, endDate}:{startDate:string, endDate:string}) {
@@ -122,5 +123,88 @@ export async function homeFetch({startDate, endDate}:{startDate:string, endDate:
     throw new Error(errorMessage, { cause: 'Missing user ID' });
   }
 
+}
+
+export async function fetchGymMeta(userID: any){
+  "use cache"
+  cacheTag('gymMeta')
+  const gymMetaResponse = await getGymMeta_CACHED(userID);
+  return gymMetaResponse[0];
+};
+
+export async function addCustomExercise(exercises: ExerciseGroup[], gymMeta: any) {
+
+  const updatedGymMeta = {
+    ...gymMeta,
+    customExercises: exercises
+  }
+
+  const response = await updateGymMeta(updatedGymMeta);
+  if (response.$metadata.httpStatusCode === 200) {
+    revalidateTag('gymMeta')
+  }
+  return response;
+}
+
+function mutateGymMetaPostWorkout(workout: any, gymMeta: any) {
+  workout.exercises.forEach((exercise: any) => {
+    const exerciseType = exercise.exerciseType;
+
+    if (!gymMeta.exerciseData[exerciseType]) {
+      gymMeta.exerciseData[exerciseType] = {
+        exercise: exerciseType,
+        mostRecentSession: null,
+        recordSet: null,
+        notes: null
+      };
+    }
+
+    gymMeta.exerciseData[exerciseType].mostRecentSession = {
+      date: workout.date,
+      sets: exercise.sets
+    };
+
+    exercise.sets.forEach((set: any) => {
+      let setVolume;
+      if (set.repsRight) {
+        setVolume = set.weight * (set.reps + set.repsRight) / 2
+      } else {
+        setVolume = set.weight * set.reps
+      }
+      
+      if (!gymMeta.exerciseData[exerciseType].recordSet || 
+          setVolume > gymMeta.exerciseData[exerciseType].recordSet.totalVolume) {
+            const recordSet:any = {
+            date: workout.date,
+            weight: set.weight,
+            reps: set.reps,
+            totalVolume: setVolume
+          };
+        if (set.repsRight) {
+          recordSet.repsRight = set.repsRight;
+        }
+        gymMeta.exerciseData[exerciseType].recordSet = recordSet;
+      }
+    });
+  });
+  return gymMeta;
+}
+
+export async function logWorkout(workout: any, gymMeta: any) {
+  gymMeta = mutateGymMetaPostWorkout(workout, gymMeta);
+  try {
+    const [gymMetaResponse, workoutResponse] = await Promise.all([
+      updateGymMeta(gymMeta),
+      addItemToTable(workout, "Apexion-Gym")
+    ]);
+    if (gymMetaResponse.$metadata.httpStatusCode === 200) {
+      revalidateTag('gymMeta')
+    }
+    console.log(workoutResponse, gymMetaResponse)
+    return workoutResponse;
+  } catch (error) {
+    console.error(error)
+    throw new Error('Error logging workout')
+  }
 }
 

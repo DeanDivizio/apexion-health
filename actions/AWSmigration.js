@@ -2,8 +2,9 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, ScanCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
 import { auth } from '@clerk/nextjs/server'
-import { getDataFromTable } from '../actions' 
-
+import { getDataFromTable } from '@/actions/AWS'
+import { setPublicMetadata } from '@/actions/Clerk'
+import { genericAddItemToTable } from '@/actions/AWS'
 const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
 const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
 const region = process.env.AWS_REGION;
@@ -70,18 +71,122 @@ async function migrateData() {
 }
 
 /************************************INIT PR AND LAST SESSION************ */
-export async function initPrAndLastSession() {
-    const {userID} = await auth();
-    const allGymData = await getDataFromTable(userID, 'Apexion-Gym', 20000000, 30000000); 
-    let gymMarkers = []; 
+async function initPrAndLastSession() {
+    const { userId } = await auth();
+    let userID;
+    if (userId) {
+        if (userId == "user_2lX5gd5X7kYVpy9BARLCIBUyqXJ") {
+            userID = "user_2mUbX7CVcH8FKa5kvUMsnkjjGbs";
+        } else {
+            userID = userId;
+        }
+    }
+    
+    const allGymData = await getDataFromTable(userID, 'Apexion-Gym', '20000101', '30001231');
+    console.log('Retrieved gym data:', allGymData);
+    
+    if (!allGymData || allGymData.length === 0) {
+        console.log('No gym data found');
+        return {};
+    }
+
+    const gymMarkers = new Map();
+
     allGymData.forEach(workout => {
-        /* gym markers is an array of objects with three keys. the first is the exercise string. the second is mostRecentSession which is the most recent session of that exercise 
-        represented as an array of objects containing weight, reps and an optional repsRight key. the third is recordSet, which is an object that tracks the highest set by volume (weight times reps)
-        and records the relevant data to weight, reps, totalVolume, and date keys. 
-        The rest of this forEach loop should iterate through every workout in allGymData array and use it to populate gymMarkers */   
+        console.log('Processing workout:', workout);
+        const dateRef = workout.date;
         
+        // Access exercises from the nested data array
+        const workoutData = workout.data?.[0];
+        if (!workoutData?.exercises) {
+            console.log('No exercises in workout:', workout);
+            return;
+        }
         
+        workoutData.exercises.forEach(exercise => {
+            console.log('Processing exercise:', exercise);
+            if (!exercise.exerciseType || !exercise.sets?.length) {
+                console.log('Invalid exercise data:', exercise);
+                return;
+            }
+
+            const existingMarker = gymMarkers.get(exercise.exerciseType);
+            
+            // Calculate volume for a set
+            const calculateVolume = (set) => {
+                const reps = set.reps || 0;
+                const repRight = set.repRight || 0;
+                return set.weight * (reps + repRight);
+            };
+
+            if (existingMarker) {
+                // Update most recent session if this is newer (comparing string dates)
+                if (!existingMarker.mostRecentSession || existingMarker.mostRecentSession.date < dateRef) {
+                    existingMarker.mostRecentSession = {
+                        date: dateRef,
+                        sets: exercise.sets,
+                    };
+                }
+
+                // Check for new record set
+                exercise.sets.forEach(set => {
+                    const volume = calculateVolume(set);
+                    if (!existingMarker.recordSet || volume > existingMarker.recordSet.totalVolume) {
+                        existingMarker.recordSet = {
+                            date: dateRef,
+                            weight: set.weight,
+                            reps: set.reps,
+                            repRight: set.repRight,
+                            totalVolume: volume,
+                        };
+                    }
+                });
+            } else {
+                // Initialize new exercise marker
+                const firstSet = exercise.sets[0];
+                const initialVolume = calculateVolume(firstSet);
+                
+                const newMarker = {
+                    exercise: exercise.exerciseType,
+                    mostRecentSession: {
+                        date: dateRef,
+                        sets: exercise.sets,
+                    },
+                    recordSet: {
+                        date: dateRef,
+                        weight: firstSet.weight,
+                        reps: firstSet.reps,
+                        repRight: firstSet.repRight,
+                        totalVolume: initialVolume,
+                    },
+                    notes: "",
+                };
+
+                // Check remaining sets for potential record
+                exercise.sets.slice(1).forEach(set => {
+                    const volume = calculateVolume(set);
+                    if (volume > newMarker.recordSet.totalVolume) {
+                        newMarker.recordSet = {
+                            date: dateRef,
+                            weight: set.weight,
+                            reps: set.reps,
+                            repRight: set.repRight,
+                            totalVolume: volume,
+                        };
+                    }
+                });
+
+                gymMarkers.set(exercise.exerciseType, newMarker);
+            }
+        });
     });
 
-
+    const gymMarkersObject = Object.fromEntries(gymMarkers);
+    console.log('Attempting to set metadata for user:', userID);
+    try {
+        await genericAddItemToTable(gymMarkersObject, 'Apexion-Gym_UserMeta');
+        return "metadata set";
+    } catch (error) {
+        return ("error setting metadata", error);
+    }
 }

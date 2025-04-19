@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState } from "react"
 import { useFormContext, useFieldArray, useWatch } from "react-hook-form"
-import { useUser } from "@clerk/nextjs"
 import { Button } from "@/components/ui_primitives/button"
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui_primitives/form"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from "@/components/ui_primitives/select"
@@ -11,28 +10,26 @@ import { EllipsisVertical, Settings } from "lucide-react"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui_primitives/accordion"
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui_primitives/alert-dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui_primitives/dropdown-menu"
-import type { ExerciseGroup, ClerkUserMetadata } from "@/utils/types"
+import type { ExerciseGroup } from "@/utils/types"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui_primitives/dialog"
 import { Plus } from "lucide-react"
 import { Textarea } from "../ui_primitives/textarea"
+import { capitalize, quickSort, spellOutDate, toCamelCase } from "@/lib/utils"
+import { addCustomExercise } from "@/actions/InternalLogic"
+import { useToast } from "@/hooks/use-toast"
 
-type CustomExercise = {
-  name: string
-  value: string
-  category: string
-}
 
 function SetForm({ exerciseIndex, setIndex, onRemove }: { exerciseIndex: number; setIndex: number; onRemove: () => void }) {
   const { control } = useFormContext()
   const [isLRSplit, setISLRSplit] = useState<boolean>(false)
 
   return (
-    <div className={`grid grid-cols-10 gap-2 items-end`}>
+    <div className={`grid grid-cols-11 gap-2 items-end`}>
       <FormField
         control={control}
         name={`exercises.${exerciseIndex}.sets.${setIndex}.weight`}
         render={({ field }) => (
-          <FormItem className={` ${isLRSplit ? "col-span-3" : "col-span-4"}`}>
+          <FormItem className={` ${isLRSplit ? "col-span-4" : "col-span-5"}`}>
             <FormLabel className="font-base">Weight</FormLabel>
             <FormControl>
               <Input t9 {...field} onChange={(e) => field.onChange(Number.parseFloat(e.target.value))} />
@@ -45,8 +42,8 @@ function SetForm({ exerciseIndex, setIndex, onRemove }: { exerciseIndex: number;
         control={control}
         name={`exercises.${exerciseIndex}.sets.${setIndex}.reps`}
         render={({ field }) => (
-          <FormItem className={isLRSplit ? "col-span-3" : "col-span-4"}>
-            <FormLabel className="font-extralight">{isLRSplit ? "Reps: Left" : "Reps"}</FormLabel>
+          <FormItem className={isLRSplit ? "col-span-3" : "col-span-5"}>
+            <FormLabel className="font-extralight">{isLRSplit ? "Left" : "Reps"}</FormLabel>
             <FormControl>
               <Input t9 {...field} onChange={(e) => field.onChange(Number.parseFloat(e.target.value))} />
             </FormControl>
@@ -59,8 +56,8 @@ function SetForm({ exerciseIndex, setIndex, onRemove }: { exerciseIndex: number;
           control={control}
           name={`exercises.${exerciseIndex}.sets.${setIndex}.repsRight`}
           render={({ field }) => (
-            <FormItem className={isLRSplit ? "col-span-3" : "col-span-4"}>
-              <FormLabel className="font-extralight">{`Reps: Right`}</FormLabel>
+            <FormItem className={isLRSplit ? "col-span-3" : "col-span-5"}>
+              <FormLabel className="font-extralight">{`Right`}</FormLabel>
               <FormControl>
                 <Input t9 {...field} onChange={(e) => field.onChange(Number.parseFloat(e.target.value))} />
               </FormControl>
@@ -69,7 +66,7 @@ function SetForm({ exerciseIndex, setIndex, onRemove }: { exerciseIndex: number;
           )}
         />
       )}
-      <div className={`w-full ${isLRSplit ? "col-span-1" : "col-span-2"} flex justify-end`}>
+      <div className={`w-full col-span-1 flex justify-end`}>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button size="icon" variant="ghost" className="flex justify-end">
@@ -118,10 +115,10 @@ function ExerciseSettingDialog({control, index}:{control: any, index: number }) 
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="Rotated Neutral">{`Rotated Neutral`}</SelectItem>
-                  <SelectItem value="Pronated">{`Pronated (upward)`}</SelectItem>
-                  <SelectItem value="Supinated">{`Supinated (downward)`}</SelectItem>
-                  <SelectItem value="Normal">Normal</SelectItem>
+                  <SelectItem value="rotatedNeutral">{`Rotated Neutral`}</SelectItem>
+                  <SelectItem value="pronated">{`Pronated (upward)`}</SelectItem>
+                  <SelectItem value="supinated">{`Supinated (downward)`}</SelectItem>
+                  <SelectItem value="normal">Normal</SelectItem>
                 </SelectContent>
               </Select>
             </FormItem>
@@ -140,11 +137,11 @@ function ExerciseSettingDialog({control, index}:{control: any, index: number }) 
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="Inclined">{`Inclined`}</SelectItem>
-                  <SelectItem value="Declined">{`Declined`}</SelectItem>
-                  <SelectItem value="Supine">{`Supine`}</SelectItem>
-                  <SelectItem value="Prone">{`Prone`}</SelectItem>
-                  <SelectItem value="Normal">{`Normal`}</SelectItem>
+                  <SelectItem value="inclined">{`Inclined`}</SelectItem>
+                  <SelectItem value="declined">{`Declined`}</SelectItem>
+                  <SelectItem value="supine">{`Supine`}</SelectItem>
+                  <SelectItem value="prone">{`Prone`}</SelectItem>
+                  <SelectItem value="normal">{`Normal`}</SelectItem>
                 </SelectContent>
               </Select>
             </FormItem>
@@ -175,13 +172,16 @@ export default function StrengthExercise({
   onOpenChange,
   onDelete,
   exercises,
+  gymMeta,
 }: {
   index: number
   isOpen: boolean
   onOpenChange: (open: boolean) => void
   onDelete: () => void
   exercises: ExerciseGroup[]
+  gymMeta: any
 }) {
+
   /**********************FORM LOGIC**************************/
   const { control, setValue } = useFormContext()
   const { fields, append, remove } = useFieldArray({ control, name: `exercises.${index}.sets` })
@@ -193,143 +193,58 @@ export default function StrengthExercise({
     return { sets, exerciseType, mod_grip, mod_plane }
   }
   const { sets, exerciseType, mod_grip, mod_plane } = WatchTheseThings(index)
-
   const [customExercise, setCustomExercise] = useState<string>("")
   const [selectedCategory, setSelectedCategory] = useState<string>("")
   const [dialogOpen, setDialogOpen] = useState<boolean>(false)
-  const [customExercises, setCustomExercises] = useState<CustomExercise[]>([])
-
-  // Previous exercise data from Clerk metadata
-  const [previousData, setPreviousData] = useState<{
-    previousSets: string | null
-    personalRecord: string | null
-    notes: string | null
-  }>({
-    previousSets: null,
-    personalRecord: null,
-    notes: null,
-  })
-
-  // Get user from Clerk
-  const { user } = useUser()
-
-  // Force select to update when exerciseType changes
+  const [exerciseList, setExerciseList] = useState<ExerciseGroup[]>(exercises)
   const [selectKey, setSelectKey] = useState<number>(0)
+  const categories = exercises
+    .filter(group => group.group !== "cardio")
+    .map(group => group.group);
+  const { toast } = useToast()
 
-  // Get available categories from exercises prop
-  const categories = exercises.map((group) => group.group)
-
-  const handleAddCustomExercise = useCallback(() => {
+  const handleAddCustomExercise = useCallback(async () => {
     if (customExercise.trim() && selectedCategory) {
-      const formattedName = customExercise.charAt(0).toLowerCase() + customExercise.slice(1).replace(/\s+/g, "")
-
-      // Add to custom exercises list
-      const newCustomExercise: CustomExercise = {
-        name: customExercise.trim(),
-        value: formattedName,
-        category: selectedCategory,
-      }
-
-      setCustomExercises((prev) => [...prev, newCustomExercise])
-
-      // Update the form value
+      const formattedName = toCamelCase(customExercise)
+      const categoryIndex = exercises.findIndex((category: any) => category.group === selectedCategory);
+      exercises[categoryIndex].items.push(formattedName);
+      setExerciseList(exercises)
       setValue(`exercises.${index}.exerciseType`, formattedName)
-
-      // Force select to update
       setSelectKey((prev) => prev + 1)
-
-      // Reset dialog state
       setCustomExercise("")
       setSelectedCategory("")
       setDialogOpen(false)
+      try {
+        const response = await addCustomExercise(exercises, gymMeta);
+        if (response.$metadata.httpStatusCode === 200) {
+          toast({
+            title: "Success",
+            description: `${customExercise} has been added to your Personal Database`,
+          })
+        } else {
+          toast({
+            title: "Error",
+            description: "There was an AWS error. Please delete the exercise and try again.",
+          })
+        }
+      } catch (error) {
+        console.error("Error adding custom exercise:", error);
+        toast({
+          title: "Error",
+          description: "There was an error adding your custom exercise. Please delete the exercise and try again.",
+        })
+      }
     }
   }, [customExercise, selectedCategory, setValue, index])
   /********************************************************* */
 
   /***********************NAME UPDATING**************************/
   const [exerciseName, setExerciseName] = useState<string>(`New Exercise`)
-  const getExerciseName = (value: string) => {
-    // Check predefined exercises
-    for (const group of exercises) {
-      const exercise = group.items.find((item) => item.toLowerCase().replace(/\s+/g, "") === value.toLowerCase())
-      if (exercise) return exercise.toString()
-    }
-
-    const customExercise = customExercises.find((ex) => ex.value === value)
-    if (customExercise) return customExercise.name
-
-    return value.toString()
-  }
-
   useEffect(() => {
     if (exerciseType) {
-      const name = getExerciseName(exerciseType).toString()
-      setExerciseName(name)
-
-      // Look for the exercise in Clerk metadata when exercise changes
-      if (user?.publicMetadata) {
-        const metadata = user.publicMetadata as ClerkUserMetadata
-
-        if (metadata?.markers?.gym) {
-          // Find the exercise in the gym markers
-          const exerciseData = metadata.markers.gym.find(
-            (marker) => marker.exercise.toLowerCase() === name.toLowerCase(),
-          )
-
-          if (exerciseData) {
-            // Format previous sets from mostRecentSession
-            let previousSetsString = null
-            if (exerciseData.mostRecentSession && exerciseData.mostRecentSession.length > 0) {
-              previousSetsString = exerciseData.mostRecentSession
-                .map((session) => {
-                  if (session.repsRight) {
-                    return `${session.reps}/${session.repsRight}@${session.weight}`
-                  }
-                  return `${session.reps}@${session.weight}`
-                })
-                .join(", ")
-            }
-
-            // Format personal record from recordSet
-            let personalRecordString = null
-            if (exerciseData.recordSet) {
-              personalRecordString = `${exerciseData.recordSet.reps}@${exerciseData.recordSet.weight}`
-            }
-
-            // Update state with the found data
-            setPreviousData({
-              previousSets: previousSetsString,
-              personalRecord: personalRecordString,
-              notes: exerciseData.notes || null,
-            })
-
-            // If we have data and no sets yet, pre-populate with the most recent session data
-            if (exerciseData.mostRecentSession && (!sets || sets.length === 0)) {
-              exerciseData.mostRecentSession.forEach((session) => {
-                append({
-                  weight: session.weight,
-                  reps: session.reps,
-                  ...(session.repsRight ? { repsRight: session.repsRight } : {}),
-                })
-              })
-            }
-
-            // If there are notes, set them in the form
-            if (exerciseData.notes) {
-              setValue(`exercises.${index}.modifications.notes`, exerciseData.notes)
-            }
-          } else {
-            // Reset previous data if no entries found
-            setPreviousData({
-              previousSets: null,
-              personalRecord: null,
-              notes: null,
-            })
-          }
-        }
-      }
+      setExerciseName(capitalize(exerciseType))
     }
-  }, [exerciseType, exercises, customExercises, user, append, sets, setValue, index])
+  }, [exerciseType])
   /********************************************************* */
 
   const addSet = () => {
@@ -351,14 +266,14 @@ export default function StrengthExercise({
           <div className="justify-start items-baseline flex">
             {`${exerciseName}`}
             <span className="px-2">
-              {(mod_grip != undefined && mod_grip != "Normal") || (mod_plane != undefined && mod_plane != "Normal")
+              {(mod_grip != undefined && mod_grip != "normal") || (mod_plane != undefined && mod_plane != "normal")
                 ? " // "
                 : ""}
             </span>
             <span className="text-xs font-extralight italic flex flex-wrap">
-              {`${mod_grip != "Normal" && mod_grip != undefined ? mod_grip : ""}`}
-              {mod_grip && mod_grip != "Normal" && mod_plane && mod_plane != "Normal" && <p className="mr-1">,</p>}
-              {`${mod_plane != "Normal" && mod_plane != undefined ? mod_plane : ""}`}
+              {`${mod_grip != "normal" && mod_grip != undefined ? capitalize(mod_grip) : ""}`}
+              {mod_grip && mod_grip != "normal" && mod_plane && mod_plane != "normal" && <p className="mr-1">,</p>}
+              {`${mod_plane != "normal" && mod_plane != undefined ? capitalize(mod_plane) : ""}`}
             </span>
           </div>
         </AccordionTrigger>
@@ -393,34 +308,27 @@ export default function StrengthExercise({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {exercises.map((group) => {
-                          // Get custom exercises for this category
-                          const categoryCustomExercises = customExercises.filter((ex) => ex.category === group.group)
-
-                          return (
-                            <SelectGroup key={group.group} className="mb-6">
-                              <SelectLabel className="font-medium text-lg">{group.group}</SelectLabel>
-                              {group.items.map((exercise) => (
-                                <SelectItem
-                                  key={exercise}
-                                  value={exercise.charAt(0).toLowerCase() + exercise.slice(1).replace(/\s+/g, "")}
-                                >
-                                  {exercise}
-                                </SelectItem>
-                              ))}
-
-                              {/* Add custom exercises for this category */}
-                              {categoryCustomExercises.map((exercise) => (
-                                <SelectItem key={exercise.value} value={exercise.value}>
-                                  {exercise.name}
-                                </SelectItem>
+                        {exerciseList.map((group) => {
+                          if (group.group !== "cardio") {
+                            return (
+                              <SelectGroup key={group.group} className="mb-6">
+                                <SelectLabel className="font-medium text-lg">{capitalize(group.group)}</SelectLabel>
+                                {group.items.map((exercise) => (
+                                exercise && exercise.trim() !== "" && (
+                                  <SelectItem
+                                    key={exercise}
+                                    value={exercise}
+                                  >
+                                    {capitalize(exercise)}
+                                  </SelectItem>
+                                )
                               ))}
                             </SelectGroup>
                           )
+                        }
                         })}
-
-                        <SelectItem value="add-custom" className="text-primary font-medium">
-                          <div className="flex items-center gap-2">
+                        <SelectItem value="add-custom" className="text-primary font-medium border-t pt-4 border-neutral-600">
+                          <div className="flex items-center gap-2 mb-2">
                             <Plus className="h-4 w-4" />
                             Add custom exercise...
                           </div>
@@ -432,18 +340,26 @@ export default function StrengthExercise({
                 )}
               />
             </div>
-            {(previousData.previousSets || previousData.personalRecord) && (
+            {gymMeta.exerciseData[exerciseType] && (
               <div id={`${index}_reference`} className="mb-6">
-                {previousData.previousSets && (
+                {gymMeta.exerciseData[exerciseType]?.mostRecentSession && (
                   <div className="flex gap-2 mb-2">
                     <p className="font-xs text-neutral-200 font-medium">{`Previous: `}</p>
-                    <p className="font-xs text-neutral-400 font-light">{previousData.previousSets}</p>
+                    {gymMeta.exerciseData[exerciseType]?.mostRecentSession.sets.map((set: any, index: number) => (
+                      <p className="font-xs text-neutral-400 font-light" key={index}>{set.reps}@{set.weight}
+                      {index == gymMeta.exerciseData[exerciseType]?.mostRecentSession.sets.length - 1 ? "" : ", "}</p>
+                    ))}
                   </div>
                 )}
-                {previousData.personalRecord && (
-                  <div className="flex gap-2 ">
-                    <p className="font-xs text-neutral-200 font-medium">{`Personal Record: `}</p>
-                    <p className="font-xs text-neutral-400 font-light">{previousData.personalRecord}</p>
+                {gymMeta.exerciseData[exerciseType]?.recordSet && (
+                  <div className="flex gap-2">
+                    <p className="font-xs text-neutral-200 font-medium">{`Your PR: `}</p>
+                    <p className="font-xs text-neutral-400 font-extralight">
+                      <span className="underline font-light">{`${gymMeta.exerciseData[exerciseType]?.recordSet.reps}${gymMeta.exerciseData[exerciseType].repsRight ? `/${gymMeta.exerciseData[exerciseType].repsRight}` : ""}@${gymMeta.exerciseData[exerciseType]?.recordSet.weight}`}</span>
+                      {` (${gymMeta.exerciseData[exerciseType]?.recordSet.totalVolume} lbs)`}
+                      {` on `}
+                      <span className="underline font-light">{spellOutDate(gymMeta.exerciseData[exerciseType]?.recordSet.date)}</span>
+                    </p>
                   </div>
                 )}
               </div>
@@ -507,7 +423,7 @@ export default function StrengthExercise({
                 <SelectContent>
                   {categories.map((category) => (
                     <SelectItem key={category} value={category}>
-                      {category}
+                      {capitalize(category)}
                     </SelectItem>
                   ))}
                 </SelectContent>

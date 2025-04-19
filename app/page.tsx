@@ -12,6 +12,7 @@ import Defocuser from "@/components/global/Defocuser";
 import { useIsMobile } from "@/hooks/use-mobile";
 import type { SummaryData } from "@/utils/types";
 
+
 const demointareadata = [
   { date: "2024-04-01", desktop: 222, mobile: 150 },
   { date: "2024-04-02", desktop: 97, mobile: 180 },

@@ -7,6 +7,7 @@ import { AppSidebar } from "@/components/global/Sidebar";
 import MobileNav from "@/components/global/MobileNav";
 import {SubNavContextProvider} from "@/context/SubNavOpenContext"
 import MobileHeader from "@/components/global/MobileHeader";
+import { Toaster } from "@/components/ui_primitives/toaster";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -40,7 +41,7 @@ export default function RootLayout({
           </SidebarProvider>
           <MobileNav />
         </SubNavContextProvider>
-        
+        <Toaster />
         </body>
       </html>
     </ClerkProvider>

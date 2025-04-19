@@ -1,8 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    // experimental: {
-    //     dynamicIO: true,
-    // },
+    experimental: {
+        useCache: true,
+        dynamicIO: true,
+    },
     async headers() {
         return [
           {

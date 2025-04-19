@@ -249,21 +249,24 @@ export type ExerciseGroup = {
       proteinGoal:number
       calorieLimit:number
     },
-    gym?: [{
-      exercise: string,
-      mostRecentSession?: [{
-        weight: number,
-        reps: number,
-        repsRight?: number
-      }],
-      recordSet?: {
-        weight: number,
-        reps: number,
-        totalVolume: number,
-        date: string
-      },
-      notes?:string,
-    }]
+    gym?: {
+      // exercise: string,
+      // mostRecentSession?: {
+      //   date: number, 
+      //   sets:[{
+      //     weight: number,
+      //     reps: number,
+      //     repsRight?: number
+      // }]},
+      // recordSet?: {
+      //   weight: number,
+      //   reps: number,
+      //   repsRight? : number,
+      //   totalVolume: number,
+      //   date: string
+      // },
+      // notes?:string,
+    }
   },
   homeLabs: string[],
   customExercises: {

@@ -15,6 +15,7 @@ import { Accordion, AccordionContent, AccordionTrigger, AccordionItem } from "..
 import type { ExerciseGroup, ClerkUserMetadata } from "@/utils/types"
 import { useUser } from "@clerk/nextjs"
 import { quickSort } from "@/lib/utils"
+import { logWorkout } from "@/actions/InternalLogic"
 
 export const dynamic = "force-dynamic"
 
@@ -43,8 +44,8 @@ const FormSchema = z.object({
         .optional(),
       modifications: z
         .object({
-          grip: z.enum(["Rotated Neutral", "Pronated", "Supinated", "Normal"]).optional(),
-          movementPlane: z.enum(["Inlcined", "Declined", "Prone", "Supine", "Normal"]).optional(),
+          grip: z.enum(["rotatedNeutral", "pronated", "supinated", "normal"]).optional(),
+          movementPlane: z.enum(["inclined", "declined", "prone", "supine", "normal"]).optional(),
         })
         .optional(),
       duration: z.number().optional(),
@@ -57,54 +58,66 @@ const FormSchema = z.object({
 // default list of exercises
 const exercises: ExerciseGroup[] = [
   {
-    group: "Upper Body",
+    group: "upperBody",
     items: [
-      "Bench Press",
-      "Bicep Curl",
-      "Chest Press",
-      "Lateral Raise",
-      "Lateral Pulldown",
-      "Pec Fly",
-      "Pull Up",
-      "Push Up",
-      "Rear Delt",
-      "Seated Row",
-      "Tricep Extension",
+      "benchPress",
+      "bicepCurl",
+      "chestPress",
+      "lateralRaise",
+      "lateralPulldown",
+      "pecFly",
+      "pullUp",
+      "pushUp",
+      "rearDelt",
+      "seatedRow",
+      "tricepExtension",
     ],
   },
   {
-    group: "Core",
-    items: ["Abdominal Crunch", "Back Extension"],
+    group: "core",
+    items: ["abdominalCrunch", "backExtension"],
   },
   {
-    group: "Lower Body",
+    group: "lowerBody",
     items: [
-      "Back Squat",
-      "Calf Raise",
-      "Deadlift",
-      "Front Squat",
-      "Hip Thrust",
-      "Kettlebell Swing",
-      "Lateral Lunge",
-      "Leg Curl",
-      "Leg Extension",
-      "Leg Press",
-      "Lunge",
+      "backSquat",
+      "calfRaise",
+      "deadlift",
+      "frontSquat",
+      "hipThrust",
+      "kettlebellSwing",
+      "lateralLunge",
+      "legCurl",
+      "legExtension",
+      "legPress",
+      "lunge",
+    ],
+  },
+  {
+    group: "cardio",
+    items: [
+      "running",
+      "cycling",
+      "swimming",
+      "rowing",
+      "elliptical",
+      "stairClimber",
+      "jumpRope",
+      "walking",
+      "hiking",
     ],
   },
 ]
 
-export default function WorkoutForm({ onSuccess }: { onSuccess: () => void }) {
+export default function WorkoutForm({ onSuccess, gymMeta }: { onSuccess: () => void, gymMeta: any }) {
   const [buttonText, setButtonText] = useState<string>("Log Data")
   const [openExercises, setOpenExercises] = useState<number[]>([])
-  const { user, isLoaded } = useUser()
-  const [userMeta, setUserMeta] = useState<ClerkUserMetadata | {}>({})
+  const { isLoaded } = useUser()
 
   const MergeExercises = useCallback(() => {
     // Helper function to add exercises without duplicates
     const addUniqueExercises = (targetArray: string[], newExercises: string[]) => {
-      if (!newExercises) return
-
+      if (!newExercises) return;
       newExercises.forEach((exercise) => {
         if (exercise !== undefined && !targetArray.includes(exercise)) {
           targetArray.push(exercise)
@@ -112,26 +125,20 @@ export default function WorkoutForm({ onSuccess }: { onSuccess: () => void }) {
       })
     }
 
-    // Add unique exercises to each category
-    // @ts-ignore
-    addUniqueExercises(exercises[0].items, user?.publicMetadata?.customExercises?.upperBody)
-    // @ts-ignore
-    addUniqueExercises(exercises[1].items, user?.publicMetadata?.customExercises?.core)
-    // @ts-ignore
-    addUniqueExercises(exercises[2].items, user?.publicMetadata?.customExercises?.lowerBody)
+    addUniqueExercises(exercises[0].items, gymMeta?.customExercises?.upperBody)
+    addUniqueExercises(exercises[1].items, gymMeta?.customExercises?.core)
+    addUniqueExercises(exercises[2].items, gymMeta?.customExercises?.lowerBody)
 
-    // Sort the arrays
     exercises[0].items = quickSort(exercises[0].items)
     exercises[1].items = quickSort(exercises[1].items)
     exercises[2].items = quickSort(exercises[2].items)
-  }, [user?.publicMetadata])
+  }, [gymMeta])
 
   useEffect(() => {
-    if (isLoaded && user?.publicMetadata) {
-      setUserMeta(user.publicMetadata)
+    if (isLoaded && gymMeta) {
       MergeExercises()
     }
-  }, [isLoaded, user?.publicMetadata, MergeExercises])
+  }, [isLoaded, gymMeta, MergeExercises])
 
   const methods = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
@@ -212,7 +219,7 @@ export default function WorkoutForm({ onSuccess }: { onSuccess: () => void }) {
             ].includes(key),
         ),
       )
-      await addItemToTable(cleanedData, "Apexion-Gym")
+      await logWorkout(cleanedData, gymMeta)
       setButtonText("Sent!")
       setTimeout(() => {
         onSuccess()
@@ -491,6 +498,7 @@ export default function WorkoutForm({ onSuccess }: { onSuccess: () => void }) {
                 onOpenChange={(open) => handleOpenChange(index, open)}
                 onDelete={() => onDelete(index)}
                 exercises={exercises}
+                gymMeta={gymMeta}
               />
             ) : (
               <CardioExercise
@@ -499,6 +507,8 @@ export default function WorkoutForm({ onSuccess }: { onSuccess: () => void }) {
                 isOpen={openExercises.includes(index)}
                 onOpenChange={(open) => handleOpenChange(index, open)}
                 onDelete={() => onDelete(index)}
+                exercises={exercises}
+                gymMeta={gymMeta}
               />
             ),
           )}
