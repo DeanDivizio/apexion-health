@@ -3,6 +3,7 @@ import { toCamelCase } from '@/lib/utils';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, QueryCommand, QueryCommandInput, QueryCommandOutput, ScanCommand, ScanCommandInput, ScanCommandOutput, UpdateCommand, UpdateCommandInput, GetCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
 import { auth } from "@clerk/nextjs/server"
+import { cacheTag } from 'next/dist/server/use-cache/cache-tag';
 
 // from here to line 20 is just AWS SDK setup
 const accessKeyId = process.env.AWS_ACCESS_KEY_ID!;
@@ -164,15 +165,13 @@ export async function getAllDataFromTableByUser(table: string) {
 }
 
 export async function getGymMeta_CACHED(userID: string) {
-  const { userId } = await auth();
-  if (!userId) {
-    throw new Error("User is not signed in.");
-  }
+  "use cache"
+  cacheTag('gymMeta')
   const params: QueryCommandInput = {
     TableName: 'Apexion-Gym_UserMeta',
     KeyConditionExpression: `userID = :user`,
     ExpressionAttributeValues: {
-      ':user': userId,
+      ':user': userID,
     }
   };
 

@@ -124,9 +124,9 @@ export default function WorkoutForm({ onSuccess, gymMeta }: { onSuccess: () => v
       })
     }
 
-    addUniqueExercises(exercises[0].items, gymMeta?.customExercises?.upperBody)
-    addUniqueExercises(exercises[1].items, gymMeta?.customExercises?.core)
-    addUniqueExercises(exercises[2].items, gymMeta?.customExercises?.lowerBody)
+    addUniqueExercises(exercises[0].items, gymMeta?.customExercises[0].items)
+    addUniqueExercises(exercises[1].items, gymMeta?.customExercises[1].items)
+    addUniqueExercises(exercises[2].items, gymMeta?.customExercises[2].items)
 
     exercises[0].items = quickSort(exercises[0].items)
     exercises[1].items = quickSort(exercises[1].items)
