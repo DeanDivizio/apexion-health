@@ -164,11 +164,15 @@ export async function getAllDataFromTableByUser(table: string) {
 }
 
 export async function getGymMeta_CACHED(userID: string) {
+  const { userId } = await auth();
+  if (!userId) {
+    throw new Error("User is not signed in.");
+  }
   const params: QueryCommandInput = {
     TableName: 'Apexion-Gym_UserMeta',
     KeyConditionExpression: `userID = :user`,
     ExpressionAttributeValues: {
-      ':user': userID,
+      ':user': userId,
     }
   };
 
