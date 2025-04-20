@@ -187,7 +187,7 @@ export default function Home() {
   },[isLoaded])
 
   return (
-    <main className={`flex pb-12 md:pb-0 px-4 pt-24 md:pt-4 h-auto 3xl:h-[100vh] overflow-clip w-full flex-col items-center justify-start bg-transparent`}>
+    <main className={`flex pb-12 md:pb-0 px-4 pt-24 md:pt-4 h-auto 3xl:h-[100vh] overflow-clip w-full flex-col items-center justify-start bg-gradient-to-br from-blue-950/20 to-neutral-950`}>
       <Defocuser />
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 w-full xl:h-[95vh]">
         <div className="col-span-1 order-2 xl:order-1 flex flex-col items-center lg:items-start p-4 border-2 bg-neutral-800/50 backdrop-blur-xl rounded-xl overflow-y-scroll">
@@ -218,7 +218,7 @@ export default function Home() {
               unit="grams" 
               value={todayProtein} 
               goal={proteinGoal}
-              shade="purple"
+              shade="blue"
               overOkay />
             <UniversalRingChart 
               title="Today's Carb Intake"
@@ -239,7 +239,7 @@ export default function Home() {
               unit="Grams" 
               value={todayFat} 
               goal={fatGoal}
-              shade="purple" />
+              shade="indigo" />
               </div>
           {/* {isMobile ? null :
           <><InteractiveAreaChart

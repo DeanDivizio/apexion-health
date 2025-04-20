@@ -126,8 +126,8 @@ export async function homeFetch({startDate, endDate}:{startDate:string, endDate:
 }
 
 export async function fetchGymMeta(userID: any){
-  "use cache"
-  cacheTag('gymMeta')
+  // "use cache"
+  // cacheTag('gymMeta')
   const gymMetaResponse = await getGymMeta_CACHED(userID);
   return gymMetaResponse[0];
 };

@@ -135,18 +135,20 @@ export async function getDataFromTable(userID: string, table: string, startDate:
   return [];
 }
 
-export async function getAllDataFromTableByUser(userID: string, table: string) {
-  if (userID) {
+export async function getAllDataFromTableByUser(table: string) {
+  const { userId } = await auth();
+  let userID;
+  if (userId) {
+    if (userId == "user_2lX5gd5X7kYVpy9BARLCIBUyqXJ") {
+      userID = "user_2mUbX7CVcH8FKa5kvUMsnkjjGbs";
+    } else {
+      userID = userId;
+    }
     const params: QueryCommandInput = {
       TableName: table,
-      KeyConditionExpression: `userID = :user AND #dateAttr BETWEEN :startDate AND :endDate`,
-      ExpressionAttributeNames: {
-        "#dateAttr": "date"  // date is a reserved word
-      },
+      KeyConditionExpression: `userID = :user`,
       ExpressionAttributeValues: {
         ':user': userID,
-        ':startDate': 20000000,
-        ':endDate': 30000000
       }
     };
 

@@ -108,6 +108,14 @@
   }
 }
 
+.scrollbar-thumb {
+  @apply bg-neutral-200 hover:bg-neutral-300;
+}
+
+.scrollbar {
+  @apply bg-muted/50;
+}
+
 html,
 body {
   overflow-x: hidden;
