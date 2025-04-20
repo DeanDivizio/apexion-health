@@ -1,6 +1,6 @@
 "use client"
 import { useState, useEffect } from "react"
-import { getAllDataFromTableByUser } from "@/actions/AWS"
+import { getAllDataFromTableByUser, updateGymSession } from "@/actions/AWS"
 import { capitalize, spellOutDate, toCamelCase } from "@/lib/utils"
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui_primitives/accordion"
 import { Skeleton } from "@/components/ui_primitives/skeleton"
@@ -16,6 +16,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui_primitives/input"
 import { Button } from "@/components/ui_primitives/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui_primitives/dropdown-menu"
+import { useToast } from "@/hooks/use-toast"
 
 const setSchema = z.object({
     reps: z.number().min(1, "Must be at least 1 rep"),
@@ -36,8 +37,9 @@ const workoutSchema = z.object({
 
 type WorkoutFormValues = z.infer<typeof workoutSchema>
 
-function EditSession({ userRef, sessionRef }: { userRef: string | null, sessionRef: any }) {
+function EditSession({ setShouldToast, setShouldToastBad, userRef, sessionRef, gymSessions }: { setShouldToast: any, setShouldToastBad: any, userRef: string | null, sessionRef: any, gymSessions: any }) {
     const isMobile = useIsMobile()
+    const [open, setOpen] = useState(false)
     const form = useForm<WorkoutFormValues>({
         resolver: zodResolver(workoutSchema),
         defaultValues: {
@@ -94,18 +96,32 @@ function EditSession({ userRef, sessionRef }: { userRef: string | null, sessionR
     }
 
     const onSubmit = async (data: WorkoutFormValues) => {
-        // TODO: Implement update logic
-        console.log(data)
+        let date = gymSessions.find((session: any) => session.date === sessionRef.date)
+        let index = date.data.findIndex((session: any) => session.startTime === sessionRef.startTime)
+        date.data[index] = data
+        let newData = date.data;
+        console.log(newData)
+        try {
+            let res = await updateGymSession(sessionRef.date, newData)
+            if (res.$metadata.httpStatusCode === 200) {
+                setShouldToast(true);
+                setOpen(false)
+            }
+            console.log(res)
+        } catch (error) {
+            console.error(error)
+            setShouldToastBad(true);
+        }
     }
 
     if (isMobile) {
         return (
-            <Drawer>
+            <Drawer open={open} onOpenChange={setOpen}>
                 <DrawerTrigger asChild>
                     <Pencil className="w-4 h-4" />
                 </DrawerTrigger>
-                <DrawerContent className="bg-transparent">
-                    <DrawerHeader className="bg-neutral-950">
+                <DrawerContent className="bg-neutral-950">
+                    <DrawerHeader >
                         <DrawerTitle className="text-white">Edit Session: <span className="text-neutral-200 font-light italic pl-2">{spellOutDate(sessionRef.date)}</span></DrawerTitle>
                     </DrawerHeader>
                     <Form {...form} >
@@ -142,11 +158,14 @@ function EditSession({ userRef, sessionRef }: { userRef: string | null, sessionR
                                 <h3 className="text-lg font-medium">Exercises</h3>
                                 <Button 
                                     type="button" 
-                                    variant="outline" 
+                                    variant="outline"
+                                    className="p-[1px] rounded bg-gradient-to-br from-blue-600 to-blue-950 text-white" 
                                     onClick={addExercise}
                                 >
-                                    <Plus className="h-4 w-4 mr-2" />
-                                    Add Exercise
+                                    <div className="w-full h-full rounded px-12 py-2 flex flex-row items-center justify-center bg-neutral-950">
+                                        <Plus className="h-4 w-4 mr-2" />
+                                        Add Exercise
+                                    </div>
                                 </Button>
                             </div>
                             <ScrollArea className="w-full h-[600px] px-4 pt-2 pb-16 bg-gradient-to-br from-neutral-950 to-neutral-900">
@@ -277,15 +296,8 @@ function EditSession({ userRef, sessionRef }: { userRef: string | null, sessionR
                             </ScrollArea>
                         </form>
                     </Form>
-                    <DrawerFooter className="absolute bottom-0 left-0 right-0 pb-8 flex flex-row gap-2 bg-transparent backdrop-blur-sm">
-                        <Button 
-                            type="submit" 
-                            className="flex-1 rounded bg-gradient-to-br from-green-500 to-blue-900 text-white"
-                            onClick={form.handleSubmit(onSubmit)}
-                        >
-                            Save Changes
-                        </Button>
-                        <DrawerClose asChild>
+                    <DrawerFooter className="absolute bottom-0 left-0 right-0 pb-8 flex flex-row gap-2 bg-black/80 backdrop-blur-sm">
+                    <DrawerClose asChild>
                             <Button 
                                 variant="outline" 
                                 className="flex-1 rounded border-red-900"
@@ -294,6 +306,13 @@ function EditSession({ userRef, sessionRef }: { userRef: string | null, sessionR
                                 Cancel
                             </Button>
                         </DrawerClose>
+                        <Button 
+                            type="submit" 
+                            className="p-[1px] rounded bg-gradient-to-br from-green-500 to-blue-900 text-white"
+                            onClick={form.handleSubmit(onSubmit)}
+                        >
+                            <div className="w-full h-full rounded px-12 py-2 flex flex-row items-center justify-center bg-neutral-950">Save Changes</div>
+                        </Button> 
                     </DrawerFooter>
                 </DrawerContent>
             </Drawer>
@@ -306,7 +325,7 @@ function EditSession({ userRef, sessionRef }: { userRef: string | null, sessionR
                 </DialogTrigger>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Edit Session</DialogTitle>
+                    <DialogTitle>ASSUME THIS IS NOT WORKING, USE MOBILE VERSION</DialogTitle>
                     </DialogHeader>
                     <Form {...form}>
                         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
@@ -502,9 +521,31 @@ function EditSession({ userRef, sessionRef }: { userRef: string | null, sessionR
 }
 
 export default function GymSessions() {
+    const { toast } = useToast()
     const [gymSessions, setGymSessions] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const [userRef, setUserRef] = useState<string | null>(null)
+    const [shouldToast, setShouldToast] = useState(false)
+    const [shouldToastBad, setShouldToastBad] = useState(false)
+    useEffect(() => {
+        if (shouldToast) {
+            toast({
+                title: "Session updated",
+                description: "Your session has been updated successfully",
+                duration: 1500,
+            })
+            setShouldToast(false)
+        }
+        if (shouldToastBad) {
+            toast({
+                title: "Error updating session",
+                description: "Your session could not be updated",
+                variant: "destructive",
+                duration: 2000,
+            })
+            setShouldToastBad(false)
+        }
+    }, [shouldToast, shouldToastBad])
 
     useEffect(() => {
         const fetchGymSessions = async () => {
@@ -518,6 +559,7 @@ export default function GymSessions() {
             console.log(gymSessions)
         }
         fetchGymSessions()
+        
     }, [gymSessions])
 
     if (loading) {
@@ -553,8 +595,9 @@ export default function GymSessions() {
                                         <div key={session.startTime}>
                                             <div className="w-full flex flex-row items-center justify-between">
                                                 <h3 className="text-xs font-thin italic mb-2">{session.startTime} - {session.endTime}</h3>
-                                                <EditSession userRef={userRef} sessionRef={{ ...session, date: date.date }} />
+                                                <EditSession setShouldToast={setShouldToast} setShouldToastBad={setShouldToastBad} userRef={userRef} sessionRef={{ ...session, date: date.date }} gymSessions={gymSessions}/>
                                             </div>
+                                            <div className="grid grid-cols-2 gap-4">
                                             {session.exercises.map((exercise: any) => (
                                                 <div key={exercise.exerciseType} className="mb-4">
                                                     <h4 className="text-md font-medium">{capitalize(exercise.exerciseType)}</h4>
@@ -566,8 +609,8 @@ export default function GymSessions() {
                                                         </div>
                                                     ))}
                                                 </div>
-
                                             ))}
+                                            </div>
                                         </div>
                                     ))}
                                 </AccordionContent>

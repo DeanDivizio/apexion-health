@@ -250,3 +250,43 @@ export async function updateExerciseData(exerciseData: any) {
     throw err;
   }
 }
+
+export async function updateGymSession(date: string, data: any) {
+  const { userId } = await auth();
+  if (!userId) {
+    throw new Error("User is not signed in.");
+  }
+
+  let userID;
+  if (userId == "user_2lX5gd5X7kYVpy9BARLCIBUyqXJ") {
+    userID = "user_2mUbX7CVcH8FKa5kvUMsnkjjGbs";
+  } else {
+    userID = userId;
+  }
+
+  try {
+    const params: UpdateCommandInput = {
+      TableName: "Apexion-Gym",
+      Key: {
+        userID: userID,
+        date: date
+      },
+      UpdateExpression: "SET #data = :newData",
+      ExpressionAttributeNames: {
+        "#data": "data"
+      },
+      ExpressionAttributeValues: {
+        ":newData": data
+      },
+      ReturnValues: "ALL_NEW"
+    };
+
+    const result = await docClient.send(new UpdateCommand(params));
+    console.log("Update successful:", result);
+    return result;
+  } catch (err) {
+    console.error(`Error updating gym session in DynamoDB:`, err);
+    throw err;
+  }
+}
+
