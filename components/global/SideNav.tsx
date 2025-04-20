@@ -10,12 +10,12 @@ export function SideNav() {
             <SheetTrigger>
                 <MenuIcon />
             </SheetTrigger>
-            <SheetContent side="left" className="w-full bg-black/30 backdrop-blur">
+            <SheetContent side="left" className="w-full bg-neutral-900/30 backdrop-blur-lg">
                 <SheetHeader>
                     <SheetTitle className="text-base font-regular">{`Hi, ${user?.firstName}`}</SheetTitle>
                     <SheetDescription className="text-xs font-thin italic">{`Where would you like to go?`}</SheetDescription>
                 </SheetHeader>
-                <nav className="flex flex-col gap-4 pt-4">
+                <nav className="flex flex-col gap-4 pt-6 h-full overflow-y-scroll">
                     <div id="side-nav-collections" className="flex flex-col text-sm font-light">
                         <h3 className="text-lg font-bold mb-0">Collections</h3>
                         <p className="text-xs font-thin italic mb-4">Your personal databases, orgnaized by day. Clear, accurate, editable.</p>
@@ -37,9 +37,9 @@ export function SideNav() {
                         <Link href="/bodygraphs" className="flex items-center gap-2 mb-4"><Scale className="w-4 h-4" />Body Measurements</Link>
                         <Link href="/labs" className="flex items-center gap-2 mb-4"><TestTube className="w-4 h-4" />Lab Results</Link>
                     </div>
-                    <div id="side-nav-admin" className="absolute bottom-6 flex flex-col text-sm font-light">
+                    <div id="side-nav-admin" className="absolute left-0 bottom-8 flex flex-col text-sm font-light w-full">
                         {/* <h3 className="text-base font-regular mb-2">Admin</h3> */}
-                        <div className="flex gap-4">
+                        <div className="flex gap-6 justify-center w-full">
                             <Link href="/settings" className="flex items-center gap-2 mb-2"><Settings className="w-4 h-4" />Settings</Link>
                             <p>|</p>
                             <Link href="/support" className="flex items-center gap-2 mb-2"><MessageSquareWarning className="w-4 h-4" />Support</Link>
