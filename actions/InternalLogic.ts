@@ -156,8 +156,15 @@ export async function addCustomExercise(customExercises: {group: string, items:s
 
 function mutateGymMetaPostWorkout(workout: any, gymMeta: any) {
   workout.exercises.forEach((exercise: any) => {
-    const exerciseType = exercise.exerciseType;
-
+    let exerciseType = exercise.exerciseType;
+    if (exercise.modifications) {
+      if (exercise.modifications.grip && exercise.modifications.grip != "normal") {
+        exerciseType = exerciseType + "_" + exercise.modifications.grip;
+      }
+      if (exercise.modifications.movementPlane && exercise.modifications.movementPlane != "normal") {
+        exerciseType = exerciseType + "_" + exercise.modifications.movementPlane;
+      }
+    }
     if (!gymMeta.exerciseData[exerciseType]) {
       gymMeta.exerciseData[exerciseType] = {
         exercise: exerciseType,

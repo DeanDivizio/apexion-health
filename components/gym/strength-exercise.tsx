@@ -202,6 +202,8 @@ export default function StrengthExercise({
     .filter(group => group.group !== "cardio")
     .map(group => group.group);
   const { toast } = useToast()
+  const [exerciseName, setExerciseName] = useState<string>(`New Exercise`)
+  const [internalExerciseName, setInternalExerciseName] = useState<string>(exerciseName)
 
   const handleAddCustomExercise = useCallback(async () => {
     if (customExercise.trim() && selectedCategory) {
@@ -239,12 +241,22 @@ export default function StrengthExercise({
   /********************************************************* */
 
   /***********************NAME UPDATING**************************/
-  const [exerciseName, setExerciseName] = useState<string>(`New Exercise`)
+  
   useEffect(() => {
     if (exerciseType) {
       setExerciseName(capitalize(exerciseType))
     }
   }, [exerciseType])
+  useEffect(() => {
+    setInternalExerciseName(exerciseType)
+    if (mod_grip && mod_grip != "normal") {
+      if (mod_plane && mod_plane != "normal") {
+        setInternalExerciseName(exerciseType + "_" + mod_grip + "_" + mod_plane)
+      } else {setInternalExerciseName(exerciseType + "_" + mod_grip)}
+    } else if (mod_plane && mod_plane != "normal") {
+      setInternalExerciseName(exerciseType + "_" + mod_plane)
+    }
+  }, [exerciseType, mod_grip, mod_plane])
   /********************************************************* */
 
   const addSet = () => {
@@ -340,25 +352,25 @@ export default function StrengthExercise({
                 )}
               />
             </div>
-            {gymMeta.exerciseData[exerciseType] && (
+            {gymMeta.exerciseData[internalExerciseName] && (
               <div id={`${index}_reference`} className="mb-6">
-                {gymMeta.exerciseData[exerciseType]?.mostRecentSession && (
+                {gymMeta.exerciseData[internalExerciseName]?.mostRecentSession && (
                   <div className="flex gap-2 mb-2">
                     <p className="font-xs text-neutral-200 font-medium">{`Previous: `}</p>
-                    {gymMeta.exerciseData[exerciseType]?.mostRecentSession.sets.map((set: any, index: number) => (
+                    {gymMeta.exerciseData[internalExerciseName]?.mostRecentSession.sets.map((set: any, index: number) => (
                       <p className="font-xs text-neutral-400 font-light" key={index}>{set.reps}@{set.weight}
-                      {index == gymMeta.exerciseData[exerciseType]?.mostRecentSession.sets.length - 1 ? "" : ", "}</p>
+                      {index == gymMeta.exerciseData[internalExerciseName]?.mostRecentSession.sets.length - 1 ? "" : ", "}</p>
                     ))}
                   </div>
                 )}
-                {gymMeta.exerciseData[exerciseType]?.recordSet && (
+                {gymMeta.exerciseData[internalExerciseName]?.recordSet && (
                   <div className="flex gap-2">
                     <p className="font-xs text-neutral-200 font-medium">{`Your PR: `}</p>
                     <p className="font-xs text-neutral-400 font-extralight">
-                      <span className="underline font-light">{`${gymMeta.exerciseData[exerciseType]?.recordSet.reps}${gymMeta.exerciseData[exerciseType].repsRight ? `/${gymMeta.exerciseData[exerciseType].repsRight}` : ""}@${gymMeta.exerciseData[exerciseType]?.recordSet.weight}`}</span>
-                      {` (${gymMeta.exerciseData[exerciseType]?.recordSet.totalVolume} lbs)`}
+                      <span className="underline font-light">{`${gymMeta.exerciseData[internalExerciseName]?.recordSet.reps}${gymMeta.exerciseData[internalExerciseName].repsRight ? `/${gymMeta.exerciseData[internalExerciseName].repsRight}` : ""}@${gymMeta.exerciseData[internalExerciseName]?.recordSet.weight}`}</span>
+                      {` (${gymMeta.exerciseData[internalExerciseName]?.recordSet.totalVolume} lbs)`}
                       {` on `}
-                      <span className="underline font-light">{spellOutDate(gymMeta.exerciseData[exerciseType]?.recordSet.date)}</span>
+                      <span className="underline font-light">{spellOutDate(gymMeta.exerciseData[internalExerciseName]?.recordSet.date)}</span>
                     </p>
                   </div>
                 )}
