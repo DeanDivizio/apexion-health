@@ -1,5 +1,5 @@
 "use server";
-import { addItemToTable, genericAddItemToTable, getDataFromTable, getGymMeta_CACHED, updateGymMeta } from "@/actions/AWS";
+import { addItemToTable, genericAddItemToTable, getDataFromTable, getGymMeta_CACHED, updateCustomExercises, updateExerciseData } from "@/actions/AWS";
 import { ExerciseGroup } from "@/utils/types";
 import { auth } from '@clerk/nextjs/server';
 import { unstable_cacheTag as cacheTag, revalidateTag } from 'next/cache'
@@ -132,14 +132,22 @@ export async function fetchGymMeta(userID: any){
   return gymMetaResponse[0];
 };
 
-export async function addCustomExercise(exercises: ExerciseGroup[], gymMeta: any) {
-
-  const updatedGymMeta = {
-    ...gymMeta,
-    customExercises: exercises
+export async function addCustomExercise(customExercises: {group: string, items:string[]}[], exercise: string, category: string) {
+  // Find the index of the group that matches the category
+  let index = customExercises.findIndex((groupObj) => groupObj.group === category);
+  
+  if (index === -1) {
+    // If category doesn't exist, create a new group
+    customExercises.push({
+      group: category,
+      items: [exercise]
+    });
+  } else {
+    // If category exists, append the exercise to its items array
+    customExercises[index].items.push(exercise);
   }
 
-  const response = await updateGymMeta(updatedGymMeta);
+  const response = await updateCustomExercises(customExercises);
   if (response.$metadata.httpStatusCode === 200) {
     revalidateTag('gymMeta')
   }
@@ -194,7 +202,7 @@ export async function logWorkout(workout: any, gymMeta: any) {
   gymMeta = mutateGymMetaPostWorkout(workout, gymMeta);
   try {
     const [gymMetaResponse, workoutResponse] = await Promise.all([
-      updateGymMeta(gymMeta),
+      updateExerciseData(gymMeta.exerciseData),
       addItemToTable(workout, "Apexion-Gym")
     ]);
     if (gymMetaResponse.$metadata.httpStatusCode === 200) {

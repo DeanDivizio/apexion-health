@@ -215,7 +215,7 @@ export default function StrengthExercise({
       setSelectedCategory("")
       setDialogOpen(false)
       try {
-        const response = await addCustomExercise(exercises, gymMeta);
+        const response = await addCustomExercise(gymMeta.customExercises, formattedName, selectedCategory);
         if (response.$metadata.httpStatusCode === 200) {
           toast({
             title: "Success",

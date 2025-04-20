@@ -180,7 +180,7 @@ export async function getGymMeta_CACHED(userID: string) {
   }
 }
 
-export async function updateGymMeta(gymMeta: any) {
+export async function updateCustomExercises(customExercises: any) {
   const { userId } = await auth();
   if (!userId) {
     throw new Error("User is not signed in.");
@@ -198,10 +198,42 @@ export async function updateGymMeta(gymMeta: any) {
       Key: {
         userID: userID
       },
-      UpdateExpression: "SET customExercises = :customExercises, exerciseData = :exerciseData",
+      UpdateExpression: "SET customExercises = :customExercises",
       ExpressionAttributeValues: {
-        ":customExercises": gymMeta.customExercises,
-        ":exerciseData": gymMeta.exerciseData
+        ":customExercises": customExercises,
+      },
+      ReturnValues: "ALL_NEW"
+    };
+    const result = await docClient.send(new UpdateCommand(params));
+    console.log("Operation successful:", result);
+    return result;
+  } catch (err) {
+    console.error(`Error in DynamoDB operation:`, err);
+    throw err;
+  }
+}
+
+export async function updateExerciseData(exerciseData: any) {
+  const { userId } = await auth();
+  if (!userId) {
+    throw new Error("User is not signed in.");
+  }
+  const tableName = "Apexion-Gym_UserMeta";
+  let userID;
+  if (userId == "user_2lX5gd5X7kYVpy9BARLCIBUyqXJ") {
+    userID = "user_2mUbX7CVcH8FKa5kvUMsnkjjGbs";
+  } else {
+    userID = userId;
+  }
+  try {
+    const params: UpdateCommandInput = {
+      TableName: tableName,
+      Key: {
+        userID: userID
+      },
+      UpdateExpression: "SET exerciseData = :exerciseData",
+      ExpressionAttributeValues: {
+        ":exerciseData": exerciseData
       },
       ReturnValues: "ALL_NEW"
     };
