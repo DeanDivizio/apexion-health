@@ -25,7 +25,18 @@ export function quickSort(arr: string[]): string[] {
 }
 
 export function capitalize(str: string) {
-  return str.replace(/\B([A-Z])/g, " $1").replace(/^./, function(str){ return str.toUpperCase(); })
+  // First, handle cases where a lowercase letter is followed by a capital letter
+  // This splits "magnesiumLThreonate" into "magnesium LThreonate"
+  let result = str.replace(/([a-z])([A-Z])/g, '$1 $2');
+  
+  // Then, handle cases where a capital letter is followed by more capital letters
+  // This splits "LThreonate" into "L Threonate"
+  result = result.replace(/([A-Z])([A-Z][a-z])/g, '$1 $2');
+  
+  // Finally, capitalize the first letter of each word
+  return result.split(' ').map(word => 
+    word.charAt(0).toUpperCase() + word.slice(1)
+  ).join(' ');
 }
 
 export function spellOutDate(dateStr: string): string {

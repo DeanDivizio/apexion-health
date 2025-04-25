@@ -14,6 +14,14 @@ import { Accordion, AccordionContent, AccordionTrigger, AccordionItem } from "..
 // i feel like force dynamic shouldnt be necessary
 export const dynamic = 'force-dynamic';
 
+const defaultSupplements:{foundational:string[], athletic:string[], cognitive:string[], sleep:string[], hormone:string[]} = {
+  foundational: ["vitaminD", "zinc", "vitaminC", "vitaminB12", "omega3",],
+  athletic: ["creatine", "tyrosine"],
+  cognitive: ["carnitine", "theanine", "alphaGPC", "rhodiolaRosea"],
+  sleep: ["magnesiumLThreonate", "melatonin", "inositol", "apigenin"],
+  hormone: ["tongkatAli", "fadogiaAgrestis"]
+}
+
 const FormSchema = z.object({
   month: z.string(),
   day: z.string(),
@@ -33,7 +41,8 @@ const FormSchema = z.object({
 
 export default function SupplementForm({ onSuccess }: { onSuccess: () => void }) {
   const [buttonText, setButtonText] = useState<string>("Log Data")
-
+  const [supplementList, setSupplementList] = useState(defaultSupplements)
+  const [customSupplements, setCustomSupplements] = useState<any>({})
   const methods = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
@@ -255,6 +264,8 @@ export default function SupplementForm({ onSuccess }: { onSuccess: () => void })
               <SupplementItem
                 key={field.id}
                 index={index}
+                supplementList={supplementList}
+                customSupplements={customSupplements}
                 onDelete={() => onDelete(index)}
               />
             ) 

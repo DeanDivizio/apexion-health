@@ -1,5 +1,5 @@
 "use server";
-import { addItemToTable, genericAddItemToTable, getDataFromTable, getGymMeta_CACHED, updateCustomExercises, updateExerciseData } from "@/actions/AWS";
+import { addItemToTable, genericAddItemToTable, getDataFromTable, getGymMeta_CACHED, updateCustomExercises, updateExerciseData, getAllDataFromTableByUser, updateCustomSupplements } from "@/actions/AWS";
 import { ExerciseGroup } from "@/utils/types";
 import { auth } from '@clerk/nextjs/server';
 import { unstable_cacheTag as cacheTag, revalidateTag } from 'next/cache'
@@ -223,3 +223,12 @@ export async function logWorkout(workout: any, gymMeta: any) {
   }
 }
 
+export async function fetchCustomSupplements() {
+  const customSupplements = await getAllDataFromTableByUser("Apexion-Supplements_UserMeta");
+  return customSupplements;
+}
+
+export async function updateCustomSupplementsWrapper(customSupplements: any) {
+  const response = await updateCustomSupplements(customSupplements);
+  return response;
+}
