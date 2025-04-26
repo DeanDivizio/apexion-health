@@ -60,3 +60,7 @@ export function toCamelCase(str: string): string {
     )
     .join('');
 }
+
+export function fromAllCaps(str: string): string {
+  return str.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
+}
