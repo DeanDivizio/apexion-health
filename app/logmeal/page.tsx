@@ -6,7 +6,6 @@ import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@
 import { useState, useEffect } from "react"
 import type { USDASearchResults } from "@/utils/types"
 import { Apple } from "lucide-react"
-import { z } from "zod"
 import MealSheet from "@/components/nutrition/MealSheet"
 import { MobileHeaderContext } from "@/context/MobileHeaderContext"
 import { useContext } from "react"
@@ -14,43 +13,6 @@ import FoodItemCard, { FoodItemCardSkeleton } from "@/components/nutrition/FoodI
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui_primitives/tabs"
 import CustomFoodForm from "@/components/nutrition/CustomFoodForm"
 import FavoriteFoodCard from "@/components/nutrition/FavoriteFoodCard"
-
-export const FormSchema = z.object({
-  month: z.string(),
-  day: z.string(),
-  year: z.string(),
-  hour: z.string(),
-  minute: z.string(),
-  ampm: z.string(),
-  mealLabel: z
-    .string()
-    .optional()
-    .or(z.literal("Breakfast"))
-    .or(z.literal("Lunch"))
-    .or(z.literal("Dinner"))
-    .or(z.literal(`Other`)),
-  foodItems: z.array(
-    z.object({
-      name: z.string(),
-      stats: z.object({
-        macros: z.object({
-          calories: z.number(),
-          protein: z.number(),
-          carbs: z.number(),
-          fat: z.number(),
-        }),
-        micros: z.array(
-          z.object({
-            id: z.number(),
-            name: z.string(),
-            amount: z.number(),
-          }),
-        ),
-      }),
-      numberOfServings: z.number(),
-    }),
-  ),
-})
 
 export default function USDATest() {
   const [searchQuery, setSearchQuery] = useState("")
