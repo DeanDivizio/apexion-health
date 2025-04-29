@@ -146,13 +146,9 @@ export default function FoodItemDrawer({item, type}: {item: USDABrandedFood | US
                 <Plus className="text-green-400 w-6 h-6" />
             </Button>
             {open && (
-                <div className="fixed inset-0 z-50">
-                    <div 
-                        className="absolute inset-0 bg-black/80"
-                        onClick={() => setOpen(false)}
-                    />
-                    <div className="absolute bottom-0 left-0 right-0 h-[90vh] bg-gradient-to-br from-teal-950/50 to-indigo-950/40 via-neutral-950/30 backdrop-blur-xl rounded-t-[10px] overflow-hidden">
-                        <div className="h-[10vh] flex flex-col items-center justify-center">
+                <div className="fixed inset-0 z-50 h-full">
+                    <div className="absolute bottom-0 left-0 right-0 h-full bg-gradient-to-br from-teal-950/50 to-indigo-950/40 via-neutral-950/30 backdrop-blur-xl rounded-t-[10px] overflow-hidden">
+                        <div className="h-[10vh] mt-6 flex flex-col items-center justify-center px-4">
                             <h3 className="text-lg font-semibold">Add Food</h3>
                             <p className="text-sm text-muted-foreground italic">{fromAllCaps(item.description)}</p>
                         </div>
@@ -171,7 +167,7 @@ export default function FoodItemDrawer({item, type}: {item: USDABrandedFood | US
                                 />
                             </div>
                         </div>
-                        <div className="absolute bottom-0 left-0 right-0 h-[10vh] backdrop-blur-sm bg-black/50 flex flex-col gap-2 p-4">
+                        <div className="absolute bottom-0 left-0 right-0 h-[16vh] backdrop-blur-sm bg-black/50 flex flex-col gap-2 p-4">
                             <Button 
                                 className="w-full mb-1 bg-gradient-to-br from-neutral-800 to-neutral-950 border border-neutral-700 rounded-xl active:scale-95 transition-transform touch-manipulation"
                                 onClick={handleAddFood}
