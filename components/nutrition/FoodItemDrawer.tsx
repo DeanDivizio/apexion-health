@@ -135,7 +135,9 @@ export default function FoodItemDrawer({item, type}: {item: USDABrandedFood | US
     return (
         <Drawer open={open} onOpenChange={setOpen}>
             <DrawerTrigger asChild>
-                <Plus className="absolute top-2 right-2 text-green-400 w-6 h-6" />
+                <Button variant="ghost" size="icon" className="absolute top-2 right-2 p-0 h-8 w-8">
+                    <Plus className="text-green-400 w-6 h-6" />
+                </Button>
             </DrawerTrigger>
             <DrawerContent className="bg-gradient-to-br from-teal-950/50 to-indigo-950/40 via-neutral-950/30 backdrop-blur-xl h-[90vh]">
                 <DrawerHeader className="h-[10vh]">
@@ -159,14 +161,26 @@ export default function FoodItemDrawer({item, type}: {item: USDABrandedFood | US
                 </div>
                 <DrawerFooter className="h-[10vh] mb-12 backdrop-blur-sm bg-black/50">
                     <Button 
-                        className="w-full mb-1 bg-gradient-to-br from-neutral-800 to-neutral-950 border border-neutral-700 rounded-xl"
-                        onClick={handleAddFood}>
-                        <p className="font-medium bg-clip-text text-transparent bg-gradient-to-br from-green-300 to-blue-500">
+                        className="w-full mb-1 bg-gradient-to-br from-neutral-800 to-neutral-950 border border-neutral-700 rounded-xl active:scale-95 transition-transform"
+                        onClick={handleAddFood}
+                        onTouchStart={(e) => e.currentTarget.classList.add('active')}
+                        onTouchEnd={(e) => e.currentTarget.classList.remove('active')}
+                    >
+                        <p className="font-medium bg-clip-text text-transparent bg-gradient-to-br from-green-300 to-blue-500 py-2">
                             Add Food
                         </p>
                     </Button>
                     <DrawerClose asChild>
-                        <Button variant="outline" className="w-full border-red-900 rounded-xl bg-gradient-to-br from-neutral-900 to-neutral-950"><p className="font-medium text-transparent bg-clip-text bg-gradient-to-br from-neutral-400 to-neutral-500">Cancel</p></Button>
+                        <Button 
+                            variant="outline" 
+                            className="w-full border-red-900 rounded-xl bg-gradient-to-br from-neutral-900 to-neutral-950 active:scale-95 transition-transform"
+                            onTouchStart={(e) => e.currentTarget.classList.add('active')}
+                            onTouchEnd={(e) => e.currentTarget.classList.remove('active')}
+                        >
+                            <p className="font-medium text-transparent bg-clip-text bg-gradient-to-br from-neutral-400 to-neutral-500 py-2">
+                                Cancel
+                            </p>
+                        </Button>
                     </DrawerClose>
                 </DrawerFooter>
             </DrawerContent>
