@@ -296,6 +296,14 @@ export type USDABrandedFood = {
   id: number;
   ingredients: string;
   label_nutrients: USDABrandedFoodNutrients;
+  food_nutrients: Array<{
+    amount: number;
+    nutrient: {
+      id: number;
+      name: string;
+      unitName: string;
+    };
+  }>;
   serving_size: string;
   serving_size_unit: string;
 }
@@ -328,9 +336,16 @@ type USDABrandedFoodNutrients = {
     saturatedFat: {
       value: number;
     };
+    sugars?: {
+      value: number;
+    };
     potassium?: {
       value: number;
     };
+    sodium?: {
+      value: number;
+    };
+    
 }
 
 export type USDAFoundationFood = {

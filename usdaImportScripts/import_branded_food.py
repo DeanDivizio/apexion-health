@@ -7,15 +7,15 @@ from tqdm import tqdm
 
 # Database connection parameters - update these with your values
 DB_PARAMS = {
-    "host": "Your db Host",
-    "database": "Your Database Name",
-    "user": "Your Username", # Default is postgres
-    "password": "Your Password",
+    "host": "192.168.4.9",
+    "database": "apexionUSDA",
+    "user": "postgres", # Default is postgres
+    "password": "D3skM@tt",
     "port": 5432  # Default PostgreSQL port
 }
 
 # Path to branded foods JSON file
-BRANDED_FOODS_PATH = "PATH TO YOUR JSON FILE"
+BRANDED_FOODS_PATH = "/Users/dean/Downloads/FoodData_Central_branded_food_json_2025-04-24.json"
 
 # Batch size for inserts (adjust based on your data size and available memory)
 BATCH_SIZE = 1000
@@ -38,6 +38,7 @@ def create_tables(conn):
             branded_food_category TEXT,
             data_type TEXT,
             label_nutrients JSONB,
+            food_nutrients JSONB,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
         """)
@@ -49,6 +50,7 @@ def create_tables(conn):
         CREATE INDEX IF NOT EXISTS idx_branded_brandowner ON branded_foods (brand_owner);
         CREATE INDEX IF NOT EXISTS idx_branded_category ON branded_foods (branded_food_category);
         CREATE INDEX IF NOT EXISTS idx_branded_label_nutrients ON branded_foods USING GIN (label_nutrients);
+        CREATE INDEX IF NOT EXISTS idx_branded_food_nutrients ON branded_foods USING GIN (food_nutrients);
         """)
         
         conn.commit()
@@ -90,9 +92,9 @@ def import_branded_foods(conn, json_file_path):
                 fdcId, description, brand_owner, gtin_upc,
                 ingredients, serving_size, serving_size_unit,
                 household_serving, branded_food_category, data_type,
-                label_nutrients
+                label_nutrients, food_nutrients
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (fdcId) DO UPDATE
             SET 
                 description = EXCLUDED.description,
@@ -104,7 +106,8 @@ def import_branded_foods(conn, json_file_path):
                 household_serving = EXCLUDED.household_serving,
                 branded_food_category = EXCLUDED.branded_food_category,
                 data_type = EXCLUDED.data_type,
-                label_nutrients = EXCLUDED.label_nutrients;
+                label_nutrients = EXCLUDED.label_nutrients,
+                food_nutrients = EXCLUDED.food_nutrients;
             """
             
             # Process in batches with progress bar
@@ -131,6 +134,7 @@ def import_branded_foods(conn, json_file_path):
                         
                         # Get label nutrients directly as they are in the JSON
                         label_nutrients = item.get('labelNutrients', {})
+                        food_nutrients = item.get('foodNutrients', {})
                         
                         # Debug print for first item
                         if success_count == 0:
@@ -139,13 +143,14 @@ def import_branded_foods(conn, json_file_path):
                             print(f"description: {description}")
                             print(f"brand_owner: {brand_owner}")
                             print(f"label_nutrients: {label_nutrients}")
+                            print(f"food_nutrients: {food_nutrients}")
                         
                         # Add to batch values
                         batch_values.append((
                             fdc_id, description, brand_owner, gtin_upc,
                             ingredients, serving_size, serving_size_unit,
                             household_serving, branded_food_category, data_type,
-                            json.dumps(label_nutrients)
+                            json.dumps(label_nutrients), json.dumps(food_nutrients)
                         ))
                         
                         success_count += 1

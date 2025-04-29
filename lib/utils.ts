@@ -64,3 +64,17 @@ export function toCamelCase(str: string): string {
 export function fromAllCaps(str: string): string {
   return str.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
 }
+
+export function roundToNearestWhole(num: number | string) {
+  if (typeof num === 'string') {
+    num = parseFloat(num);
+  }
+  return Math.round(num);
+}
+
+export function roundToNearestTenth(num: number | string) {
+  if (typeof num === 'string') {
+    num = parseFloat(num);
+  }
+  return Math.round(num * 10) / 10;
+}

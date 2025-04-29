@@ -1,0 +1,173 @@
+"use client"
+import { Plus, Info } from "lucide-react"
+import { Button } from "../ui_primitives/button"
+import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger } from "../ui_primitives/drawer"
+import { USDABrandedFood, USDAFoundationFood } from "@/utils/types"
+import { fromAllCaps } from "@/lib/utils"
+import { findFoundationMacros, findMicros } from "./foodUtils"
+import { Input } from "../ui_primitives/input"
+import { useMealForm } from "@/context/MealFormContext"
+import { useState } from "react"
+
+function RenderMacros({item, type}: {item: USDABrandedFood | USDAFoundationFood, type: string}) {
+    if (type === "branded") {
+        const food = item as USDABrandedFood;
+        return (
+            <div id="branded-macros" className="mb-8">
+                <h3 className="text-lg font-medium mb-4 text-transparent bg-clip-text bg-gradient-to-b from-green-200 to-green-500">Macros</h3>
+                <div className="flex items-center justify-start gap-2 mb-4 ml-4">
+                    <p>Calories</p>
+                    <Input t9 type="number" className="w-20 h-6 bg-neutral-800 border-none rounded" defaultValue={food.label_nutrients?.calories?.value || 0} />
+                </div>
+                <div className="flex items-center justify-start gap-2 mb-4 ml-4">
+                    <p>Protein <span className="text-xs text-neutral-400">(grams)</span></p>
+                    <Input t9 type="number" className="w-20 h-6 bg-neutral-800 border-none rounded" defaultValue={food.label_nutrients?.protein?.value || 0} />
+                </div>
+                <div className="flex items-center justify-start gap-2 mb-4 ml-4">
+                    <p>Carbs <span className="text-xs text-neutral-400">(grams)</span></p>
+                    <Input t9 type="number" className="w-20 h-6 bg-neutral-800 border-none rounded" defaultValue={food.label_nutrients?.carbohydrates?.value || 0} />
+                </div>
+                <div className="flex items-center justify-start gap-2 mb-4 ml-4">
+                    <p>Fat <span className="text-xs text-neutral-400">(grams)</span></p>
+                    <Input t9 type="number" className="w-20 h-6 bg-neutral-800 border-none rounded" defaultValue={food.label_nutrients?.fat?.value || 0} />
+                </div>
+            </div>
+        )
+    } else {
+        const food = item as USDAFoundationFood;
+        const macros = findFoundationMacros(food)
+        return (
+            <div id="foundation-macros" className="mb-8">
+                <h3 className="text-lg font-medium mb-4 text-transparent bg-clip-text bg-gradient-to-b from-green-200 to-green-500">Macros</h3>
+                <div className="flex items-center justify-start gap-2 mb-4 ml-4"><p>Calories</p> <Input t9 type="number" className="w-20 h-6 bg-neutral-800 border-none rounded" defaultValue={macros.calories || 0} /></div>
+                <div className="flex items-center justify-start gap-2 mb-4 ml-4"><p>Protein <span className="text-xs text-neutral-400">(grams)</span></p> <Input t9 type="number" className="w-20 h-6 bg-neutral-800 border-none rounded" defaultValue={macros.protein || 0} /></div>
+                <div className="flex items-center justify-start gap-2 mb-4 ml-4"><p>Carbs <span className="text-xs text-neutral-400">(grams)</span></p> <Input t9 type="number" className="w-20 h-6 bg-neutral-800 border-none rounded" defaultValue={macros.carbs || 0} /></div>
+                <div className="flex items-center justify-start gap-2 mb-4 ml-4"><p>Fat <span className="text-xs text-neutral-400">(grams)</span></p> <Input t9 type="number" className="w-20 h-6 bg-neutral-800 border-none rounded" defaultValue={macros.fat || 0} /></div>
+            </div>
+        )
+    }
+}
+
+function RenderMicros({item, type}: {item: USDABrandedFood | USDAFoundationFood, type: string}) {
+    const micros = findMicros(item, type)
+    const nonZeroMicros = Object.entries(micros).filter(([_, value]) => value.amount > 0)
+    
+    return (
+        <div id="micros">
+            <h3 className="text-lg font-medium mb-4 text-transparent bg-clip-text bg-gradient-to-b from-blue-200 to-blue-500">Micros</h3>
+            <div className="">
+                {nonZeroMicros.map(([key, value]) => (
+                    <div key={key} className="flex flex-col mb-4 ml-4">
+                        <div className="flex items-center gap-2">
+                            <p className="capitalize">
+                                {key.replace(/([A-Z])/g, ' $1').trim()} 
+                                <span className="text-xs text-neutral-400 ml-1">({value.unit})</span>
+                            </p>
+                            <Input 
+                                type="number" 
+                                className="w-20 h-6 bg-neutral-800 border-none rounded" 
+                                defaultValue={value.amount} 
+                            />
+                        </div>
+                        {'note' in value && value.note && (
+                            <p className="text-xs font-light italic text-neutral-400 mt-1">{value.note}</p>
+                        )}
+                    </div>
+                ))}
+            </div>
+        </div>
+    )
+}
+
+export default function FoodItemDrawer({item, type}: {item: USDABrandedFood | USDAFoundationFood, type: string}) {
+    const { addFoodItem } = useMealForm()
+    const [servings, setServings] = useState<number>(1)
+    const [open, setOpen] = useState(false)
+
+    const transformFoodItem = (item: USDABrandedFood | USDAFoundationFood, type: string) => {
+        let macros;
+        if (type === "branded") {
+            const food = item as USDABrandedFood;
+            macros = {
+                calories: food.label_nutrients.calories.value,
+                protein: food.label_nutrients.protein.value,
+                carbs: food.label_nutrients.carbohydrates.value,
+                fat: food.label_nutrients.fat.value
+            };
+        } else {
+            const food = item as USDAFoundationFood;
+            const baseMacros = findFoundationMacros(food);
+            macros = {
+                calories: baseMacros.calories,
+                protein: baseMacros.protein,
+                carbs: baseMacros.carbs,
+                fat: baseMacros.fat
+            };
+        }
+
+        const micros = findMicros(item, type);
+        const microsArray = Object.entries(micros).map(([name, value]) => ({
+            id: value.id,
+            name: name,
+            amount: value.amount,
+            unit: value.unit,
+            // @ts-ignore
+            note: value.note || ''
+        }));
+
+        return {
+            name: fromAllCaps(item.description),
+            numberOfServings: servings,
+            stats: {
+                ...macros,
+                micros: microsArray
+            }
+        };
+    };
+
+    const handleAddFood = () => {
+        addFoodItem(transformFoodItem(item, type));
+        setOpen(false);
+    };
+
+    return (
+        <Drawer open={open} onOpenChange={setOpen}>
+            <DrawerTrigger asChild>
+                <Plus className="absolute top-2 right-2 text-green-400 w-6 h-6" />
+            </DrawerTrigger>
+            <DrawerContent className="bg-gradient-to-br from-teal-950/50 to-indigo-950/40 via-neutral-950/30 backdrop-blur-xl h-[90vh]">
+                <DrawerHeader className="h-[10vh]">
+                    <DrawerTitle>Add Food</DrawerTitle>
+                    <DrawerDescription className="italic">{fromAllCaps(item.description)}</DrawerDescription>
+                </DrawerHeader>
+                <div className="p-4 h-[70vh] overflow-y-auto">
+                    <RenderMacros item={item} type={type} />
+                    <RenderMicros item={item} type={type} />
+                    <div className="flex flex-col items-center justify-start w-full mt-12 mb-4">
+                        <p className="text-xl font-medium mb-4 text-transparent bg-clip-text bg-gradient-to-b from-purple-200 to-purple-500">Number of Servings</p>
+                        <Input 
+                            type="number" 
+                            min="0" 
+                            step="0.5"
+                            value={servings}
+                            onChange={(e) => setServings(parseFloat(e.target.value) || 1)}
+                            className="w-20 h-8 bg-neutral-800 border-none rounded"
+                        />
+                    </div>
+                </div>
+                <DrawerFooter className="h-[10vh] mb-12 backdrop-blur-sm bg-black/50">
+                    <Button 
+                        className="w-full mb-1 bg-gradient-to-br from-neutral-800 to-neutral-950 border border-neutral-700 rounded-xl"
+                        onClick={handleAddFood}>
+                        <p className="font-medium bg-clip-text text-transparent bg-gradient-to-br from-green-300 to-blue-500">
+                            Add Food
+                        </p>
+                    </Button>
+                    <DrawerClose asChild>
+                        <Button variant="outline" className="w-full border-red-900 rounded-xl bg-gradient-to-br from-neutral-900 to-neutral-950"><p className="font-medium text-transparent bg-clip-text bg-gradient-to-br from-neutral-400 to-neutral-500">Cancel</p></Button>
+                    </DrawerClose>
+                </DrawerFooter>
+            </DrawerContent>
+        </Drawer>
+    )
+}

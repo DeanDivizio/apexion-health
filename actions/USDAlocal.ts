@@ -32,7 +32,7 @@ async function USDAPostgresSearch_Foundation(query: string, limit: number = 10):
 }
 
 async function USDAPostgresSearch_Branded(query: string, limit: number = 10): Promise<USDABrandedFood[]> {
-    // "use cache"
+    "use cache"
     try {
       const client = await pool.connect();
       try {
@@ -63,7 +63,6 @@ async function USDAPostgresSearch_Branded(query: string, limit: number = 10): Pr
           ]
         );
         
-        console.log('Search results:', result.rows);
         return result.rows as USDABrandedFood[];
       } finally {
         client.release();

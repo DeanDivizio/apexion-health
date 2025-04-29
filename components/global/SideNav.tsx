@@ -2,7 +2,8 @@
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui_primitives/sheet";
 import { Apple, ClipboardPlus, Dumbbell, MenuIcon, MessageSquareWarning, Pill, Scale, Settings, Syringe, TestTube, UserPen } from "lucide-react";
 import Link from "next/link";
-import { useUser } from "@clerk/nextjs";
+import { SignIn, useUser } from "@clerk/nextjs";
+import { SignInButton, SignedIn, SignedOut } from "@clerk/nextjs";
 export function SideNav() {
     const { user } = useUser();
     return (
@@ -12,8 +13,13 @@ export function SideNav() {
             </SheetTrigger>
             <SheetContent side="left" className="w-full bg-neutral-900/30 backdrop-blur-lg">
                 <SheetHeader>
-                    <SheetTitle className="text-base font-regular">{`Hi, ${user?.firstName}`}</SheetTitle>
-                    <SheetDescription className="text-xs font-thin italic">{`Where would you like to go?`}</SheetDescription>
+                    <SignedIn>
+                        <SheetTitle className="text-base font-regular">{`Hi, ${user?.firstName}`}</SheetTitle>
+                        <SheetDescription className="text-xs font-thin italic">{`Where would you like to go?`}</SheetDescription>
+                    </SignedIn>
+                    <SignedOut>
+                        <SheetTitle className="text-base font-regular"><SignInButton /></SheetTitle>
+                    </SignedOut>
                 </SheetHeader>
                 <nav className="flex flex-col gap-4 pt-6 h-full overflow-y-scroll">
                     <div id="side-nav-collections" className="flex flex-col text-sm font-light">

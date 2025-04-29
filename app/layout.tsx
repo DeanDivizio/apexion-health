@@ -6,6 +6,8 @@ import MobileNav from "@/components/global/MobileNav";
 import {SubNavContextProvider} from "@/context/SubNavOpenContext"
 import MobileHeader from "@/components/global/MobileHeader";
 import { Toaster } from "@/components/ui_primitives/toaster";
+import { MobileHeaderProvider } from "@/context/MobileHeaderContext";
+import { MealFormProvider } from "@/context/MealFormContext";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -30,12 +32,16 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en">
         <body className="w-full h-auto overflow-clip bg-black">
-        <MobileHeader />
-        <SubNavContextProvider>
-            {children}
-          <MobileNav />
-        </SubNavContextProvider>
-        <Toaster />
+          <MobileHeaderProvider>
+            <MealFormProvider>
+              <MobileHeader />
+              <SubNavContextProvider>
+                {children}
+                <MobileNav />
+              </SubNavContextProvider>
+            </MealFormProvider>
+          </MobileHeaderProvider>
+          <Toaster />
         </body>
       </html>
     </ClerkProvider>

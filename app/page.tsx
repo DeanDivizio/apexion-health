@@ -1,7 +1,7 @@
 "use client";
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { homeFetch } from "@/actions/InternalLogic";
-import { useUser } from "@clerk/nextjs";
+import { SignedIn, SignedOut, SignInButton, UserButton, useUser } from "@clerk/nextjs";
 import { WeeklyDataDisplayComponent } from "@/components/home/WeeklySummary";
 import PinnedData from "@/components/home/PinnedData";
 import Footer from "@/components/global/Footer";
@@ -11,6 +11,8 @@ import { ChartConfig } from "@/components/ui_primitives/chart";
 import Defocuser from "@/components/global/Defocuser";
 import { useIsMobile } from "@/hooks/use-mobile";
 import type { SummaryData } from "@/utils/types";
+import { MobileHeaderContext } from "@/context/MobileHeaderContext";
+
 
 
 const demointareadata = [
@@ -122,6 +124,7 @@ const demochartConfig = {
 
 export default function Home() {
   const { user, isLoaded } = useUser();
+  const { setHeaderComponent } = useContext(MobileHeaderContext);
   const isMobile = useIsMobile();
   const [data, setData] = useState<SummaryData>();
   const [todayCalories, setTodayCalories] = useState(0);
@@ -185,6 +188,22 @@ export default function Home() {
     setFatGoal(user?.publicMetadata.markers.nutrition.fatGoal);
     }
   },[isLoaded])
+
+  useEffect(()=>{
+    setHeaderComponent(
+      <div className="flex items-center justify-center">
+      <SignedIn>
+        <UserButton />
+      </SignedIn>
+      <SignedOut>
+        <SignInButton />
+      </SignedOut>
+      </div>
+      )
+    return () => {
+      setHeaderComponent(null)
+    }
+  },[])
 
   return (
     <main className={`flex pb-12 md:pb-0 px-4 pt-24 md:pt-4 h-auto 3xl:h-[100vh] overflow-clip w-full flex-col items-center justify-start bg-gradient-to-br from-blue-950/20 to-neutral-950`}>
