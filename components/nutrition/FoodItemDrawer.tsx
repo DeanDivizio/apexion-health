@@ -127,63 +127,72 @@ export default function FoodItemDrawer({item, type}: {item: USDABrandedFood | US
         };
     };
 
-    const handleAddFood = () => {
-        addFoodItem(transformFoodItem(item, type));
+    const handleAddFood = (e: React.MouseEvent | React.TouchEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const transformedItem = transformFoodItem(item, type);
+        addFoodItem(transformedItem);
         setOpen(false);
     };
 
     return (
-        <Drawer open={open} onOpenChange={setOpen}>
-            <DrawerTrigger asChild>
-                <Button variant="ghost" size="icon" className="absolute top-2 right-2 p-0 h-8 w-8">
-                    <Plus className="text-green-400 w-6 h-6" />
-                </Button>
-            </DrawerTrigger>
-            <DrawerContent className="bg-gradient-to-br from-teal-950/50 to-indigo-950/40 via-neutral-950/30 backdrop-blur-xl h-[90vh]">
-                <DrawerHeader className="h-[10vh]">
-                    <DrawerTitle>Add Food</DrawerTitle>
-                    <DrawerDescription className="italic">{fromAllCaps(item.description)}</DrawerDescription>
-                </DrawerHeader>
-                <div className="p-4 h-[70vh] overflow-y-auto">
-                    <RenderMacros item={item} type={type} />
-                    <RenderMicros item={item} type={type} />
-                    <div className="flex flex-col items-center justify-start w-full mt-12 mb-4">
-                        <p className="text-xl font-medium mb-4 text-transparent bg-clip-text bg-gradient-to-b from-purple-200 to-purple-500">Number of Servings</p>
-                        <Input 
-                            type="number" 
-                            min="0" 
-                            step="0.5"
-                            value={servings}
-                            onChange={(e) => setServings(parseFloat(e.target.value) || 1)}
-                            className="w-20 h-8 bg-neutral-800 border-none rounded"
-                        />
+        <div>
+            <Button 
+                variant="ghost" 
+                size="icon" 
+                className="absolute top-2 right-2 p-0 h-8 w-8 touch-manipulation"
+                onClick={() => setOpen(true)}
+            >
+                <Plus className="text-green-400 w-6 h-6" />
+            </Button>
+            {open && (
+                <div className="fixed inset-0 z-50">
+                    <div 
+                        className="absolute inset-0 bg-black/80"
+                        onClick={() => setOpen(false)}
+                    />
+                    <div className="absolute bottom-0 left-0 right-0 h-[90vh] bg-gradient-to-br from-teal-950/50 to-indigo-950/40 via-neutral-950/30 backdrop-blur-xl rounded-t-[10px] overflow-hidden">
+                        <div className="h-[10vh] flex flex-col items-center justify-center">
+                            <h3 className="text-lg font-semibold">Add Food</h3>
+                            <p className="text-sm text-muted-foreground italic">{fromAllCaps(item.description)}</p>
+                        </div>
+                        <div className="p-4 h-[70vh] overflow-y-auto">
+                            <RenderMacros item={item} type={type} />
+                            <RenderMicros item={item} type={type} />
+                            <div className="flex flex-col items-center justify-start w-full mt-12 mb-4">
+                                <p className="text-xl font-medium mb-4 text-transparent bg-clip-text bg-gradient-to-b from-purple-200 to-purple-500">Number of Servings</p>
+                                <Input 
+                                    type="number" 
+                                    min="0" 
+                                    step="0.5"
+                                    value={servings}
+                                    onChange={(e) => setServings(parseFloat(e.target.value) || 1)}
+                                    className="w-20 h-8 bg-neutral-800 border-none rounded"
+                                />
+                            </div>
+                        </div>
+                        <div className="absolute bottom-0 left-0 right-0 h-[10vh] backdrop-blur-sm bg-black/50 flex flex-col gap-2 p-4">
+                            <Button 
+                                className="w-full mb-1 bg-gradient-to-br from-neutral-800 to-neutral-950 border border-neutral-700 rounded-xl active:scale-95 transition-transform touch-manipulation"
+                                onClick={handleAddFood}
+                            >
+                                <p className="font-medium bg-clip-text text-transparent bg-gradient-to-br from-green-300 to-blue-500 py-2">
+                                    Add Food
+                                </p>
+                            </Button>
+                            <Button 
+                                variant="outline" 
+                                className="w-full border-red-900 rounded-xl bg-gradient-to-br from-neutral-900 to-neutral-950 active:scale-95 transition-transform touch-manipulation"
+                                onClick={() => setOpen(false)}
+                            >
+                                <p className="font-medium text-transparent bg-clip-text bg-gradient-to-br from-neutral-400 to-neutral-500 py-2">
+                                    Cancel
+                                </p>
+                            </Button>
+                        </div>
                     </div>
                 </div>
-                <DrawerFooter className="h-[10vh] mb-12 backdrop-blur-sm bg-black/50">
-                    <Button 
-                        className="w-full mb-1 bg-gradient-to-br from-neutral-800 to-neutral-950 border border-neutral-700 rounded-xl active:scale-95 transition-transform"
-                        onClick={handleAddFood}
-                        onTouchStart={(e) => e.currentTarget.classList.add('active')}
-                        onTouchEnd={(e) => e.currentTarget.classList.remove('active')}
-                    >
-                        <p className="font-medium bg-clip-text text-transparent bg-gradient-to-br from-green-300 to-blue-500 py-2">
-                            Add Food
-                        </p>
-                    </Button>
-                    <DrawerClose asChild>
-                        <Button 
-                            variant="outline" 
-                            className="w-full border-red-900 rounded-xl bg-gradient-to-br from-neutral-900 to-neutral-950 active:scale-95 transition-transform"
-                            onTouchStart={(e) => e.currentTarget.classList.add('active')}
-                            onTouchEnd={(e) => e.currentTarget.classList.remove('active')}
-                        >
-                            <p className="font-medium text-transparent bg-clip-text bg-gradient-to-br from-neutral-400 to-neutral-500 py-2">
-                                Cancel
-                            </p>
-                        </Button>
-                    </DrawerClose>
-                </DrawerFooter>
-            </DrawerContent>
-        </Drawer>
+            )}
+        </div>
     )
 }
