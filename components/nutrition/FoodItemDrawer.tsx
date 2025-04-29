@@ -118,6 +118,8 @@ export default function FoodItemDrawer({item, type}: {item: USDABrandedFood | US
         return {
             name: fromAllCaps(item.description),
             numberOfServings: servings,
+            servingSize: type === "branded" ? parseFloat((item as USDABrandedFood).serving_size) : 100,
+            servingSizeUnit: type === "branded" ? (item as USDABrandedFood).serving_size_unit : "g",
             stats: {
                 ...macros,
                 micros: microsArray
