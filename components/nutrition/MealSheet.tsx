@@ -6,6 +6,8 @@ import { Button } from "../ui_primitives/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui_primitives/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui_primitives/select"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../ui_primitives/accordion"
+import { Input } from "../ui_primitives/input"
+import { Label } from "../ui_primitives/label"
 
 export default function MealSheet() {
     const { 
@@ -15,7 +17,8 @@ export default function MealSheet() {
         setMealFormData,
         submitMeal,
         sheetOpen,
-        setSheetOpen
+        setSheetOpen,
+        updateFoodItemServings
     } = useMealForm()
 
     const totalMacros = foodItems.reduce((acc, item) => ({
@@ -166,19 +169,56 @@ export default function MealSheet() {
                     {foodItems.map((item) => (
                         <Card key={item.name} className="relative mb-4">
                             <CardHeader>
-                            <CardTitle className="text-base font-medium">{item.name}</CardTitle>
-                            <CardDescription className="text-sm font-thin italic">{`${item.numberOfServings} ${item.numberOfServings > 1 ? "servings" : "serving"}`}</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                className="absolute bottom-2 right-2"
-                                onClick={() => removeFoodItem(item.name)}
-                            >
-                                <Trash2 className="w-5 h-5 text-red-900" />
-                            </Button>
-                        </CardContent>
+                                <CardTitle className="text-base font-medium">{item.name}</CardTitle>
+                                <CardDescription className="text-sm font-thin italic">
+                                    {item.servingSize && item.servingSizeUnit ? 
+                                        `Serving Size: ${item.servingSize}${item.servingSizeUnit === "pieces" ? item.servingSize > 1 ? " Pieces" : " Piece" : item.servingSizeUnit}` :
+                                        `${item.numberOfServings} ${item.numberOfServings > 1 ? "servings" : "serving"}`
+                                    }
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="grid grid-cols-4 items-center gap-4 mb-4">
+                                    <Label htmlFor={`servings-${item.name}`} className="text-right">
+                                        Servings
+                                    </Label>
+                                    <Input
+                                        id={`servings-${item.name}`}
+                                        type="number"
+                                        min="0.25"
+                                        step="0.25"
+                                        value={item.numberOfServings}
+                                        onChange={(e) => updateFoodItemServings(item.name, parseFloat(e.target.value))}
+                                        className="col-span-3"
+                                    />
+                                </div>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-1">
+                                    <div className="flex gap-2 items-center">
+                                        <span className="text-sm text-neutral-400">Calories</span>
+                                        <span className="text-lg">{Math.round(item.stats.calories * item.numberOfServings)}</span>
+                                    </div>
+                                    <div className="flex gap-2 items-center">
+                                        <span className="text-sm text-neutral-400">Protein</span>
+                                        <span className="text-lg">{Math.round(item.stats.protein * item.numberOfServings)}g</span>
+                                    </div>
+                                    <div className="flex gap-2 items-center">
+                                        <span className="text-sm text-neutral-400">Carbs</span>
+                                        <span className="text-lg">{Math.round(item.stats.carbs * item.numberOfServings)}g</span>
+                                    </div>
+                                    <div className="flex gap-2 items-center">
+                                        <span className="text-sm text-neutral-400">Fat</span>
+                                        <span className="text-lg">{Math.round(item.stats.fat * item.numberOfServings)}g</span>
+                                    </div>
+                                </div>
+                                <Button 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    className="absolute bottom-2 right-2"
+                                    onClick={() => removeFoodItem(item.name)}
+                                >
+                                    <Trash2 className="w-5 h-5 text-red-900" />
+                                </Button>
+                            </CardContent>
                         </Card>
                     ))}
                     {foodItems.length === 0 && (

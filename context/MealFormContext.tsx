@@ -44,6 +44,7 @@ interface MealFormContextType {
   setMealFormData: (data: z.infer<typeof MealFormSchema>) => void;
   submitMeal: () => Promise<void>;
   addToFavorites: (item: FoodItem) => void;
+  updateFoodItemServings: (name: string, servings: number) => void;
 }
 
 const MealFormContext = createContext<MealFormContextType | undefined>(undefined);
@@ -149,6 +150,14 @@ export const MealFormProvider: React.FC<MealFormProviderProps> = ({ children }) 
     }
   };
 
+  const updateFoodItemServings = (name: string, servings: number) => {
+    setFoodItems((prevItems) =>
+      prevItems.map((item) =>
+        item.name === name ? { ...item, numberOfServings: servings } : item
+      )
+    );
+  };
+
   return (
     <MealFormContext.Provider value={{ 
       foodItems, 
@@ -159,7 +168,8 @@ export const MealFormProvider: React.FC<MealFormProviderProps> = ({ children }) 
       mealFormData,
       setMealFormData,
       submitMeal,
-      addToFavorites
+      addToFavorites,
+      updateFoodItemServings
     }}>
       {children}
     </MealFormContext.Provider>

@@ -15,6 +15,8 @@ import {
   DialogTrigger,
 } from "../ui_primitives/dialog"
 import { useState } from "react"
+import { Input } from "../ui_primitives/input"
+import { Label } from "../ui_primitives/label"
 
 interface FavoriteFoodCardProps {
   item: {
@@ -43,12 +45,16 @@ export default function FavoriteFoodCard({ item, index, onDelete }: FavoriteFood
   const { addFoodItem } = useMealForm()
   const { toast } = useToast()
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+  const [servings, setServings] = useState(1)
 
   const handleAddToMeal = () => {
     addFoodItem({
       ...item,
-      numberOfServings: 1
+      numberOfServings: servings
     })
+    setIsAddDialogOpen(false)
+    setServings(1)
     toast({
       title: "Food Added",
       description: `${item.name} has been added to your meal`,
@@ -88,14 +94,49 @@ export default function FavoriteFoodCard({ item, index, onDelete }: FavoriteFood
             </CardDescription>
           </div>
           <div className="flex gap-2">
-            <Button 
-              onClick={handleAddToMeal}
-              variant="ghost"
-              size="icon"
-              className="absolute top-4 right-4"
-            >
-              <PlusIcon className="w-6 h-6 text-green-400" />
-            </Button>
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Button 
+                  variant="ghost"
+                  size="icon"
+                  className="absolute top-4 right-4"
+                >
+                  <PlusIcon className="w-6 h-6 text-green-400" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-[400px] sm:max-w-[425px]">
+                <DialogHeader className="mb-4">
+                  <DialogTitle className="mb-4">Add to Meal</DialogTitle>
+                  <DialogDescription>
+                    How many servings of {item.name} would you like to add to your meal?
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="servings" className="text-right">
+                      Servings
+                    </Label>
+                    <Input
+                      id="servings"
+                      type="number"
+                      min="0.25"
+                      step="0.25"
+                      value={servings}
+                      onChange={(e) => setServings(parseFloat(e.target.value))}
+                      className="col-span-3"
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleAddToMeal}>
+                    Add to Meal
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
             <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
               <DialogTrigger asChild>
                 <Button 
