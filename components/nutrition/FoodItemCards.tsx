@@ -22,7 +22,7 @@ export default function FoodItemCard({ item, type }: { item: USDABrandedFood | U
    }
   
     return (
-    <Card className="w-full mb-4 relative">
+    <Card className="w-full mb-4 relative rounded-2xl">
       <CardHeader>
         <CardTitle className="text-base font-medium w-[90%]">{title}</CardTitle>
         <CardDescription className="text-sm text-neutral-400">{subTitle}</CardDescription>

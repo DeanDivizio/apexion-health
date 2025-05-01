@@ -13,6 +13,7 @@ import FoodItemCard, { FoodItemCardSkeleton } from "@/components/nutrition/FoodI
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui_primitives/tabs"
 import CustomFoodForm from "@/components/nutrition/CustomFoodForm"
 import FavoriteFoodCard from "@/components/nutrition/FavoriteFoodCard"
+import { Input } from "@/components/ui_primitives/input"
 
 export default function USDATest() {
   const [searchQuery, setSearchQuery] = useState("")
@@ -66,26 +67,31 @@ export default function USDATest() {
   return (
     <main className="min-h-screen flex flex-col items-center justify-start w-full py-28 bg-gradient-to-br from-green-950/40 to-blue-950/30 via-neutral-950">
       <div className="flex flex-col items-center justify-start w-full h-full">
-        <div className="flex flex-row items-center justify-center pb-8">
+        <div className="flex flex-row items-center justify-center mb-6">
           <h1 className="text-2xl font-medium">Log Food</h1>
         </div>
         <Tabs defaultValue="search" className="w-full flex flex-col items-center justify-center">
-          <TabsList className="rounded gap-4 mb-4">
+          <TabsList className="rounded gap-4 mb-12">
             <TabsTrigger value="search">Search</TabsTrigger>
             <TabsTrigger value="favorites">Favorites</TabsTrigger>
             <TabsTrigger value="custom">Add Custom</TabsTrigger>
           </TabsList>
           <TabsContent value="search" className="w-full">
-            <div className="grid grid-cols-4 gap-2 md:w-2/3 pb-8 px-4">
-              <input
-                className="col-span-3 p-2 rounded-md text-black"
+            <div className="grid grid-cols-5 gap-2 md:w-2/3 pb-8 px-4">
+              <Input
+                className="col-span-4 p-4 h-12 rounded-md text-white text-base bg-gradient-to-br from-neutral-950 via-neutral-900/60 to-neutral-950"
                 type="text"
                 value={searchQuery}
                 placeholder="Search for a food item..."
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyUp={(e) => {
+                  if (e.key === 'Enter') {
+                    handleSearch();
+                  }
+                }}
               />
               <button
-                className="col-span-1 p-2 rounded-md bg-gradient-to-br from-green-400 to-green-500 text-white"
+                className="col-span-1 p-2 rounded-md bg-gradient-to-br from-green-400 to-green-700 text-white"
                 onClick={handleSearch}
               >
                 Search

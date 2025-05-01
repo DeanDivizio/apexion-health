@@ -25,7 +25,7 @@ export const findFoundationCalories = (item: USDAFoundationFood) => {
 }
 
 export const findBrandCalories = (item: USDABrandedFood) => {
-    if (item.label_nutrients.calories.value) {
+    if (item.label_nutrients?.calories?.value) {
         return roundToNearestWhole(item.label_nutrients.calories.value)
     } else {
         return roundToNearestWhole(item.food_nutrients.find((nutrient) => nutrient.nutrient.id === 1008)?.amount || 

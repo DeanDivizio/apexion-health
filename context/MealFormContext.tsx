@@ -1,7 +1,5 @@
 "use client"
 import { addItemToTable, updateFavoriteFoodItems } from '@/actions/AWS';
-import { USDAFoundationFood } from '@/utils/types';
-import { USDABrandedFood } from '@/utils/types';
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
@@ -19,8 +17,8 @@ export const MealFormSchema = z.object({
 export interface FoodItem {
   name: string;
   numberOfServings: number;
-  servingSize: number;
-  servingSizeUnit: string;
+  servingSize?: number;
+  servingSizeUnit?: string;
   stats: {
     calories: number;
     protein: number;
@@ -84,7 +82,7 @@ export const MealFormProvider: React.FC<MealFormProviderProps> = ({ children }) 
     toast({
       title: "Food Added",
       description: `${item.name} has been added to your meal`,
-      duration: 1000,
+      duration: 2000,
     });
   };
 
