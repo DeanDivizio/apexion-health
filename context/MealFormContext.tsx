@@ -1,6 +1,6 @@
 "use client"
 import { addItemToTable, updateFavoriteFoodItems } from '@/actions/AWS';
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
 
@@ -65,9 +65,19 @@ export const MealFormProvider: React.FC<MealFormProviderProps> = ({ children }) 
   const { toast } = useToast();
   const [foodItems, setFoodItems] = useState<FoodItem[]>([]);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [mealFormData, setMealFormData] = useState<z.infer<typeof MealFormSchema>>(() => {
+  const [mealFormData, setMealFormData] = useState<z.infer<typeof MealFormSchema>>({
+    month: '',
+    day: '',
+    year: '',
+    hour: '',
+    minute: '',
+    ampm: '',
+    mealLabel: undefined,
+  });
+
+  useEffect(() => {
     const now = new Date();
-    return {
+    setMealFormData({
       month: (now.getMonth() + 1).toString().padStart(2, '0'),
       day: now.getDate().toString().padStart(2, '0'),
       year: now.getFullYear().toString(),
@@ -75,8 +85,8 @@ export const MealFormProvider: React.FC<MealFormProviderProps> = ({ children }) 
       minute: now.getMinutes().toString().padStart(2, '0'),
       ampm: now.getHours() >= 12 ? 'PM' : 'AM',
       mealLabel: undefined,
-    };
-  });
+    });
+  }, []);
 
   const addFoodItem = (item: FoodItem) => {
     setFoodItems((prevItems) => [...prevItems, item]);
