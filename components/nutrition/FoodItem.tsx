@@ -38,7 +38,7 @@ export default function FoodItem({ index, onDelete }: { index: number; onDelete:
                             <FormItem className="flex flex-row items-baseline gap-4 ">
                                 <FormLabel className="font-extralight">Calories:</FormLabel>
                                 <FormControl>
-                                    <Input t9 {...field} onChange={(e) => field.onChange(parseInt(e.target.value))} />
+                                    <Input t9 type="number" step="0.1" {...field} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -51,7 +51,7 @@ export default function FoodItem({ index, onDelete }: { index: number; onDelete:
                             <FormItem className="flex flex-row items-baseline gap-4 ">
                                 <FormLabel className="font-extralight">Protein:</FormLabel>
                                 <FormControl>
-                                    <Input t9 {...field} onChange={(e) => field.onChange(parseInt(e.target.value))} />
+                                    <Input t9 type="number" step="0.1" {...field} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -64,7 +64,7 @@ export default function FoodItem({ index, onDelete }: { index: number; onDelete:
                             <FormItem className="flex flex-row items-baseline gap-4 ">
                                 <FormLabel className="font-extralight">Carbs:</FormLabel>
                                 <FormControl>
-                                    <Input t9 {...field} onChange={(e) => field.onChange(parseInt(e.target.value))} />
+                                    <Input t9 type="number" step="0.1" {...field} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -77,7 +77,7 @@ export default function FoodItem({ index, onDelete }: { index: number; onDelete:
                             <FormItem className="flex flex-row items-baseline gap-4 ">
                                 <FormLabel className="font-extralight">Fat:</FormLabel>
                                 <FormControl>
-                                    <Input t9 {...field} onChange={(e) => field.onChange(parseInt(e.target.value))} />
+                                    <Input t9 type="number" step="0.1" {...field} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>

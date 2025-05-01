@@ -240,6 +240,7 @@ export default function CustomFoodForm() {
             <Input 
               type="number" 
               min="0"
+              step="0.1"
               className="w-32"
               value={formData.stats.protein}
               onChange={(e) => setFormData(prev => ({ 
@@ -254,6 +255,7 @@ export default function CustomFoodForm() {
             <Input 
               type="number" 
               min="0"
+              step="0.1"
               className="w-32"
               value={formData.stats.carbs}
               onChange={(e) => setFormData(prev => ({ 
@@ -268,6 +270,7 @@ export default function CustomFoodForm() {
             <Input 
               type="number" 
               min="0"
+              step="0.1"
               className="w-32"
               value={formData.stats.fat}
               onChange={(e) => setFormData(prev => ({ 
