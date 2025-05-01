@@ -356,3 +356,102 @@ export async function updateFavoriteFoodItems(favoriteFoodItem: any) {
     throw err;
   }
 }
+export async function updateCustomFoodItems(customFoodItem: any) {
+  const { userId } = await auth();
+  if (!userId) {
+    throw new Error("User is not signed in.");
+  }
+  const tableName = "Apexion-Nutrition_UserMeta";
+  let userID;
+  if (userId == "user_2lX5gd5X7kYVpy9BARLCIBUyqXJ") {
+    userID = "user_2mUbX7CVcH8FKa5kvUMsnkjjGbs";
+  } else {
+    userID = userId;
+  }
+  try {
+    const params: UpdateCommandInput = {
+      TableName: tableName,
+      Key: {
+        userID: userID
+      },
+      UpdateExpression: "SET customFoodItems = list_append(if_not_exists(customFoodItems, :empty_list), :newItem)",
+      ExpressionAttributeValues: {
+        ":newItem": [customFoodItem],
+        ":empty_list": []
+      },
+      ReturnValues: "ALL_NEW"
+    };
+    const result = await docClient.send(new UpdateCommand(params));
+    console.log("Operation successful:", result);
+    return result;
+  } catch (err) {
+    console.error(`Error in DynamoDB operation:`, err);
+    throw err;
+  }
+}
+
+export async function deleteFavoriteFoodItem(index: number) {
+  const { userId } = await auth();
+  if (!userId) {
+    throw new Error("User is not signed in.");
+  }
+
+  const tableName = "Apexion-Nutrition_UserMeta";
+  let userID;
+  if (userId == "user_2lX5gd5X7kYVpy9BARLCIBUyqXJ") {
+    userID = "user_2mUbX7CVcH8FKa5kvUMsnkjjGbs";
+  } else {
+    userID = userId;
+  }
+
+  try {
+    const params: UpdateCommandInput = {
+      TableName: tableName,
+      Key: {
+        userID: userID
+      },
+      UpdateExpression: `REMOVE favoriteFoodItems[${index}]`,
+      ReturnValues: "ALL_NEW"
+    };
+
+    const result = await docClient.send(new UpdateCommand(params));
+    console.log("Delete operation successful:", result);
+    return result;
+  } catch (err) {
+    console.error(`Error deleting favorite food item from DynamoDB:`, err);
+    throw err;
+  }
+}
+
+export async function deleteCustomFoodItem(index: number) {
+  const { userId } = await auth();
+  if (!userId) {
+    throw new Error("User is not signed in.");
+  }
+
+  const tableName = "Apexion-Nutrition_UserMeta";
+  let userID;
+  if (userId == "user_2lX5gd5X7kYVpy9BARLCIBUyqXJ") {
+    userID = "user_2mUbX7CVcH8FKa5kvUMsnkjjGbs";
+  } else {
+    userID = userId;
+  }
+
+  try {
+    const params: UpdateCommandInput = {
+      TableName: tableName,
+      Key: {
+        userID: userID
+      },
+      UpdateExpression: `REMOVE customFoodItems[${index}]`,
+      ReturnValues: "ALL_NEW"
+    };
+
+    const result = await docClient.send(new UpdateCommand(params));
+    console.log("Delete operation successful:", result);
+    return result;
+  } catch (err) {
+    console.error(`Error deleting custom food item from DynamoDB:`, err);
+    throw err;
+  }
+}

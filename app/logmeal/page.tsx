@@ -14,6 +14,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui_primit
 import CustomFoodForm from "@/components/nutrition/CustomFoodForm"
 import FavoriteFoodCard from "@/components/nutrition/FavoriteFoodCard"
 import { Input } from "@/components/ui_primitives/input"
+import CustomFoodCard from "@/components/nutrition/CustomFoodCard"
 
 export default function USDATest() {
   const [searchQuery, setSearchQuery] = useState("")
@@ -22,6 +23,15 @@ export default function USDATest() {
   const [favorites, setFavorites] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isLoadingFavorites, setIsLoadingFavorites] = useState(false)
+  const [customFoodItems, setCustomFoodItems] = useState<any[]>([])
+
+  const handleDeleteFavorite = (index: number) => {
+    setFavorites(prevFavorites => prevFavorites.filter((_, i) => i !== index))
+  }
+
+  const handleDeleteCustomFood = (index: number) => {
+    setCustomFoodItems(prevCustomFoodItems => prevCustomFoodItems.filter((_, i) => i !== index))
+  }
 
   useEffect(() => {
     setHeaderComponent(<MealSheet />)
@@ -31,12 +41,15 @@ export default function USDATest() {
   }, [setHeaderComponent])
 
   useEffect(() => {
-    const fetchFavorites = async () => {
+    const fetchUserMeta = async () => {
       setIsLoadingFavorites(true)
       try {
         const data = await getAllDataFromTableByUser("Apexion-Nutrition_UserMeta")
         if (data && data.length > 0 && data[0].favoriteFoodItems) {
           setFavorites(data[0].favoriteFoodItems)
+        }
+        if (data && data.length > 0 && data[0].customFoodItems) {
+          setCustomFoodItems(data[0].customFoodItems)
         }
       } catch (error) {
         console.error('Error fetching favorites:', error)
@@ -44,7 +57,7 @@ export default function USDATest() {
         setIsLoadingFavorites(false)
       }
     }
-    fetchFavorites()
+    fetchUserMeta()
   }, [])
 
   const handleSearch = async () => {
@@ -71,10 +84,10 @@ export default function USDATest() {
           <h1 className="text-2xl font-medium">Log Food</h1>
         </div>
         <Tabs defaultValue="search" className="w-full flex flex-col items-center justify-center">
-          <TabsList className="rounded gap-4 mb-12">
+          <TabsList className="rounded gap-4 mb-8">
             <TabsTrigger value="search">Search</TabsTrigger>
             <TabsTrigger value="favorites">Favorites</TabsTrigger>
-            <TabsTrigger value="custom">Add Custom</TabsTrigger>
+            <TabsTrigger value="custom">Custom</TabsTrigger>
           </TabsList>
           <TabsContent value="search" className="w-full">
             <div className="grid grid-cols-5 gap-2 md:w-2/3 pb-8 px-4">
@@ -139,7 +152,12 @@ export default function USDATest() {
                 </div>
               ) : favorites.length > 0 ? (
                 favorites.map((item, index) => (
-                  <FavoriteFoodCard key={index} item={item} />
+                  <FavoriteFoodCard 
+                    key={index} 
+                    item={item} 
+                    index={index} 
+                    onDelete={() => handleDeleteFavorite(index)}
+                  />
                 ))
               ) : (
                 <div className="flex flex-col h-80 items-center justify-center">
@@ -149,8 +167,32 @@ export default function USDATest() {
               )}
             </div>
           </TabsContent>
-          <TabsContent value="custom" className="w-full">
+          <TabsContent value="custom" className="w-full flex flex-col items-center justify-center">
             <CustomFoodForm />
+            <hr className="w-48 mt-4 mb-8 border-neutral-400" />
+            <div className="px-4 space-y-4">
+              {isLoadingFavorites ? (
+                <div className="w-full">
+                  <FoodItemCardSkeleton />
+                  <FoodItemCardSkeleton />
+                  <FoodItemCardSkeleton />
+                </div>
+              ) : customFoodItems.length > 0 ? (
+                customFoodItems.map((item, index) => (
+                  <CustomFoodCard 
+                    key={index} 
+                    item={item} 
+                    index={index} 
+                    onDelete={() => handleDeleteCustomFood(index)}
+                  />
+                ))
+              ) : (
+                <div className="flex flex-col h-80 items-center justify-center">
+                  <Apple className="w-10 h-10 text-neutral-700 mb-4" />
+                  <p className="text-neutral-400 text-sm font-thin italic">No favorite items yet</p>
+                </div>
+              )}
+            </div>
           </TabsContent>
         </Tabs>
       </div>

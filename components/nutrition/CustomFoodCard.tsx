@@ -3,7 +3,7 @@ import { Button } from "@/components/ui_primitives/button"
 import { useToast } from "@/hooks/use-toast"
 import { PlusIcon, Trash2 } from "lucide-react"
 import { capitalize } from "@/lib/utils"
-import { deleteFavoriteFoodItem } from "@/actions/AWS"
+import { deleteCustomFoodItem } from "@/actions/AWS"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui_primitives/card"
 import {
   Dialog,
@@ -16,7 +16,7 @@ import {
 } from "../ui_primitives/dialog"
 import { useState } from "react"
 
-interface FavoriteFoodCardProps {
+interface CustomFoodCardProps {
   item: {
     name: string
     servingSize: number
@@ -39,7 +39,7 @@ interface FavoriteFoodCardProps {
   onDelete: () => void
 }
 
-export default function FavoriteFoodCard({ item, index, onDelete }: FavoriteFoodCardProps) {
+export default function CustomFoodCard({ item, index, onDelete }: CustomFoodCardProps) {
   const { addFoodItem } = useMealForm()
   const { toast } = useToast()
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
@@ -58,19 +58,19 @@ export default function FavoriteFoodCard({ item, index, onDelete }: FavoriteFood
 
   const handleDelete = async () => {
     try {
-      await deleteFavoriteFoodItem(index)
+      await deleteCustomFoodItem(index)
       onDelete()
       setIsDeleteDialogOpen(false)
       toast({
         title: "Item Deleted",
-        description: `${item.name} has been removed from your favorites`,
+        description: `${item.name} has been removed from your custom foods`,
         duration: 1500,
       })
     } catch (error) {
-      console.error('Error deleting favorite item:', error)
+      console.error('Error deleting custom food item:', error)
       toast({
         title: "Error",
-        description: "Failed to delete favorite item",
+        description: "Failed to delete custom food item",
         variant: "destructive",
         duration: 1500,
       })
@@ -78,11 +78,11 @@ export default function FavoriteFoodCard({ item, index, onDelete }: FavoriteFood
   }
 
   return (
-    <Card className="w-full mb-4 relative rounded-2xl">
+    <Card className="max-w-screen mb-4 relative rounded-2xl">
       <CardHeader>
         <div className="flex justify-between items-start">
           <div>
-            <CardTitle className="text-base font-medium max-w-72 mb-2 ">{item.name}</CardTitle>
+            <CardTitle className="text-base font-medium max-w-80 mb-2">{item.name}</CardTitle>
             <CardDescription className="text-sm text-neutral-400">
               Serving Size: {item.servingSize}{item.servingSizeUnit === "pieces" ? item.servingSize > 1 ? " Pieces" : " Piece" : item.servingSizeUnit}
             </CardDescription>
@@ -108,17 +108,17 @@ export default function FavoriteFoodCard({ item, index, onDelete }: FavoriteFood
               </DialogTrigger>
               <DialogContent className="max-w-[400px] sm:max-w-[425px]">
                 <DialogHeader className="mb-4">
-                  <DialogTitle className="mb-4">Remove from Favorites</DialogTitle>
+                  <DialogTitle className="mb-4">Delete Custom Food</DialogTitle>
                   <DialogDescription>
-                    This will remove {item.name} from your favorite foods and cannot be undone. Your existing logged meals will not be affected.
+                    This will remove {item.name} from your custom foods and cannot be undone. Your existing logged meals and your favorite foods will not be affected.
                   </DialogDescription>
                 </DialogHeader>
                 <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+                  <Button  variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
                     Cancel
                   </Button>
                   <Button className="mb-4" variant="destructive" onClick={handleDelete}>
-                    Remove
+                    Delete
                   </Button>
                 </DialogFooter>
               </DialogContent>
