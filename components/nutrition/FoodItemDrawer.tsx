@@ -1,5 +1,5 @@
 "use client"
-import { Plus, Info } from "lucide-react"
+import { Plus, Info, X } from "lucide-react"
 import { Button } from "../ui_primitives/button"
 import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger } from "../ui_primitives/drawer"
 import { USDABrandedFood, USDAFoundationFood } from "@/utils/types"
@@ -135,57 +135,82 @@ export default function FoodItemDrawer({item, type}: {item: USDABrandedFood | US
     };
 
     return (
-        <Drawer open={isOpen} onOpenChange={setIsOpen}>
-            <DrawerTrigger asChild>
-                <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="absolute top-2 right-2 p-0 h-8 w-8 touch-manipulation"
-                >
-                    <Plus className="text-green-400 w-6 h-6" />
-                </Button>
-            </DrawerTrigger>
-            <DrawerContent className="bg-gradient-to-br from-teal-950/50 to-indigo-950/40 via-neutral-950/30 backdrop-blur-xl">
-                <DrawerHeader className="h-[10vh] mt-6 flex flex-col items-center justify-center px-4">
-                    <DrawerTitle>Add Food</DrawerTitle>
-                    <DrawerDescription className="italic">{fromAllCaps(item.description)}</DrawerDescription>
-                </DrawerHeader>
-                <div className="p-4 h-[70vh] overflow-y-auto">
-                    <RenderMacros item={item} type={type} />
-                    <RenderMicros item={item} type={type} />
-                    <div className="flex flex-col items-center justify-start w-full mt-12 mb-4">
-                        <p className="text-xl font-medium mb-4 text-transparent bg-clip-text bg-gradient-to-b from-purple-200 to-purple-500">Number of Servings</p>
-                        <Input 
-                            type="number" 
-                            min="0" 
-                            step="0.5"
-                            value={servings}
-                            onChange={(e) => setServings(parseFloat(e.target.value) || 1)}
-                            className="w-20 h-8 bg-neutral-800 border-none rounded"
-                        />
+        <>
+            <Button 
+                variant="ghost" 
+                size="icon" 
+                className="absolute top-2 right-2 p-0 h-8 w-8 touch-manipulation"
+                onClick={() => setIsOpen(true)}
+            >
+                <Plus className="text-green-400 w-6 h-6" />
+            </Button>
+
+            {isOpen && (
+                <div className="fixed inset-0 z-50 mt-0">
+                    {/* Backdrop */}
+                    <div 
+                        className="absolute w-screen h-screen inset-0 bg-black/50 backdrop-blur-sm animate-in fade-in duration-300"
+                        onClick={() => setIsOpen(false)}
+                    />
+                    
+                    {/* Modal */}
+                    <div className="absolute w-screen h-screen inset-0 flex flex-col bg-gradient-to-br from-teal-950/50 to-indigo-950/40 via-neutral-950/30 backdrop-blur-xl animate-in slide-in-from-bottom duration-300">
+                        {/* Header */}
+                        <div className="h-[10vh] mt-6 flex flex-col items-center justify-center px-4">
+                            <h2 className="text-2xl font-semibold">Add Food</h2>
+                            <p className="text-sm text-neutral-400 italic">{fromAllCaps(item.description)}</p>
+                        </div>
+
+                        {/* Content */}
+                        <div className="p-4 h-[70vh] overflow-y-auto">
+                            <RenderMacros item={item} type={type} />
+                            <RenderMicros item={item} type={type} />
+                            <div className="flex flex-col items-center justify-start w-full mt-12 mb-4">
+                                <p className="text-xl font-medium mb-4 text-transparent bg-clip-text bg-gradient-to-b from-purple-200 to-purple-500">Number of Servings</p>
+                                <Input 
+                                    type="number" 
+                                    min="0" 
+                                    step="0.5"
+                                    value={servings}
+                                    onChange={(e) => setServings(parseFloat(e.target.value) || 1)}
+                                    className="w-20 h-8 bg-neutral-800 border-none rounded"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Footer */}
+                        <div className="backdrop-blur-sm p-4">
+                            <Button 
+                                className="w-full mb-4 bg-gradient-to-br from-neutral-800 to-neutral-950 border border-neutral-700 rounded-xl active:scale-95 transition-transform touch-manipulation"
+                                onClick={handleAddFood}
+                            >
+                                <p className="font-medium bg-clip-text text-transparent bg-gradient-to-br from-green-300 to-blue-500 py-2">
+                                    Add Food
+                                </p>
+                            </Button>
+                            <Button 
+                                variant="outline" 
+                                className="w-full border-red-900 rounded-xl bg-gradient-to-br from-neutral-900 to-neutral-950 active:scale-95 transition-transform touch-manipulation"
+                                onClick={() => setIsOpen(false)}
+                            >
+                                <p className="font-medium text-transparent bg-clip-text bg-gradient-to-br from-neutral-400 to-neutral-500 py-2">
+                                    Cancel
+                                </p>
+                            </Button>
+                        </div>
+
+                        {/* Close button */}
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="absolute top-4 right-4 p-0 h-8 w-8 touch-manipulation"
+                            onClick={() => setIsOpen(false)}
+                        >
+                            <X className="text-neutral-400 w-6 h-6" />
+                        </Button>
                     </div>
                 </div>
-                <DrawerFooter className="backdrop-blur-sm bg-black/50">
-                    <Button 
-                        className="w-full mb-1 bg-gradient-to-br from-neutral-800 to-neutral-950 border border-neutral-700 rounded-xl active:scale-95 transition-transform touch-manipulation"
-                        onClick={handleAddFood}
-                    >
-                        <p className="font-medium bg-clip-text text-transparent bg-gradient-to-br from-green-300 to-blue-500 py-2">
-                            Add Food
-                        </p>
-                    </Button>
-                    <DrawerClose asChild>
-                        <Button 
-                            variant="outline" 
-                            className="w-full border-red-900 rounded-xl bg-gradient-to-br from-neutral-900 to-neutral-950 active:scale-95 transition-transform touch-manipulation"
-                        >
-                            <p className="font-medium text-transparent bg-clip-text bg-gradient-to-br from-neutral-400 to-neutral-500 py-2">
-                                Cancel
-                            </p>
-                        </Button>
-                    </DrawerClose>
-                </DrawerFooter>
-            </DrawerContent>
-        </Drawer>
+            )}
+        </>
     )
 }
