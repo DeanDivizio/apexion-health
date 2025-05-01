@@ -78,11 +78,11 @@ export default function CustomFoodCard({ item, index, onDelete }: CustomFoodCard
   }
 
   return (
-    <Card className="max-w-screen mb-4 relative rounded-2xl">
+    <Card className="w-full mb-4 relative rounded-2xl">
       <CardHeader>
         <div className="flex justify-between items-start">
           <div>
-            <CardTitle className="text-base font-medium max-w-80 mb-2">{item.name}</CardTitle>
+            <CardTitle className="text-base font-medium max-w-72 mb-2">{item.name}</CardTitle>
             <CardDescription className="text-sm text-neutral-400">
               Serving Size: {item.servingSize}{item.servingSizeUnit === "pieces" ? item.servingSize > 1 ? " Pieces" : " Piece" : item.servingSizeUnit}
             </CardDescription>

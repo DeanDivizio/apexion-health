@@ -167,10 +167,10 @@ export default function USDATest() {
               )}
             </div>
           </TabsContent>
-          <TabsContent value="custom" className="w-full flex flex-col items-center justify-center">
+          <TabsContent value="custom" className="w-screen flex flex-col items-center justify-center">
             <CustomFoodForm />
             <hr className="w-48 mt-4 mb-8 border-neutral-400" />
-            <div className="px-4 space-y-4">
+            <div className="px-4 space-y-4 w-full">
               {isLoadingFavorites ? (
                 <div className="w-full">
                   <FoodItemCardSkeleton />
