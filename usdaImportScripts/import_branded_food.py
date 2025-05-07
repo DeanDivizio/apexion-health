@@ -7,15 +7,15 @@ from tqdm import tqdm
 
 # Database connection parameters - update these with your values
 DB_PARAMS = {
-    "host": "192.168.4.9",
+    "host": "host",
     "database": "apexionUSDA",
     "user": "postgres", # Default is postgres
-    "password": "D3skM@tt",
+    "password": "pw",
     "port": 5432  # Default PostgreSQL port
 }
 
 # Path to branded foods JSON file
-BRANDED_FOODS_PATH = "/Users/dean/Downloads/FoodData_Central_branded_food_json_2025-04-24.json"
+BRANDED_FOODS_PATH = "path
 
 # Batch size for inserts (adjust based on your data size and available memory)
 BATCH_SIZE = 1000
