@@ -68,15 +68,16 @@ export default function CustomFoodForm() {
       setHeaderComponentRight(null)
     }
   }, [setHeaderComponentRight])
-  
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
     try {
       setIsSubmitting(true)
-      const foodItem: FoodItem = {
+      const mealItem: FormData = {
         name: formData.name,
         fdcid: null,
         apexionid: generateApexionID(),
+        numberOfServings: formData.numberOfServings,
         variationlabels: formData.variationlabels,
         brand: formData.brand,
         ingredients: null,
@@ -102,10 +103,10 @@ export default function CustomFoodForm() {
           potassium: formData.nutrients.potassium || null
         }
       }
-      updateCustomFoodItems(foodItem)
-      addMealItem(foodItem)
+      updateCustomFoodItems(mealItem)
+      addMealItem(mealItem)
       if (shouldSaveToFavorites) {
-        addToFavorites(foodItem)
+        addToFavorites(mealItem)
       }
       setFormData({
         name: "",
@@ -161,288 +162,289 @@ export default function CustomFoodForm() {
   return (
     <div className="w-full p-4">
       <h1 className="text-2xl font-bold text-center mb-2">
-         Add Custom Food Item
-        </h1>
+        Add Custom Food Item
+      </h1>
       <p className="text-xs italic text-neutral-400 text-center mb-8">
-          Create a new custom food item to be saved to your custom foods database.
-        </p>
-        <form onSubmit={onSubmit} className="space-y-6 mb-12">
-          <div className="space-y-4 mb-12">
+        Create a new custom food item to be saved to your custom foods database.
+      </p>
+      <form onSubmit={onSubmit} className="space-y-6 mb-12">
+        <div className="space-y-4 mb-12">
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Food Name</label>
+            <Input
+              placeholder="ie. Chicken Breast"
+              value={formData.name}
+              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Brand</label>
+            <Input
+              placeholder="ie. Tyson"
+              value={formData.brand || ""}
+              onChange={(e) => setFormData(prev => ({ ...prev, brand: e.target.value }))}
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Variation Labels <span className="text-xs text-neutral-400">(comma separated, optional)</span></label>
+            <Input
+              placeholder="ie. Boneless, Skinless, Organic"
+              value={formData.variationlabels?.join(", ") || ""}
+              onChange={(e) => setFormData(prev => ({
+                ...prev,
+                variationlabels: e.target.value ? e.target.value.split(",").map(label => label.trim()) : null
+              }))}
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Food Name</label>
-              <Input
-                placeholder="ie. Chicken Breast"
-                value={formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Brand</label>
-              <Input
-                placeholder="ie. Tyson"
-                value={formData.brand || ""}
-                onChange={(e) => setFormData(prev => ({ ...prev, brand: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Variation Labels <span className="text-xs text-neutral-400">(comma separated, optional)</span></label>
-              <Input
-                placeholder="ie. Boneless, Skinless, Organic"
-                value={formData.variationlabels?.join(", ") || ""}
-                onChange={(e) => setFormData(prev => ({ 
-                  ...prev, 
-                  variationlabels: e.target.value ? e.target.value.split(",").map(label => label.trim()) : null 
+              <label className="text-sm font-medium">Serving Size</label>
+              <NumberInput
+                placeholder="i.e. 84"
+                onChange={(e) => setFormData(prev => ({
+                  ...prev,
+                  servinginfo: {
+                    ...prev.servinginfo,
+                    size: e.target.value ? Number(e.target.value) : 0
+                  }
                 }))}
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Serving Size</label>
-                <NumberInput
-                  placeholder="i.e. 84"
-                  onChange={(e) => setFormData(prev => ({ 
-                    ...prev, 
-                    servinginfo: { 
-                      ...prev.servinginfo, 
-                      size: e.target.value ? Number(e.target.value) : 0 
-                    } 
-                  }))}
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Unit</label>
-                <Select
-                  value={formData.servinginfo.unit}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, servinginfo: { ...prev.servinginfo, unit: value } }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select unit" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="g">Grams (g)</SelectItem>
-                    <SelectItem value="pieces">Pieces</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="saveToFavorites"
-                checked={shouldSaveToFavorites}
-                onCheckedChange={(checked) => setShouldSaveToFavorites(checked as boolean)}
-              />
-              <label
-                htmlFor="saveToFavorites"
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Unit</label>
+              <Select
+                value={formData.servinginfo.unit}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, servinginfo: { ...prev.servinginfo, unit: value } }))}
               >
-                Save to favorites
-              </label>
-              <p className="text-sm text-neutral-400">
-                Save this item for quick access later
-              </p>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select unit" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="g">Grams (g)</SelectItem>
+                  <SelectItem value="pieces">Pieces</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
-          <h3 className="text-lg font-medium text-transparent bg-clip-text bg-gradient-to-b from-green-200 to-green-500">Macro Nutrients</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex items-center gap-2">
-              <label className="w-20 text-sm font-medium">Calories</label>
-              <NumberInput
-                placeholder="i.e. 100"
-                onChange={(e) => setFormData(prev => ({
-                  ...prev,
-                  nutrients: { ...prev.nutrients, calories: e.target.value ? Number(e.target.value) : 0 }
-                }))}
-                className="w-24"
-              />
-            </div>
-
-            <div className="flex items-center gap-2">
-              <label className="w-20 text-sm font-medium">Protein (g)</label>
-              <NumberInput
-                placeholder="i.e. 100"
-                onChange={(e) => setFormData(prev => ({
-                  ...prev,
-                  nutrients: { ...prev.nutrients, protein: e.target.value ? Number(e.target.value) : 0 }
-                }))}
-                className="w-24"
-              />
-            </div>
-
-            <div className="flex items-center gap-2">
-              <label className="w-20 text-sm font-medium">Carbs (g)</label>
-              <NumberInput
-                placeholder="i.e. 100"
-                onChange={(e) => setFormData(prev => ({
-                  ...prev,
-                  nutrients: { ...prev.nutrients, carbs: e.target.value ? Number(e.target.value) : 0 }
-                }))}
-                className="w-24"
-              />
-            </div>
-
-            <div className="flex items-center gap-2">
-              <label className="w-20 text-sm font-medium">Total Fat<span className="text-xs text-neutral-400"> (g)</span></label>
-              <NumberInput
-                placeholder="i.e. 100"
-                onChange={(e) => setFormData(prev => ({
-                  ...prev,
-                  nutrients: { 
-                    ...prev.nutrients, 
-                    fats: { 
-                      ...prev.nutrients.fats, 
-                      total: e.target.value ? Number(e.target.value) : 0 
-                    } 
-                  }
-                }))}
-                className="w-24"
-              />
-            </div>
-
-            <div className="flex items-center gap-2">
-              <label className="w-20 text-sm font-medium">Saturated Fat<span className="text-xs text-neutral-400"> (g)</span></label>
-              <NumberInput
-                placeholder="i.e. 100"
-                onChange={(e) => setFormData(prev => ({
-                  ...prev,
-                  nutrients: { 
-                    ...prev.nutrients, 
-                    fats: { 
-                      ...prev.nutrients.fats, 
-                      saturated: e.target.value ? Number(e.target.value) : 0 
-                    } 
-                  }
-                }))}
-                className="w-24"
-              />
-            </div>
-
-            <div className="flex items-center gap-2">
-              <label className="w-20 text-sm font-medium">Trans Fat<span className="text-xs text-neutral-400"> (g)</span></label>
-              <NumberInput
-                placeholder="i.e. 100"
-                onChange={(e) => setFormData(prev => ({
-                  ...prev,
-                  nutrients: { 
-                    ...prev.nutrients, 
-                    fats: { 
-                      ...prev.nutrients.fats, 
-                      trans: e.target.value ? Number(e.target.value) : 0 
-                    } 
-                  }
-                }))}
-                className="w-24"
-              />
-            </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="saveToFavorites"
+              checked={shouldSaveToFavorites}
+              onCheckedChange={(checked) => setShouldSaveToFavorites(checked as boolean)}
+            />
+            <label
+              htmlFor="saveToFavorites"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            >
+              Save to favorites
+            </label>
+            <p className="text-sm text-neutral-400">
+              Save this item for quick access later
+            </p>
+          </div>
         </div>
 
-          <h3 className="text-lg font-medium text-transparent bg-clip-text bg-gradient-to-b from-blue-200 to-blue-500">Micro Nutrients <span className="text-xs text-neutral-400">(optional)</span></h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex items-center gap-2">
-              <label className="w-20 text-sm font-medium">Total Sugars<span className="text-xs text-neutral-400"> (g)</span></label>
-              <NumberInput
-                placeholder="i.e. 100"
-                onChange={(e) => setFormData(prev => ({
-                  ...prev,
-                  nutrients: { ...prev.nutrients, sugars: e.target.value ? Number(e.target.value) : 0 }
-                }))}
-                className="w-24"
-              />
-            </div>
+        <h3 className="text-lg font-medium text-transparent bg-clip-text bg-gradient-to-b from-green-200 to-green-500">Macro Nutrients</h3>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="flex items-center gap-2">
+            <label className="w-20 text-sm font-medium">Calories</label>
+            <NumberInput
+              placeholder="i.e. 100"
+              onChange={(e) => setFormData(prev => ({
+                ...prev,
+                nutrients: { ...prev.nutrients, calories: e.target.value ? Number(e.target.value) : 0 }
+              }))}
+              className="w-24"
+            />
+          </div>
 
-            <div className="flex items-center gap-2">
-              <label className="w-20 text-sm font-medium">Sodium<span className="text-xs text-neutral-400"> (mg)</span></label>
-              <NumberInput
-                placeholder="i.e. 100"
-                onChange={(e) => setFormData(prev => ({
-                  ...prev,
-                  nutrients: { ...prev.nutrients, sodium: e.target.value ? Number(e.target.value) : 0 }
-                }))}
-                className="w-24"
-              />
-            </div>
+          <div className="flex items-center gap-2">
+            <label className="w-20 text-sm font-medium">Protein (g)</label>
+            <NumberInput
+              placeholder="i.e. 100"
+              onChange={(e) => setFormData(prev => ({
+                ...prev,
+                nutrients: { ...prev.nutrients, protein: e.target.value ? Number(e.target.value) : 0 }
+              }))}
+              className="w-24"
+            />
+          </div>
 
-            <div className="flex items-center gap-2">
-              <label className="w-20 text-sm font-medium">Calcium<span className="text-xs text-neutral-400"> (mg)</span></label>
-              <NumberInput
-                placeholder="i.e. 100"
-                onChange={(e) => setFormData(prev => ({
-                  ...prev,
-                  nutrients: { ...prev.nutrients, calcium: e.target.value ? Number(e.target.value) : 0 }
-                }))}
-                className="w-24"
-              />
-            </div>
+          <div className="flex items-center gap-2">
+            <label className="w-20 text-sm font-medium">Carbs (g)</label>
+            <NumberInput
+              placeholder="i.e. 100"
+              onChange={(e) => setFormData(prev => ({
+                ...prev,
+                nutrients: { ...prev.nutrients, carbs: e.target.value ? Number(e.target.value) : 0 }
+              }))}
+              className="w-24"
+            />
+          </div>
 
-            <div className="flex items-center gap-2">
-              <label className="w-20 text-sm font-medium">Iron<span className="text-xs text-neutral-400"> (mg)</span></label>
-              <NumberInput
-                placeholder="i.e. 100"
-                onChange={(e) => setFormData(prev => ({
-                  ...prev,
-                  nutrients: { 
-                    ...prev.nutrients, 
-                    iron: e.target.value ? Number(e.target.value) : 0 
+          <div className="flex items-center gap-2">
+            <label className="w-20 text-sm font-medium">Total Fat<span className="text-xs text-neutral-400"> (g)</span></label>
+            <NumberInput
+              placeholder="i.e. 100"
+              onChange={(e) => setFormData(prev => ({
+                ...prev,
+                nutrients: {
+                  ...prev.nutrients,
+                  fats: {
+                    ...prev.nutrients.fats,
+                    total: e.target.value ? Number(e.target.value) : 0
                   }
-                }))}
-                className="w-24"
-              />
-            </div>
+                }
+              }))}
+              className="w-24"
+            />
+          </div>
 
-            <div className="flex items-center gap-2">
-              <label className="w-20 text-sm font-medium">Potassium<span className="text-xs text-neutral-400"> (mg)</span></label>
-              <NumberInput
-                placeholder="i.e. 100"
-                onChange={(e) => setFormData(prev => ({
-                  ...prev,
-                  nutrients: { 
-                    ...prev.nutrients, 
-                    potassium: e.target.value ? Number(e.target.value) : 0 
-                  } 
-                }))}
-                className="w-24"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <label className="w-20 text-sm font-medium">Cholesterol<span className="text-xs text-neutral-400"> (mg)</span></label>
-              <NumberInput
-                placeholder="i.e. 100"
-                onChange={(e) => setFormData(prev => ({
-                  ...prev,
-                  nutrients: { 
-                    ...prev.nutrients, 
-                    cholesterol: e.target.value ? Number(e.target.value) : 0 
-                  } 
-                }))}
-                className="w-24"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <label className="w-20 text-sm font-medium">Fiber<span className="text-xs text-neutral-400"> (g)</span></label>
-              <NumberInput
-                placeholder="i.e. 100"
-                onChange={(e) => setFormData(prev => ({
-                  ...prev,
-                  nutrients: { 
-                    ...prev.nutrients, 
-                    fiber: e.target.value ? Number(e.target.value) : 0 
-                  } 
-                }))}
-                className="w-24"
-              />
-            </div>
+          <div className="flex items-center gap-2">
+            <label className="w-20 text-sm font-medium">Saturated Fat<span className="text-xs text-neutral-400"> (g)</span></label>
+            <NumberInput
+              placeholder="i.e. 100"
+              onChange={(e) => setFormData(prev => ({
+                ...prev,
+                nutrients: {
+                  ...prev.nutrients,
+                  fats: {
+                    ...prev.nutrients.fats,
+                    saturated: e.target.value ? Number(e.target.value) : 0
+                  }
+                }
+              }))}
+              className="w-24"
+            />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <label className="w-20 text-sm font-medium">Trans Fat<span className="text-xs text-neutral-400"> (g)</span></label>
+            <NumberInput
+              placeholder="i.e. 100"
+              onChange={(e) => setFormData(prev => ({
+                ...prev,
+                nutrients: {
+                  ...prev.nutrients,
+                  fats: {
+                    ...prev.nutrients.fats,
+                    trans: e.target.value ? Number(e.target.value) : 0
+                  }
+                }
+              }))}
+              className="w-24"
+            />
+          </div>
+        </div>
+
+        <h3 className="text-lg font-medium text-transparent bg-clip-text bg-gradient-to-b from-blue-200 to-blue-500">Micro Nutrients <span className="text-xs text-neutral-400">(optional)</span></h3>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="flex items-center gap-2">
+            <label className="w-20 text-sm font-medium">Total Sugars<span className="text-xs text-neutral-400"> (g)</span></label>
+            <NumberInput
+              placeholder="i.e. 100"
+              onChange={(e) => setFormData(prev => ({
+                ...prev,
+                nutrients: { ...prev.nutrients, sugars: e.target.value ? Number(e.target.value) : 0 }
+              }))}
+              className="w-24"
+            />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <label className="w-20 text-sm font-medium">Sodium<span className="text-xs text-neutral-400"> (mg)</span></label>
+            <NumberInput
+              placeholder="i.e. 100"
+              onChange={(e) => setFormData(prev => ({
+                ...prev,
+                nutrients: { ...prev.nutrients, sodium: e.target.value ? Number(e.target.value) : 0 }
+              }))}
+              className="w-24"
+            />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <label className="w-20 text-sm font-medium">Calcium<span className="text-xs text-neutral-400"> (mg)</span></label>
+            <NumberInput
+              placeholder="i.e. 100"
+              onChange={(e) => setFormData(prev => ({
+                ...prev,
+                nutrients: { ...prev.nutrients, calcium: e.target.value ? Number(e.target.value) : 0 }
+              }))}
+              className="w-24"
+            />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <label className="w-20 text-sm font-medium">Iron<span className="text-xs text-neutral-400"> (mg)</span></label>
+            <NumberInput
+              placeholder="i.e. 100"
+              onChange={(e) => setFormData(prev => ({
+                ...prev,
+                nutrients: {
+                  ...prev.nutrients,
+                  iron: e.target.value ? Number(e.target.value) : 0
+                }
+              }))}
+              className="w-24"
+            />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <label className="w-20 text-sm font-medium">Potassium<span className="text-xs text-neutral-400"> (mg)</span></label>
+            <NumberInput
+              placeholder="i.e. 100"
+              onChange={(e) => setFormData(prev => ({
+                ...prev,
+                nutrients: {
+                  ...prev.nutrients,
+                  potassium: e.target.value ? Number(e.target.value) : 0
+                }
+              }))}
+              className="w-24"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="w-20 text-sm font-medium">Cholesterol<span className="text-xs text-neutral-400"> (mg)</span></label>
+            <NumberInput
+              placeholder="i.e. 100"
+              onChange={(e) => setFormData(prev => ({
+                ...prev,
+                nutrients: {
+                  ...prev.nutrients,
+                  cholesterol: e.target.value ? Number(e.target.value) : 0
+                }
+              }))}
+              className="w-24"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="w-20 text-sm font-medium">Fiber<span className="text-xs text-neutral-400"> (g)</span></label>
+            <NumberInput
+              placeholder="i.e. 100"
+              onChange={(e) => setFormData(prev => ({
+                ...prev,
+                nutrients: {
+                  ...prev.nutrients,
+                  fiber: e.target.value ? Number(e.target.value) : 0
+                }
+              }))}
+              className="w-24"
+            />
+          </div>
         </div>
 
       </form>
-      <div className="space-y-2 mb-4">
+      <div className="space-y-2">
         <label className="text-sm font-medium">Number of Servings This Meal</label>
-        <Input
-          type="number"
-          min="0.5"
-          step="0.5"
-          value={formData.numberOfServings}
-          onChange={(e) => setFormData(prev => ({ ...prev, numberOfServings: Number(e.target.value) }))}
+        <NumberInput
+          placeholder="i.e. 2"
+          onChange={(e) => setFormData(prev => ({
+            ...prev,
+            numberOfServings: e.target.value ? Number(e.target.value) : 0
+          }
+          ))}
         />
       </div>
       <div className="backdrop-blur-sm bg-black/50 flex flex-col gap-2">
