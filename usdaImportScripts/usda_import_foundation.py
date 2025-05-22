@@ -4,52 +4,76 @@ import psycopg2.extras
 import time
 import os
 from tqdm import tqdm
+import uuid
 
 # Database connection parameters - update these with your values
 DB_PARAMS = {
-    "host": "Your db Host",
-    "database": "Your Database Name",
-    "user": "Your Username", # Default is postgres
-    "password": "Your Password",
+    "host": "yourhost",
+    "database": "apexionFoods",
+    "user": "postgres", # Default is postgres
+    "password": "your_password",
     "port": 5432  # Default PostgreSQL port
 }
 
 # Path to your JSON file
-FOUNDATION_FOODS_PATH = "PATH TO YOUR JSON FILE"
+FOUNDATION_FOODS_PATH = "/path/to/your/foundation_foods.json"
 
 # Batch size for inserts (adjust based on your data size and available memory)
 BATCH_SIZE = 1000
 
+# Nutrient ID mappings
+NUTRIENT_IDS = {
+    'calories': [1008, 2047, 2048],  # Energy (kcal)
+    'protein': [1003],  # Protein
+    'carbs': [1050, 1005],  # Carbohydrate, by difference or summation
+    'total_fat': [1004],  # Total lipid (fat)
+    'saturated_fat': [1258],  # Fatty acids, total saturated
+    'trans_fat': [1257],  # Fatty acids, total trans
+    'sugars': [1063],  # Sugars, total including NLEA
+    'fiber': [1079],  # Fiber, total dietary
+    'cholesterol': [1253],  # Cholesterol
+    'sodium': [1093],  # Sodium, Na
+    'calcium': [1087],  # Calcium, Ca
+    'iron': [1089],  # Iron, Fe
+    'potassium': [1092],  # Potassium, K
+}
+
 def create_tables(conn):
     """Create the necessary tables if they don't exist"""
     with conn.cursor() as cur:
-        # Create foundation foods table with simple structure
+        # Create usdaFoundation table with simple structure
         cur.execute("""
-        CREATE TABLE IF NOT EXISTS foundation_foods (
+        CREATE TABLE IF NOT EXISTS usdaFoundation (
             id SERIAL PRIMARY KEY,
-            fdcId INTEGER UNIQUE NOT NULL,
-            description TEXT,
-            food_category TEXT,
-            data_type TEXT,
-            macros JSONB,
-            nutrients JSONB,
-            nutrient_conversion_factors JSONB,
-            food_portions JSONB,
+            apexionID TEXT UNIQUE NOT NULL,
+            fdcID INTEGER,
+            name TEXT NOT NULL,
+            variationLabels TEXT[],
+            brand TEXT,
+            nutrients JSONB NOT NULL,
+            servingInfo JSONB NOT NULL,
+            ingredients TEXT,
+            numberOfServings INTEGER,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
         """)
         
         # Create indexes for the columns
         cur.execute("""
-        CREATE INDEX IF NOT EXISTS idx_foundation_fdcid ON foundation_foods (fdcId);
-        CREATE INDEX IF NOT EXISTS idx_foundation_description ON foundation_foods (description);
-        CREATE INDEX IF NOT EXISTS idx_foundation_foodcategory ON foundation_foods (food_category);
-        CREATE INDEX IF NOT EXISTS idx_foundation_datatype ON foundation_foods (data_type);
-        CREATE INDEX IF NOT EXISTS idx_foundation_macros ON foundation_foods USING GIN (macros);
+        CREATE INDEX IF NOT EXISTS idx_usda_foundation_apexionid ON usdaFoundation (apexionID);
+        CREATE INDEX IF NOT EXISTS idx_usda_foundation_fdcid ON usdaFoundation (fdcID);
+        CREATE INDEX IF NOT EXISTS idx_usda_foundation_name ON usdaFoundation (name);
         """)
         
         conn.commit()
         print("Tables and indexes created successfully")
+
+def find_nutrient_amount(nutrients, nutrient_ids):
+    """Find the first non-null amount for a list of nutrient IDs"""
+    for nutrient in nutrients:
+        if nutrient.get('id') in nutrient_ids and nutrient.get('amount') is not None:
+            return nutrient.get('amount')
+    return 0
 
 def import_foundation_foods(conn, json_file_path):
     """Import Foundation Foods JSON data"""
@@ -83,20 +107,21 @@ def import_foundation_foods(conn, json_file_path):
         with conn.cursor() as cur:
             # Prepare the insert statement
             insert_query = """
-            INSERT INTO foundation_foods (
-                fdcId, description, food_category, data_type,
-                macros, nutrients, nutrient_conversion_factors, food_portions
+            INSERT INTO usdaFoundation (
+                apexionID, fdcID, name, variationLabels, brand,
+                nutrients, servingInfo, ingredients, numberOfServings
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-            ON CONFLICT (fdcId) DO UPDATE
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (apexionID) DO UPDATE
             SET 
-                description = EXCLUDED.description,
-                food_category = EXCLUDED.food_category,
-                data_type = EXCLUDED.data_type,
-                macros = EXCLUDED.macros,
+                fdcID = EXCLUDED.fdcID,
+                name = EXCLUDED.name,
+                variationLabels = EXCLUDED.variationLabels,
+                brand = EXCLUDED.brand,
                 nutrients = EXCLUDED.nutrients,
-                nutrient_conversion_factors = EXCLUDED.nutrient_conversion_factors,
-                food_portions = EXCLUDED.food_portions;
+                servingInfo = EXCLUDED.servingInfo,
+                ingredients = EXCLUDED.ingredients,
+                numberOfServings = EXCLUDED.numberOfServings;
             """
             
             # Process in batches with progress bar
@@ -115,41 +140,7 @@ def import_foundation_foods(conn, json_file_path):
                         food_category = item.get('foodCategory', {}).get('description')
                         data_type = item.get('dataType')
                         
-                        # Extract macros
-                        macros = {}
-                        for nutrient in item.get('foodNutrients', []):
-                            nutrient_data = nutrient.get('nutrient', {})
-                            name = nutrient_data.get('name')
-                            amount = nutrient.get('amount')
-                            unit = nutrient_data.get('unitName')
-                            
-                            if name == "Carbohydrate, by difference" and amount is not None:
-                                macros['carbohydrate_by_difference'] = {
-                                    'amount': amount,
-                                    'unit': unit
-                                }
-                            elif name == "Energy" and unit == "kcal" and amount is not None:
-                                macros['energy'] = {
-                                    'amount': amount,
-                                    'unit': unit
-                                }
-                            elif name == "Protein" and amount is not None:
-                                macros['protein'] = {
-                                    'amount': amount,
-                                    'unit': unit
-                                }
-                            elif name == "Total lipid (fat)" and amount is not None:
-                                macros['total_fat'] = {
-                                    'amount': amount,
-                                    'unit': unit
-                                }
-                            elif name == "Carbohydrate, by summation" and amount is not None:
-                                macros['carbohydrate_by_summation'] = {
-                                    'amount': amount,
-                                    'unit': unit
-                                }
-                        
-                        # Filter and transform foodNutrients array
+                        # Extract nutrients
                         nutrients = []
                         for nutrient in item.get('foodNutrients', []):
                             nutrient_data = nutrient.get('nutrient', {})
@@ -159,9 +150,18 @@ def import_foundation_foods(conn, json_file_path):
                                 'unitName': nutrient_data.get('unitName'),
                                 'amount': nutrient.get('amount')
                             }
-                            # Only add if it has required fields
                             if all(v is not None for v in filtered_nutrient.values()):
                                 nutrients.append(filtered_nutrient)
+                        
+                        # Extract macros
+                        macros = {
+                            'calories': find_nutrient_amount(nutrients, NUTRIENT_IDS['calories']),
+                            'protein': find_nutrient_amount(nutrients, NUTRIENT_IDS['protein']),
+                            'carbs': find_nutrient_amount(nutrients, NUTRIENT_IDS['carbs']),
+                            'total_fat': find_nutrient_amount(nutrients, NUTRIENT_IDS['total_fat']),
+                            'saturated_fat': find_nutrient_amount(nutrients, NUTRIENT_IDS['saturated_fat']),
+                            'trans_fat': find_nutrient_amount(nutrients, NUTRIENT_IDS['trans_fat'])
+                        }
                         
                         # Nutrient conversion factors are already in the correct format
                         nutrient_conversion_factors = item.get('nutrientConversionFactors', [])
@@ -180,29 +180,45 @@ def import_foundation_foods(conn, json_file_path):
                                 'sequenceNumber': portion.get('sequenceNumber'),
                                 'amount': portion.get('amount')
                             }
-                            # Only add if it has required fields
                             if all(v is not None for v in filtered_portion.values()):
                                 food_portions.append(filtered_portion)
                         
-                        # Debug print for first item
-                        if success_count == 0:
-                            print("First item sample:")
-                            print(f"fdcId: {fdc_id}")
-                            print(f"description: {description}")
-                            print(f"food_category: {food_category}")
-                            print(f"data_type: {data_type}")
-                            print(f"macros: {macros}")
-                            print(f"nutrients: {nutrients[:1]}")
-                            print(f"nutrient_conversion_factors: {nutrient_conversion_factors[:1]}")
-                            print(f"food_portions: {food_portions[:1]}")
+                        # Extract nutrients in the correct format
+                        food_item_nutrients = {
+                            'calories': find_nutrient_amount(nutrients, NUTRIENT_IDS['calories']),
+                            'protein': find_nutrient_amount(nutrients, NUTRIENT_IDS['protein']),
+                            'carbs': find_nutrient_amount(nutrients, NUTRIENT_IDS['carbs']),
+                            'fats': {
+                                'total': find_nutrient_amount(nutrients, NUTRIENT_IDS['total_fat']),
+                                'saturated': find_nutrient_amount(nutrients, NUTRIENT_IDS['saturated_fat']),
+                                'trans': find_nutrient_amount(nutrients, NUTRIENT_IDS['trans_fat'])
+                            },
+                            'sugars': find_nutrient_amount(nutrients, NUTRIENT_IDS['sugars']),
+                            'fiber': find_nutrient_amount(nutrients, NUTRIENT_IDS['fiber']),
+                            'cholesterol': find_nutrient_amount(nutrients, NUTRIENT_IDS['cholesterol']),
+                            'sodium': find_nutrient_amount(nutrients, NUTRIENT_IDS['sodium']),
+                            'calcium': find_nutrient_amount(nutrients, NUTRIENT_IDS['calcium']),
+                            'iron': find_nutrient_amount(nutrients, NUTRIENT_IDS['iron']),
+                            'potassium': find_nutrient_amount(nutrients, NUTRIENT_IDS['potassium'])
+                        }
+                        
+                        # Get serving info from the first portion
+                        serving_info = {
+                            'size': food_portions[0]['amount'] if food_portions else 1,
+                            'unit': food_portions[0]['measureUnit']['name'] if food_portions and food_portions[0].get('measureUnit', {}).get('name') else None
+                        }
                         
                         # Add to batch values
                         batch_values.append((
-                            fdc_id, description, food_category, data_type,
-                            json.dumps(macros),
-                            json.dumps(nutrients),
-                            json.dumps(nutrient_conversion_factors),
-                            json.dumps(food_portions)
+                            str(uuid.uuid4()),  # Generate unique apexionID
+                            fdc_id,
+                            description,  # name
+                            None,  # variationLabels
+                            None,  # brand
+                            json.dumps(food_item_nutrients),
+                            json.dumps(serving_info),
+                            None,  # ingredients
+                            None  # numberOfServings
                         ))
                         
                         success_count += 1
@@ -224,7 +240,7 @@ def import_foundation_foods(conn, json_file_path):
         
         end_time = time.time()
         duration = end_time - start_time
-        print(f"Import completed for foundation_foods:")
+        print(f"Import completed for usdaFoundation:")
         print(f"  - Successfully imported: {success_count} items")
         print(f"  - Errors: {error_count} items")
         print(f"  - Time taken: {duration:.2f} seconds")

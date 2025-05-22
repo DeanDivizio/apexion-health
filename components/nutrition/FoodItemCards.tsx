@@ -1,32 +1,27 @@
-import type { USDABrandedFood, USDAFoundationFood } from "@/utils/types"
+'use client';
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui_primitives/card"
-import { findBrandCalories, findFoundationCalories } from "./foodUtils";
 import { fromAllCaps } from "@/lib/utils";
 import { Skeleton } from "../ui_primitives/skeleton";
 import FoodItemDrawer from "./FoodItemDrawer";
+import { FoodItem } from "@/utils/newtypes";
+import { useState } from "react";
 
-export default function FoodItemCard({ item, type }: { item: USDABrandedFood | USDAFoundationFood, type: "branded" | "foundation" }) {
-   
-   let calories;
-   let subTitle;
-   let title = fromAllCaps(item.description);
+export default function FoodItemCard({ item }: { item: FoodItem }) {
+   const [calories] = useState(item.nutrients.calories);
+   const [subTitle] = useState(item.brand ? item.brand : "");
+   const [sideText] = useState(item.variationlabels && item.variationlabels.length > 0 ? item.variationlabels.join(", ") : "");
+   const [title] = useState(fromAllCaps(item.name));
 
-   if (type === "branded") {
-    item = item as USDABrandedFood
-    calories = findBrandCalories(item)
-    subTitle = fromAllCaps(item.brand_owner || "No Brand")
-   } else {
-    item = item as USDAFoundationFood
-    calories = findFoundationCalories(item)
-    subTitle = "No Brand, (Foundation Food)"
-   }
-  
     return (
     <Card className="w-full mb-4 relative rounded-2xl">
       <CardHeader>
-        <CardTitle className="text-base font-medium w-[90%]">{title}</CardTitle>
+        <CardTitle className="text-base font-medium w-[90%]">
+          {title}
+          {sideText && <span className="text-neutral-400"> • {sideText}</span>}
+        </CardTitle>
         <CardDescription className="text-sm text-neutral-400">{subTitle}</CardDescription>
-        <FoodItemDrawer item={item} type={type} />
+        <FoodItemDrawer item={item} />
       </CardHeader>
       <CardContent>
         <p className="text-sm text-neutral-300">{calories} <span className="text-neutral-500 font-light">calories per serving</span></p>

@@ -1,4 +1,5 @@
 "use client"
+import { FoodItem } from '@/utils/newtypes';
 import { addItemToTable, updateFavoriteFoodItems } from '@/actions/AWS';
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { z } from 'zod';
@@ -14,30 +15,15 @@ export const MealFormSchema = z.object({
   mealLabel: z.string().optional().or(z.literal('Breakfast')).or(z.literal('Lunch')).or(z.literal('Dinner')).or(z.literal(`Other`)),
 });
 
-export interface FoodItem {
-  name: string;
+
+interface MealItems extends FoodItem {
   numberOfServings: number;
-  servingSize?: number;
-  servingSizeUnit?: string;
-  stats: {
-    calories: number;
-    protein: number;
-    carbs: number;
-    fat: number;
-    micros: {
-        id: number | undefined,
-        name: string,
-        amount: number
-        unit: string
-        note?: string
-    }[]
-  }
 }
 
 interface MealFormContextType {
-  foodItems: FoodItem[];
-  addFoodItem: (item: FoodItem) => void;
-  removeFoodItem: (name: string) => void;
+  mealItems: MealItems[];
+  addMealItem: (item: FoodItem) => void;
+  removeMealItem: (name: string) => void;
   sheetOpen: boolean;
   setSheetOpen: (open: boolean) => void;
   mealFormData: z.infer<typeof MealFormSchema>;
@@ -63,7 +49,7 @@ interface MealFormProviderProps {
 
 export const MealFormProvider: React.FC<MealFormProviderProps> = ({ children }) => {
   const { toast } = useToast();
-  const [foodItems, setFoodItems] = useState<FoodItem[]>([]);
+  const [mealItems, setMealItems] = useState<MealItems[]>([]);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [mealFormData, setMealFormData] = useState<z.infer<typeof MealFormSchema>>({
     month: '',
@@ -88,8 +74,8 @@ export const MealFormProvider: React.FC<MealFormProviderProps> = ({ children }) 
     });
   }, []);
 
-  const addFoodItem = (item: FoodItem) => {
-    setFoodItems((prevItems) => [...prevItems, item]);
+  const addMealItem = (item: FoodItem) => {
+    setMealItems((prevItems) => [...prevItems, { ...item, numberOfServings: 1 }]);
     toast({
       title: "Food Added",
       description: `${item.name} has been added to your meal`,
@@ -97,8 +83,8 @@ export const MealFormProvider: React.FC<MealFormProviderProps> = ({ children }) 
     });
   };
 
-  const removeFoodItem = (name: string) => {
-    setFoodItems((prevItems) => prevItems.filter((item) => item.name !== name));
+  const removeMealItem = (name: string) => {
+    setMealItems((prevItems) => prevItems.filter((item) => item.name !== name));
     toast({
       title: "Food Removed",
       description: `${name} has been removed from your meal`,
@@ -126,14 +112,14 @@ export const MealFormProvider: React.FC<MealFormProviderProps> = ({ children }) 
         ...mealFormData,
         date: formattedDate,
         time: formattedTime,
-        foodItems,
+        mealItems,
       };
       const cleanedData = Object.fromEntries(
         Object.entries(formattedData).filter(([key]) => !['day', 'month', 'year', 'hour', 'minute', 'ampm'].includes(key))
       );
       try {
         await addItemToTable(cleanedData, "Apexion-Nutrition");
-        setFoodItems([]);
+        setMealItems([]);
         toast({
           title: "Meal Logged",
           description: "Your meal has been successfully logged",
@@ -161,7 +147,7 @@ export const MealFormProvider: React.FC<MealFormProviderProps> = ({ children }) 
   };
 
   const updateFoodItemServings = (name: string, servings: number) => {
-    setFoodItems((prevItems) =>
+    setMealItems((prevItems) =>
       prevItems.map((item) =>
         item.name === name ? { ...item, numberOfServings: servings } : item
       )
@@ -170,9 +156,9 @@ export const MealFormProvider: React.FC<MealFormProviderProps> = ({ children }) 
 
   return (
     <MealFormContext.Provider value={{ 
-      foodItems, 
-      addFoodItem, 
-      removeFoodItem, 
+      mealItems, 
+      addMealItem, 
+      removeMealItem, 
       sheetOpen, 
       setSheetOpen,
       mealFormData,

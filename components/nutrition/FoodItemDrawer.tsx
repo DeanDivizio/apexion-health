@@ -1,136 +1,79 @@
 "use client"
-import { Plus, Info, X } from "lucide-react"
+import { Plus, X } from "lucide-react"
 import { Button } from "../ui_primitives/button"
-import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger } from "../ui_primitives/drawer"
-import { USDABrandedFood, USDAFoundationFood } from "@/utils/types"
-import { fromAllCaps, roundToNearestWhole } from "@/lib/utils"
-import { findBrandCalories, findFoundationMacros, findMicros } from "./foodUtils"
+import { fromAllCaps } from "@/lib/utils"
 import { Input } from "../ui_primitives/input"
 import { useMealForm } from "@/context/MealFormContext"
 import { useState } from "react"
+import { FoodItem } from "@/utils/newtypes"
 
-function RenderMacros({item, type}: {item: USDABrandedFood | USDAFoundationFood, type: string}) {
-    if (type === "branded") {
-        const food = item as USDABrandedFood;
+function RenderMacros({item}: {item: FoodItem}) {
         return (
             <div id="branded-macros" className="mb-8">
                 <h3 className="text-lg font-medium mb-4 text-transparent bg-clip-text bg-gradient-to-b from-green-200 to-green-500">Macros</h3>
                 <div className="flex items-center justify-start gap-2 mb-4 ml-4">
                     <p>Calories</p>
-                    <Input t9 type="number" className="w-20 h-6 bg-neutral-800 border-none rounded" defaultValue={findBrandCalories(food)} />
+                    <Input t9 type="number" className="w-20 h-6 bg-neutral-800 border-none rounded" defaultValue={item.nutrients.calories} />
                 </div>
                 <div className="flex items-center justify-start gap-2 mb-4 ml-4">
                     <p>Protein <span className="text-xs text-neutral-400">(grams)</span></p>
-                    <Input t9 type="number" className="w-20 h-6 bg-neutral-800 border-none rounded" defaultValue={food.label_nutrients?.protein?.value || 0} />
+                    <Input t9 type="number" className="w-20 h-6 bg-neutral-800 border-none rounded" defaultValue={item.nutrients.protein} />
                 </div>
                 <div className="flex items-center justify-start gap-2 mb-4 ml-4">
                     <p>Carbs <span className="text-xs text-neutral-400">(grams)</span></p>
-                    <Input t9 type="number" className="w-20 h-6 bg-neutral-800 border-none rounded" defaultValue={food.label_nutrients?.carbohydrates?.value || 0} />
+                    <Input t9 type="number" className="w-20 h-6 bg-neutral-800 border-none rounded" defaultValue={item.nutrients.carbs} />
                 </div>
                 <div className="flex items-center justify-start gap-2 mb-4 ml-4">
-                    <p>Fat <span className="text-xs text-neutral-400">(grams)</span></p>
-                    <Input t9 type="number" className="w-20 h-6 bg-neutral-800 border-none rounded" defaultValue={food.label_nutrients?.fat?.value || 0} />
+                    <p>Total Fat <span className="text-xs text-neutral-400">(grams)</span></p>
+                    <Input t9 type="number" className="w-20 h-6 bg-neutral-800 border-none rounded" defaultValue={item.nutrients.fats.total} />
                 </div>
             </div>
         )
-    } else {
-        const food = item as USDAFoundationFood;
-        const macros = findFoundationMacros(food)
-        return (
-            <div id="foundation-macros" className="mb-8">
-                <h3 className="text-lg font-medium mb-4 text-transparent bg-clip-text bg-gradient-to-b from-green-200 to-green-500">Macros</h3>
-                <div className="flex items-center justify-start gap-2 mb-4 ml-4"><p>Calories</p> <Input t9 type="number" className="w-20 h-6 bg-neutral-800 border-none rounded" defaultValue={macros.calories || 0} /></div>
-                <div className="flex items-center justify-start gap-2 mb-4 ml-4"><p>Protein <span className="text-xs text-neutral-400">(grams)</span></p> <Input t9 type="number" className="w-20 h-6 bg-neutral-800 border-none rounded" defaultValue={macros.protein || 0} /></div>
-                <div className="flex items-center justify-start gap-2 mb-4 ml-4"><p>Carbs <span className="text-xs text-neutral-400">(grams)</span></p> <Input t9 type="number" className="w-20 h-6 bg-neutral-800 border-none rounded" defaultValue={macros.carbs || 0} /></div>
-                <div className="flex items-center justify-start gap-2 mb-4 ml-4"><p>Fat <span className="text-xs text-neutral-400">(grams)</span></p> <Input t9 type="number" className="w-20 h-6 bg-neutral-800 border-none rounded" defaultValue={macros.fat || 0} /></div>
-            </div>
-        )
-    }
 }
 
-function RenderMicros({item, type}: {item: USDABrandedFood | USDAFoundationFood, type: string}) {
-    const micros = findMicros(item, type)
-    const nonZeroMicros = Object.entries(micros).filter(([_, value]) => value.amount > 0)
+function RenderMicros({item}: {item: FoodItem}) {
+    const nutrients = item.nutrients;
+    const nonZeroMicros = Object.entries(nutrients).filter(([key, value]) => {
+        return key !== "calories" && 
+               key !== "protein" && 
+               key !== "carbs" && 
+               key !== "fats" && 
+               value !== null &&
+               typeof value === "number";
+    });
     
     return (
         <div id="micros">
             <h3 className="text-lg font-medium mb-4 text-transparent bg-clip-text bg-gradient-to-b from-blue-200 to-blue-500">Micros</h3>
-            <div className="">
+            <div className="grid grid-cols-2 gap-4">
                 {nonZeroMicros.map(([key, value]) => (
                     <div key={key} className="flex flex-col mb-4 ml-4">
                         <div className="flex items-center gap-2">
                             <p className="capitalize">
-                                {key.replace(/([A-Z])/g, ' $1').trim()} 
-                                <span className="text-xs text-neutral-400 ml-1">({value.unit})</span>
+                                {key.replace(/([A-Z])/g, ' $1').trim()}
                             </p>
                             <Input 
-                                type="number" 
-                                className="w-20 h-6 bg-neutral-800 border-none rounded" 
-                                defaultValue={value.amount} 
+                                type="number"
+                                className="w-20 h-6 bg-neutral-800 border-none rounded"
+                                defaultValue={value as number}
                             />
                         </div>
-                        {'note' in value && value.note && (
-                            <p className="text-xs font-light italic text-neutral-400 mt-1">{value.note}</p>
-                        )}
                     </div>
                 ))}
             </div>
         </div>
-    )
+    );
 }
 
-export default function FoodItemDrawer({item, type}: {item: USDABrandedFood | USDAFoundationFood, type: string}) {
-    const { addFoodItem } = useMealForm()
+export default function FoodItemDrawer({item}: {item: FoodItem}) {
+    const { addMealItem } = useMealForm()
     const [servings, setServings] = useState<number>(1)
     const [isOpen, setIsOpen] = useState<boolean>(false)
-
-    const transformFoodItem = (item: USDABrandedFood | USDAFoundationFood, type: string) => {
-        let macros;
-        if (type === "branded") {
-            const food = item as USDABrandedFood;
-            const calories = findBrandCalories(food)
-            macros = {
-                calories: calories,
-                protein: roundToNearestWhole(food.label_nutrients.protein.value),
-                carbs: roundToNearestWhole(food.label_nutrients.carbohydrates.value),
-                fat: roundToNearestWhole(food.label_nutrients.fat.value)
-            };
-        } else {
-            const food = item as USDAFoundationFood;
-            const baseMacros = findFoundationMacros(food);
-            macros = {
-                calories: baseMacros.calories,
-                protein: baseMacros.protein,
-                carbs: baseMacros.carbs,
-                fat: baseMacros.fat
-            };
-        }
-
-        const micros = findMicros(item, type);
-        const microsArray = Object.entries(micros).map(([name, value]) => ({
-            id: value.id,
-            name: name,
-            amount: value.amount,
-            unit: value.unit,
-            // @ts-ignore
-            note: value.note || ''
-        }));
-
-        return {
-            name: fromAllCaps(item.description),
-            numberOfServings: servings,
-            stats: {
-                ...macros,
-                micros: microsArray
-            }
-        };
-    };
 
     const handleAddFood = (e: React.MouseEvent | React.TouchEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        const transformedItem = transformFoodItem(item, type);
-        addFoodItem(transformedItem);
+        addMealItem({ ...item, numberOfServings: servings });
         setIsOpen(false)
     };
 
@@ -158,13 +101,13 @@ export default function FoodItemDrawer({item, type}: {item: USDABrandedFood | US
                         {/* Header */}
                         <div className="h-[10vh] mt-6 flex flex-col items-center justify-center px-4">
                             <h2 className="text-2xl font-semibold">Add Food</h2>
-                            <p className="text-sm text-neutral-400 italic">{fromAllCaps(item.description)}</p>
+                            <p className="text-sm text-neutral-400 italic">{fromAllCaps(item.name)}</p>
                         </div>
 
                         {/* Content */}
                         <div className="p-4 h-[70vh] overflow-y-auto">
-                            <RenderMacros item={item} type={type} />
-                            <RenderMicros item={item} type={type} />
+                            <RenderMacros item={item} />
+                            <RenderMicros item={item} />
                             <div className="flex flex-col items-center justify-start w-full mt-12 mb-4">
                                 <p className="text-xl font-medium mb-4 text-transparent bg-clip-text bg-gradient-to-b from-purple-200 to-purple-500">Number of Servings</p>
                                 <Input 

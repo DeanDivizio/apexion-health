@@ -46,7 +46,7 @@ export function spellOutDate(dateStr: string): string {
   const date = new Date(`${year}-${month}-${day}`);
   const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const monthName = monthNames[date.getMonth()];
-  return `${monthName}. ${parseInt(day)}, ${year}`;
+  return `${monthName}${monthName !== "May" ? "." : ""} ${parseInt(day)}, ${year}`;
 }
 
 export function toCamelCase(str: string): string {
@@ -77,4 +77,8 @@ export function roundToNearestTenth(num: number | string) {
     num = parseFloat(num);
   }
   return Math.round(num * 10) / 10;
+}
+
+export function generateApexionID() {
+  return crypto.randomUUID();
 }

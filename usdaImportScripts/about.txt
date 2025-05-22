@@ -1,7 +1,0 @@
-This folder contains the files needed to take a JSON copy of the branded and foundational foods databases from the UDSDA FoodData Central, strip away erroneous data, and put all values into a postgres database.
-
-In a virtual python enviornment, install requirements.txt
-
-Modify the files to point to and authenticate with your database. Make sure you adjust the path to your copy of the FDC data.
-
-Run each of the files. The branded one will take a while.

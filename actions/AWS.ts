@@ -455,3 +455,41 @@ export async function deleteCustomFoodItem(index: number) {
     throw err;
   }
 }
+
+export async function updateMeal(date: string, data: any) {
+  const { userId } = await auth();
+  if (!userId) {
+    throw new Error("User is not signed in.");
+  }
+  const tableName = "Apexion-Nutrition";
+  let userID;
+  if (userId == "user_2lX5gd5X7kYVpy9BARLCIBUyqXJ") {
+    userID = "user_2mUbX7CVcH8FKa5kvUMsnkjjGbs";
+  } else {
+    userID = userId;
+  }
+  try {
+    const params: UpdateCommandInput = {
+      TableName: tableName,
+      Key: {
+        userID: userID,
+        date: date
+      },
+      UpdateExpression: "SET #data = :newData",
+      ExpressionAttributeNames: {
+        "#data": "data"
+      },
+      ExpressionAttributeValues: {
+        ":newData": data
+      },
+      ReturnValues: "ALL_NEW"
+    };
+
+    const result = await docClient.send(new UpdateCommand(params));
+    console.log("Operation successful:", result);
+    return result;
+  } catch (err) {
+    console.error(`Error in DynamoDB operation:`, err);
+    throw err;
+  }
+}

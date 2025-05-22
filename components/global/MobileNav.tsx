@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { House, Syringe, Plus, Dumbbell, Heart  } from "lucide-react";
+import { House, Syringe, Plus, Dumbbell, Heart, Apple  } from "lucide-react";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -58,7 +58,7 @@ export default function MobileNav() {
     return(
         <nav className="w-full h-20 flex items-center justify-around pb-2 fixed z-10 bottom-0 md:hidden bg-slate-950/45 backdrop-blur-xl">
             <Link href="/" className="flex justify-center"><House /></Link>
-            <Link href="/labs" className="flex justify-center"><Syringe /></Link>
+            <Link href="/meals" className="flex justify-center"><Apple /></Link>
             <LogButton open={open} setOpen={setOpen} />
             <Link href="/gymsessions" className="flex justify-center"><Dumbbell /></Link>
             <Link href="/" className="flex justify-center"><Heart /></Link>

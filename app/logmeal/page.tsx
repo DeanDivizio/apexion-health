@@ -1,25 +1,26 @@
 "use client"
 
-import { USDAPostgresSearch } from "@/actions/USDAlocal"
+import { FoodItemSearch } from "@/actions/USDAlocal"
 import { getAllDataFromTableByUser } from "@/actions/AWS"
-import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui_primitives/select"
 import { useState, useEffect } from "react"
-import type { USDASearchResults } from "@/utils/types"
+import type { FoodItem } from "@/utils/newtypes"
 import { Apple } from "lucide-react"
 import MealSheet from "@/components/nutrition/MealSheet"
 import { MobileHeaderContext } from "@/context/MobileHeaderContext"
 import { useContext } from "react"
 import FoodItemCard, { FoodItemCardSkeleton } from "@/components/nutrition/FoodItemCards"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui_primitives/tabs"
-import CustomFoodForm from "@/components/nutrition/CustomFoodForm"
-import FavoriteFoodCard from "@/components/nutrition/FavoriteFoodCard"
 import { Input } from "@/components/ui_primitives/input"
 import CustomFoodCard from "@/components/nutrition/CustomFoodCard"
+import { Button } from "@/components/ui_primitives/button"
+import Link from "next/link"
+import BackButton from "@/components/global/BackButton"
+import { SideNav } from "@/components/global/SideNav"
 
-export default function USDATest() {
+export default function LogMeal() {
   const [searchQuery, setSearchQuery] = useState("")
-  const [searchResults, setSearchResults] = useState<USDASearchResults>()
-  const { setHeaderComponent } = useContext(MobileHeaderContext)
+  const [searchResults, setSearchResults] = useState<FoodItem[]>()
+  const { setHeaderComponentRight, setHeaderComponentLeft, setMobileHeading } = useContext(MobileHeaderContext)
   const [favorites, setFavorites] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isLoadingFavorites, setIsLoadingFavorites] = useState(false)
@@ -34,11 +35,15 @@ export default function USDATest() {
   }
 
   useEffect(() => {
-    setHeaderComponent(<MealSheet />)
+    setHeaderComponentLeft(<SideNav />)
+    setHeaderComponentRight(<MealSheet />)
+    setMobileHeading("Log Food")
     return () => {
-      setHeaderComponent(null)
+      setHeaderComponentRight(null)
+      setHeaderComponentLeft(null)
+      setMobileHeading("generic")
     }
-  }, [setHeaderComponent])
+  }, [setHeaderComponentRight, setHeaderComponentLeft, setMobileHeading])
 
   useEffect(() => {
     const fetchUserMeta = async () => {
@@ -62,7 +67,7 @@ export default function USDATest() {
 
   const handleSearch = async () => {
     setIsLoading(true)
-    const results: any = await USDAPostgresSearch(searchQuery, 20)
+    const results: any = await FoodItemSearch(searchQuery, 25)
     setSearchResults(results)
     console.log(results)
     handleScroll()
@@ -78,16 +83,13 @@ export default function USDATest() {
   }
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-start w-full py-28 bg-gradient-to-br from-green-950/40 to-blue-950/30 via-neutral-950">
+    <main className="min-h-screen flex flex-col items-center justify-start w-full pt-20 pb-28 bg-gradient-to-br from-green-950/40 to-blue-950/30 via-neutral-950">
       <div className="flex flex-col items-center justify-start w-full h-full">
-        <div className="flex flex-row items-center justify-center mb-6">
-          <h1 className="text-2xl font-medium">Log Food</h1>
-        </div>
         <Tabs defaultValue="search" className="w-full flex flex-col items-center justify-center">
-          <TabsList className="rounded gap-4 mb-8">
-            <TabsTrigger value="search">Search</TabsTrigger>
-            <TabsTrigger value="favorites">Favorites</TabsTrigger>
-            <TabsTrigger value="custom">Custom</TabsTrigger>
+          <TabsList className="rounded gap-8 mb-8 p-2">
+            <TabsTrigger value="search" className="tracking-wider">Search</TabsTrigger>
+            <TabsTrigger value="favorites" className="tracking-wider">Favorites</TabsTrigger>
+            <TabsTrigger value="custom" className="tracking-wider">Custom</TabsTrigger>
           </TabsList>
           <TabsContent value="search" className="w-full">
             <div className="grid grid-cols-5 gap-2 md:w-2/3 pb-8 px-4">
@@ -111,22 +113,15 @@ export default function USDATest() {
               </button>
             </div>
             <div id="search-results" className="px-4 scroll-mt-20">
-              {!isLoading && searchResults &&
-                searchResults.foundation.map((result) => (
-                  <div key={result.id}>
-                    <FoodItemCard item={result} type="foundation" />
-                  </div>
-                ))}
-              {!isLoading && searchResults &&
-                searchResults.branded.map((result) => (
-                  <div key={result.id}>
-                    <FoodItemCard item={result} type="branded" />
-                  </div>
-                ))}
+              {!isLoading && searchResults && searchResults.map((result: FoodItem, index: number) => (
+                <div key={`${result.name}-${index}`}>
+                  <FoodItemCard item={result} />
+                </div>
+              ))}
               {!searchResults && !isLoading && (
                 <div className="flex flex-col h-80 items-center justify-center">
                   <Apple className="w-10 h-10 text-neutral-700 mb-4" />
-                  <p className="text-neutral-400 text-sm font-thin italic">Make a selection to get started</p>
+                  <p className="text-neutral-400 text-sm font-thin italic">Make a search to get started</p>
                 </div>
               )}
               {isLoading && (
@@ -152,9 +147,9 @@ export default function USDATest() {
                 </div>
               ) : favorites.length > 0 ? (
                 favorites.map((item, index) => (
-                  <FavoriteFoodCard 
+                  <CustomFoodCard 
                     key={index} 
-                    item={item} 
+                    {...item} 
                     index={index} 
                     onDelete={() => handleDeleteFavorite(index)}
                   />
@@ -162,13 +157,17 @@ export default function USDATest() {
               ) : (
                 <div className="flex flex-col h-80 items-center justify-center">
                   <Apple className="w-10 h-10 text-neutral-700 mb-4" />
-                  <p className="text-neutral-400 text-sm font-thin italic">No favorite items yet</p>
+                  <p className="text-neutral-400 text-sm font-thin italic">No favorite foods yet</p>
                 </div>
               )}
             </div>
           </TabsContent>
           <TabsContent value="custom" className="w-screen flex flex-col items-center justify-center">
-            <CustomFoodForm />
+            <Link href="/logmeal/addcustomfood">
+              <Button>
+                Add Custom Food
+              </Button>
+            </Link>
             <hr className="w-48 mt-4 mb-8 border-neutral-400" />
             <div className="px-4 space-y-4 w-full">
               {isLoadingFavorites ? (
@@ -181,7 +180,7 @@ export default function USDATest() {
                 customFoodItems.map((item, index) => (
                   <CustomFoodCard 
                     key={index} 
-                    item={item} 
+                    {...item} 
                     index={index} 
                     onDelete={() => handleDeleteCustomFood(index)}
                   />
@@ -189,7 +188,7 @@ export default function USDATest() {
               ) : (
                 <div className="flex flex-col h-80 items-center justify-center">
                   <Apple className="w-10 h-10 text-neutral-700 mb-4" />
-                  <p className="text-neutral-400 text-sm font-thin italic">No favorite items yet</p>
+                  <p className="text-neutral-400 text-sm font-thin italic">No custom foods yet</p>
                 </div>
               )}
             </div>

@@ -3,17 +3,27 @@
 import { createContext, useState } from "react"
 
 export const MobileHeaderContext = createContext({
-    headerComponent: null,
-    setHeaderComponent: (component) => {}
+    headerComponentRight: null,
+    setHeaderComponentRight: (component) => {},
+    headerComponentLeft: null,
+    setHeaderComponentLeft: (component) => {},
+    mobileHeading: "generic",
+    setMobileHeading: (heading) => {}
 })
 
 export const MobileHeaderProvider = ({children}) => {
-    const [headerComponent, setHeaderComponent] = useState(null)
-    
+    const [headerComponentRight, setHeaderComponentRight] = useState(null)
+    const [headerComponentLeft, setHeaderComponentLeft] = useState(null)
+    const [mobileHeading, setMobileHeading] = useState("generic")
+
     return (
         <MobileHeaderContext.Provider value={{
-            headerComponent,
-            setHeaderComponent
+            headerComponentRight,
+            setHeaderComponentRight,
+            headerComponentLeft,
+            setHeaderComponentLeft,
+            mobileHeading,
+            setMobileHeading
         }}>
             {children}
         </MobileHeaderContext.Provider>

@@ -15,7 +15,6 @@ export async function homeFetch({startDate, endDate}:{startDate:string, endDate:
       userID = userId;
     }
     try {
-      // Fetch macro goals, daily macro stats, workout data, body measurements
         const [hormoneData, gymData, macroData, medData, suppData] = await Promise.all([
           getDataFromTable(userID, "Apexion-Hormone", startDate, endDate),
           getDataFromTable(userID, "Apexion-Gym", startDate, endDate),
@@ -42,22 +41,22 @@ export async function homeFetch({startDate, endDate}:{startDate:string, endDate:
           }
         });//@ts-ignore
         macroData.forEach((item: { date: string; data: []; totals?:Macros}) => {
-          let calories = 0;
-          let protein = 0;
-          let carbs = 0;
-          let fat = 0;
+          let totalCalories = 0;
+          let totalProtein = 0;
+          let totalCarbs = 0;
+          let totalFat = 0;
           try {
-          item.data.forEach((meal:[]) => { //@ts-ignore
-              meal.foodItems.forEach((item:any) => {
-                calories = calories + item.stats.calories * item.numberOfServings;
-                protein = protein + item.stats.protein * item.numberOfServings;
-                carbs = carbs + item.stats.carbs * item.numberOfServings;
-                fat = fat + item.stats.fat * item.numberOfServings;
-              });
-            }
-          )
-          item = {...item, totals: {calories:calories, protein:protein, carbs:carbs, fat:fat}}
-        } catch (err){
+            item.data.forEach((meal: any) => {
+              // this function is needed until we do the Nutrition
+              // database migration. It accounts for the new data shape
+              const mealMacros = calculateMacrosForMeal(meal);
+              totalCalories += mealMacros.calories;
+              totalProtein += mealMacros.protein;
+              totalCarbs += mealMacros.carbs;
+              totalFat += mealMacros.fat;
+            });
+            item = {...item, totals: {calories:totalCalories, protein:totalProtein, carbs:totalCarbs, fat:totalFat}}
+          } catch (err){
             console.log(err)
           }
           
@@ -232,3 +231,58 @@ export async function updateCustomSupplementsWrapper(customSupplements: any) {
   const response = await updateCustomSupplements(customSupplements);
   return response;
 }
+
+const calculateMacrosFromFoodItems = (meal: any) => {
+  let calories = 0;
+  let protein = 0;
+  let carbs = 0;
+  let fat = 0;
+
+  meal.foodItems.forEach((item: any) => {
+    if (item.stats) {
+      calories += item.stats.calories * item.numberOfServings;
+      protein += item.stats.protein * item.numberOfServings;
+      carbs += item.stats.carbs * item.numberOfServings;
+      fat += item.stats.fat * item.numberOfServings;
+    } else {
+      calories += item.nutrients.calories * item.numberOfServings;
+      protein += item.nutrients.protein * item.numberOfServings;
+      carbs += item.nutrients.carbs * item.numberOfServings;
+      fat += item.nutrients.fats.total * item.numberOfServings;
+    }
+  });
+
+  return { calories, protein, carbs, fat };
+};
+
+const calculateMacrosFromMealItems = (meal: any) => {
+  let calories = 0;
+  let protein = 0;
+  let carbs = 0;
+  let fat = 0;
+
+  meal.mealItems.forEach((item: any) => {
+    if (item.stats) {
+      calories += item.stats.calories * item.numberOfServings;
+      protein += item.stats.protein * item.numberOfServings;
+      carbs += item.stats.carbs * item.numberOfServings;
+      fat += item.stats.fat * item.numberOfServings;
+    } else {
+      calories += item.nutrients.calories * item.numberOfServings;
+      protein += item.nutrients.protein * item.numberOfServings;
+      carbs += item.nutrients.carbs * item.numberOfServings;
+      fat += item.nutrients.fats.total * item.numberOfServings;
+    }
+  });
+
+  return { calories, protein, carbs, fat };
+};
+
+const calculateMacrosForMeal = (meal: any) => {
+  if (meal.foodItems) {
+    return calculateMacrosFromFoodItems(meal);
+  } else if (meal.mealItems) {
+    return calculateMacrosFromMealItems(meal);
+  }
+  return { calories: 0, protein: 0, carbs: 0, fat: 0 };
+};

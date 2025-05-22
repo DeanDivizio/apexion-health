@@ -8,11 +8,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../ui_primitives/accordion"
 import { Input } from "../ui_primitives/input"
 import { Label } from "../ui_primitives/label"
+import { roundToNearestTenth, roundToNearestWhole } from "@/lib/utils"
 
 export default function MealSheet() {
     const { 
-        foodItems, 
-        removeFoodItem, 
+        mealItems, 
+        removeMealItem, 
         mealFormData, 
         setMealFormData,
         submitMeal,
@@ -21,20 +22,19 @@ export default function MealSheet() {
         updateFoodItemServings
     } = useMealForm()
 
-    const totalMacros = foodItems.reduce((acc, item) => ({
-        calories: acc.calories + (item.stats.calories * item.numberOfServings),
-        protein: acc.protein + (item.stats.protein * item.numberOfServings),
-        carbs: acc.carbs + (item.stats.carbs * item.numberOfServings),
-        fat: acc.fat + (item.stats.fat * item.numberOfServings)
+    const totalMacros = mealItems.reduce((acc, item) => ({
+        calories: acc.calories + (item.nutrients.calories * (item.numberOfServings || 1)),
+        protein: acc.protein + (item.nutrients.protein * (item.numberOfServings || 1)),
+        carbs: acc.carbs + (item.nutrients.carbs * (item.numberOfServings || 1)),
+        fat: acc.fat + (item.nutrients.fats.total * (item.numberOfServings || 1))
     }), { calories: 0, protein: 0, carbs: 0, fat: 0 })
 
     return (
         <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
             <SheetTrigger asChild>
-                <div className="flex items-center justify-center w-10 h-10">
-                    <ChevronLeft className="w-5 h-5 text-neutral-400" />
-                    <Apple className="w-5 h-5 text-green-400" />
-                </div>
+                <Button variant="outline" className="px-4 rounded bg-gradient-to-br from-neutral-900 to-neutral-950 border border-neutral-800 active:scale-95 transition-transform touch-manipulation">
+                    <Apple className="w-4 h-4 text-green-400" />
+                </Button>
             </SheetTrigger>
             <SheetContent className="w-[90vw] bg-gradient-to-br from-neutral-950 to-neutral-900">
                 <SheetHeader>
@@ -166,14 +166,14 @@ export default function MealSheet() {
                     </AccordionItem>
                 </Accordion>
                 <div className="flex flex-col gap-4 h-[85vh] pb-40 overflow-y-scroll">
-                    {foodItems.map((item) => (
+                    {mealItems.map((item) => (
                         <Card key={item.name} className="relative mb-4">
                             <CardHeader>
                                 <CardTitle className="text-base font-medium">{item.name}</CardTitle>
                                 <CardDescription className="text-sm font-thin italic">
-                                    {item.servingSize && item.servingSizeUnit ? 
-                                        `Serving Size: ${item.servingSize}${item.servingSizeUnit === "pieces" ? item.servingSize > 1 ? " Pieces" : " Piece" : item.servingSizeUnit}` :
-                                        `${item.numberOfServings} ${item.numberOfServings > 1 ? "servings" : "serving"}`
+                                    {item.servinginfo.size && item.servinginfo.unit ? 
+                                        `Serving Size: ${item.servinginfo.size}${item.servinginfo.unit === "pieces" ? item.servinginfo.size > 1 ? " Pieces" : " Piece" : item.servinginfo.unit}` :
+                                        `${item.numberOfServings || 1} ${(item.numberOfServings || 1) > 1 ? "servings" : "serving"}`
                                     }
                                 </CardDescription>
                             </CardHeader>
@@ -195,33 +195,33 @@ export default function MealSheet() {
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-1">
                                     <div className="flex gap-2 items-center">
                                         <span className="text-sm text-neutral-400">Calories</span>
-                                        <span className="text-lg">{Math.round(item.stats.calories * item.numberOfServings)}</span>
+                                        <span className="text-lg">{Math.round(item.nutrients.calories * (item.numberOfServings || 1))}</span>
                                     </div>
                                     <div className="flex gap-2 items-center">
                                         <span className="text-sm text-neutral-400">Protein</span>
-                                        <span className="text-lg">{Math.round(item.stats.protein * item.numberOfServings)}g</span>
+                                        <span className="text-lg">{Math.round(item.nutrients.protein * (item.numberOfServings || 1))}g</span>
                                     </div>
                                     <div className="flex gap-2 items-center">
                                         <span className="text-sm text-neutral-400">Carbs</span>
-                                        <span className="text-lg">{Math.round(item.stats.carbs * item.numberOfServings)}g</span>
+                                        <span className="text-lg">{Math.round(item.nutrients.carbs * (item.numberOfServings || 1))}g</span>
                                     </div>
                                     <div className="flex gap-2 items-center">
                                         <span className="text-sm text-neutral-400">Fat</span>
-                                        <span className="text-lg">{Math.round(item.stats.fat * item.numberOfServings)}g</span>
+                                        <span className="text-lg">{Math.round(item.nutrients.fats.total * (item.numberOfServings || 1))}g</span>
                                     </div>
                                 </div>
                                 <Button 
                                     variant="ghost" 
                                     size="sm" 
                                     className="absolute bottom-2 right-2"
-                                    onClick={() => removeFoodItem(item.name)}
+                                    onClick={() => removeMealItem(item.name)}
                                 >
                                     <Trash2 className="w-5 h-5 text-red-900" />
                                 </Button>
                             </CardContent>
                         </Card>
                     ))}
-                    {foodItems.length === 0 && (
+                    {mealItems.length === 0 && (
                         <div className="flex flex-col items-center justify-center h-full">
                             <Apple className="w-10 h-10 text-neutral-400 mb-4" />
                             <p className="text-sm font-thin italic text-center">No food items added</p>
@@ -235,19 +235,19 @@ export default function MealSheet() {
                         </CardHeader> */}
                         <CardContent className="grid grid-cols-4 gap-4 py-2">
                             <div className="flex flex-col items-center">
-                                <p className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-b from-green-200 to-green-600">{totalMacros.calories}</p>
+                                <p className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-b from-green-200 to-green-600">{roundToNearestWhole(totalMacros.calories)}</p>
                                 <p className="text-xs text-neutral-400">calories</p>
                             </div>
                             <div className="flex flex-col items-center">
-                                <p className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-b from-blue-200 to-blue-600">{totalMacros.protein}g</p>
+                                <p className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-b from-blue-200 to-blue-600">{roundToNearestTenth(totalMacros.protein)}g</p>
                                 <p className="text-xs text-neutral-400">protein</p>
                             </div>
                             <div className="flex flex-col items-center">
-                                <p className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-b from-purple-200 to-purple-600">{totalMacros.carbs}g</p>
+                                <p className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-b from-purple-200 to-purple-600">{roundToNearestTenth(totalMacros.carbs)}g</p>
                                 <p className="text-xs text-neutral-400">carbs</p>
                             </div>
                             <div className="flex flex-col items-center">
-                                <p className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-b from-orange-200 to-orange-600">{totalMacros.fat}g</p>
+                                <p className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-b from-orange-200 to-orange-600">{roundToNearestTenth(totalMacros.fat)}g</p>
                                 <p className="text-xs text-neutral-400">fat</p>
                             </div>
                         </CardContent>
@@ -255,7 +255,7 @@ export default function MealSheet() {
                     <Button 
                         className="mb-4 w-full bg-gradient-to-br from-green-600 to-blue-600 border border-neutral-700 rounded-xl shadow-lg shadow-neutral-600/40" 
                         onClick={submitMeal}
-                        disabled={foodItems.length === 0}
+                        disabled={mealItems.length === 0}
                     >
                         <p className="text-transparent bg-clip-text bg-gradient-to-b from-neutral-50 to-neutral-100 ">Log Meal</p>
                     </Button>
