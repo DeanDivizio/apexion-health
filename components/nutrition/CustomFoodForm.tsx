@@ -36,7 +36,7 @@ export default function CustomFoodForm() {
     apexionid: "",
     fdcid: null,
     variationlabels: null,
-    brand: null,
+    brand: "",
     ingredients: null,
     servinginfo: {
       size: 0,
@@ -77,8 +77,8 @@ export default function CustomFoodForm() {
         name: formData.name,
         fdcid: null,
         apexionid: generateApexionID(),
-        variationlabels: null,
-        brand: null,
+        variationlabels: formData.variationlabels,
+        brand: formData.brand,
         ingredients: null,
         servinginfo: {
           size: formData.servinginfo.size,
@@ -113,7 +113,7 @@ export default function CustomFoodForm() {
         apexionid: "",
         fdcid: null,
         variationlabels: null,
-        brand: null,
+        brand: "",
         ingredients: null,
         servinginfo: {
           size: 0,
@@ -164,7 +164,7 @@ export default function CustomFoodForm() {
          Add Custom Food Item
         </h1>
       <p className="text-xs italic text-neutral-400 text-center mb-8">
-          Create a new custom food item with your desired nutritional values. You can add more later.
+          Create a new custom food item to be saved to your custom foods database.
         </p>
         <form onSubmit={onSubmit} className="space-y-6 mb-12">
           <div className="space-y-4 mb-12">
@@ -174,6 +174,25 @@ export default function CustomFoodForm() {
                 placeholder="ie. Chicken Breast"
                 value={formData.name}
                 onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Brand</label>
+              <Input
+                placeholder="ie. Tyson"
+                value={formData.brand || ""}
+                onChange={(e) => setFormData(prev => ({ ...prev, brand: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Variation Labels <span className="text-xs text-neutral-400">(comma separated, optional)</span></label>
+              <Input
+                placeholder="ie. Boneless, Skinless, Organic"
+                value={formData.variationlabels?.join(", ") || ""}
+                onChange={(e) => setFormData(prev => ({ 
+                  ...prev, 
+                  variationlabels: e.target.value ? e.target.value.split(",").map(label => label.trim()) : null 
+                }))}
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -417,7 +436,7 @@ export default function CustomFoodForm() {
 
       </form>
       <div className="space-y-2 mb-4">
-        <label className="text-sm font-medium">Number of Servings</label>
+        <label className="text-sm font-medium">Number of Servings This Meal</label>
         <Input
           type="number"
           min="0.5"
