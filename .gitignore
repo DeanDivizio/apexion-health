@@ -38,3 +38,5 @@ next-env.d.ts
 
 # usda import scripts
 /usdaImportScripts/manual_food_entryUNTRACKED.py
+
+.VSCodeCounter
