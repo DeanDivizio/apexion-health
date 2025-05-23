@@ -112,7 +112,7 @@ export const MealFormProvider: React.FC<MealFormProviderProps> = ({ children }) 
         ...mealFormData,
         date: formattedDate,
         time: formattedTime,
-        mealItems,
+        mealItems
       };
       const cleanedData = Object.fromEntries(
         Object.entries(formattedData).filter(([key]) => !['day', 'month', 'year', 'hour', 'minute', 'ampm'].includes(key))
