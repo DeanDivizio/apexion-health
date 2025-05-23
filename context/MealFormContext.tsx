@@ -18,6 +18,9 @@ export const MealFormSchema = z.object({
 
 interface MealItems extends FoodItem {
   numberOfServings: number;
+  created_at?: Date;
+  match_score?: string;
+  all_terms_match?: boolean;
 }
 
 interface MealFormContextType {
@@ -108,11 +111,18 @@ export const MealFormProvider: React.FC<MealFormProviderProps> = ({ children }) 
     try {
       const formattedDate = `${mealFormData.year}${mealFormData.month}${mealFormData.day}`;
       const formattedTime = `${mealFormData.hour}:${mealFormData.minute} ${mealFormData.ampm}`;
+      
+      // Clean up meal items by removing unnecessary fields
+      const cleanedMealItems = mealItems.map(item => {
+        const { created_at, match_score, all_terms_match, ...cleanedItem } = item;
+        return cleanedItem;
+      });
+
       const formattedData = {
         ...mealFormData,
         date: formattedDate,
         time: formattedTime,
-        mealItems
+        mealItems: cleanedMealItems
       };
       const cleanedData = Object.fromEntries(
         Object.entries(formattedData).filter(([key]) => !['day', 'month', 'year', 'hour', 'minute', 'ampm'].includes(key))
