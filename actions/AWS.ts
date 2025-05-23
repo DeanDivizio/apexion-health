@@ -31,9 +31,8 @@ export async function addItemToTable(formData: { [key: string]: any }, table: st
     throw new Error("User is not signed in.");
   }
 
-
   const tableName = table;
-  const date = formData.date || new Date().toISOString().split('T')[0].replace(/-/g, '');
+  const date = formData.date;
 
   // Remove userID and date from formData as they'll be used as keys
   let { userID, date: formDate, ...dataToStore } = formData;
@@ -42,6 +41,7 @@ export async function addItemToTable(formData: { [key: string]: any }, table: st
   } else {
     userID = userId;
   }
+
   try {
     const params: UpdateCommandInput = {
       TableName: tableName,
