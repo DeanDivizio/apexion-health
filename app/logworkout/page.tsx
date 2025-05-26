@@ -47,7 +47,13 @@ export default function LogWorkoutPage() {
     return (
         <div className="w-full flex justify-center align-center">
             <Suspense fallback={<div>Loading...</div>}>
-                <WorkOutForm onSuccess={handleSuccess} gymMeta={gymMeta} />
+                {gymMeta ? (
+                    <WorkOutForm onSuccess={handleSuccess} gymMeta={gymMeta} />
+                ) : (
+                    <div className="flex items-center justify-center h-screen">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+                    </div>
+                )}
             </Suspense>
         </div>
     )
