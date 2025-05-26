@@ -1,12 +1,15 @@
 'use client';
 import WorkOutForm from "@/components/gym/WorkOutForm";
 import { useRouter } from "next/navigation";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useState, useContext } from "react";
 import { fetchGymMeta } from "@/actions/InternalLogic";
 import { useAuth } from "@clerk/nextjs";
+import { SideNav } from "@/components/global/SideNav";
+import { MobileHeaderContext } from "@/context/MobileHeaderContext";
 
 export default function LogWorkoutPage() {
     const { userId, isLoaded } = useAuth();
+    const { setHeaderComponentLeft, setHeaderComponentRight, setMobileHeading } = useContext(MobileHeaderContext);
     const router = useRouter();
     const [gymMeta, setGymMeta] = useState<any>(null);
     function handleSuccess() {
@@ -35,6 +38,11 @@ export default function LogWorkoutPage() {
         }
         console.log(gymMeta);
     }, [gymMeta, isLoaded]);
+
+    useEffect(()=>{
+        setHeaderComponentLeft(<SideNav />)
+        setMobileHeading("Log Workout")
+    },[setHeaderComponentLeft, setMobileHeading])
 
     return (
         <div className="w-full flex justify-center align-center">

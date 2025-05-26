@@ -89,10 +89,6 @@ export default function Home() {
       </SignedOut>
       </div>
       )
-    return () => {
-      setHeaderComponentLeft(null)
-      setHeaderComponentRight(null)
-    }
   },[setHeaderComponentLeft, setHeaderComponentRight])
 
   return (

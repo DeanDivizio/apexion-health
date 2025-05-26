@@ -6,7 +6,7 @@ import { Button } from "@/components/ui_primitives/button"
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui_primitives/form"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from "@/components/ui_primitives/select"
 import { Input } from "@/components/ui_primitives/input"
-import { EllipsisVertical, Settings } from "lucide-react"
+import { EllipsisVertical, InfoIcon, Settings } from "lucide-react"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui_primitives/accordion"
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui_primitives/alert-dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui_primitives/dropdown-menu"
@@ -17,6 +17,8 @@ import { Textarea } from "../ui_primitives/textarea"
 import { capitalize, quickSort, spellOutDate, toCamelCase } from "@/lib/utils"
 import { addCustomExercise } from "@/actions/InternalLogic"
 import { useToast } from "@/hooks/use-toast"
+import { Slider } from "@/components/ui_primitives/slider"
+import { Popover, PopoverContent, PopoverTrigger } from "../ui_primitives/popover"
 
 
 function SetForm({ exerciseIndex, setIndex, onRemove }: { exerciseIndex: number; setIndex: number; onRemove: () => void }) {
@@ -24,40 +26,14 @@ function SetForm({ exerciseIndex, setIndex, onRemove }: { exerciseIndex: number;
   const [isLRSplit, setISLRSplit] = useState<boolean>(false)
 
   return (
-    <div className={`grid grid-cols-11 gap-2 items-end`}>
-      <FormField
-        control={control}
-        name={`exercises.${exerciseIndex}.sets.${setIndex}.weight`}
-        render={({ field }) => (
-          <FormItem className={` ${isLRSplit ? "col-span-4" : "col-span-5"}`}>
-            <FormLabel className="font-base">Weight</FormLabel>
-            <FormControl>
-              <Input t9 {...field} onChange={(e) => field.onChange(Number.parseFloat(e.target.value))} />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-      <FormField
-        control={control}
-        name={`exercises.${exerciseIndex}.sets.${setIndex}.reps`}
-        render={({ field }) => (
-          <FormItem className={isLRSplit ? "col-span-3" : "col-span-5"}>
-            <FormLabel className="font-extralight">{isLRSplit ? "Left" : "Reps"}</FormLabel>
-            <FormControl>
-              <Input t9 {...field} onChange={(e) => field.onChange(Number.parseFloat(e.target.value))} />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-      {isLRSplit && (
+    <div>
+      <div className={`grid grid-cols-11 gap-2 items-end mb-6`}>
         <FormField
           control={control}
-          name={`exercises.${exerciseIndex}.sets.${setIndex}.repsRight`}
+          name={`exercises.${exerciseIndex}.sets.${setIndex}.weight`}
           render={({ field }) => (
-            <FormItem className={isLRSplit ? "col-span-3" : "col-span-5"}>
-              <FormLabel className="font-extralight">{`Right`}</FormLabel>
+            <FormItem className={` ${isLRSplit ? "col-span-4" : "col-span-5"}`}>
+              <FormLabel className="font-base">Weight</FormLabel>
               <FormControl>
                 <Input t9 {...field} onChange={(e) => field.onChange(Number.parseFloat(e.target.value))} />
               </FormControl>
@@ -65,33 +41,91 @@ function SetForm({ exerciseIndex, setIndex, onRemove }: { exerciseIndex: number;
             </FormItem>
           )}
         />
-      )}
-      <div className={`w-full col-span-1 flex justify-end`}>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button size="icon" variant="ghost" className="flex justify-end">
-              <EllipsisVertical className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem>
-              <Button type="button" variant="ghost" onClick={() => setISLRSplit(!isLRSplit)}>
-                {`Split L/R Reps`}
+        <FormField
+          control={control}
+          name={`exercises.${exerciseIndex}.sets.${setIndex}.reps`}
+          render={({ field }) => (
+            <FormItem className={isLRSplit ? "col-span-3" : "col-span-5"}>
+              <FormLabel className="font-extralight">{isLRSplit ? "Left" : "Reps"}</FormLabel>
+              <FormControl>
+                <Input t9 {...field} onChange={(e) => field.onChange(Number.parseFloat(e.target.value))} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        {isLRSplit && (
+          <FormField
+            control={control}
+            name={`exercises.${exerciseIndex}.sets.${setIndex}.repsRight`}
+            render={({ field }) => (
+              <FormItem className={isLRSplit ? "col-span-3" : "col-span-5"}>
+                <FormLabel className="font-extralight">{`Right`}</FormLabel>
+                <FormControl>
+                  <Input t9 {...field} onChange={(e) => field.onChange(Number.parseFloat(e.target.value))} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
+        <div className={`w-full col-span-1 flex justify-end`}>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="icon" variant="ghost" className="flex justify-end">
+                <EllipsisVertical className="h-4 w-4" />
               </Button>
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Button type="button" variant="ghost" onClick={onRemove}>
-                Delete Set
-              </Button>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem>
+                <Button type="button" variant="ghost" onClick={() => setISLRSplit(!isLRSplit)}>
+                  {`Split L/R Reps`}
+                </Button>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Button type="button" variant="ghost" onClick={onRemove}>
+                  Delete Set
+                </Button>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
-      <div></div>
+      <FormField
+        control={control}
+        name={`exercises.${exerciseIndex}.sets.${setIndex}.effort`}
+        render={({ field }) => (
+          <FormItem className="grid grid-cols-5 items-center">
+            <div className="col-span-1 flex items-center gap-2">
+              <p className="text-sm font-extralight">Effort:</p>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <InfoIcon className="h-4 w-4" />
+                </PopoverTrigger>
+                <PopoverContent side="top" align="start" className="translate-x-6 space-y-2">
+                  <p className="font-light text-sm">Recording your subjective effort per set lets Apexion track intra-lift variability and overall performance in more detail.</p>
+                  <p className="font-light text-sm">This option can be disabled in settings. Leaving the slider at 0 will effectively disable recording for that set.</p>
+                  <p className="font-light text-sm">Reserve 10 for when you take a set to failure.</p>
+                </PopoverContent>
+              </Popover>
+            </div>
+            <Slider {...field}
+              onValueChange={(value) => field.onChange(value[0])}
+              className="col-span-4"
+              defaultValue={[0]}
+              max={10}
+              min={0}
+              step={1}
+              value={field.value ? [field.value] : [0]}
+            />
+          </FormItem>
+        )}
+      />
     </div>
   )
 }
-function ExerciseSettingDialog({control, index}:{control: any, index: number }) { 
+
+function ExerciseSettingDialog({ control, index }: { control: any, index: number }) {
   return (
     <AlertDialog>
       <AlertDialogTrigger>
@@ -153,7 +187,7 @@ function ExerciseSettingDialog({control, index}:{control: any, index: number }) 
           render={({ field }) => (
             <FormItem className="w-full">
               <FormLabel>Notes</FormLabel>
-              <Textarea {...field} />
+              <Textarea {...field} placeholder="The notes dont work right now. whatever you type here wont be saved."/>
             </FormItem>
           )}
         />
@@ -241,7 +275,7 @@ export default function StrengthExercise({
   /********************************************************* */
 
   /***********************NAME UPDATING**************************/
-  
+
   useEffect(() => {
     if (exerciseType) {
       setExerciseName(capitalize(exerciseType))
@@ -252,7 +286,7 @@ export default function StrengthExercise({
     if (mod_grip && mod_grip != "normal") {
       if (mod_plane && mod_plane != "normal") {
         setInternalExerciseName(exerciseType + "_" + mod_grip + "_" + mod_plane)
-      } else {setInternalExerciseName(exerciseType + "_" + mod_grip)}
+      } else { setInternalExerciseName(exerciseType + "_" + mod_grip) }
     } else if (mod_plane && mod_plane != "normal") {
       setInternalExerciseName(exerciseType + "_" + mod_plane)
     }
@@ -300,7 +334,7 @@ export default function StrengthExercise({
                     <FormLabel className="w-full">
                       <div className="w-full flex flex-row justify-between mb-4">
                         Exercise
-                        <ExerciseSettingDialog control={control} index={index}/>  
+                        <ExerciseSettingDialog control={control} index={index} />
                       </div>
                     </FormLabel>
                     <Select
@@ -326,18 +360,18 @@ export default function StrengthExercise({
                               <SelectGroup key={group.group} className="mb-6">
                                 <SelectLabel className="font-medium text-lg">{capitalize(group.group)}</SelectLabel>
                                 {group.items.map((exercise) => (
-                                exercise && exercise.trim() !== "" && (
-                                  <SelectItem
-                                    key={exercise}
-                                    value={exercise}
-                                  >
-                                    {capitalize(exercise)}
-                                  </SelectItem>
-                                )
-                              ))}
-                            </SelectGroup>
-                          )
-                        }
+                                  exercise && exercise.trim() !== "" && (
+                                    <SelectItem
+                                      key={exercise}
+                                      value={exercise}
+                                    >
+                                      {capitalize(exercise)}
+                                    </SelectItem>
+                                  )
+                                ))}
+                              </SelectGroup>
+                            )
+                          }
                         })}
                         <SelectItem value="add-custom" className="text-primary font-medium border-t pt-4 border-neutral-600">
                           <div className="flex items-center gap-2 mb-2">
@@ -359,7 +393,7 @@ export default function StrengthExercise({
                     <p className="font-xs text-neutral-200 font-medium">{`Previous: `}</p>
                     {gymMeta.exerciseData[internalExerciseName]?.mostRecentSession.sets.map((set: any, index: number) => (
                       <p className="font-xs text-neutral-400 font-light" key={index}>{set.reps}@{set.weight}
-                      {index == gymMeta.exerciseData[internalExerciseName]?.mostRecentSession.sets.length - 1 ? "" : ", "}</p>
+                        {index == gymMeta.exerciseData[internalExerciseName]?.mostRecentSession.sets.length - 1 ? "" : ", "}</p>
                     ))}
                   </div>
                 )}

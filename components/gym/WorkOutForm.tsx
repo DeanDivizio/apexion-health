@@ -38,6 +38,7 @@ const FormSchema = z.object({
           z.object({
             weight: z.number(),
             reps: z.number(),
+            effort: z.array(z.number())
           }),
         )
         .optional(),
@@ -123,11 +124,9 @@ export default function WorkoutForm({ onSuccess, gymMeta }: { onSuccess: () => v
         }
       })
     }
-
     addUniqueExercises(exercises[0].items, gymMeta?.customExercises[0].items)
     addUniqueExercises(exercises[1].items, gymMeta?.customExercises[1].items)
     addUniqueExercises(exercises[2].items, gymMeta?.customExercises[2].items)
-
     exercises[0].items = quickSort(exercises[0].items)
     exercises[1].items = quickSort(exercises[1].items)
     exercises[2].items = quickSort(exercises[2].items)
@@ -232,7 +231,7 @@ export default function WorkoutForm({ onSuccess, gymMeta }: { onSuccess: () => v
   const addExercise = (type: "strength" | "cardio") => {
     const newIndex = fields.length
     if (type === "strength") {
-      append({ type, exerciseType: "", sets: [{ weight: 0, reps: 1 }] })
+      append({ type, exerciseType: "", sets: [{ weight: 0, reps: 1, effort: [0] }] })
     } else {
       append({ type, exerciseType: "", duration: 0, distance: 0, unit: "km" })
     }

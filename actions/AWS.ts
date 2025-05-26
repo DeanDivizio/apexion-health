@@ -41,7 +41,6 @@ export async function addItemToTable(formData: { [key: string]: any }, table: st
   } else {
     userID = userId;
   }
-  console.log(dataToStore)
   try {
     const params: UpdateCommandInput = {
       TableName: tableName,
