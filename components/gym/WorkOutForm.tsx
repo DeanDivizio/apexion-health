@@ -38,7 +38,7 @@ const FormSchema = z.object({
           z.object({
             weight: z.number(),
             reps: z.number(),
-            effort: z.number()
+            effort: z.coerce.number()
           }),
         )
         .optional(),
@@ -246,7 +246,10 @@ export default function WorkoutForm({ onSuccess, gymMeta }: { onSuccess: () => v
     <FormProvider {...methods}>
       <Form {...methods}>
         <form
-          onSubmit={methods.handleSubmit(onSubmit)}
+          onSubmit={methods.handleSubmit(onSubmit, (errors) => {
+            console.error("Form validation errors:", errors)
+            setButtonText("Validation failed")
+          })}
           className="w-11/12 2xl:w-1/2 pt-24 pb-36 flex flex-col justify-start"
         >
           <Accordion type="single" collapsible className="mb-8">
