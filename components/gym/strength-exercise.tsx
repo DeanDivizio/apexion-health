@@ -110,13 +110,13 @@ function SetForm({ exerciseIndex, setIndex, onRemove }: { exerciseIndex: number;
               </Popover>
             </div>
             <Slider {...field}
-              onValueChange={(value) => field.onChange([value[0]])}
+              onValueChange={(value) => field.onChange(value[0])}
               className="col-span-4"
               defaultValue={[0]}
               max={10}
               min={0}
               step={1}
-              value={field.value ? field.value : [0]}
+              value={field.value ? [field.value] : [0]}
             />
           </FormItem>
         )}
