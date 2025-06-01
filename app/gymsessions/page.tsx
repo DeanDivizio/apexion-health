@@ -1,5 +1,5 @@
 "use client"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useContext } from "react"
 import { getAllDataFromTableByUser, updateGymSession } from "@/actions/AWS"
 import { capitalize, spellOutDate, toCamelCase } from "@/lib/utils"
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui_primitives/accordion"
@@ -17,6 +17,8 @@ import { Input } from "@/components/ui_primitives/input"
 import { Button } from "@/components/ui_primitives/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui_primitives/dropdown-menu"
 import { useToast } from "@/hooks/use-toast"
+import { MobileHeaderContext } from "@/context/MobileHeaderContext"
+import { SideNav } from "@/components/global/SideNav"
 
 const setSchema = z.object({
     reps: z.number().min(1, "Must be at least 1 rep"),
@@ -527,6 +529,19 @@ export default function GymSessions() {
     const [userRef, setUserRef] = useState<string | null>(null)
     const [shouldToast, setShouldToast] = useState(false)
     const [shouldToastBad, setShouldToastBad] = useState(false)
+    const { setMobileHeading, setHeaderComponentLeft, setHeaderComponentRight } = useContext(MobileHeaderContext)
+    useEffect(() => {
+        setMobileHeading("Gym Sessions")
+        setHeaderComponentLeft(<SideNav />)
+        setHeaderComponentRight(<div />)
+        return () => {
+            setMobileHeading("")
+            setHeaderComponentLeft(<div />)
+            setHeaderComponentRight(<div />)
+        }
+    }, [setMobileHeading, setHeaderComponentLeft, setHeaderComponentRight])
+
+
     useEffect(() => {
         if (shouldToast) {
             toast({
@@ -579,9 +594,8 @@ export default function GymSessions() {
 
     return (
         <main className="w-full min-h-screen pt-24 pb-16 bg-gradient-to-br from-indigo-950/15 to-neutral-950">
-            <h1 className="w-full text-center text-3xl font-medium mb-8">Gym Sessions</h1>
             <div className="w-full flex flex-col items-center justify-center">
-                <Accordion type="single" collapsible>
+                <Accordion type="single" collapsible defaultValue={gymSessions[0].date || ""}>
                     {gymSessions.map((date, index) => (
                         <AccordionItem key={index} value={date.date}
                             className={`min-w-[350px] w-96 max-w-[400px] flex flex-col items-start justify-center mb-8 px-4 rounded

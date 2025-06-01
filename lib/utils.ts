@@ -40,13 +40,13 @@ export function capitalize(str: string) {
 }
 
 export function spellOutDate(dateStr: string): string {
-  const year = dateStr.substring(0, 4);
-  const month = dateStr.substring(4, 6);
-  const day = dateStr.substring(6, 8);
-  const date = new Date(`${year}-${month}-${day}`);
+  const year = parseInt(dateStr.substring(0, 4));
+  const month = parseInt(dateStr.substring(4, 6)) - 1; // Convert to 0-based month
+  const day = parseInt(dateStr.substring(6, 8));
+  const date = new Date(year, month, day, 12, 0, 0); // Set to noon to avoid timezone issues
   const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const monthName = monthNames[date.getMonth()];
-  return `${monthName}${monthName !== "May" ? "." : ""} ${parseInt(day)}, ${year}`;
+  return `${monthName}${monthName !== "May" ? "." : ""} ${day}, ${year}`;
 }
 
 export function toCamelCase(str: string): string {

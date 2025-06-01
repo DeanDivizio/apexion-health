@@ -12,7 +12,7 @@ import { SideNav } from "@/components/global/SideNav";
 
 export default function Home() {
   const { user, isLoaded } = useUser();
-  const { setHeaderComponentLeft, setHeaderComponentRight } = useContext(MobileHeaderContext);
+  const { setHeaderComponentLeft, setHeaderComponentRight, setMobileHeading } = useContext(MobileHeaderContext);
   const [data, setData] = useState<SummaryData>();
   const [todayCalories, setTodayCalories] = useState(0);
   const [todayProtein, setTodayProtein] = useState(0);
@@ -89,7 +89,8 @@ export default function Home() {
       </SignedOut>
       </div>
       )
-  },[setHeaderComponentLeft, setHeaderComponentRight])
+      setMobileHeading("generic")
+  },[setHeaderComponentLeft, setHeaderComponentRight, setMobileHeading])
 
   return (
     <main className={`flex pb-12 md:pb-0 px-4 pt-24 md:pt-4 h-auto 3xl:h-[100vh] overflow-clip w-full flex-col items-center justify-start bg-gradient-to-br from-blue-950/20 to-neutral-950`}>

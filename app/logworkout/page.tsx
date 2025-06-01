@@ -42,6 +42,9 @@ export default function LogWorkoutPage() {
     useEffect(()=>{
         setHeaderComponentLeft(<SideNav />)
         setMobileHeading("Log Workout")
+        return () => {
+            setMobileHeading("")
+        }
     },[setHeaderComponentLeft, setMobileHeading])
 
     return (
