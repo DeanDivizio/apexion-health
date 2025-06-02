@@ -5,15 +5,8 @@ import { PlusIcon, Trash2 } from "lucide-react"
 import { capitalize, generateApexionID } from "@/lib/utils"
 import { deleteCustomFoodItem } from "@/actions/AWS"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui_primitives/card"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "../ui_primitives/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui_primitives/dialog"
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter, DrawerTrigger } from "@/components/ui_primitives/drawer"
 import { useState } from "react"
 import { Input } from "../ui_primitives/input"
 import { Label } from "../ui_primitives/label"
@@ -104,52 +97,52 @@ export default function CustomFoodCard({ index, onDelete, ...props }: CustomFood
             </CardDescription>
           </div>
           <div className="flex gap-2">
-            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-              <DialogTrigger asChild>
-                <Button 
+            <Drawer open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+              <DrawerTrigger asChild>
+                <Button
                   variant="ghost"
                   size="icon"
                   className="absolute top-4 right-4"
                 >
                   <PlusIcon className="w-6 h-6 text-green-400" />
                 </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-[400px] sm:max-w-[425px]">
-                <DialogHeader className="mb-4">
-                  <DialogTitle className="mb-4">Add to Meal</DialogTitle>
-                  <DialogDescription>
+              </DrawerTrigger>
+              <DrawerContent className="px-4">
+                  <DrawerHeader className="px-4 mb-4">
+                  <DrawerTitle className="mb-4">Add to Meal</DrawerTitle>
+                  <DrawerDescription>
                     How many servings of {props.name} would you like to add to your meal?
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
+                  </DrawerDescription>
+                </DrawerHeader>
+                <div className="grid gap-4 py-4 px-4">
                   <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="servings" className="text-right">
+                    <Label htmlFor="servings" className="">
                       Servings
                     </Label>
                     <Input
                       id="servings"
                       type="number"
-                      min="0.25"
-                      step="0.25"
+                      min="0.5"
+                      step="0.5"
                       value={servings}
                       onChange={(e) => setServings(parseFloat(e.target.value))}
                       className="col-span-3"
                     />
                   </div>
                 </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button onClick={handleAddToMeal}>
+                <DrawerFooter>
+                  <Button className="mb-4" onClick={handleAddToMeal}>
                     Add to Meal
                   </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+                  <Button variant="outline" className="mb-8" onClick={() => setIsAddDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                </DrawerFooter>
+              </DrawerContent>
+            </Drawer>
             <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
               <DialogTrigger asChild>
-                <Button 
+                <Button
                   variant="ghost"
                   size="icon"
                   className="absolute bottom-4 right-4"
@@ -165,7 +158,7 @@ export default function CustomFoodCard({ index, onDelete, ...props }: CustomFood
                   </DialogDescription>
                 </DialogHeader>
                 <DialogFooter>
-                  <Button  variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+                  <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
                     Cancel
                   </Button>
                   <Button className="mb-4" variant="destructive" onClick={handleDelete}>

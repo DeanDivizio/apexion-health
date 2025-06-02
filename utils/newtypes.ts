@@ -26,7 +26,6 @@ apexionid: string;
         unit: string;
     }
     ingredients: string | null;
-    numberOfServings?: number;
 }
 
 export type SearchResults = {

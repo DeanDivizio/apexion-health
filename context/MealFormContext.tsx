@@ -25,7 +25,7 @@ interface MealItems extends FoodItem {
 
 interface MealFormContextType {
   mealItems: MealItems[];
-  addMealItem: (item: FoodItem) => void;
+  addMealItem: (item: MealItems) => void;
   removeMealItem: (name: string) => void;
   sheetOpen: boolean;
   setSheetOpen: (open: boolean) => void;
@@ -64,25 +64,12 @@ export const MealFormProvider: React.FC<MealFormProviderProps> = ({ children }) 
     mealLabel: undefined,
   });
 
-  useEffect(() => {
-    const now = new Date();
-    setMealFormData({
-      month: (now.getMonth() + 1).toString().padStart(2, '0'),
-      day: now.getDate().toString().padStart(2, '0'),
-      year: now.getFullYear().toString(),
-      hour: (now.getHours() % 12 || 12).toString(),
-      minute: now.getMinutes().toString().padStart(2, '0'),
-      ampm: now.getHours() >= 12 ? 'PM' : 'AM',
-      mealLabel: undefined,
-    });
-  }, []);
-
-  const addMealItem = (item: FoodItem) => {
-    setMealItems((prevItems) => [...prevItems, { ...item, numberOfServings: 1 }]);
+  const addMealItem = (item: MealItems) => {
+    setMealItems((prevItems) => [...prevItems, item]);
     toast({
       title: "Food Added",
       description: `${item.name} has been added to your meal`,
-      duration: 2000,
+      duration: 1000,
     });
   };
 
@@ -96,8 +83,7 @@ export const MealFormProvider: React.FC<MealFormProviderProps> = ({ children }) 
   };
 
   const addToFavorites = async (item: FoodItem) => {
-    // Remove numberOfServings before saving to favorites
-    const { numberOfServings, ...favoriteItem } = item;
+    const favoriteItem: FoodItem = item;
     await updateFavoriteFoodItems(favoriteItem)
     console.log('Saving to favorites:', favoriteItem);
     toast({

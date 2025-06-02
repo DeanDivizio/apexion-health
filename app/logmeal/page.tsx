@@ -14,8 +14,8 @@ import { Input } from "@/components/ui_primitives/input"
 import CustomFoodCard from "@/components/nutrition/CustomFoodCard"
 import { Button } from "@/components/ui_primitives/button"
 import Link from "next/link"
-import BackButton from "@/components/global/BackButton"
 import { SideNav } from "@/components/global/SideNav"
+import { useMealForm } from "@/context/MealFormContext"
 
 export default function LogMeal() {
   const [searchQuery, setSearchQuery] = useState("")
@@ -25,7 +25,7 @@ export default function LogMeal() {
   const [isLoading, setIsLoading] = useState(false)
   const [isLoadingFavorites, setIsLoadingFavorites] = useState(false)
   const [customFoodItems, setCustomFoodItems] = useState<any[]>([])
-
+  const { setMealFormData } = useMealForm()
   const handleDeleteFavorite = (index: number) => {
     setFavorites(prevFavorites => prevFavorites.filter((_, i) => i !== index))
   }
@@ -33,7 +33,18 @@ export default function LogMeal() {
   const handleDeleteCustomFood = (index: number) => {
     setCustomFoodItems(prevCustomFoodItems => prevCustomFoodItems.filter((_, i) => i !== index))
   }
-
+  useEffect(() => {
+    const now = new Date();
+    setMealFormData({
+      month: (now.getMonth() + 1).toString().padStart(2, '0'),
+      day: now.getDate().toString().padStart(2, '0'),
+      year: now.getFullYear().toString(),
+      hour: (now.getHours() % 12 || 12).toString(),
+      minute: now.getMinutes().toString().padStart(2, '0'),
+      ampm: now.getHours() >= 12 ? 'PM' : 'AM',
+      mealLabel: undefined,
+    });
+  }, []);
   useEffect(() => {
     setHeaderComponentLeft(<SideNav />)
     setHeaderComponentRight(<MealSheet />)

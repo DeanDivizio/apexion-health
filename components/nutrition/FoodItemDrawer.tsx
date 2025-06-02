@@ -115,7 +115,7 @@ export default function FoodItemDrawer({item}: {item: FoodItem}) {
                                     min="0" 
                                     step="0.5"
                                     value={servings}
-                                    onChange={(e) => setServings(parseFloat(e.target.value) || 1)}
+                                    onChange={(e) => setServings(parseFloat(e.target.value))}
                                     className="w-20 h-8 bg-neutral-800 border-none rounded"
                                 />
                             </div>
