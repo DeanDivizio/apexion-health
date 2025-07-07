@@ -91,8 +91,9 @@ export default function CustomFoodCard({ index, onDelete, ...props }: CustomFood
       <CardHeader>
         <div className="flex justify-between items-start">
           <div>
-            <CardTitle className="text-base font-medium max-w-72 mb-2">{props.name}</CardTitle>
+            <CardTitle className="text-base font-medium max-w-72 mb-1">{props.name} <span className="text-xs text-neutral-400">{props.variationlabels && props.variationlabels.length > 0 && <span className="text-xs text-neutral-400">{`( ${props.variationlabels.join(", ")} )`}</span> }</span></CardTitle>
             <CardDescription className="text-sm text-neutral-400">
+              {props.brand && <span>{props.brand} <br /></span>}
               Serving Size: {props.servinginfo.size}{props.servinginfo.unit === "pieces" ? props.servinginfo.size > 1 ? " Pieces" : " Piece" : props.servinginfo.unit}
             </CardDescription>
           </div>
