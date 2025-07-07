@@ -221,7 +221,7 @@ export default function StrengthExercise({
   const { fields, append, remove } = useFieldArray({ control, name: `exercises.${index}.sets` })
   function WatchTheseThings(index: number) {
     const sets = useWatch({ control, name: `exercises.${index}.sets` })
-    const exerciseType = useWatch({ control, name: `exercises.${index}.exerciseType` })
+    const exerciseType = useWatch({ control, name: `exercises.${index}.name` })
     const mod_grip = useWatch({ control, name: `exercises.${index}.modifications.grip` })
     const mod_plane = useWatch({ control, name: `exercises.${index}.modifications.movementPlane` })
     return { sets, exerciseType, mod_grip, mod_plane }
@@ -245,7 +245,7 @@ export default function StrengthExercise({
       const categoryIndex = exercises.findIndex((category: any) => category.group === selectedCategory);
       exercises[categoryIndex].items.push(formattedName);
       setExerciseList(exercises)
-      setValue(`exercises.${index}.exerciseType`, formattedName)
+      setValue(`exercises.${index}.name`, formattedName)
       setSelectKey((prev) => prev + 1)
       setCustomExercise("")
       setSelectedCategory("")
@@ -328,7 +328,7 @@ export default function StrengthExercise({
             <div className="flex items-center mb-4">
               <FormField
                 control={control}
-                name={`exercises.${index}.exerciseType`}
+                name={`exercises.${index}.name`}
                 render={({ field }) => (
                   <FormItem className="w-full">
                     <FormLabel className="w-full">

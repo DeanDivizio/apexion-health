@@ -32,7 +32,7 @@ const FormSchema = z.object({
   exercises: z.array(
     z.object({
       type: z.enum(["strength", "cardio"]),
-      exerciseType: z.string(),
+      name: z.string(),
       sets: z
         .array(
           z.object({
@@ -234,9 +234,9 @@ export default function WorkoutForm({ onSuccess, gymMeta }: { onSuccess: () => v
   const addExercise = (type: "strength" | "cardio") => {
     const newIndex = fields.length
     if (type === "strength") {
-      append({ type, exerciseType: "", sets: [{ weight: 0, reps: 1, effort: 0 }] })
+      append({ type, name: "", sets: [{ weight: 0, reps: 1, effort: 0 }] })
     } else {
-      append({ type, exerciseType: "", duration: 0, distance: 0, unit: "km" })
+      append({ type, name: "", duration: 0, distance: 0, unit: "km" })
     }
     setOpenExercises((prev) => [...prev, newIndex])
   }
