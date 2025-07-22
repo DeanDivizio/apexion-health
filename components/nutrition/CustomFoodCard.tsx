@@ -6,10 +6,8 @@ import { capitalize, generateApexionID } from "@/lib/utils"
 import { deleteCustomFoodItem } from "@/actions/AWS"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui_primitives/card"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui_primitives/dialog"
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter, DrawerTrigger } from "@/components/ui_primitives/drawer"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui_primitives/select"
 import { useState } from "react"
-import { Input } from "../ui_primitives/input"
-import { Label } from "../ui_primitives/label"
 import type { FoodItem } from "@/utils/newtypes"
 
 interface CustomFoodCardProps extends FoodItem {
@@ -22,7 +20,6 @@ export default function CustomFoodCard({ index, onDelete, ...props }: CustomFood
   const { addMealItem } = useMealForm()
   const { toast } = useToast()
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [servings, setServings] = useState(1)
 
   const handleAddToMeal = () => {
@@ -56,7 +53,6 @@ export default function CustomFoodCard({ index, onDelete, ...props }: CustomFood
       variationlabels: props.variationlabels,
       brand: props.brand,
     })
-    setIsAddDialogOpen(false)
     setServings(1)
     toast({
       title: "Food Added",
@@ -98,8 +94,11 @@ export default function CustomFoodCard({ index, onDelete, ...props }: CustomFood
             </CardDescription>
           </div>
           <div className="flex gap-2">
-            <Drawer open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-              <DrawerTrigger asChild>
+            <Select onValueChange={(value) => {
+              setServings(parseFloat(value))
+              handleAddToMeal()
+            }}>
+              <SelectTrigger asChild>
                 <Button
                   variant="ghost"
                   size="icon"
@@ -107,40 +106,21 @@ export default function CustomFoodCard({ index, onDelete, ...props }: CustomFood
                 >
                   <PlusIcon className="w-6 h-6 text-green-400" />
                 </Button>
-              </DrawerTrigger>
-              <DrawerContent className="px-4">
-                  <DrawerHeader className="px-4 mb-4">
-                  <DrawerTitle className="mb-4">Add to Meal</DrawerTitle>
-                  <DrawerDescription>
-                    How many servings of {props.name} would you like to add to your meal?
-                  </DrawerDescription>
-                </DrawerHeader>
-                <div className="grid gap-4 py-4 px-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="servings" className="">
-                      Servings
-                    </Label>
-                    <Input
-                      id="servings"
-                      type="number"
-                      min="0.5"
-                      step="0.5"
-                      value={servings}
-                      onChange={(e) => setServings(parseFloat(e.target.value))}
-                      className="col-span-3"
-                    />
-                  </div>
-                </div>
-                <DrawerFooter>
-                  <Button className="mb-4" onClick={handleAddToMeal}>
-                    Add to Meal
-                  </Button>
-                  <Button variant="outline" className="mb-8" onClick={() => setIsAddDialogOpen(false)}>
-                    Cancel
-                  </Button>
-                </DrawerFooter>
-              </DrawerContent>
-            </Drawer>
+              </SelectTrigger>
+              <SelectContent>
+                {Array.from({ length: 20 }, (_, i) => (i + 1) * 0.5).map((value) => (
+                  value === 1 ? (
+                    <SelectItem key={value} value={value.toString()}>
+                      {value} serving
+                    </SelectItem>
+                  ) : (
+                    <SelectItem key={value} value={value.toString()}>
+                      {value} servings
+                    </SelectItem>
+                  )
+                ))}
+              </SelectContent>
+            </Select>
             <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
               <DialogTrigger asChild>
                 <Button
