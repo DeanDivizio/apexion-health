@@ -2,6 +2,7 @@ import { useMealForm } from "@/context/MealFormContext"
 import { Button } from "@/components/ui_primitives/button"
 import { useToast } from "@/hooks/use-toast"
 import { PlusIcon, Trash2 } from "lucide-react"
+import { capitalize, generateApexionID } from "@/lib/utils"
 import { deleteCustomFoodItem } from "@/actions/AWS"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui_primitives/card"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui_primitives/dialog"
@@ -13,52 +14,18 @@ interface CustomFoodCardProps extends FoodItem {
   index: number
   onDelete: () => void
 }
-
 // Renders food item from user's custom foods. handles adding to meal. handles deleting from
 // user's custom foods.
 export default function CustomFoodCard({ index, onDelete, ...props }: CustomFoodCardProps) {
-  // Add error boundaries for context hooks
-  let addMealItem: any
-  let toast: any
-  
-  try {
-    const mealFormContext = useMealForm()
-    addMealItem = mealFormContext?.addMealItem
-  } catch (error) {
-    console.error('MealFormContext not available:', error)
-    addMealItem = () => {}
-  }
-
-  try {
-    const toastContext = useToast()
-    toast = toastContext?.toast
-  } catch (error) {
-    console.error('Toast context not available:', error)
-    toast = () => {}
-  }
-
+  const { addMealItem } = useMealForm()
+  const { toast } = useToast()
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [servings, setServings] = useState(1)
 
-  // Add null checks for required properties
-  if (!props.name || !props.nutrients || !props.servinginfo) {
-    console.error('CustomFoodCard: Missing required properties', props)
-    return null
-  }
-
-  const handleAddToMeal = () => {
-    handleAddToMealWithServings(servings)
-  }
-
-  const handleAddToMealWithServings = (servingCount: number) => {
-    if (!addMealItem) {
-      console.error('addMealItem function not available')
-      return
-    }
-
+  const handleAddToMeal = (servingsToAdd: number = servings) => {
     addMealItem({
       name: props.name,
-      numberOfServings: servingCount,
+      numberOfServings: servingsToAdd,
       apexionid: props.apexionid,
       fdcid: props.fdcid,
       servinginfo: {
@@ -66,13 +33,13 @@ export default function CustomFoodCard({ index, onDelete, ...props }: CustomFood
         unit: props.servinginfo.unit,
       },
       nutrients: {
-        calories: props.nutrients.calories || 0,
-        protein: props.nutrients.protein || 0,
-        carbs: props.nutrients.carbs || 0,
+        calories: props.nutrients.calories,
+        protein: props.nutrients.protein,
+        carbs: props.nutrients.carbs,
         fats: {
-          total: props.nutrients.fats?.total || 0,
-          saturated: props.nutrients.fats?.saturated,
-          trans: props.nutrients.fats?.trans,
+          total: props.nutrients.fats.total,
+          saturated: props.nutrients.fats.saturated,
+          trans: props.nutrients.fats.trans,
         },
         sugars: props.nutrients.sugars,
         fiber: props.nutrients.fiber,
@@ -97,9 +64,7 @@ export default function CustomFoodCard({ index, onDelete, ...props }: CustomFood
   const handleDelete = async () => {
     try {
       await deleteCustomFoodItem(index)
-      if (onDelete) {
-        onDelete()
-      }
+      onDelete()
       setIsDeleteDialogOpen(false)
       toast({
         title: "Item Deleted",
@@ -122,41 +87,20 @@ export default function CustomFoodCard({ index, onDelete, ...props }: CustomFood
       <CardHeader>
         <div className="flex justify-between items-start">
           <div>
-            <CardTitle className="text-base font-medium max-w-72 mb-1">
-              <span>
-                {props.name} 
-                {props.variationlabels && props.variationlabels.length > 0 && (
-                  <span className="text-xs text-neutral-400">
-                    {`( ${props.variationlabels.join(", ")} )`}
-                  </span>
-                )}
-              </span>
-            </CardTitle>
+            <CardTitle className="text-base font-medium max-w-72 mb-1">{props.name} <span className="text-xs text-neutral-400">{props.variationlabels && props.variationlabels.length > 0 && <span className="text-xs text-neutral-400">{`( ${props.variationlabels.join(", ")} )`}</span> }</span></CardTitle>
             <CardDescription className="text-sm text-neutral-400">
               {props.brand && <span>{props.brand} <br /></span>}
-              Serving Size: {props.servinginfo.size}
-              {props.servinginfo.unit === "pieces" 
-                ? props.servinginfo.size > 1 ? " Pieces" : " Piece" 
-                : props.servinginfo.unit}
+              Serving Size: {props.servinginfo.size}{props.servinginfo.unit === "pieces" ? props.servinginfo.size > 1 ? " Pieces" : " Piece" : props.servinginfo.unit}
             </CardDescription>
           </div>
           <div className="flex gap-2">
             <Select onValueChange={(value) => {
-              const parsedValue = parseFloat(value)
-              if (!isNaN(parsedValue) && parsedValue > 0) {
-                setServings(parsedValue)
-                // Call handleAddToMeal with the new value directly
-                handleAddToMealWithServings(parsedValue)
-              }
+              const servingsValue = parseFloat(value)
+              setServings(servingsValue)
+              handleAddToMeal(servingsValue)
             }}>
-              <SelectTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute top-4 right-4"
-                >
-                  <PlusIcon className="w-6 h-6 text-green-400" />
-                </Button>
+              <SelectTrigger className="outline-none border-none active:scale-95 active:brightness-50 active:rotate-45">
+                <PlusIcon className="w-6 h-6 text-green-400" />
               </SelectTrigger>
               <SelectContent>
                 {Array.from({ length: 20 }, (_, i) => (i + 1) * 0.5).map((value) => (
@@ -206,19 +150,19 @@ export default function CustomFoodCard({ index, onDelete, ...props }: CustomFood
         <div className="grid grid-cols-2 md:grid-cols-4 gap-1">
           <div className="flex gap-2 items-center">
             <span className="text-sm text-neutral-400">Calories</span>
-            <span className="text-lg">{props.nutrients.calories || 0}</span>
+            <span className="text-lg">{props.nutrients.calories}</span>
           </div>
           <div className="flex gap-2 items-center">
             <span className="text-sm text-neutral-400">Protein</span>
-            <span className="text-lg">{props.nutrients.protein || 0}g</span>
+            <span className="text-lg">{props.nutrients.protein}g</span>
           </div>
           <div className="flex gap-2 items-center">
             <span className="text-sm text-neutral-400">Carbs</span>
-            <span className="text-lg">{props.nutrients.carbs || 0}g</span>
+            <span className="text-lg">{props.nutrients.carbs}g</span>
           </div>
           <div className="flex gap-2 items-center">
             <span className="text-sm text-neutral-400">Fat</span>
-            <span className="text-lg">{props.nutrients.fats?.total || 0}g</span>
+            <span className="text-lg">{props.nutrients.fats.total}g</span>
           </div>
         </div>
       </CardContent>
