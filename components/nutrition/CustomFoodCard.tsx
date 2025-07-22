@@ -2,7 +2,6 @@ import { useMealForm } from "@/context/MealFormContext"
 import { Button } from "@/components/ui_primitives/button"
 import { useToast } from "@/hooks/use-toast"
 import { PlusIcon, Trash2 } from "lucide-react"
-import { capitalize, generateApexionID } from "@/lib/utils"
 import { deleteCustomFoodItem } from "@/actions/AWS"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui_primitives/card"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui_primitives/dialog"
@@ -94,7 +93,9 @@ export default function CustomFoodCard({ index, onDelete, ...props }: CustomFood
   const handleDelete = async () => {
     try {
       await deleteCustomFoodItem(index)
-      onDelete()
+      if (onDelete) {
+        onDelete()
+      }
       setIsDeleteDialogOpen(false)
       toast({
         title: "Item Deleted",
@@ -118,12 +119,14 @@ export default function CustomFoodCard({ index, onDelete, ...props }: CustomFood
         <div className="flex justify-between items-start">
           <div>
             <CardTitle className="text-base font-medium max-w-72 mb-1">
-              {props.name} 
-              {props.variationlabels && props.variationlabels.length > 0 && (
-                <span className="text-xs text-neutral-400">
-                  {`( ${props.variationlabels.join(", ")} )`}
-                </span>
-              )}
+              <span>
+                {props.name} 
+                {props.variationlabels && props.variationlabels.length > 0 && (
+                  <span className="text-xs text-neutral-400">
+                    {`( ${props.variationlabels.join(", ")} )`}
+                  </span>
+                )}
+              </span>
             </CardTitle>
             <CardDescription className="text-sm text-neutral-400">
               {props.brand && <span>{props.brand} <br /></span>}
@@ -135,8 +138,11 @@ export default function CustomFoodCard({ index, onDelete, ...props }: CustomFood
           </div>
           <div className="flex gap-2">
             <Select onValueChange={(value) => {
-              setServings(parseFloat(value))
-              handleAddToMeal()
+              const parsedValue = parseFloat(value)
+              if (!isNaN(parsedValue)) {
+                setServings(parsedValue)
+                handleAddToMeal()
+              }
             }}>
               <SelectTrigger asChild>
                 <Button
