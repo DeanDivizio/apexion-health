@@ -47,6 +47,10 @@ export default function CustomFoodCard({ index, onDelete, ...props }: CustomFood
   }
 
   const handleAddToMeal = () => {
+    handleAddToMealWithServings(servings)
+  }
+
+  const handleAddToMealWithServings = (servingCount: number) => {
     if (!addMealItem) {
       console.error('addMealItem function not available')
       return
@@ -54,7 +58,7 @@ export default function CustomFoodCard({ index, onDelete, ...props }: CustomFood
 
     addMealItem({
       name: props.name,
-      numberOfServings: servings,
+      numberOfServings: servingCount,
       apexionid: props.apexionid,
       fdcid: props.fdcid,
       servinginfo: {
@@ -139,9 +143,10 @@ export default function CustomFoodCard({ index, onDelete, ...props }: CustomFood
           <div className="flex gap-2">
             <Select onValueChange={(value) => {
               const parsedValue = parseFloat(value)
-              if (!isNaN(parsedValue)) {
+              if (!isNaN(parsedValue) && parsedValue > 0) {
                 setServings(parsedValue)
-                handleAddToMeal()
+                // Call handleAddToMeal with the new value directly
+                handleAddToMealWithServings(parsedValue)
               }
             }}>
               <SelectTrigger asChild>
