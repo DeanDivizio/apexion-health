@@ -945,18 +945,18 @@ export default function MealsList() {
                                                 <div className="grid grid-cols-2 gap-4">
                                                     {mealItems.map((item: any) => {
                                                         const itemMacros = item.stats ? {
-                                                            calories: item.stats.calories * item.numberOfServings,
-                                                            protein: item.stats.protein * item.numberOfServings,
-                                                            carbs: item.stats.carbs * item.numberOfServings,
-                                                            fat: item.stats.fat * item.numberOfServings
+                                                            calories: Math.round(item.stats.calories * item.numberOfServings),
+                                                            protein: Math.round(item.stats.protein * item.numberOfServings),
+                                                            carbs: Math.round(item.stats.carbs * item.numberOfServings),
+                                                            fat: Math.round(item.stats.fat * item.numberOfServings)
                                                         } : {
-                                                            calories: item.nutrients.calories * item.numberOfServings,
-                                                            protein: item.nutrients.protein * item.numberOfServings,
-                                                            carbs: item.nutrients.carbs * item.numberOfServings,
-                                                            fat: item.nutrients.fats.total * item.numberOfServings
+                                                            calories: Math.round(item.nutrients.calories * item.numberOfServings),
+                                                            protein: Math.round(item.nutrients.protein * item.numberOfServings),
+                                                            carbs: Math.round(item.nutrients.carbs * item.numberOfServings),
+                                                            fat: Math.round(item.nutrients.fats.total * item.numberOfServings)
                                                         };
                                                         return (
-                                                            <div key={item.name} className="mb-4">
+                                                            <div key={`${item.name}-${item.variationlabels}-${item.numberOfServings}`} className="mb-4">
                                                                 <h4 className="text-md font-medium">{capitalize(item.name)}</h4>
                                                                 <div className="flex flex-row items-center justify-start gap-1 pl-4 py-1 text-sm">
                                                                     <p className="font-medium">{item.numberOfServings || 1} <span className="text-neutral-200 font-thin">serving{item.numberOfServings > 1 ? 's' : ''}</span></p>

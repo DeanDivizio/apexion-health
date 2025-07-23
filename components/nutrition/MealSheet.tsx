@@ -167,7 +167,7 @@ export default function MealSheet() {
                 </Accordion>
                 <div className="flex flex-col gap-4 h-[85vh] pb-40 overflow-y-scroll">
                     {mealItems.map((item) => (
-                        <Card key={item.name} className="relative mb-4">
+                        <Card key={`${item.name}-${item.variationlabels}-${item.numberOfServings}`} className="relative mb-4">
                             <CardHeader>
                                 <CardTitle className="text-base font-medium">{item.name}</CardTitle>
                                 <CardDescription className="text-sm font-thin italic">
@@ -239,15 +239,15 @@ export default function MealSheet() {
                                 <p className="text-xs text-neutral-400">calories</p>
                             </div>
                             <div className="flex flex-col items-center">
-                                <p className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-b from-blue-200 to-blue-600">{roundToNearestTenth(totalMacros.protein)}g</p>
+                                <p className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-b from-blue-200 to-blue-600">{roundToNearestWhole(totalMacros.protein)}g</p>
                                 <p className="text-xs text-neutral-400">protein</p>
                             </div>
                             <div className="flex flex-col items-center">
-                                <p className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-b from-purple-200 to-purple-600">{roundToNearestTenth(totalMacros.carbs)}g</p>
+                                <p className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-b from-purple-200 to-purple-600">{roundToNearestWhole(totalMacros.carbs)}g</p>
                                 <p className="text-xs text-neutral-400">carbs</p>
                             </div>
                             <div className="flex flex-col items-center">
-                                <p className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-b from-orange-200 to-orange-600">{roundToNearestTenth(totalMacros.fat)}g</p>
+                                <p className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-b from-orange-200 to-orange-600">{roundToNearestWhole(totalMacros.fat)}g</p>
                                 <p className="text-xs text-neutral-400">fat</p>
                             </div>
                         </CardContent>

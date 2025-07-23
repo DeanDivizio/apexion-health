@@ -4,6 +4,7 @@ import { addItemToTable, updateFavoriteFoodItems } from '@/actions/AWS';
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
+import { useRouter } from 'next/navigation';
 
 export const MealFormSchema = z.object({
   month: z.string(),
@@ -51,6 +52,7 @@ interface MealFormProviderProps {
 }
 
 export const MealFormProvider: React.FC<MealFormProviderProps> = ({ children }) => {
+  const router = useRouter();
   const { toast } = useToast();
   const [mealItems, setMealItems] = useState<MealItems[]>([]);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -121,6 +123,9 @@ export const MealFormProvider: React.FC<MealFormProviderProps> = ({ children }) 
           description: "Your meal has been successfully logged",
           duration: 1000,
         });
+        setTimeout(() => {
+          router.push('/');
+        }, 500);
       } catch (error) {
         console.error('Error submitting meal:', error);
         toast({
