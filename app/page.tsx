@@ -112,7 +112,7 @@ export default function Home() {
               subtextOrder="unit last"
               description="Intake compared to maintenence" 
               unit="Calories" 
-              value={todayCalories} 
+              value={Math.round(todayCalories)} 
               goal={calorieLimit}
               shade="indigo" />
             <UniversalRingChart 
@@ -122,7 +122,7 @@ export default function Home() {
               subtextOrder="unit last"
               description="Intake compared to goal" 
               unit="grams" 
-              value={todayProtein} 
+              value={Math.round(todayProtein)} 
               goal={proteinGoal}
               shade="blue"
               overOkay />
@@ -133,7 +133,7 @@ export default function Home() {
               subtextOrder="unit last"
               description="Intake compared to goal" 
               unit="Grams" 
-              value={todayCarbs} 
+              value={Math.round(todayCarbs)} 
               goal={carbGoal}
               shade="green" />
             <UniversalRingChart 
@@ -143,7 +143,7 @@ export default function Home() {
               subtextOrder="unit last"
               description="Intake compared to goal" 
               unit="Grams" 
-              value={todayFat} 
+              value={Math.round(todayFat)} 
               goal={fatGoal}
               shade="indigo" />
               </div>
