@@ -35,7 +35,7 @@ function SetForm({ exerciseIndex, setIndex, onRemove }: { exerciseIndex: number;
             <FormItem className={` ${isLRSplit ? "col-span-4" : "col-span-5"}`}>
               <FormLabel className="font-base">Weight</FormLabel>
               <FormControl>
-                <Input t9 {...field} onChange={(e) => field.onChange(Number.parseFloat(e.target.value))} />
+                <Input t9 {...field} onChange={(e) => field.onChange(Number.parseFloat(e.target.value))} className="[&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -48,7 +48,7 @@ function SetForm({ exerciseIndex, setIndex, onRemove }: { exerciseIndex: number;
             <FormItem className={isLRSplit ? "col-span-3" : "col-span-5"}>
               <FormLabel className="font-extralight">{isLRSplit ? "Left" : "Reps"}</FormLabel>
               <FormControl>
-                <Input t9 {...field} onChange={(e) => field.onChange(Number.parseFloat(e.target.value))} />
+                <Input t9 {...field} onChange={(e) => field.onChange(Number.parseFloat(e.target.value))} className="[&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -62,7 +62,7 @@ function SetForm({ exerciseIndex, setIndex, onRemove }: { exerciseIndex: number;
               <FormItem className={isLRSplit ? "col-span-3" : "col-span-5"}>
                 <FormLabel className="font-extralight">{`Right`}</FormLabel>
                 <FormControl>
-                  <Input t9 {...field} onChange={(e) => field.onChange(Number.parseFloat(e.target.value))} />
+                  <Input t9 {...field} onChange={(e) => field.onChange(Number.parseFloat(e.target.value))} className="[&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -91,36 +91,75 @@ function SetForm({ exerciseIndex, setIndex, onRemove }: { exerciseIndex: number;
           </DropdownMenu>
         </div>
       </div>
+      <div className="grid grid-cols-2 gap-2 items-center justify-center">
       <FormField
         control={control}
         name={`exercises.${exerciseIndex}.sets.${setIndex}.effort`}
         render={({ field }) => (
-          <FormItem className="grid grid-cols-5 items-center">
-            <div className="col-span-1 flex items-center gap-2">
-              <p className="text-sm font-extralight">Effort:</p>
+          <FormItem className="flex items-center col-span-1">
+            <div className="flex items-center gap-2 relative">
               <Popover>
-                <PopoverTrigger asChild>
+                <PopoverTrigger asChild className="absolute left-0 -translate-y-4 -translate-x-2">
                   <InfoIcon className="h-4 w-4" />
                 </PopoverTrigger>
                 <PopoverContent side="top" align="start" className="translate-x-6 space-y-2">
                   <p className="font-light text-sm">Recording your subjective effort per set lets Apexion track intra-lift variability and overall performance in more detail.</p>
-                  <p className="font-light text-sm">This option can be disabled in settings. Leaving the slider at 0 will effectively disable recording for that set.</p>
-                  <p className="font-light text-sm">Reserve 10 for when you take a set to failure.</p>
+                  <p className="font-light text-sm">This is optional and can be disabled in settings. Leaving the default value will disable recording for that set.</p>
                 </PopoverContent>
               </Popover>
             </div>
-            <Slider {...field}
-              onValueChange={(value) => field.onChange(Number(value[0]))}
-              className="col-span-4"
-              defaultValue={[0]}
-              max={10}
-              min={0}
-              step={1}
-              value={[field.value ?? 0]}
+            <Select 
+            {...field}
+            onValueChange={(value) => field.onChange(Number(value))}
+            value={field.value ? field.value.toString() : undefined}
+            >
+              <SelectTrigger className="text-left">
+                <SelectValue placeholder="Effort" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="0">Not recorded</SelectItem>
+                <SelectItem value="1">1</SelectItem>
+                <SelectItem value="2">2</SelectItem>
+                <SelectItem value="3">3</SelectItem>
+                <SelectItem value="4">4</SelectItem>
+                <SelectItem value="5">5</SelectItem>
+                <SelectItem value="6">6</SelectItem>
+                <SelectItem value="7">7</SelectItem>
+                <SelectItem value="8">8</SelectItem>
+                <SelectItem value="9">One From Failure</SelectItem>
+                <SelectItem value="10">Failure</SelectItem>
+              </SelectContent>
+            </Select>
+          </FormItem>
+        )}
+      />
+      <FormField
+        control={control}
+        name={`exercises.${exerciseIndex}.sets.${setIndex}.duration`}
+        render={({ field }) => (
+          <FormItem className="flex items-center ml-2">
+            <div className="flex items-center gap-2 relative">
+              <Popover>
+                <PopoverTrigger asChild className="absolute left-0 -translate-y-4 -translate-x-2">
+                  <InfoIcon className="h-4 w-4" />
+                </PopoverTrigger>
+                <PopoverContent side="top" align="center" className="translate-x-6 space-y-2">
+                  <p className="font-light text-sm">Recording the duration of your sets (especially when combined with effort) allows Apexion to estimate intra-rep effort and overall performance in more detail.</p>
+                  <p className="font-light text-sm">This is optional and can be disabled in settings. Leaving the default value will disable recording for that set.</p>
+                </PopoverContent>
+              </Popover>
+            </div>
+            <Input 
+            t9 
+            {...field} 
+            onChange={(e) => field.onChange(Number.parseFloat(e.target.value))} 
+            placeholder="Duration (seconds)" 
+            className="col-span-1 mt-2 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]" 
             />
           </FormItem>
         )}
       />
+      </div>
     </div>
   )
 }
@@ -128,8 +167,8 @@ function SetForm({ exerciseIndex, setIndex, onRemove }: { exerciseIndex: number;
 function ExerciseSettingDialog({ control, index }: { control: any, index: number }) {
   return (
     <AlertDialog>
-      <AlertDialogTrigger>
-        <Settings size={16} />
+      <AlertDialogTrigger asChild>
+        <Settings size={24} className="opacity-50"/>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
@@ -330,11 +369,11 @@ export default function StrengthExercise({
                 control={control}
                 name={`exercises.${index}.exerciseType`}
                 render={({ field }) => (
-                  <FormItem className="w-full">
-                    <FormLabel className="w-full">
+                  <FormItem className="w-full flex align-center justify-between gap-4 mb-4">
+                    <FormLabel hidden={true}>
                       <div className="w-full flex flex-row justify-between mb-4">
                         Exercise
-                        <ExerciseSettingDialog control={control} index={index} />
+                        
                       </div>
                     </FormLabel>
                     <Select
@@ -381,6 +420,7 @@ export default function StrengthExercise({
                         </SelectItem>
                       </SelectContent>
                     </Select>
+                    <ExerciseSettingDialog control={control} index={index} />
                     <FormMessage />
                   </FormItem>
                 )}
@@ -390,7 +430,7 @@ export default function StrengthExercise({
               <div id={`${index}_reference`} className="mb-6">
                 {gymMeta.exerciseData[internalExerciseName]?.mostRecentSession && (
                   <div className="flex gap-2 mb-2">
-                    <p className="font-xs text-neutral-200 font-medium">{`Previous: `}</p>
+                    <p className="font-xs text-neutral-200 font-medium">{`${spellOutDate(gymMeta.exerciseData[internalExerciseName]?.mostRecentSession.date)}: `}</p>
                     {gymMeta.exerciseData[internalExerciseName]?.mostRecentSession.sets.map((set: any, index: number) => (
                       <p className="font-xs text-neutral-400 font-light" key={index}>{set.reps}@{set.weight}
                         {index == gymMeta.exerciseData[internalExerciseName]?.mostRecentSession.sets.length - 1 ? "" : ", "}</p>

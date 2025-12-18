@@ -38,7 +38,9 @@ const FormSchema = z.object({
           z.object({
             weight: z.number(),
             reps: z.number(),
-            effort: z.coerce.number()
+            repsRight: z.number().nullable(),
+            effort: z.coerce.number().optional(),
+            duration: z.number().optional(),
           }),
         )
         .optional(),
@@ -234,7 +236,7 @@ export default function WorkoutForm({ onSuccess, gymMeta }: { onSuccess: () => v
   const addExercise = (type: "strength" | "cardio") => {
     const newIndex = fields.length
     if (type === "strength") {
-      append({ type, exerciseType: "", sets: [{ weight: 0, reps: 1, effort: 0 }] })
+      append({ type, exerciseType: "", sets: [{ weight: 0, reps: 1, repsRight: null, effort: undefined, duration: undefined }] })
     } else {
       append({ type, exerciseType: "", duration: 0, distance: 0, unit: "km" })
     }
