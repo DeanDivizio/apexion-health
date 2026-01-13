@@ -103,7 +103,8 @@ function SetForm({ exerciseIndex, setIndex, onRemove }: { exerciseIndex: number;
                 </PopoverTrigger>
                 <PopoverContent side="top" align="start" className="translate-x-6 space-y-2">
                   <p className="font-light text-sm">Recording your subjective effort per set lets Apexion track intra-lift variability and overall performance in more detail.</p>
-                  <p className="font-light text-sm">This is optional and can be disabled in settings. Leaving the default value will disable recording for that set.</p>
+                  <p className="font-light text-sm">This is optional and can be disabled in settings (eventually). Leaving the default value will disable recording for that set.</p>
+                  <p className="font-light text-sm">This is also known as RPE (Rating of Perceived Exertion).</p>
                 </PopoverContent>
               </Popover>
             </div>
@@ -144,7 +145,7 @@ function SetForm({ exerciseIndex, setIndex, onRemove }: { exerciseIndex: number;
                 </PopoverTrigger>
                 <PopoverContent side="top" align="center" className="translate-x-6 space-y-2">
                   <p className="font-light text-sm">Recording the duration of your sets (especially when combined with effort) allows Apexion to estimate intra-rep effort and overall performance in more detail.</p>
-                  <p className="font-light text-sm">This is optional and can be disabled in settings. Leaving the default value will disable recording for that set.</p>
+                  <p className="font-light text-sm">This is optional and can be disabled in settings (eventually). Leaving the default value will disable recording for that set.</p>
                 </PopoverContent>
               </Popover>
             </div>
@@ -431,7 +432,7 @@ export default function StrengthExercise({
                   <div className="flex gap-2 mb-2">
                     <p className="font-xs text-neutral-200 font-medium">{`${spellOutDate(gymMeta.exerciseData[internalExerciseName]?.mostRecentSession.date)}: `}</p>
                     {gymMeta.exerciseData[internalExerciseName]?.mostRecentSession.sets.map((set: any, index: number) => (
-                      <p className="font-xs text-neutral-400 font-light" key={index}>{set.reps}@{set.weight}
+                      <p className="font-xs text-neutral-400 font-light" key={index}>{set.reps}@{set.weight}{set.effort ? `:${set.effort}` : ""}
                         {index == gymMeta.exerciseData[internalExerciseName]?.mostRecentSession.sets.length - 1 ? "" : ", "}</p>
                     ))}
                   </div>
