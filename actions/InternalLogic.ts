@@ -148,7 +148,7 @@ export async function addCustomExercise(customExercises: {group: string, items:s
 
   const response = await updateCustomExercises(customExercises);
   if (response.$metadata.httpStatusCode === 200) {
-    revalidateTag('gymMeta')
+    revalidateTag('gymMeta', 'max')
   }
   return response;
 }
@@ -212,7 +212,7 @@ export async function logWorkout(workout: any, gymMeta: any) {
       addItemToTable(workout, "Apexion-Gym")
     ]);
     if (gymMetaResponse.$metadata.httpStatusCode === 200) {
-      revalidateTag('gymMeta')
+      revalidateTag('gymMeta', 'default')
     }
     console.log(workoutResponse, gymMetaResponse)
     return workoutResponse;

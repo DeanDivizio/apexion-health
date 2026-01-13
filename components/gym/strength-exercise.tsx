@@ -17,7 +17,6 @@ import { Textarea } from "../ui_primitives/textarea"
 import { capitalize, quickSort, spellOutDate, toCamelCase } from "@/lib/utils"
 import { addCustomExercise } from "@/actions/InternalLogic"
 import { useToast } from "@/hooks/use-toast"
-import { Slider } from "@/components/ui_primitives/slider"
 import { Popover, PopoverContent, PopoverTrigger } from "../ui_primitives/popover"
 
 
