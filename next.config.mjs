@@ -2,7 +2,6 @@
 const nextConfig = {
     experimental: {
         useCache: true,
-        dynamicIO: true,
     },
     async headers() {
         return [
