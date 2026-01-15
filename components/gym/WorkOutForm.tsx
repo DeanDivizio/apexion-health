@@ -38,7 +38,7 @@ const FormSchema = z.object({
           z.object({
             weight: z.number(),
             reps: z.number(),
-            repsRight: z.number().nullable(),
+            repsRight: z.number().nullable().optional(),
             effort: z.coerce.number().optional(),
             duration: z.number().optional(),
           }),
