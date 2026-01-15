@@ -1,5 +1,6 @@
 "use server";
 import { addItemToTable, genericAddItemToTable, getDataFromTable, getGymMeta_CACHED, updateCustomExercises, updateExerciseData, getAllDataFromTableByUser, updateCustomSupplements } from "@/actions/AWS";
+import { listWorkoutSessions } from "@/lib/gym/server/gymService";
 import { ExerciseGroup } from "@/utils/types";
 import { auth } from '@clerk/nextjs/server';
 import { unstable_cacheTag as cacheTag, revalidateTag } from 'next/cache'
@@ -15,9 +16,9 @@ export async function homeFetch({startDate, endDate}:{startDate:string, endDate:
       userID = userId;
     }
     try {
-        const [hormoneData, gymData, macroData, medData, suppData] = await Promise.all([
+        const [hormoneData, gymSessions, macroData, medData, suppData] = await Promise.all([
           getDataFromTable(userID, "Apexion-Hormone", startDate, endDate),
-          getDataFromTable(userID, "Apexion-Gym", startDate, endDate),
+          listWorkoutSessions(userId, { startDate, endDate }),
           getDataFromTable(userID, "Apexion-Nutrition", startDate, endDate),
           getDataFromTable(userID, "Apexion-Medication", startDate, endDate),
           getDataFromTable(userID, "Apexion-Supplements", startDate, endDate),
@@ -32,12 +33,12 @@ export async function homeFetch({startDate, endDate}:{startDate:string, endDate:
             summaryData.set(item.date, {date: item.date, hormoneData: item.data})
           }
         }); //@ts-ignore
-        gymData.forEach((item: { date: string; data: []}) => {
-          const existingItem = summaryData.get(item.date)
+        gymSessions.forEach((session) => {
+          const existingItem = summaryData.get(session.date)
           if (existingItem) {
-            existingItem.gym = item.data;
+            existingItem.gym = [...(existingItem.gym ?? []), session]
           } else {
-            summaryData.set(item.date, {date: item.date, gym: item.data})
+            summaryData.set(session.date, {date: session.date, gym: [session]})
           }
         });//@ts-ignore
         macroData.forEach((item: { date: string; data: []; totals?:Macros}) => {
@@ -124,6 +125,7 @@ export async function homeFetch({startDate, endDate}:{startDate:string, endDate:
 
 }
 
+// Legacy gym meta fetch (DynamoDB). Replaced by actions/gym.getGymMetaAction.
 export async function fetchGymMeta(userID: any){
   // "use cache"
   // cacheTag('gymMeta')
@@ -204,6 +206,7 @@ function mutateGymMetaPostWorkout(workout: any, gymMeta: any) {
   return gymMeta;
 }
 
+// Legacy gym workout logger (DynamoDB). Replaced by actions/gym.createWorkoutSessionAction.
 export async function logWorkout(workout: any, gymMeta: any) {
   gymMeta = mutateGymMetaPostWorkout(workout, gymMeta);
   try {

@@ -15,10 +15,17 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Plus } from "lucide-react"
 import { Textarea } from "../ui_primitives/textarea"
 import { capitalize, quickSort, spellOutDate, toCamelCase } from "@/lib/utils"
-import { addCustomExercise } from "@/actions/InternalLogic"
+import { createCustomExerciseAction } from "@/actions/gym"
 import { useToast } from "@/hooks/use-toast"
 import { Popover, PopoverContent, PopoverTrigger } from "../ui_primitives/popover"
 
+
+function formatRepCount(reps?: { bilateral?: number; left?: number; right?: number }) {
+  if (!reps) return "";
+  if (reps.bilateral !== undefined) return `${reps.bilateral}`;
+  if (reps.left !== undefined && reps.right !== undefined) return `${reps.left}/${reps.right}`;
+  return "";
+}
 
 function SetForm({ exerciseIndex, setIndex, onRemove }: { exerciseIndex: number; setIndex: number; onRemove: () => void }) {
   const { control } = useFormContext()
@@ -177,7 +184,7 @@ function ExerciseSettingDialog({ control, index }: { control: any, index: number
         </AlertDialogHeader>
         <FormField
           control={control}
-          name={`exercises.${index}.modifications.grip`}
+          name={`exercises.${index}.variations.grip`}
           render={({ field }) => (
             <FormItem className="w-full">
               <FormLabel>Hand Grip</FormLabel>
@@ -188,10 +195,11 @@ function ExerciseSettingDialog({ control, index }: { control: any, index: number
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="rotatedNeutral">{`Rotated Neutral`}</SelectItem>
-                  <SelectItem value="pronated">{`Pronated (upward)`}</SelectItem>
-                  <SelectItem value="supinated">{`Supinated (downward)`}</SelectItem>
-                  <SelectItem value="normal">Normal</SelectItem>
+                  <SelectItem value="normal">{`Normal`}</SelectItem>
+                  <SelectItem value="pronated">{`Pronated (overhand)`}</SelectItem>
+                  <SelectItem value="supinated">{`Supinated (underhand)`}</SelectItem>
+                  <SelectItem value="neutral">{`Neutral`}</SelectItem>
+                  <SelectItem value="neutralSupinated">{`Neutral/Supinated`}</SelectItem>
                 </SelectContent>
               </Select>
             </FormItem>
@@ -199,7 +207,7 @@ function ExerciseSettingDialog({ control, index }: { control: any, index: number
         />
         <FormField
           control={control}
-          name={`exercises.${index}.modifications.movementPlane`}
+          name={`exercises.${index}.variations.plane`}
           render={({ field }) => (
             <FormItem className="w-full">
               <FormLabel>Movement Plane</FormLabel>
@@ -210,11 +218,9 @@ function ExerciseSettingDialog({ control, index }: { control: any, index: number
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="inclined">{`Inclined`}</SelectItem>
-                  <SelectItem value="declined">{`Declined`}</SelectItem>
-                  <SelectItem value="supine">{`Supine`}</SelectItem>
-                  <SelectItem value="prone">{`Prone`}</SelectItem>
-                  <SelectItem value="normal">{`Normal`}</SelectItem>
+                  <SelectItem value="flat">{`Flat`}</SelectItem>
+                  <SelectItem value="incline">{`Incline`}</SelectItem>
+                  <SelectItem value="decline">{`Decline`}</SelectItem>
                 </SelectContent>
               </Select>
             </FormItem>
@@ -222,7 +228,7 @@ function ExerciseSettingDialog({ control, index }: { control: any, index: number
         />
         <FormField
           control={control}
-          name={`exercises.${index}.modifications.notes`}
+          name={`exercises.${index}.notes`}
           render={({ field }) => (
             <FormItem className="w-full">
               <FormLabel>Notes</FormLabel>
@@ -261,8 +267,8 @@ export default function StrengthExercise({
   function WatchTheseThings(index: number) {
     const sets = useWatch({ control, name: `exercises.${index}.sets` })
     const exerciseType = useWatch({ control, name: `exercises.${index}.exerciseType` })
-    const mod_grip = useWatch({ control, name: `exercises.${index}.modifications.grip` })
-    const mod_plane = useWatch({ control, name: `exercises.${index}.modifications.movementPlane` })
+    const mod_grip = useWatch({ control, name: `exercises.${index}.variations.grip` })
+    const mod_plane = useWatch({ control, name: `exercises.${index}.variations.plane` })
     return { sets, exerciseType, mod_grip, mod_plane }
   }
   const { sets, exerciseType, mod_grip, mod_plane } = WatchTheseThings(index)
@@ -290,18 +296,15 @@ export default function StrengthExercise({
       setSelectedCategory("")
       setDialogOpen(false)
       try {
-        const response = await addCustomExercise(gymMeta.customExercises, formattedName, selectedCategory);
-        if (response.$metadata.httpStatusCode === 200) {
-          toast({
-            title: "Success",
-            description: `${customExercise} has been added to your Personal Database`,
-          })
-        } else {
-          toast({
-            title: "Error",
-            description: "There was an AWS error. Please delete the exercise and try again.",
-          })
-        }
+        await createCustomExerciseAction({
+          key: formattedName,
+          name: customExercise,
+          category: selectedCategory,
+        })
+        toast({
+          title: "Success",
+          description: `${customExercise} has been added to your Personal Database`,
+        })
       } catch (error) {
         console.error("Error adding custom exercise:", error);
         toast({
@@ -322,14 +325,7 @@ export default function StrengthExercise({
   }, [exerciseType])
   useEffect(() => {
     setInternalExerciseName(exerciseType)
-    if (mod_grip && mod_grip != "normal") {
-      if (mod_plane && mod_plane != "normal") {
-        setInternalExerciseName(exerciseType + "_" + mod_grip + "_" + mod_plane)
-      } else { setInternalExerciseName(exerciseType + "_" + mod_grip) }
-    } else if (mod_plane && mod_plane != "normal") {
-      setInternalExerciseName(exerciseType + "_" + mod_plane)
-    }
-  }, [exerciseType, mod_grip, mod_plane])
+  }, [exerciseType])
   /********************************************************* */
 
   const addSet = () => {
@@ -351,14 +347,12 @@ export default function StrengthExercise({
           <div className="justify-start items-baseline flex">
             {`${exerciseName}`}
             <span className="px-2">
-              {(mod_grip != undefined && mod_grip != "normal") || (mod_plane != undefined && mod_plane != "normal")
-                ? " // "
-                : ""}
+              {(mod_grip && mod_grip !== "normal") || (mod_plane && mod_plane !== "flat") ? " // " : ""}
             </span>
             <span className="text-xs font-extralight italic flex flex-wrap">
-              {`${mod_grip != "normal" && mod_grip != undefined ? capitalize(mod_grip) : ""}`}
-              {mod_grip && mod_grip != "normal" && mod_plane && mod_plane != "normal" && <p className="mr-1">,</p>}
-              {`${mod_plane != "normal" && mod_plane != undefined ? capitalize(mod_plane) : ""}`}
+              {`${mod_grip && mod_grip !== "normal" ? capitalize(mod_grip) : ""}`}
+              {mod_grip && mod_grip !== "normal" && mod_plane && mod_plane !== "flat" && <p className="mr-1">,</p>}
+              {`${mod_plane && mod_plane !== "flat" ? capitalize(mod_plane) : ""}`}
             </span>
           </div>
         </AccordionTrigger>
@@ -432,7 +426,7 @@ export default function StrengthExercise({
                   <div className="flex gap-2 mb-2">
                     <p className="font-xs text-neutral-200 font-medium">{`${spellOutDate(gymMeta.exerciseData[internalExerciseName]?.mostRecentSession.date)}: `}</p>
                     {gymMeta.exerciseData[internalExerciseName]?.mostRecentSession.sets.map((set: any, index: number) => (
-                      <p className="font-xs text-neutral-400 font-light" key={index}>{set.reps}@{set.weight}{set.effort ? `:${set.effort}` : ""}
+                      <p className="font-xs text-neutral-400 font-light" key={index}>{formatRepCount(set.reps)}@{set.weight}{set.effort ? `:${set.effort}` : ""}
                         {index == gymMeta.exerciseData[internalExerciseName]?.mostRecentSession.sets.length - 1 ? "" : ", "}</p>
                     ))}
                   </div>
@@ -441,7 +435,7 @@ export default function StrengthExercise({
                   <div className="flex gap-2">
                     <p className="font-xs text-neutral-200 font-medium">{`Your PR: `}</p>
                     <p className="font-xs text-neutral-400 font-extralight">
-                      <span className="underline font-light">{`${gymMeta.exerciseData[internalExerciseName]?.recordSet.reps}${gymMeta.exerciseData[internalExerciseName].repsRight ? `/${gymMeta.exerciseData[internalExerciseName].repsRight}` : ""}@${gymMeta.exerciseData[internalExerciseName]?.recordSet.weight}`}</span>
+                      <span className="underline font-light">{`${formatRepCount(gymMeta.exerciseData[internalExerciseName]?.recordSet.reps)}@${gymMeta.exerciseData[internalExerciseName]?.recordSet.weight}`}</span>
                       {` (${gymMeta.exerciseData[internalExerciseName]?.recordSet.totalVolume} lbs)`}
                       {` on `}
                       <span className="underline font-light">{spellOutDate(gymMeta.exerciseData[internalExerciseName]?.recordSet.date)}</span>

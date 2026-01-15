@@ -11,10 +11,11 @@ import { Checkbox } from "@/components/ui_primitives/checkbox"
 import StrengthExercise from "@/components/gym/strength-exercise"
 import CardioExercise from "@/components/gym/CardioExerciseEntry"
 import { Accordion, AccordionContent, AccordionTrigger, AccordionItem } from "../ui_primitives/accordion"
-import type { ExerciseGroup, ClerkUserMetadata } from "@/utils/types"
+import type { ExerciseGroup } from "@/utils/types"
 import { useUser } from "@clerk/nextjs"
 import { quickSort } from "@/lib/utils"
-import { logWorkout } from "@/actions/InternalLogic"
+import { createWorkoutSessionAction } from "@/actions/gym"
+import { EXERCISE_MAP } from "@/lib/gym"
 
 export const dynamic = "force-dynamic"
 
@@ -44,12 +45,13 @@ const FormSchema = z.object({
           }),
         )
         .optional(),
-      modifications: z
+      variations: z
         .object({
-          grip: z.enum(["rotatedNeutral", "pronated", "supinated", "normal"]).optional(),
-          movementPlane: z.enum(["inclined", "declined", "prone", "supine", "normal"]).optional(),
+          grip: z.enum(["normal", "pronated", "supinated", "neutral", "neutralSupinated"]).optional(),
+          plane: z.enum(["flat", "incline", "decline"]).optional(),
         })
         .optional(),
+      notes: z.string().optional(),
       duration: z.number().optional(),
       distance: z.number().optional(),
       unit: z.enum(["km", "mi"]).optional(),
@@ -115,6 +117,14 @@ export default function WorkoutForm({ onSuccess, gymMeta }: { onSuccess: () => v
   const [buttonText, setButtonText] = useState<string>("Log Data")
   const [openExercises, setOpenExercises] = useState<number[]>([])
   const { isLoaded } = useUser()
+
+  const repModeByExercise = useCallback(
+    (exerciseType: string) => {
+      const builtIn = EXERCISE_MAP.get(exerciseType);
+      return builtIn?.repMode ?? "bilateral";
+    },
+    [],
+  );
 
   const MergeExercises = useCallback(() => {
     // Helper function to add exercises without duplicates
@@ -199,30 +209,50 @@ export default function WorkoutForm({ onSuccess, gymMeta }: { onSuccess: () => v
       } else {
         formattedEndTime = `${data.endHour}:${data.endMinute} ${data.endAmpm}`
       }
-      const formattedData = {
-        ...data,
+      const cleanedData = {
         date: formattedDate,
         startTime: formattedStartTime,
         endTime: formattedEndTime,
-      }
-      const cleanedData = Object.fromEntries(
-        Object.entries(formattedData).filter(
-          ([key]) =>
-            ![
-              "day",
-              "month",
-              "year",
-              "startHour",
-              "startMinute",
-              "startAmpm",
-              "endHour",
-              "endMinute",
-              "endAmpm",
-              "useCurrentEndTime",
-            ].includes(key),
-        ),
-      )
-      await logWorkout(cleanedData, gymMeta)
+        exercises: data.exercises.map((exercise) => {
+          const variations = exercise.variations
+            ? Object.fromEntries(
+                Object.entries(exercise.variations).filter(([, value]) => value),
+              )
+            : undefined
+
+          if (exercise.type === "cardio") {
+            return {
+              type: "cardio",
+              exerciseType: exercise.exerciseType,
+              duration: exercise.duration ?? 0,
+              distance: exercise.distance ?? undefined,
+              unit: exercise.unit ?? undefined,
+              variations,
+              notes: exercise.notes ?? undefined,
+            };
+          }
+
+          const repMode = repModeByExercise(exercise.exerciseType);
+          return {
+            type: "strength",
+            exerciseType: exercise.exerciseType,
+            sets:
+              exercise.sets?.map((set) => ({
+                weight: set.weight,
+                reps:
+                  repMode === "dualUnilateral"
+                    ? { left: set.reps, right: set.repsRight ?? set.reps }
+                    : { bilateral: set.reps },
+                effort: set.effort,
+                duration: set.duration,
+              })) ?? [],
+            variations,
+            notes: exercise.notes ?? undefined,
+          };
+        }),
+      };
+
+      await createWorkoutSessionAction(cleanedData)
       setButtonText("Sent!")
       setTimeout(() => {
         onSuccess()

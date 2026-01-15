@@ -2,13 +2,13 @@
 import WorkOutForm from "@/components/gym/WorkOutForm";
 import { useRouter } from "next/navigation";
 import { Suspense, useEffect, useState, useContext } from "react";
-import { fetchGymMeta } from "@/actions/InternalLogic";
+import { getGymMetaAction } from "@/actions/gym";
 import { useAuth } from "@clerk/nextjs";
 import { SideNav } from "@/components/global/SideNav";
 import { MobileHeaderContext } from "@/context/MobileHeaderContext";
 
 export default function LogWorkoutPage() {
-    const { userId, isLoaded } = useAuth();
+    const { isLoaded } = useAuth();
     const { setHeaderComponentLeft, setHeaderComponentRight, setMobileHeading } = useContext(MobileHeaderContext);
     const router = useRouter();
     const [gymMeta, setGymMeta] = useState<any>(null);
@@ -17,13 +17,7 @@ export default function LogWorkoutPage() {
     }
     async function fetchGymMetaWrapper() {
         if (isLoaded) {
-            let userID;
-            if (userId == "user_2lX5gd5X7kYVpy9BARLCIBUyqXJ") {
-                userID = "user_2mUbX7CVcH8FKa5kvUMsnkjjGbs";
-            } else {
-                userID = userId;
-            }
-            const gymMeta = await fetchGymMeta(userID);
+            const gymMeta = await getGymMetaAction();
             setGymMeta(gymMeta);
         }
     }

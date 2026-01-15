@@ -1,0 +1,173 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum GymExerciseType {
+  strength
+  cardio
+}
+
+enum GymRepMode {
+  bilateral
+  dualUnilateral
+}
+
+model GymWorkoutSession {
+  id           String               @id @default(uuid())
+  userId       String
+  dateStr      String
+  startTimeStr String
+  endTimeStr   String
+  createdAt    DateTime             @default(now())
+  exercises    GymWorkoutExercise[]
+
+  @@index([userId, dateStr])
+}
+
+model GymWorkoutExercise {
+  id              String                        @id @default(uuid())
+  sessionId       String
+  session         GymWorkoutSession             @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  order           Int
+  type            GymExerciseType
+  exerciseKey     String
+  notes           String?
+  durationMinutes Float?
+  distance        Float?
+  distanceUnit    String?
+  strengthSets    GymStrengthSet[]
+  variations      GymWorkoutExerciseVariation[]
+
+  @@index([sessionId, order])
+  @@index([exerciseKey])
+}
+
+model GymStrengthSet {
+  id             String             @id @default(uuid())
+  exerciseId     String
+  exercise       GymWorkoutExercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  order          Int
+  weight         Float
+  repsBilateral  Int?
+  repsLeft       Int?
+  repsRight      Int?
+  effort         Int?
+  durationSeconds Int?
+
+  @@index([exerciseId, order])
+}
+
+model GymVariationTemplate {
+  id               String                         @id
+  label            String
+  options          GymVariationOption[]
+  exerciseSupports GymExerciseVariationSupport[]
+  optionOverrides  GymExerciseVariationOptionLabelOverride[]
+  effects          GymExerciseVariationEffect[]
+  workoutVariations GymWorkoutExerciseVariation[]
+}
+
+model GymVariationOption {
+  id         String               @id @default(uuid())
+  templateId String
+  template   GymVariationTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  key        String
+  label      String
+  order      Int?
+
+  @@unique([templateId, key])
+}
+
+model GymCustomExercise {
+  id               String                                @id @default(uuid())
+  userId           String
+  key              String
+  name             String
+  category         String
+  repMode          GymRepMode
+  createdAt        DateTime                              @default(now())
+  targets          GymCustomExerciseTarget[]
+  variationSupports GymExerciseVariationSupport[]
+  optionOverrides  GymExerciseVariationOptionLabelOverride[]
+  effects          GymExerciseVariationEffect[]
+
+  @@unique([userId, key])
+  @@index([userId])
+}
+
+model GymCustomExerciseTarget {
+  id         String             @id @default(uuid())
+  exerciseId String
+  exercise   GymCustomExercise  @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  muscle     String
+  weight     Float
+
+  @@unique([exerciseId, muscle])
+}
+
+model GymExerciseVariationSupport {
+  id         String               @id @default(uuid())
+  exerciseId String
+  exercise   GymCustomExercise    @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  templateId String
+  template   GymVariationTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  labelOverride String?
+
+  @@unique([exerciseId, templateId])
+}
+
+model GymExerciseVariationOptionLabelOverride {
+  id         String               @id @default(uuid())
+  exerciseId String
+  exercise   GymCustomExercise    @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  templateId String
+  template   GymVariationTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  optionKey  String
+  labelOverride String
+
+  @@unique([exerciseId, templateId, optionKey])
+}
+
+model GymExerciseVariationEffect {
+  id         String               @id @default(uuid())
+  exerciseId String
+  exercise   GymCustomExercise    @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  templateId String
+  template   GymVariationTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  optionKey  String
+  multipliers Json?
+  deltas     Json?
+
+  @@unique([exerciseId, templateId, optionKey])
+}
+
+model GymWorkoutExerciseVariation {
+  id         String               @id @default(uuid())
+  exerciseId String
+  exercise   GymWorkoutExercise   @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  templateId String
+  template   GymVariationTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  optionKey  String
+
+  @@unique([exerciseId, templateId])
+}
+
+model GymUserExerciseStat {
+  id             String  @id @default(uuid())
+  userId         String
+  exerciseKey    String
+  prDateStr      String?
+  prWeight       Float?
+  prRepsBilateral Int?
+  prRepsLeft     Int?
+  prRepsRight    Int?
+  prTotalVolume  Float?
+  notes          String?
+
+  @@unique([userId, exerciseKey])
+  @@index([userId])
+}
