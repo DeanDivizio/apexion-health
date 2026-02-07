@@ -86,6 +86,11 @@ export type DistanceUnit = "km" | "mi";
  */
 export type StrengthRepMode = "bilateral" | "dualUnilateral";
 
+/**
+ * Weight measurement unit for user preferences.
+ */
+export type WeightUnit = "lbs" | "kg";
+
 // =============================================================================
 // SECTION 2: EXERCISE DEFINITIONS
 // =============================================================================
@@ -154,6 +159,8 @@ export interface VariationTemplateOverride {
   labelOverride?: string;
   /** Optional per-option label overrides (keys must match template option keys) */
   optionLabelOverrides?: Record<string, string>;
+  /** The option key pre-selected by default when this exercise is added to a workout */
+  defaultOptionKey?: string;
 }
 
 /**
@@ -265,17 +272,6 @@ export interface StrengthSet {
 }
 
 /**
- * Modifications that alter how an exercise is performed.
- * These modify the exercise key for stats tracking (e.g., "benchPress_inclined_pronated").
- */
-export interface ExerciseModifications {
-  /** Hand/grip position */
-  grip?: GripType;
-  /** Body angle/position */
-  movementPlane?: MovementPlane;
-}
-
-/**
  * A strength exercise entry in a workout.
  */
 export interface StrengthExerciseEntry {
@@ -285,14 +281,9 @@ export interface StrengthExerciseEntry {
   /** Array of sets performed */
   sets: StrengthSet[];
   /**
-   * Legacy modifications (kept for backward compatibility with current UI).
-   * Planned migration: replace with `variations`.
-   */
-  modifications?: ExerciseModifications;
-
-  /**
-   * Exercise-specific variations (preferred long-term).
-   * Example: { width: "wide", plane: "incline" }
+   * Exercise-specific variations selected for this instance.
+   * Keys are variation template IDs, values are selected option keys.
+   * Example: { width: "wide", planeAngle: "30" }
    */
   variations?: Record<string, string>;
   /** User notes for this exercise instance */
@@ -361,21 +352,18 @@ export interface ExerciseRecord {
 }
 
 /**
- * Historical stats for a specific exercise (including modifications).
- * 
- * The `exerciseKey` includes modifications, e.g., "benchPress_inclined_pronated".
- * This allows tracking separate PRs for different variations.
+ * Historical stats for a specific exercise.
+ * PRs are tracked per base exercise key (variations are stored separately on workout entries).
  */
 export interface ExerciseStats {
   /** 
-   * The full exercise key including modifications.
-   * Format: "{exerciseType}" or "{exerciseType}_{grip}_{movementPlane}"
-   * Examples: "benchPress", "benchPress_inclined", "lateralRaise_pronated"
+   * The exercise key (camelCase).
+   * Examples: "benchPress", "lateralRaise"
    */
   exerciseKey: string;
   /** 
-   * Display name for UI (cached at time of first record).
-   * Includes modification labels, e.g., "Bench Press (Inclined, Pronated)"
+   * Display name for UI.
+   * Examples: "Bench Press", "Lateral Raise"
    */
   displayName: string;
   /** Category for grouping in stats views */
@@ -392,7 +380,7 @@ export interface ExerciseStats {
 }
 
 /**
- * Per-user gym metadata stored in DynamoDB.
+ * Per-user gym metadata stored in PostgreSQL.
  * Contains custom exercises and historical stats.
  */
 export interface GymUserMeta {
@@ -489,28 +477,6 @@ export function calculateSetVolume(set: StrengthSet): number {
   // For unilateral, use average reps × weight
   const avgReps = ((reps.left ?? 0) + (reps.right ?? 0)) / 2;
   return weight * avgReps;
-}
-
-/**
- * Build the exercise key from type and modifications.
- * Used for stats tracking.
- */
-export function buildExerciseKey(
-  exerciseType: string,
-  modifications?: ExerciseModifications
-): string {
-  if (!modifications) return exerciseType;
-  
-  const parts = [exerciseType];
-  
-  if (modifications.grip && modifications.grip !== "normal") {
-    parts.push(modifications.grip);
-  }
-  if (modifications.movementPlane && modifications.movementPlane !== "normal") {
-    parts.push(modifications.movementPlane);
-  }
-  
-  return parts.join("_");
 }
 
 // =============================================================================

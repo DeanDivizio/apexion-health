@@ -23,6 +23,7 @@ model GymWorkoutSession {
   startTimeStr String
   endTimeStr   String
   createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
   exercises    GymWorkoutExercise[]
 
   @@index([userId, dateStr])
@@ -110,12 +111,13 @@ model GymCustomExerciseTarget {
 }
 
 model GymExerciseVariationSupport {
-  id         String               @id @default(uuid())
-  exerciseId String
-  exercise   GymCustomExercise    @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
-  templateId String
-  template   GymVariationTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
-  labelOverride String?
+  id               String               @id @default(uuid())
+  exerciseId       String
+  exercise         GymCustomExercise    @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  templateId       String
+  template         GymVariationTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  labelOverride    String?
+  defaultOptionKey String?
 
   @@unique([exerciseId, templateId])
 }
@@ -157,7 +159,7 @@ model GymWorkoutExerciseVariation {
 }
 
 model GymUserExerciseStat {
-  id             String  @id @default(uuid())
+  id             String   @id @default(uuid())
   userId         String
   exerciseKey    String
   prDateStr      String?
@@ -167,7 +169,17 @@ model GymUserExerciseStat {
   prRepsRight    Int?
   prTotalVolume  Float?
   notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   @@unique([userId, exerciseKey])
   @@index([userId])
+}
+
+model GymUserPreferences {
+  id         String   @id @default(uuid())
+  userId     String   @unique
+  weightUnit String   @default("lbs")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }

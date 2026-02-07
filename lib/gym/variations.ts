@@ -135,22 +135,6 @@ export const SUPPORT_TEMPLATE: VariationTemplate = {
 };
 
 /**
- * Unilateral performance style (separate from whether an exercise is typically unilateral).
- */
-export const UNILATERAL_MODE_TEMPLATE: VariationTemplate = {
-  id: "unilateralMode",
-  label: "Unilateral Mode",
-  description: "How you perform sides (together vs one at a time).",
-  options: [
-    { key: "bilateral", label: "Bilateral", description: "Both sides together.", order: 1 },
-    { key: "unilateral", label: "Unilateral", description: "One side at a time.", order: 2 },
-    { key: "alternating", label: "Alternating", description: "Switch sides each rep.", order: 3 },
-    { key: "offset", label: "Offset (Uneven Load)", description: "Uneven load between sides.", order: 4 },
-    { key: "contralateral", label: "Contralateral", description: "Opposite arm/leg focus.", order: 5 },
-  ],
-};
-
-/**
  * Range of motion (ROM) selection.
  */
 export const RANGE_OF_MOTION_TEMPLATE: VariationTemplate = {
@@ -270,10 +254,9 @@ export const FOOT_VERTICAL_POSITION_TEMPLATE: VariationTemplate = {
   label: "Foot Height",
   description: "Vertical foot position on the platform.",
   options: [
-    { key: "standard", label: "Standard", description: "Default foot height.", order: 1 },
-    { key: "low", label: "Low", description: "Feet placed lower on the platform.", order: 2 },
-    { key: "mid", label: "Mid", description: "Feet centered on the platform.", order: 3 },
-    { key: "high", label: "High", description: "Feet placed higher on the platform.", order: 4 },
+    { key: "low", label: "Low", description: "Feet placed lower on the platform.", order: 1 },
+    { key: "mid", label: "Mid", description: "Feet centered on the platform.", order: 2 },
+    { key: "high", label: "High", description: "Feet placed higher on the platform.", order: 3 },
   ],
 };
 
@@ -318,7 +301,6 @@ export const VARIATION_TEMPLATES: VariationTemplate[] = [
   RESISTANCE_SOURCE_TEMPLATE,
   BODY_POSITION_TEMPLATE,
   SUPPORT_TEMPLATE,
-  UNILATERAL_MODE_TEMPLATE,
   RANGE_OF_MOTION_TEMPLATE,
   KNEE_ANGLE_TEMPLATE,
   CADENCE_TEMPLATE,

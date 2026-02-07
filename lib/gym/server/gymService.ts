@@ -3,9 +3,10 @@
  *
  * This module provides the data access layer for the gym/workout tracking feature.
  * It handles all Prisma database operations for:
- * - Creating workout sessions with exercises and sets
- * - Listing/retrieving workout history
- * - Fetching user-specific gym metadata (custom exercises, PRs, stats)
+ * - Creating, reading, updating, and deleting workout sessions
+ * - Exercise stats and personal record (PR) tracking
+ * - User-specific gym metadata (custom exercises, PRs, stats)
+ * - User preferences (weight unit, etc.)
  *
  * The service translates between:
  * - Application types (from @/lib/gym) used by the UI and business logic
@@ -15,12 +16,14 @@
  * - WorkoutSession: A single gym visit containing multiple exercises
  * - ExerciseEntry: Either a strength or cardio exercise
  * - StrengthSet: Weight + reps for strength exercises (supports bilateral & unilateral)
- * - Variations: Exercise modifications (grip width, incline, etc.) stored separately
+ * - Variations: Exercise modifications (grip width, incline, etc.) stored as a join table
+ * - PR detection: Automatically updates personal records when new workouts are saved
  */
 
 import { prisma } from "@/lib/db/prisma";
 import {
   EXERCISE_MAP,
+  calculateSetVolume,
   type DistanceUnit,
   type ExerciseCategory,
   type ExerciseEntry,
@@ -29,12 +32,19 @@ import {
   type ExerciseStats,
   type GymUserMeta,
   type RepCount,
+  type StrengthSet,
   type WorkoutSession,
 } from "@/lib/gym";
 
 // =============================================================================
 // INTERNAL TYPES & HELPERS
 // =============================================================================
+
+/** Prisma interactive transaction client. */
+type TxClient = Omit<
+  typeof prisma,
+  "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends"
+>;
 
 /**
  * Database column structure for rep counts.
@@ -50,9 +60,6 @@ type RepColumns = {
 
 /**
  * Converts an application RepCount to database column format.
- *
- * @param reps - The RepCount from the application (either bilateral or left/right)
- * @returns Database-ready object with all three rep columns
  *
  * @example
  * // Bilateral exercise (both arms together)
@@ -77,12 +84,6 @@ function repCountToColumns(reps: RepCount): RepColumns {
 
 /**
  * Converts database rep columns back to application RepCount format.
- *
- * @param cols - The raw database columns
- * @returns A RepCount object for application use
- *
- * Logic: If repsBilateral has a value, it's a bilateral exercise.
- * Otherwise, reconstruct the left/right values (defaulting to 0).
  */
 function columnsToRepCount(cols: RepColumns): RepCount {
   if (cols.repsBilateral !== null && cols.repsBilateral !== undefined) {
@@ -93,14 +94,6 @@ function columnsToRepCount(cols: RepColumns): RepCount {
 
 /**
  * Transforms variation selections from a Record to an array of rows for DB insertion.
- *
- * Variations are stored as a join table linking exercises to variation templates.
- * Each variation has:
- * - templateId: Which variation type (e.g., "width", "grip", "plane")
- * - optionKey: Which option was selected (e.g., "wide", "narrow")
- *
- * @param variations - Map of templateId -> selected optionKey
- * @returns Array of { templateId, optionKey } objects for createMany
  */
 function variationsToRows(variations?: Record<string, string>) {
   if (!variations) return [];
@@ -110,29 +103,298 @@ function variationsToRows(variations?: Record<string, string>) {
   }));
 }
 
+/**
+ * Calculate set volume directly from DB column values.
+ * Uses the same logic as calculateSetVolume but works with raw DB columns.
+ */
+function calculateVolumeFromColumns(weight: number, cols: RepColumns): number {
+  if (cols.repsBilateral !== null && cols.repsBilateral !== undefined) {
+    return weight * cols.repsBilateral;
+  }
+  const avgReps = ((cols.repsLeft ?? 0) + (cols.repsRight ?? 0)) / 2;
+  return weight * avgReps;
+}
+
+// =============================================================================
+// DB-TO-APP TRANSFORMATION HELPERS
+// =============================================================================
+
+/**
+ * Transform a DB exercise record into an application ExerciseEntry.
+ * Handles both strength and cardio exercise types.
+ */
+function transformExercise(dbExercise: {
+  type: string;
+  exerciseKey: string;
+  durationMinutes: number | null;
+  distance: number | null;
+  distanceUnit: string | null;
+  notes: string | null;
+  strengthSets: Array<{
+    weight: number;
+    repsBilateral: number | null;
+    repsLeft: number | null;
+    repsRight: number | null;
+    effort: number | null;
+    durationSeconds: number | null;
+  }>;
+  variations: Array<{
+    templateId: string;
+    optionKey: string;
+  }>;
+}): ExerciseEntry {
+  // Rebuild the variations map from join table rows
+  const variations: Record<string, string> = {};
+  for (const row of dbExercise.variations) {
+    variations[row.templateId] = row.optionKey;
+  }
+  const hasVariations = Object.keys(variations).length > 0;
+
+  if (dbExercise.type === "cardio") {
+    return {
+      type: "cardio",
+      exerciseType: dbExercise.exerciseKey,
+      duration: dbExercise.durationMinutes ?? 0,
+      distance: dbExercise.distance ?? undefined,
+      unit: (dbExercise.distanceUnit as DistanceUnit) ?? undefined,
+      variations: hasVariations ? variations : undefined,
+      notes: dbExercise.notes ?? undefined,
+    };
+  }
+
+  return {
+    type: "strength",
+    exerciseType: dbExercise.exerciseKey,
+    sets: dbExercise.strengthSets.map((set) => ({
+      weight: set.weight,
+      reps: columnsToRepCount({
+        repsBilateral: set.repsBilateral,
+        repsLeft: set.repsLeft,
+        repsRight: set.repsRight,
+      }),
+      effort: set.effort ?? undefined,
+      duration: set.durationSeconds ?? undefined,
+    })),
+    variations: hasVariations ? variations : undefined,
+    notes: dbExercise.notes ?? undefined,
+  };
+}
+
+// =============================================================================
+// WRITE HELPERS (used by create & update)
+// =============================================================================
+
+/**
+ * Creates exercise records, sets, and variation selections for a session.
+ * Extracted for reuse between create and update flows.
+ */
+async function createExercisesForSession(
+  tx: TxClient,
+  sessionId: string,
+  exercises: ExerciseEntry[],
+) {
+  for (const [exerciseIndex, exercise] of exercises.entries()) {
+    const createdExercise = await tx.gymWorkoutExercise.create({
+      data: {
+        sessionId,
+        order: exerciseIndex,
+        type: exercise.type,
+        exerciseKey: exercise.exerciseType,
+        notes: exercise.notes ?? null,
+        durationMinutes: exercise.type === "cardio" ? exercise.duration : null,
+        distance: exercise.type === "cardio" ? exercise.distance ?? null : null,
+        distanceUnit: exercise.type === "cardio" ? exercise.unit ?? null : null,
+      },
+    });
+
+    // Create strength sets
+    if (exercise.type === "strength") {
+      for (const [setIndex, set] of exercise.sets.entries()) {
+        await tx.gymStrengthSet.create({
+          data: {
+            exerciseId: createdExercise.id,
+            order: setIndex,
+            weight: set.weight,
+            effort: set.effort ?? null,
+            durationSeconds: set.duration ?? null,
+            ...repCountToColumns(set.reps),
+          },
+        });
+      }
+    }
+
+    // Create variation selections
+    const variationRows = variationsToRows(exercise.variations);
+    if (variationRows.length > 0) {
+      await tx.gymWorkoutExerciseVariation.createMany({
+        data: variationRows.map((row) => ({
+          exerciseId: createdExercise.id,
+          templateId: row.templateId,
+          optionKey: row.optionKey,
+        })),
+      });
+    }
+  }
+}
+
+/**
+ * Detects personal records from a newly created workout session
+ * and creates/updates the user's exercise stats accordingly.
+ *
+ * For each strength exercise, finds the highest-volume set and
+ * compares it against the user's stored PR.
+ */
+async function updateStatsAfterCreate(
+  tx: TxClient,
+  userId: string,
+  session: WorkoutSession,
+) {
+  for (const exercise of session.exercises) {
+    if (exercise.type !== "strength") continue;
+
+    // Find the highest-volume set in this exercise
+    let bestVolume = 0;
+    let bestSet: StrengthSet | null = null;
+    for (const set of exercise.sets) {
+      const volume = calculateSetVolume(set);
+      if (volume > bestVolume) {
+        bestVolume = volume;
+        bestSet = set;
+      }
+    }
+
+    if (!bestSet || bestVolume <= 0) continue;
+
+    const existing = await tx.gymUserExerciseStat.findUnique({
+      where: {
+        userId_exerciseKey: { userId, exerciseKey: exercise.exerciseType },
+      },
+    });
+
+    const repCols = repCountToColumns(bestSet.reps);
+
+    if (!existing) {
+      // First time performing this exercise — create stat with PR
+      await tx.gymUserExerciseStat.create({
+        data: {
+          userId,
+          exerciseKey: exercise.exerciseType,
+          prDateStr: session.date,
+          prWeight: bestSet.weight,
+          prRepsBilateral: repCols.repsBilateral,
+          prRepsLeft: repCols.repsLeft,
+          prRepsRight: repCols.repsRight,
+          prTotalVolume: bestVolume,
+        },
+      });
+    } else if (existing.prTotalVolume === null || bestVolume > existing.prTotalVolume) {
+      // New personal record — update
+      await tx.gymUserExerciseStat.update({
+        where: { id: existing.id },
+        data: {
+          prDateStr: session.date,
+          prWeight: bestSet.weight,
+          prRepsBilateral: repCols.repsBilateral,
+          prRepsLeft: repCols.repsLeft,
+          prRepsRight: repCols.repsRight,
+          prTotalVolume: bestVolume,
+        },
+      });
+    }
+  }
+}
+
+/**
+ * Recalculates the PR for a specific exercise by scanning all remaining sessions.
+ * Called after delete/update to ensure stats remain accurate.
+ *
+ * If no sets remain, the PR fields are cleared but the stat row is preserved
+ * (to retain user notes).
+ */
+async function recalculateExerciseStat(
+  tx: TxClient,
+  userId: string,
+  exerciseKey: string,
+) {
+  // Find all strength sets for this exercise across all user's sessions
+  const sets = await tx.gymStrengthSet.findMany({
+    where: {
+      exercise: {
+        exerciseKey,
+        session: { userId },
+      },
+    },
+    include: {
+      exercise: {
+        include: {
+          session: { select: { dateStr: true } },
+        },
+      },
+    },
+  });
+
+  let bestVolume = 0;
+  let bestSet: (typeof sets)[number] | null = null;
+
+  for (const set of sets) {
+    const volume = calculateVolumeFromColumns(set.weight, {
+      repsBilateral: set.repsBilateral,
+      repsLeft: set.repsLeft,
+      repsRight: set.repsRight,
+    });
+    if (volume > bestVolume) {
+      bestVolume = volume;
+      bestSet = set;
+    }
+  }
+
+  const existing = await tx.gymUserExerciseStat.findUnique({
+    where: { userId_exerciseKey: { userId, exerciseKey } },
+  });
+
+  if (!existing) return;
+
+  if (bestSet && bestVolume > 0) {
+    await tx.gymUserExerciseStat.update({
+      where: { id: existing.id },
+      data: {
+        prDateStr: bestSet.exercise.session.dateStr,
+        prWeight: bestSet.weight,
+        prRepsBilateral: bestSet.repsBilateral,
+        prRepsLeft: bestSet.repsLeft,
+        prRepsRight: bestSet.repsRight,
+        prTotalVolume: bestVolume,
+      },
+    });
+  } else {
+    // No sets remain — clear the PR but keep the stat row (preserves notes)
+    await tx.gymUserExerciseStat.update({
+      where: { id: existing.id },
+      data: {
+        prDateStr: null,
+        prWeight: null,
+        prRepsBilateral: null,
+        prRepsLeft: null,
+        prRepsRight: null,
+        prTotalVolume: null,
+      },
+    });
+  }
+}
+
 // =============================================================================
 // CREATE OPERATIONS
 // =============================================================================
 
 /**
- * Creates a new workout session with all its exercises and sets.
+ * Creates a new workout session with all its exercises, sets, and variations.
+ * Also detects and records personal records.
  *
- * Uses a database transaction to ensure atomicity - if any part fails,
- * the entire workout is rolled back (no partial saves).
- *
- * Data structure created:
- * - GymWorkoutSession (1 per workout)
- *   └── GymWorkoutExercise (1 per exercise in the session)
- *       ├── GymStrengthSet (multiple, only for strength exercises)
- *       └── GymWorkoutExerciseVariation (multiple, for exercise modifications)
- *
- * @param userId - The Clerk user ID
- * @param session - The complete workout session data from the form
- * @returns The created session record (without nested relations)
+ * Uses a database transaction to ensure atomicity — if any part fails,
+ * the entire workout is rolled back.
  */
 export async function createWorkoutSession(userId: string, session: WorkoutSession) {
   return prisma.$transaction(async (tx) => {
-    // 1. Create the parent session record
     const createdSession = await tx.gymWorkoutSession.create({
       data: {
         userId,
@@ -142,54 +404,8 @@ export async function createWorkoutSession(userId: string, session: WorkoutSessi
       },
     });
 
-    // 2. Loop through each exercise in the session
-    for (const [exerciseIndex, exercise] of session.exercises.entries()) {
-      // Create the exercise record with type-specific fields
-      // Cardio exercises have duration/distance, strength exercises don't
-      const createdExercise = await tx.gymWorkoutExercise.create({
-        data: {
-          sessionId: createdSession.id,
-          order: exerciseIndex, // Preserves exercise order in the workout
-          type: exercise.type,
-          exerciseKey: exercise.exerciseType,
-          notes: exercise.notes ?? null,
-          // Cardio-specific fields (null for strength exercises)
-          durationMinutes: exercise.type === "cardio" ? exercise.duration : null,
-          distance: exercise.type === "cardio" ? exercise.distance ?? null : null,
-          distanceUnit: exercise.type === "cardio" ? exercise.unit ?? null : null,
-        },
-      });
-
-      // 3. For strength exercises, create set records
-      if (exercise.type === "strength") {
-        for (const [setIndex, set] of exercise.sets.entries()) {
-          const repColumns = repCountToColumns(set.reps);
-          await tx.gymStrengthSet.create({
-            data: {
-              exerciseId: createdExercise.id,
-              order: setIndex, // Preserves set order within the exercise
-              weight: set.weight,
-              effort: set.effort ?? null, // RPE (Rating of Perceived Exertion)
-              durationSeconds: set.duration ?? null, // Time under tension
-              ...repColumns, // Spread the rep columns (bilateral or left/right)
-            },
-          });
-        }
-      }
-
-      // 4. Create variation records if any modifications were applied
-      // (e.g., incline bench, wide grip, etc.)
-      const variationRows = variationsToRows(exercise.variations);
-      if (variationRows.length > 0) {
-        await tx.gymWorkoutExerciseVariation.createMany({
-          data: variationRows.map((row) => ({
-            exerciseId: createdExercise.id,
-            templateId: row.templateId,
-            optionKey: row.optionKey,
-          })),
-        });
-      }
-    }
+    await createExercisesForSession(tx, createdSession.id, session.exercises);
+    await updateStatsAfterCreate(tx, userId, session);
 
     return createdSession;
   });
@@ -200,25 +416,48 @@ export async function createWorkoutSession(userId: string, session: WorkoutSessi
 // =============================================================================
 
 /**
+ * Retrieves a single workout session by ID.
+ * Returns null if the session doesn't exist or doesn't belong to the user.
+ */
+export async function getWorkoutSession(
+  userId: string,
+  sessionId: string,
+): Promise<(WorkoutSession & { id: string }) | null> {
+  const session = await prisma.gymWorkoutSession.findFirst({
+    where: { id: sessionId, userId },
+    include: {
+      exercises: {
+        orderBy: { order: "asc" },
+        include: {
+          strengthSets: { orderBy: { order: "asc" } },
+          variations: true,
+        },
+      },
+    },
+  });
+
+  if (!session) return null;
+
+  return {
+    id: session.id,
+    date: session.dateStr,
+    startTime: session.startTimeStr,
+    endTime: session.endTimeStr,
+    exercises: session.exercises.map(transformExercise),
+  };
+}
+
+/**
  * Retrieves a user's workout sessions with optional date filtering.
- *
- * Fetches all nested data (exercises, sets, variations) and transforms
- * from database schema back to application types.
- *
- * @param userId - The Clerk user ID
- * @param options.startDate - Optional filter: only sessions on or after this date (YYYYMMDD)
- * @param options.endDate - Optional filter: only sessions on or before this date (YYYYMMDD)
- * @returns Array of WorkoutSession objects, sorted newest first
+ * Returns sessions sorted newest-first with all nested data.
  */
 export async function listWorkoutSessions(
   userId: string,
   options?: { startDate?: string; endDate?: string },
-): Promise<WorkoutSession[]> {
-  // Fetch sessions with all related data in a single query
+): Promise<Array<WorkoutSession & { id: string }>> {
   const sessions = await prisma.gymWorkoutSession.findMany({
     where: {
       userId,
-      // Conditionally add date range filters
       ...(options?.startDate || options?.endDate
         ? {
             dateStr: {
@@ -231,60 +470,115 @@ export async function listWorkoutSessions(
     orderBy: [{ dateStr: "desc" }, { startTimeStr: "desc" }],
     include: {
       exercises: {
-        orderBy: { order: "asc" }, // Maintain original exercise order
+        orderBy: { order: "asc" },
         include: {
-          strengthSets: { orderBy: { order: "asc" } }, // Maintain original set order
+          strengthSets: { orderBy: { order: "asc" } },
           variations: true,
         },
       },
     },
   });
 
-  // Transform database records to application types
   return sessions.map((session) => ({
+    id: session.id,
     date: session.dateStr,
     startTime: session.startTimeStr,
     endTime: session.endTimeStr,
-    exercises: session.exercises.map((exercise): ExerciseEntry => {
-      // Rebuild the variations map from the join table rows
-      const variations: Record<string, string> = {};
-      for (const row of exercise.variations) {
-        variations[row.templateId] = row.optionKey;
-      }
-
-      // Handle cardio exercises (running, cycling, etc.)
-      if (exercise.type === "cardio") {
-        return {
-          type: "cardio",
-          exerciseType: exercise.exerciseKey,
-          duration: exercise.durationMinutes ?? 0,
-          distance: exercise.distance ?? undefined,
-          // Cast DB string to DistanceUnit type (DB stores as string, app needs union type)
-          unit: (exercise.distanceUnit as DistanceUnit) ?? undefined,
-          variations: Object.keys(variations).length ? variations : undefined,
-          notes: exercise.notes ?? undefined,
-        };
-      }
-
-      // Handle strength exercises (bench press, squats, etc.)
-      return {
-        type: "strength",
-        exerciseType: exercise.exerciseKey,
-        sets: exercise.strengthSets.map((set) => ({
-          weight: set.weight,
-          reps: columnsToRepCount({
-            repsBilateral: set.repsBilateral,
-            repsLeft: set.repsLeft,
-            repsRight: set.repsRight,
-          }),
-          effort: set.effort ?? undefined,
-          duration: set.durationSeconds ?? undefined,
-        })),
-        variations: Object.keys(variations).length ? variations : undefined,
-        notes: exercise.notes ?? undefined,
-      };
-    }),
+    exercises: session.exercises.map(transformExercise),
   }));
+}
+
+// =============================================================================
+// UPDATE OPERATIONS
+// =============================================================================
+
+/**
+ * Replaces a workout session's contents.
+ *
+ * Strategy: delete all child records, update session fields, recreate children.
+ * Also recalculates PR stats for any exercises affected (old or new).
+ */
+export async function updateWorkoutSession(
+  userId: string,
+  sessionId: string,
+  session: WorkoutSession,
+) {
+  return prisma.$transaction(async (tx) => {
+    // Verify ownership and collect old exercise keys
+    const existing = await tx.gymWorkoutSession.findFirst({
+      where: { id: sessionId, userId },
+      include: {
+        exercises: {
+          where: { type: "strength" },
+          select: { exerciseKey: true },
+        },
+      },
+    });
+
+    if (!existing) throw new Error("Workout session not found");
+
+    // Track all exercise keys that need stat recalculation (old + new)
+    const affectedKeys = new Set(existing.exercises.map((e) => e.exerciseKey));
+    for (const ex of session.exercises) {
+      if (ex.type === "strength") affectedKeys.add(ex.exerciseType);
+    }
+
+    // Delete old child records (cascade: exercises → sets + variations)
+    await tx.gymWorkoutExercise.deleteMany({ where: { sessionId } });
+
+    // Update session-level fields
+    await tx.gymWorkoutSession.update({
+      where: { id: sessionId },
+      data: {
+        dateStr: session.date,
+        startTimeStr: session.startTime,
+        endTimeStr: session.endTime,
+      },
+    });
+
+    // Recreate exercises, sets, and variations
+    await createExercisesForSession(tx, sessionId, session.exercises);
+
+    // Recalculate stats for all affected exercises
+    for (const key of affectedKeys) {
+      await recalculateExerciseStat(tx, userId, key);
+    }
+  });
+}
+
+// =============================================================================
+// DELETE OPERATIONS
+// =============================================================================
+
+/**
+ * Deletes a workout session and recalculates stats for affected exercises.
+ * The cascade on GymWorkoutSession handles deleting child records.
+ */
+export async function deleteWorkoutSession(userId: string, sessionId: string) {
+  return prisma.$transaction(async (tx) => {
+    // Verify ownership and collect affected exercise keys
+    const session = await tx.gymWorkoutSession.findFirst({
+      where: { id: sessionId, userId },
+      include: {
+        exercises: {
+          where: { type: "strength" },
+          select: { exerciseKey: true },
+        },
+      },
+    });
+
+    if (!session) throw new Error("Workout session not found");
+
+    const affectedKeys = [...new Set(session.exercises.map((e) => e.exerciseKey))];
+
+    // Cascade deletes exercises, sets, and variations
+    await tx.gymWorkoutSession.delete({ where: { id: sessionId } });
+
+    // Recalculate stats for exercises that were in the deleted session
+    for (const key of affectedKeys) {
+      await recalculateExerciseStat(tx, userId, key);
+    }
+  });
 }
 
 // =============================================================================
@@ -293,29 +587,19 @@ export async function listWorkoutSessions(
 
 /**
  * Groups custom exercises by category for UI display.
- *
- * Takes a flat list of custom exercises and groups them into ExerciseGroup
- * objects for rendering in exercise picker dropdowns.
- *
- * @param customExercises - Array of custom exercise records with key and category
- * @returns Array of ExerciseGroup objects (category + sorted exercise keys)
  */
 function buildCustomExerciseGroups(
   customExercises: Array<{ key: string; category: string }>,
 ): ExerciseGroup[] {
-  // Group exercises by category using a Map
   const groups = new Map<string, string[]>();
   for (const exercise of customExercises) {
     const items = groups.get(exercise.category) ?? [];
     items.push(exercise.key);
     groups.set(exercise.category, items);
   }
-
-  // Convert Map to array of ExerciseGroup objects
   return Array.from(groups.entries()).map(([group, items]) => ({
-    // Cast to ExerciseCategory (DB stores as string, app needs union type)
     group: group as ExerciseCategory,
-    items: items.sort(), // Alphabetical sort within each category
+    items: items.sort(),
   }));
 }
 
@@ -326,55 +610,38 @@ function buildCustomExerciseGroups(
  * - Custom exercises the user has created
  * - Personal records and stats for each exercise
  * - Most recent session data for each exercise (for "repeat last workout" feature)
- *
- * The function merges data from multiple sources:
- * 1. User's custom exercise definitions
- * 2. Pre-computed stats from the stats table (PRs, notes)
- * 3. Session history (for most recent workout data)
- *
- * @param userId - The Clerk user ID
- * @returns GymUserMeta object with all user-specific gym data
  */
 export async function getGymMeta(userId: string): Promise<GymUserMeta> {
-  // Fetch all data sources in parallel for performance
   const [customExercises, statRows, sessions] = await Promise.all([
-    // 1. User's custom exercise definitions
     prisma.gymCustomExercise.findMany({
       where: { userId },
       select: { key: true, category: true, name: true },
     }),
-    // 2. Pre-aggregated exercise stats (PRs, notes)
     prisma.gymUserExerciseStat.findMany({
       where: { userId },
     }),
-    // 3. Full workout history (for most recent session per exercise)
+    // TODO: Optimize — currently loads all sessions to find most recent per exercise.
+    // Consider storing lastSessionDate/sets on GymUserExerciseStat or using a targeted query.
     listWorkoutSessions(userId),
   ]);
 
-  // Build the exercise data map from stats
   const exerciseData: Record<string, ExerciseStats> = {};
-
-  // Create a lookup map for custom exercises by key
   const customExerciseMap = new Map(
     customExercises.map((exercise) => [exercise.key, exercise]),
   );
 
-  // Process pre-computed stats from the stats table
+  // Build stats from pre-computed PR data
   for (const row of statRows) {
-    // Try to find exercise definition (either built-in or custom)
     const exerciseDef = EXERCISE_MAP.get(row.exerciseKey);
     const customExercise = customExerciseMap.get(row.exerciseKey);
 
-    // Determine display name and category (fallback chain)
     const displayName =
       exerciseDef?.name ?? customExercise?.name ?? row.exerciseKey;
-    // Cast to ExerciseCategory (DB stores as string, app needs union type)
     const category: ExerciseCategory =
       (exerciseDef?.category as ExerciseCategory) ??
       (customExercise?.category as ExerciseCategory) ??
       "upperBody";
 
-    // Build the personal record if we have all required fields
     let recordSet: ExerciseRecord | undefined;
     if (row.prDateStr && row.prWeight !== null && row.prTotalVolume !== null) {
       recordSet = {
@@ -398,11 +665,9 @@ export async function getGymMeta(userId: string): Promise<GymUserMeta> {
     };
   }
 
-  // Augment exercise data with most recent session info
-  // This enables "repeat last workout" functionality
+  // Augment with most recent session info (for "repeat last workout")
   for (const session of sessions) {
     for (const exercise of session.exercises) {
-      // Only track most recent for strength exercises (cardio doesn't have sets)
       if (exercise.type !== "strength") continue;
 
       const exerciseKey = exercise.exerciseType;
@@ -411,7 +676,6 @@ export async function getGymMeta(userId: string): Promise<GymUserMeta> {
       // Skip if we already found a more recent session for this exercise
       if (existing?.mostRecentSession) continue;
 
-      // Either update existing stats or create new entry
       exerciseData[exerciseKey] = {
         exerciseKey,
         displayName: existing?.displayName ?? exercise.exerciseType,
@@ -431,4 +695,38 @@ export async function getGymMeta(userId: string): Promise<GymUserMeta> {
     customExercises: buildCustomExerciseGroups(customExercises),
     exerciseData,
   };
+}
+
+// =============================================================================
+// USER PREFERENCES
+// =============================================================================
+
+/**
+ * Retrieves gym preferences for a user.
+ * Returns defaults if no preferences have been saved yet.
+ */
+export async function getUserPreferences(userId: string) {
+  const prefs = await prisma.gymUserPreferences.findUnique({
+    where: { userId },
+  });
+  return prefs ?? { userId, weightUnit: "lbs" };
+}
+
+/**
+ * Creates or updates gym preferences for a user.
+ */
+export async function updateUserPreferences(
+  userId: string,
+  data: { weightUnit?: string },
+) {
+  return prisma.gymUserPreferences.upsert({
+    where: { userId },
+    create: {
+      userId,
+      weightUnit: data.weightUnit ?? "lbs",
+    },
+    update: {
+      ...(data.weightUnit !== undefined ? { weightUnit: data.weightUnit } : {}),
+    },
+  });
 }

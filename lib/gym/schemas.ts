@@ -15,7 +15,7 @@ export const muscleGroupSchema = z.enum([
   // Chest
   "chestUpper", "chestMid", "chestLower",
   // Back
-  "lats", "trapsUpper", "trapsMid", "trapsLower", "rhomboids", "erectorSpinae",
+  "lats", "trapsUpper", "trapsMid", "trapsLower", "rhomboids", "lowerBack",
   // Shoulders
   "deltsFront", "deltsSide", "deltsRear",
   // Arms
@@ -156,16 +156,10 @@ export const strengthSetSchema = z.object({
   duration: z.number().min(0).optional(),
 });
 
-export const exerciseModificationsSchema = z.object({
-  grip: gripTypeSchema.optional(),
-  movementPlane: movementPlaneSchema.optional(),
-});
-
 export const strengthExerciseEntrySchema = z.object({
   type: z.literal("strength"),
   exerciseType: z.string().min(1, "Select an exercise"),
   sets: z.array(strengthSetSchema).min(1, "Add at least one set"),
-  modifications: exerciseModificationsSchema.optional(),
   variations: z.record(z.string(), z.string()).optional(),
   notes: z.string().optional(),
 });
@@ -269,7 +263,6 @@ export type ExerciseGroupSchema = z.infer<typeof exerciseGroupSchema>;
 
 export type RepCountSchema = z.infer<typeof repCountSchema>;
 export type StrengthSetSchema = z.infer<typeof strengthSetSchema>;
-export type ExerciseModificationsSchema = z.infer<typeof exerciseModificationsSchema>;
 export type StrengthExerciseEntrySchema = z.infer<typeof strengthExerciseEntrySchema>;
 export type CardioExerciseEntrySchema = z.infer<typeof cardioExerciseEntrySchema>;
 export type ExerciseEntrySchema = z.infer<typeof exerciseEntrySchema>;
@@ -289,3 +282,60 @@ export type GymUserMetaSchema = z.infer<typeof gymUserMetaSchema>;
 export type DateFormFieldsSchema = z.infer<typeof dateFormFieldsSchema>;
 export type TimeFormFieldsSchema = z.infer<typeof timeFormFieldsSchema>;
 export type WorkoutFormSchema = z.infer<typeof workoutFormSchema>;
+
+// =============================================================================
+// WEIGHT UNIT
+// =============================================================================
+
+export const weightUnitSchema = z.enum(["lbs", "kg"]);
+export type WeightUnitSchema = z.infer<typeof weightUnitSchema>;
+
+// =============================================================================
+// ACTION INPUT SCHEMAS
+// =============================================================================
+
+/**
+ * Input schema for creating a custom exercise.
+ * Used in the createCustomExerciseAction server action.
+ */
+export const createCustomExerciseInputSchema = z.object({
+  key: z.string().min(1, "Exercise key is required"),
+  name: z.string().min(1, "Exercise name is required"),
+  category: exerciseCategorySchema,
+  repMode: strengthRepModeSchema.default("bilateral"),
+  targets: z.array(muscleTargetSchema).default([]),
+  variationSupports: z.array(z.object({
+    templateId: z.string().min(1),
+    labelOverride: z.string().optional(),
+    defaultOptionKey: z.string().optional(),
+  })).default([]),
+  optionLabelOverrides: z.array(z.object({
+    templateId: z.string().min(1),
+    optionKey: z.string().min(1),
+    labelOverride: z.string().min(1),
+  })).default([]),
+  variationEffects: z.array(z.object({
+    templateId: z.string().min(1),
+    optionKey: z.string().min(1),
+    multipliers: z.record(z.string(), z.number()).optional(),
+    deltas: z.record(z.string(), z.number()).optional(),
+  })).default([]),
+});
+export type CreateCustomExerciseInput = z.infer<typeof createCustomExerciseInputSchema>;
+
+/**
+ * Options schema for listing workout sessions with date filters.
+ */
+export const listSessionsOptionsSchema = z.object({
+  startDate: z.string().regex(/^\d{8}$/, "Date must be in YYYYMMDD format").optional(),
+  endDate: z.string().regex(/^\d{8}$/, "Date must be in YYYYMMDD format").optional(),
+});
+export type ListSessionsOptions = z.infer<typeof listSessionsOptionsSchema>;
+
+/**
+ * Input schema for updating gym user preferences.
+ */
+export const updateGymPreferencesSchema = z.object({
+  weightUnit: weightUnitSchema.optional(),
+});
+export type UpdateGymPreferences = z.infer<typeof updateGymPreferencesSchema>;

@@ -18,6 +18,7 @@ export type {
   MovementPlane,
   DistanceUnit,
   StrengthRepMode,
+  WeightUnit,
   // Weighted targets
   MuscleTarget,
   MuscleTargets,
@@ -32,7 +33,6 @@ export type {
   // Workout data
   RepCount,
   StrengthSet,
-  ExerciseModifications,
   StrengthExerciseEntry,
   CardioExerciseEntry,
   ExerciseEntry,
@@ -54,7 +54,6 @@ export {
   isUnilateralReps,
   getTotalReps,
   calculateSetVolume,
-  buildExerciseKey,
   // Weighted target utilities
   targetsToMap,
   normalizeTargetMap,
@@ -72,6 +71,7 @@ export {
   movementPlaneSchema,
   distanceUnitSchema,
   strengthRepModeSchema,
+  weightUnitSchema,
   // Weighted targets
   muscleTargetSchema,
   muscleTargetsSchema,
@@ -86,7 +86,6 @@ export {
   // Workout data
   repCountSchema,
   strengthSetSchema,
-  exerciseModificationsSchema,
   strengthExerciseEntrySchema,
   cardioExerciseEntrySchema,
   exerciseEntrySchema,
@@ -99,13 +98,16 @@ export {
   dateFormFieldsSchema,
   timeFormFieldsSchema,
   workoutFormSchema,
+  // Action inputs
+  createCustomExerciseInputSchema,
+  listSessionsOptionsSchema,
+  updateGymPreferencesSchema,
 } from "./schemas";
 
 // Inferred schema types (when you need types derived from schemas)
 export type {
   RepCountSchema,
   StrengthSetSchema,
-  ExerciseModificationsSchema,
   StrengthExerciseEntrySchema,
   CardioExerciseEntrySchema,
   ExerciseEntrySchema,
@@ -118,6 +120,10 @@ export type {
   WorkoutSessionSchema,
   WorkoutFormSchema,
   StrengthRepModeSchema,
+  WeightUnitSchema,
+  CreateCustomExerciseInput,
+  ListSessionsOptions,
+  UpdateGymPreferences,
 } from "./schemas";
 
 // Variation templates
@@ -130,8 +136,8 @@ export {
   RESISTANCE_SOURCE_TEMPLATE,
   BODY_POSITION_TEMPLATE,
   SUPPORT_TEMPLATE,
-  UNILATERAL_MODE_TEMPLATE,
   RANGE_OF_MOTION_TEMPLATE,
+  KNEE_ANGLE_TEMPLATE,
   CADENCE_TEMPLATE,
   PAUSE_TEMPLATE,
   BAR_TYPE_TEMPLATE,

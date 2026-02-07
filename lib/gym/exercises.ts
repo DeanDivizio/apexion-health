@@ -82,12 +82,12 @@ const RAW_DEFAULT_EXERCISES: RawExerciseDefinition[] = [
       ["triceps", 0.10],
     ),
     variationTemplates: {
-      width: { templateId: WIDTH_TEMPLATE.id, labelOverride: "Grip Width" },
-      planeAngle: { templateId: PLANE_ANGLE_TEMPLATE.id, labelOverride: "Bench Angle" },
-      barType: { templateId: BAR_TYPE_TEMPLATE.id, labelOverride: "Bar Type" },
-      gripTechnique: { templateId: GRIP_TECHNIQUE_TEMPLATE.id, labelOverride: "Grip Technique" },
-      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
-      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+      width: { templateId: WIDTH_TEMPLATE.id, labelOverride: "Grip Width", defaultOptionKey: "neutral" },
+      planeAngle: { templateId: PLANE_ANGLE_TEMPLATE.id, labelOverride: "Bench Angle", defaultOptionKey: "0" },
+      barType: { templateId: BAR_TYPE_TEMPLATE.id, labelOverride: "Bar Type", defaultOptionKey: "straightBar" },
+      gripTechnique: { templateId: GRIP_TECHNIQUE_TEMPLATE.id, labelOverride: "Grip Technique", defaultOptionKey: "standard" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence", defaultOptionKey: "untracked" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause", defaultOptionKey: "untracked" },
     },
     variationEffects: {
       width: {
@@ -152,11 +152,11 @@ const RAW_DEFAULT_EXERCISES: RawExerciseDefinition[] = [
       ["triceps", 0.10],
     ),
     variationTemplates: {
-      width: { templateId: WIDTH_TEMPLATE.id, labelOverride: "Grip Width" },
-      planeAngle: { templateId: PLANE_ANGLE_TEMPLATE.id, labelOverride: "Movement Plane Angle" },
-      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
-      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
-      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
+      width: { templateId: WIDTH_TEMPLATE.id, labelOverride: "Grip Width", defaultOptionKey: "neutral" },
+      planeAngle: { templateId: PLANE_ANGLE_TEMPLATE.id, labelOverride: "Movement Plane Angle", defaultOptionKey: "0" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence", defaultOptionKey: "untracked" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause", defaultOptionKey: "untracked" },
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source", defaultOptionKey: "untracked" },
     },
     variationEffects: {
       width: {
@@ -213,11 +213,11 @@ const RAW_DEFAULT_EXERCISES: RawExerciseDefinition[] = [
       ["chestLower", 0.15],
     ),
     variationTemplates: {
-      planeAngle: { templateId: PLANE_ANGLE_TEMPLATE.id, labelOverride: "Movement Angle" },
-      bodyPosition: { templateId: BODY_POSITION_TEMPLATE.id, labelOverride: "Body Position" },
-      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
-      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
-      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+      planeAngle: { templateId: PLANE_ANGLE_TEMPLATE.id, labelOverride: "Movement Angle", defaultOptionKey: "0" },
+      bodyPosition: { templateId: BODY_POSITION_TEMPLATE.id, labelOverride: "Body Position", defaultOptionKey: "seated" },
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source", defaultOptionKey: "untracked" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence", defaultOptionKey: "untracked" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause", defaultOptionKey: "untracked" },
     },
     variationEffects: {
       planeAngle: {
@@ -280,10 +280,10 @@ const RAW_DEFAULT_EXERCISES: RawExerciseDefinition[] = [
       ["absUpper", 0.10],
     ),
     variationTemplates: {
-      width: { templateId: WIDTH_TEMPLATE.id, labelOverride: "Hand Width" },
-      planeAngle: { templateId: PLANE_ANGLE_TEMPLATE.id, labelOverride: "Body Angle" },
-      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
-      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+      width: { templateId: WIDTH_TEMPLATE.id, labelOverride: "Hand Width", defaultOptionKey: "neutral" },
+      planeAngle: { templateId: PLANE_ANGLE_TEMPLATE.id, labelOverride: "Body Angle", defaultOptionKey: "0" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence", defaultOptionKey: "untracked" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause", defaultOptionKey: "untracked" },
     },
     variationEffects: {
       width: {
@@ -332,10 +332,10 @@ const RAW_DEFAULT_EXERCISES: RawExerciseDefinition[] = [
       ["deltsFront", 0.15],
     ),
     variationTemplates: {
-      width: { templateId: WIDTH_TEMPLATE.id, labelOverride: "Grip Width" },
-      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
-      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
-      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+      width: { templateId: WIDTH_TEMPLATE.id, labelOverride: "Grip Width", defaultOptionKey: "neutral" },
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source", defaultOptionKey: "bodyweight" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence", defaultOptionKey: "untracked" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause", defaultOptionKey: "untracked" },
     },
     variationEffects: {
       // NOTE(research): Forward lean increases chest activation, upright increases tricep focus.
@@ -391,11 +391,11 @@ const RAW_DEFAULT_EXERCISES: RawExerciseDefinition[] = [
       ["biceps", 0.10],
     ),
     variationTemplates: {
-      width: { templateId: WIDTH_TEMPLATE.id, labelOverride: "Handle Width" },
-      grip: { templateId: GRIP_TEMPLATE.id, labelOverride: "Grip" },
-      cableAttachment: { templateId: CABLE_ATTACHMENT_TEMPLATE.id, labelOverride: "Attachment" },
-      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
-      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+      width: { templateId: WIDTH_TEMPLATE.id, labelOverride: "Handle Width", defaultOptionKey: "neutral" },
+      grip: { templateId: GRIP_TEMPLATE.id, labelOverride: "Grip", defaultOptionKey: "normal" },
+      cableAttachment: { templateId: CABLE_ATTACHMENT_TEMPLATE.id, labelOverride: "Attachment", defaultOptionKey: "straightBar" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence", defaultOptionKey: "untracked" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause", defaultOptionKey: "untracked" },
     },
     variationEffects: {
       width: {
@@ -452,13 +452,13 @@ const RAW_DEFAULT_EXERCISES: RawExerciseDefinition[] = [
       ["biceps", 0.10],
     ),
     variationTemplates: {
-      width: { templateId: WIDTH_TEMPLATE.id, labelOverride: "Handle Width" },
-      grip: { templateId: GRIP_TEMPLATE.id, labelOverride: "Grip" },
-      cableAttachment: { templateId: CABLE_ATTACHMENT_TEMPLATE.id, labelOverride: "Attachment" },
-      support: { templateId: SUPPORT_TEMPLATE.id, labelOverride: "Support" },
-      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
-      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
-      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+      width: { templateId: WIDTH_TEMPLATE.id, labelOverride: "Handle Width", defaultOptionKey: "neutral" },
+      grip: { templateId: GRIP_TEMPLATE.id, labelOverride: "Grip", defaultOptionKey: "normal" },
+      cableAttachment: { templateId: CABLE_ATTACHMENT_TEMPLATE.id, labelOverride: "Attachment", defaultOptionKey: "vHandle" },
+      support: { templateId: SUPPORT_TEMPLATE.id, labelOverride: "Support", defaultOptionKey: "none" },
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source", defaultOptionKey: "cable" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence", defaultOptionKey: "untracked" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause", defaultOptionKey: "untracked" },
     },
     variationEffects: {
       width: {
@@ -532,10 +532,10 @@ const RAW_DEFAULT_EXERCISES: RawExerciseDefinition[] = [
       ["deltsRear", 0.10],
     ),
     variationTemplates: {
-      width: { templateId: WIDTH_TEMPLATE.id, labelOverride: "Grip Width" },
-      grip: { templateId: GRIP_TEMPLATE.id, labelOverride: "Grip" },
-      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
-      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+      width: { templateId: WIDTH_TEMPLATE.id, labelOverride: "Grip Width", defaultOptionKey: "neutral" },
+      grip: { templateId: GRIP_TEMPLATE.id, labelOverride: "Grip", defaultOptionKey: "pronated" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence", defaultOptionKey: "untracked" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause", defaultOptionKey: "untracked" },
     },
     variationEffects: {
       width: {
@@ -581,11 +581,11 @@ const RAW_DEFAULT_EXERCISES: RawExerciseDefinition[] = [
       ["trapsMid", 0.15],
     ),
     variationTemplates: {
-      bodyPosition: { templateId: BODY_POSITION_TEMPLATE.id, labelOverride: "Body Position" },
-      support: { templateId: SUPPORT_TEMPLATE.id, labelOverride: "Support" },
-      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
-      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
-      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+      bodyPosition: { templateId: BODY_POSITION_TEMPLATE.id, labelOverride: "Body Position", defaultOptionKey: "standing" },
+      support: { templateId: SUPPORT_TEMPLATE.id, labelOverride: "Support", defaultOptionKey: "none" },
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source", defaultOptionKey: "untracked" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence", defaultOptionKey: "untracked" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause", defaultOptionKey: "untracked" },
     },
     variationEffects: {
       bodyPosition: {
@@ -645,12 +645,12 @@ const RAW_DEFAULT_EXERCISES: RawExerciseDefinition[] = [
       ["lowerBack", 0.10],
     ),
     variationTemplates: {
-      width: { templateId: WIDTH_TEMPLATE.id, labelOverride: "Grip Width" },
-      grip: { templateId: GRIP_TEMPLATE.id, labelOverride: "Grip" },
-      barType: { templateId: BAR_TYPE_TEMPLATE.id, labelOverride: "Bar Type" },
-      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
-      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
-      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+      width: { templateId: WIDTH_TEMPLATE.id, labelOverride: "Grip Width", defaultOptionKey: "neutral" },
+      grip: { templateId: GRIP_TEMPLATE.id, labelOverride: "Grip", defaultOptionKey: "pronated" },
+      barType: { templateId: BAR_TYPE_TEMPLATE.id, labelOverride: "Bar Type", defaultOptionKey: "straightBar" },
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source", defaultOptionKey: "barbell" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence", defaultOptionKey: "untracked" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause", defaultOptionKey: "untracked" },
     },
     variationEffects: {
       width: {
@@ -716,10 +716,10 @@ const RAW_DEFAULT_EXERCISES: RawExerciseDefinition[] = [
       ["trapsMid", 0.20],
     ),
     variationTemplates: {
-      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
-      barType: { templateId: BAR_TYPE_TEMPLATE.id, labelOverride: "Bar Type" },
-      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
-      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source", defaultOptionKey: "untracked" },
+      barType: { templateId: BAR_TYPE_TEMPLATE.id, labelOverride: "Bar Type", defaultOptionKey: "straightBar" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence", defaultOptionKey: "untracked" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause", defaultOptionKey: "untracked" },
     },
     variationEffects: {
       resistanceSource: {
@@ -773,9 +773,9 @@ const RAW_DEFAULT_EXERCISES: RawExerciseDefinition[] = [
       ["trapsLower", 0.10],
     ),
     variationTemplates: {
-      cableAttachment: { templateId: CABLE_ATTACHMENT_TEMPLATE.id, labelOverride: "Attachment" },
-      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
-      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+      cableAttachment: { templateId: CABLE_ATTACHMENT_TEMPLATE.id, labelOverride: "Attachment", defaultOptionKey: "rope" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence", defaultOptionKey: "untracked" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause", defaultOptionKey: "untracked" },
     },
     variationEffects: {
       cableAttachment: {
@@ -819,11 +819,11 @@ const RAW_DEFAULT_EXERCISES: RawExerciseDefinition[] = [
     ),
     isUnilateral: true,
     variationTemplates: {
-      bodyPosition: { templateId: BODY_POSITION_TEMPLATE.id, labelOverride: "Body Position" },
-      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
-      rangeOfMotion: { templateId: RANGE_OF_MOTION_TEMPLATE.id, labelOverride: "Range of Motion" },
-      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
-      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+      bodyPosition: { templateId: BODY_POSITION_TEMPLATE.id, labelOverride: "Body Position", defaultOptionKey: "standing" },
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source", defaultOptionKey: "dumbbell" },
+      rangeOfMotion: { templateId: RANGE_OF_MOTION_TEMPLATE.id, labelOverride: "Range of Motion", defaultOptionKey: "full" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence", defaultOptionKey: "untracked" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause", defaultOptionKey: "untracked" },
     },
     variationEffects: {
       bodyPosition: {
@@ -883,12 +883,12 @@ const RAW_DEFAULT_EXERCISES: RawExerciseDefinition[] = [
       ["triceps", 0.25],
     ),
     variationTemplates: {
-      width: { templateId: WIDTH_TEMPLATE.id, labelOverride: "Grip Width" },
-      bodyPosition: { templateId: BODY_POSITION_TEMPLATE.id, labelOverride: "Body Position" },
-      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
-      barType: { templateId: BAR_TYPE_TEMPLATE.id, labelOverride: "Bar Type" },
-      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
-      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+      width: { templateId: WIDTH_TEMPLATE.id, labelOverride: "Grip Width", defaultOptionKey: "neutral" },
+      bodyPosition: { templateId: BODY_POSITION_TEMPLATE.id, labelOverride: "Body Position", defaultOptionKey: "seated" },
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source", defaultOptionKey: "untracked" },
+      barType: { templateId: BAR_TYPE_TEMPLATE.id, labelOverride: "Bar Type", defaultOptionKey: "straightBar" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence", defaultOptionKey: "untracked" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause", defaultOptionKey: "untracked" },
     },
     variationEffects: {
       width: {
@@ -957,11 +957,11 @@ const RAW_DEFAULT_EXERCISES: RawExerciseDefinition[] = [
     ),
     isUnilateral: true,
     variationTemplates: {
-      grip: { templateId: GRIP_TEMPLATE.id, labelOverride: "Grip" },
-      bodyPosition: { templateId: BODY_POSITION_TEMPLATE.id, labelOverride: "Body Position" },
-      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
-      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
-      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+      grip: { templateId: GRIP_TEMPLATE.id, labelOverride: "Grip", defaultOptionKey: "normal" },
+      bodyPosition: { templateId: BODY_POSITION_TEMPLATE.id, labelOverride: "Body Position", defaultOptionKey: "standing" },
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source", defaultOptionKey: "dumbbell" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence", defaultOptionKey: "untracked" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause", defaultOptionKey: "untracked" },
     },
     variationEffects: {
       grip: {
@@ -1023,13 +1023,13 @@ const RAW_DEFAULT_EXERCISES: RawExerciseDefinition[] = [
     ),
     isUnilateral: true,
     variationTemplates: {
-      grip: { templateId: GRIP_TEMPLATE.id, labelOverride: "Grip" },
-      bodyPosition: { templateId: BODY_POSITION_TEMPLATE.id, labelOverride: "Body Position" },
-      support: { templateId: SUPPORT_TEMPLATE.id, labelOverride: "Support" },
-      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
-      barType: { templateId: BAR_TYPE_TEMPLATE.id, labelOverride: "Bar Type" },
-      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
-      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+      grip: { templateId: GRIP_TEMPLATE.id, labelOverride: "Grip", defaultOptionKey: "supinated" },
+      bodyPosition: { templateId: BODY_POSITION_TEMPLATE.id, labelOverride: "Body Position", defaultOptionKey: "standing" },
+      support: { templateId: SUPPORT_TEMPLATE.id, labelOverride: "Support", defaultOptionKey: "none" },
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source", defaultOptionKey: "untracked" },
+      barType: { templateId: BAR_TYPE_TEMPLATE.id, labelOverride: "Bar Type", defaultOptionKey: "straightBar" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence", defaultOptionKey: "untracked" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause", defaultOptionKey: "untracked" },
     },
     variationEffects: {
       grip: {
@@ -1101,12 +1101,12 @@ const RAW_DEFAULT_EXERCISES: RawExerciseDefinition[] = [
       ["triceps", 1.0],
     ),
     variationTemplates: {
-      bodyPosition: { templateId: BODY_POSITION_TEMPLATE.id, labelOverride: "Body Position" },
-      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
-      cableAttachment: { templateId: CABLE_ATTACHMENT_TEMPLATE.id, labelOverride: "Attachment" },
-      barType: { templateId: BAR_TYPE_TEMPLATE.id, labelOverride: "Bar Type" },
-      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
-      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+      bodyPosition: { templateId: BODY_POSITION_TEMPLATE.id, labelOverride: "Body Position", defaultOptionKey: "standing" },
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source", defaultOptionKey: "untracked" },
+      cableAttachment: { templateId: CABLE_ATTACHMENT_TEMPLATE.id, labelOverride: "Attachment", defaultOptionKey: "rope" },
+      barType: { templateId: BAR_TYPE_TEMPLATE.id, labelOverride: "Bar Type", defaultOptionKey: "straightBar" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence", defaultOptionKey: "untracked" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause", defaultOptionKey: "untracked" },
     },
     variationEffects: {
       bodyPosition: {
@@ -1177,10 +1177,10 @@ const RAW_DEFAULT_EXERCISES: RawExerciseDefinition[] = [
       ["forearms", 0.15],
     ),
     variationTemplates: {
-      grip: { templateId: GRIP_TEMPLATE.id, labelOverride: "Grip" },
-      cableAttachment: { templateId: CABLE_ATTACHMENT_TEMPLATE.id, labelOverride: "Attachment" },
-      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
-      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+      grip: { templateId: GRIP_TEMPLATE.id, labelOverride: "Grip", defaultOptionKey: "pronated" },
+      cableAttachment: { templateId: CABLE_ATTACHMENT_TEMPLATE.id, labelOverride: "Attachment", defaultOptionKey: "straightBar" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence", defaultOptionKey: "untracked" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause", defaultOptionKey: "untracked" },
     },
     variationEffects: {
       grip: {
@@ -1229,10 +1229,10 @@ const RAW_DEFAULT_EXERCISES: RawExerciseDefinition[] = [
     ),
     isUnilateral: true,
     variationTemplates: {
-      bodyPosition: { templateId: BODY_POSITION_TEMPLATE.id, labelOverride: "Body Position" },
-      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
-      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
-      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+      bodyPosition: { templateId: BODY_POSITION_TEMPLATE.id, labelOverride: "Body Position", defaultOptionKey: "standing" },
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source", defaultOptionKey: "dumbbell" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence", defaultOptionKey: "untracked" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause", defaultOptionKey: "untracked" },
     },
     variationEffects: {
       bodyPosition: {
@@ -1286,10 +1286,10 @@ const RAW_DEFAULT_EXERCISES: RawExerciseDefinition[] = [
       ["absLower", 0.45],
     ),
     variationTemplates: {
-      planeAngle: { templateId: PLANE_ANGLE_TEMPLATE.id, labelOverride: "Bench Angle" },
-      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
-      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
-      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+      planeAngle: { templateId: PLANE_ANGLE_TEMPLATE.id, labelOverride: "Bench Angle", defaultOptionKey: "0" },
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source", defaultOptionKey: "bodyweight" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence", defaultOptionKey: "untracked" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause", defaultOptionKey: "untracked" },
     },
     variationEffects: {
       planeAngle: {
@@ -1342,10 +1342,10 @@ const RAW_DEFAULT_EXERCISES: RawExerciseDefinition[] = [
       ["hamstrings", 0.20],
     ),
     variationTemplates: {
-      planeAngle: { templateId: PLANE_ANGLE_TEMPLATE.id, labelOverride: "Bench Angle" },
-      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
-      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
-      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+      planeAngle: { templateId: PLANE_ANGLE_TEMPLATE.id, labelOverride: "Bench Angle", defaultOptionKey: "45" },
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source", defaultOptionKey: "bodyweight" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence", defaultOptionKey: "untracked" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause", defaultOptionKey: "untracked" },
     },
     variationEffects: {
       planeAngle: {
@@ -1399,7 +1399,7 @@ const RAW_DEFAULT_EXERCISES: RawExerciseDefinition[] = [
       ["obliques", 0.20],
     ),
     variationTemplates: {
-      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source", defaultOptionKey: "bodyweight" },
     },
     variationEffects: {
       resistanceSource: {
@@ -1426,9 +1426,9 @@ const RAW_DEFAULT_EXERCISES: RawExerciseDefinition[] = [
       ["absLower", 0.20],
     ),
     variationTemplates: {
-      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
-      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
-      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source", defaultOptionKey: "bodyweight" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence", defaultOptionKey: "untracked" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause", defaultOptionKey: "untracked" },
     },
     variationEffects: {
       resistanceSource: {
@@ -1471,10 +1471,10 @@ const RAW_DEFAULT_EXERCISES: RawExerciseDefinition[] = [
       ["hipFlexors", 0.40],
     ),
     variationTemplates: {
-      bodyPosition: { templateId: BODY_POSITION_TEMPLATE.id, labelOverride: "Body Position" },
-      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
-      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
-      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+      bodyPosition: { templateId: BODY_POSITION_TEMPLATE.id, labelOverride: "Body Position", defaultOptionKey: "supine" },
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source", defaultOptionKey: "bodyweight" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence", defaultOptionKey: "untracked" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause", defaultOptionKey: "untracked" },
     },
     variationEffects: {
       bodyPosition: {
@@ -1527,10 +1527,10 @@ const RAW_DEFAULT_EXERCISES: RawExerciseDefinition[] = [
       ["hipFlexors", 0.25],
     ),
     variationTemplates: {
-      planeAngle: { templateId: PLANE_ANGLE_TEMPLATE.id, labelOverride: "Bench Angle" },
-      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
-      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
-      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+      planeAngle: { templateId: PLANE_ANGLE_TEMPLATE.id, labelOverride: "Bench Angle", defaultOptionKey: "0" },
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source", defaultOptionKey: "bodyweight" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence", defaultOptionKey: "untracked" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause", defaultOptionKey: "untracked" },
     },
     variationEffects: {
       planeAngle: {
@@ -1584,7 +1584,7 @@ const RAW_DEFAULT_EXERCISES: RawExerciseDefinition[] = [
     ),
     isUnilateral: true,
     variationTemplates: {
-      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source", defaultOptionKey: "bodyweight" },
     },
     variationEffects: {
       resistanceSource: {
@@ -1618,12 +1618,13 @@ const RAW_DEFAULT_EXERCISES: RawExerciseDefinition[] = [
         templateId: WIDTH_TEMPLATE.id,
         labelOverride: "Stance Width",
         optionLabelOverrides: { closest: "Narrowest", neutral: "Standard" },
+        defaultOptionKey: "neutral",
       },
-      barType: { templateId: BAR_TYPE_TEMPLATE.id, labelOverride: "Bar Type" },
-      heelElevation: { templateId: HEEL_ELEVATION_TEMPLATE.id, labelOverride: "Heel Elevation" },
-      footAngle: { templateId: FOOT_ANGLE_TEMPLATE.id, labelOverride: "Foot Angle" },
-      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
-      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+      barType: { templateId: BAR_TYPE_TEMPLATE.id, labelOverride: "Bar Type", defaultOptionKey: "straightBar" },
+      heelElevation: { templateId: HEEL_ELEVATION_TEMPLATE.id, labelOverride: "Heel Elevation", defaultOptionKey: "flat" },
+      footAngle: { templateId: FOOT_ANGLE_TEMPLATE.id, labelOverride: "Foot Angle", defaultOptionKey: "toesForward" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence", defaultOptionKey: "untracked" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause", defaultOptionKey: "untracked" },
     },
     variationEffects: {
       width: {
@@ -1680,12 +1681,12 @@ const RAW_DEFAULT_EXERCISES: RawExerciseDefinition[] = [
       ["lowerBack", 0.07],
     ),
     variationTemplates: {
-      width: { templateId: WIDTH_TEMPLATE.id, labelOverride: "Stance Width" },
-      heelElevation: { templateId: HEEL_ELEVATION_TEMPLATE.id, labelOverride: "Heel Elevation" },
-      footAngle: { templateId: FOOT_ANGLE_TEMPLATE.id, labelOverride: "Foot Angle" },
-      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
-      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
-      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+      width: { templateId: WIDTH_TEMPLATE.id, labelOverride: "Stance Width", defaultOptionKey: "neutral" },
+      heelElevation: { templateId: HEEL_ELEVATION_TEMPLATE.id, labelOverride: "Heel Elevation", defaultOptionKey: "flat" },
+      footAngle: { templateId: FOOT_ANGLE_TEMPLATE.id, labelOverride: "Foot Angle", defaultOptionKey: "toesForward" },
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source", defaultOptionKey: "barbell" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence", defaultOptionKey: "untracked" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause", defaultOptionKey: "untracked" },
     },
     variationEffects: {
       width: {
@@ -1746,12 +1747,12 @@ const RAW_DEFAULT_EXERCISES: RawExerciseDefinition[] = [
       ["trapsUpper", 0.05],
     ),
     variationTemplates: {
-      width: { templateId: WIDTH_TEMPLATE.id, labelOverride: "Stance Width" },
-      barType: { templateId: BAR_TYPE_TEMPLATE.id, labelOverride: "Bar Type" },
-      gripTechnique: { templateId: GRIP_TECHNIQUE_TEMPLATE.id, labelOverride: "Grip Technique" },
-      gripAssistance: { templateId: GRIP_ASSISTANCE_TEMPLATE.id, labelOverride: "Grip Assistance" },
-      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
-      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+      width: { templateId: WIDTH_TEMPLATE.id, labelOverride: "Stance Width", defaultOptionKey: "neutral" },
+      barType: { templateId: BAR_TYPE_TEMPLATE.id, labelOverride: "Bar Type", defaultOptionKey: "straightBar" },
+      gripTechnique: { templateId: GRIP_TECHNIQUE_TEMPLATE.id, labelOverride: "Grip Technique", defaultOptionKey: "standard" },
+      gripAssistance: { templateId: GRIP_ASSISTANCE_TEMPLATE.id, labelOverride: "Grip Assistance", defaultOptionKey: "none" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence", defaultOptionKey: "untracked" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause", defaultOptionKey: "untracked" },
     },
     variationEffects: {
       width: {
@@ -1809,12 +1810,12 @@ const RAW_DEFAULT_EXERCISES: RawExerciseDefinition[] = [
       ["lowerBack", 0.25],
     ),
     variationTemplates: {
-      width: { templateId: WIDTH_TEMPLATE.id, labelOverride: "Stance Width" },
-      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
-      barType: { templateId: BAR_TYPE_TEMPLATE.id, labelOverride: "Bar Type" },
-      gripAssistance: { templateId: GRIP_ASSISTANCE_TEMPLATE.id, labelOverride: "Grip Assistance" },
-      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
-      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+      width: { templateId: WIDTH_TEMPLATE.id, labelOverride: "Stance Width", defaultOptionKey: "neutral" },
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source", defaultOptionKey: "barbell" },
+      barType: { templateId: BAR_TYPE_TEMPLATE.id, labelOverride: "Bar Type", defaultOptionKey: "straightBar" },
+      gripAssistance: { templateId: GRIP_ASSISTANCE_TEMPLATE.id, labelOverride: "Grip Assistance", defaultOptionKey: "none" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence", defaultOptionKey: "untracked" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause", defaultOptionKey: "untracked" },
     },
     variationEffects: {
       width: {
@@ -1878,11 +1879,11 @@ const RAW_DEFAULT_EXERCISES: RawExerciseDefinition[] = [
       ["hamstrings", 0.15],
     ),
     variationTemplates: {
-      width: { templateId: WIDTH_TEMPLATE.id, labelOverride: "Stance Width" },
-      footVerticalPosition: { templateId: FOOT_VERTICAL_POSITION_TEMPLATE.id, labelOverride: "Foot Height" },
-      footAngle: { templateId: FOOT_ANGLE_TEMPLATE.id, labelOverride: "Foot Angle" },
-      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
-      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+      width: { templateId: WIDTH_TEMPLATE.id, labelOverride: "Stance Width", defaultOptionKey: "neutral" },
+      footVerticalPosition: { templateId: FOOT_VERTICAL_POSITION_TEMPLATE.id, labelOverride: "Foot Height", defaultOptionKey: "mid" },
+      footAngle: { templateId: FOOT_ANGLE_TEMPLATE.id, labelOverride: "Foot Angle", defaultOptionKey: "toesForward" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence", defaultOptionKey: "untracked" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause", defaultOptionKey: "untracked" },
     },
     variationEffects: {
       width: {
@@ -1893,7 +1894,6 @@ const RAW_DEFAULT_EXERCISES: RawExerciseDefinition[] = [
         widest: { deltas: { adductors: +0.10, glutes: +0.06, quads: -0.12, hamstrings: -0.04 } },
       },
       footVerticalPosition: {
-        standard: {},
         low: { deltas: { quads: +0.10, glutes: -0.06, hamstrings: -0.04 } },
         mid: {},
         high: { deltas: { glutes: +0.10, hamstrings: +0.08, quads: -0.18 } },
@@ -1931,11 +1931,11 @@ const RAW_DEFAULT_EXERCISES: RawExerciseDefinition[] = [
       ["hamstrings", 0.10],
     ),
     variationTemplates: {
-      width: { templateId: WIDTH_TEMPLATE.id, labelOverride: "Stance Width" },
-      footVerticalPosition: { templateId: FOOT_VERTICAL_POSITION_TEMPLATE.id, labelOverride: "Foot Height" },
-      footAngle: { templateId: FOOT_ANGLE_TEMPLATE.id, labelOverride: "Foot Angle" },
-      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
-      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+      width: { templateId: WIDTH_TEMPLATE.id, labelOverride: "Stance Width", defaultOptionKey: "neutral" },
+      footVerticalPosition: { templateId: FOOT_VERTICAL_POSITION_TEMPLATE.id, labelOverride: "Foot Height", defaultOptionKey: "mid" },
+      footAngle: { templateId: FOOT_ANGLE_TEMPLATE.id, labelOverride: "Foot Angle", defaultOptionKey: "toesForward" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence", defaultOptionKey: "untracked" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause", defaultOptionKey: "untracked" },
     },
     variationEffects: {
       width: {
@@ -1946,7 +1946,6 @@ const RAW_DEFAULT_EXERCISES: RawExerciseDefinition[] = [
         widest: { deltas: { adductors: +0.10, glutes: +0.06, quads: -0.12, hamstrings: -0.04 } },
       },
       footVerticalPosition: {
-        standard: {},
         low: { deltas: { quads: +0.08, glutes: -0.05, hamstrings: -0.03 } },
         mid: {},
         high: { deltas: { glutes: +0.08, hamstrings: +0.06, quads: -0.14 } },
@@ -1982,9 +1981,9 @@ const RAW_DEFAULT_EXERCISES: RawExerciseDefinition[] = [
       ["quads", 1.0],
     ),
     variationTemplates: {
-      footAngle: { templateId: FOOT_ANGLE_TEMPLATE.id, labelOverride: "Foot Angle" },
-      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
-      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+      footAngle: { templateId: FOOT_ANGLE_TEMPLATE.id, labelOverride: "Foot Angle", defaultOptionKey: "toesForward" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence", defaultOptionKey: "untracked" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause", defaultOptionKey: "untracked" },
     },
     variationEffects: {
       footAngle: {
@@ -2018,10 +2017,10 @@ const RAW_DEFAULT_EXERCISES: RawExerciseDefinition[] = [
       ["hamstrings", 1.0],
     ),
     variationTemplates: {
-      bodyPosition: { templateId: BODY_POSITION_TEMPLATE.id, labelOverride: "Body Position" },
-      footAngle: { templateId: FOOT_ANGLE_TEMPLATE.id, labelOverride: "Foot Angle" },
-      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
-      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+      bodyPosition: { templateId: BODY_POSITION_TEMPLATE.id, labelOverride: "Body Position", defaultOptionKey: "seated" },
+      footAngle: { templateId: FOOT_ANGLE_TEMPLATE.id, labelOverride: "Foot Angle", defaultOptionKey: "toesForward" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence", defaultOptionKey: "untracked" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause", defaultOptionKey: "untracked" },
     },
     variationEffects: {
       bodyPosition: {
@@ -2065,12 +2064,12 @@ const RAW_DEFAULT_EXERCISES: RawExerciseDefinition[] = [
       ["hamstrings", 0.20],
     ),
     variationTemplates: {
-      width: { templateId: WIDTH_TEMPLATE.id, labelOverride: "Stance Width" },
-      kneeAngle: { templateId: KNEE_ANGLE_TEMPLATE.id, labelOverride: "Knee Angle (Foot Placement)" },
-      footAngle: { templateId: FOOT_ANGLE_TEMPLATE.id, labelOverride: "Foot Angle" },
-      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
-      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
-      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+      width: { templateId: WIDTH_TEMPLATE.id, labelOverride: "Stance Width", defaultOptionKey: "neutral" },
+      kneeAngle: { templateId: KNEE_ANGLE_TEMPLATE.id, labelOverride: "Knee Angle (Foot Placement)", defaultOptionKey: "neutral" },
+      footAngle: { templateId: FOOT_ANGLE_TEMPLATE.id, labelOverride: "Foot Angle", defaultOptionKey: "toesForward" },
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source", defaultOptionKey: "barbell" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence", defaultOptionKey: "untracked" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause", defaultOptionKey: "untracked" },
     },
     variationEffects: {
       // NOTE(research): Evidence is strongest for hip thrust variations changing foot position / intent.
@@ -2136,12 +2135,12 @@ const RAW_DEFAULT_EXERCISES: RawExerciseDefinition[] = [
       ["hamstrings", 0.25],
     ),
     variationTemplates: {
-      width: { templateId: WIDTH_TEMPLATE.id, labelOverride: "Stance Width" },
-      kneeAngle: { templateId: KNEE_ANGLE_TEMPLATE.id, labelOverride: "Knee Angle (Foot Placement)" },
-      footAngle: { templateId: FOOT_ANGLE_TEMPLATE.id, labelOverride: "Foot Angle" },
-      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
-      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
-      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+      width: { templateId: WIDTH_TEMPLATE.id, labelOverride: "Stance Width", defaultOptionKey: "neutral" },
+      kneeAngle: { templateId: KNEE_ANGLE_TEMPLATE.id, labelOverride: "Knee Angle (Foot Placement)", defaultOptionKey: "neutral" },
+      footAngle: { templateId: FOOT_ANGLE_TEMPLATE.id, labelOverride: "Foot Angle", defaultOptionKey: "toesForward" },
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source", defaultOptionKey: "bodyweight" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence", defaultOptionKey: "untracked" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause", defaultOptionKey: "untracked" },
     },
     variationEffects: {
       width: {
@@ -2202,9 +2201,9 @@ const RAW_DEFAULT_EXERCISES: RawExerciseDefinition[] = [
     ),
     isUnilateral: true,
     variationTemplates: {
-      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
-      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
-      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source", defaultOptionKey: "dumbbell" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence", defaultOptionKey: "untracked" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause", defaultOptionKey: "untracked" },
     },
     variationEffects: {
       resistanceSource: {
@@ -2249,10 +2248,10 @@ const RAW_DEFAULT_EXERCISES: RawExerciseDefinition[] = [
     ),
     isUnilateral: true,
     variationTemplates: {
-      width: { templateId: WIDTH_TEMPLATE.id, labelOverride: "Stance Width" },
-      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
-      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
-      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+      width: { templateId: WIDTH_TEMPLATE.id, labelOverride: "Stance Width", defaultOptionKey: "neutral" },
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source", defaultOptionKey: "dumbbell" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence", defaultOptionKey: "untracked" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause", defaultOptionKey: "untracked" },
     },
     variationEffects: {
       width: {
@@ -2304,9 +2303,9 @@ const RAW_DEFAULT_EXERCISES: RawExerciseDefinition[] = [
     ),
     isUnilateral: true,
     variationTemplates: {
-      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
-      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
-      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source", defaultOptionKey: "bodyweight" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence", defaultOptionKey: "untracked" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause", defaultOptionKey: "untracked" },
     },
     variationEffects: {
       resistanceSource: {
@@ -2351,10 +2350,10 @@ const RAW_DEFAULT_EXERCISES: RawExerciseDefinition[] = [
     ),
     isUnilateral: true,
     variationTemplates: {
-      heelElevation: { templateId: HEEL_ELEVATION_TEMPLATE.id, labelOverride: "Front Heel Elevation" },
-      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
-      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
-      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+      heelElevation: { templateId: HEEL_ELEVATION_TEMPLATE.id, labelOverride: "Front Heel Elevation", defaultOptionKey: "flat" },
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source", defaultOptionKey: "dumbbell" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence", defaultOptionKey: "untracked" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause", defaultOptionKey: "untracked" },
     },
     variationEffects: {
       heelElevation: {
@@ -2400,11 +2399,11 @@ const RAW_DEFAULT_EXERCISES: RawExerciseDefinition[] = [
       ["calves", 1.0],
     ),
     variationTemplates: {
-      bodyPosition: { templateId: BODY_POSITION_TEMPLATE.id, labelOverride: "Body Position" },
-      footAngle: { templateId: FOOT_ANGLE_TEMPLATE.id, labelOverride: "Foot Angle" },
-      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
-      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
-      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+      bodyPosition: { templateId: BODY_POSITION_TEMPLATE.id, labelOverride: "Body Position", defaultOptionKey: "standing" },
+      footAngle: { templateId: FOOT_ANGLE_TEMPLATE.id, labelOverride: "Foot Angle", defaultOptionKey: "toesForward" },
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source", defaultOptionKey: "untracked" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence", defaultOptionKey: "untracked" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause", defaultOptionKey: "untracked" },
     },
     variationEffects: {
       bodyPosition: {
@@ -2462,9 +2461,9 @@ const RAW_DEFAULT_EXERCISES: RawExerciseDefinition[] = [
       ["deltsFront", 0.10],
     ),
     variationTemplates: {
-      width: { templateId: WIDTH_TEMPLATE.id, labelOverride: "Stance Width" },
-      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
-      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
+      width: { templateId: WIDTH_TEMPLATE.id, labelOverride: "Stance Width", defaultOptionKey: "neutral" },
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source", defaultOptionKey: "kettlebell" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence", defaultOptionKey: "untracked" },
     },
     variationEffects: {
       width: {
@@ -2506,10 +2505,10 @@ const RAW_DEFAULT_EXERCISES: RawExerciseDefinition[] = [
       ["abductors", 1.0],
     ),
     variationTemplates: {
-      bodyPosition: { templateId: BODY_POSITION_TEMPLATE.id, labelOverride: "Body Position" },
-      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
-      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
-      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+      bodyPosition: { templateId: BODY_POSITION_TEMPLATE.id, labelOverride: "Body Position", defaultOptionKey: "seated" },
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source", defaultOptionKey: "machineSelectorized" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence", defaultOptionKey: "untracked" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause", defaultOptionKey: "untracked" },
     },
     variationEffects: {
       bodyPosition: {
@@ -2560,10 +2559,10 @@ const RAW_DEFAULT_EXERCISES: RawExerciseDefinition[] = [
       ["adductors", 1.0],
     ),
     variationTemplates: {
-      bodyPosition: { templateId: BODY_POSITION_TEMPLATE.id, labelOverride: "Body Position" },
-      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
-      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
-      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+      bodyPosition: { templateId: BODY_POSITION_TEMPLATE.id, labelOverride: "Body Position", defaultOptionKey: "seated" },
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source", defaultOptionKey: "machineSelectorized" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence", defaultOptionKey: "untracked" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause", defaultOptionKey: "untracked" },
     },
     variationEffects: {
       bodyPosition: {

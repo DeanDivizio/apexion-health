@@ -1,111 +1,122 @@
 "use server";
 
 import { auth } from "@clerk/nextjs/server";
-import { workoutSessionSchema } from "@/lib/gym";
-import { createWorkoutSession, getGymMeta, listWorkoutSessions } from "@/lib/gym/server/gymService";
+import {
+  workoutSessionSchema,
+  createCustomExerciseInputSchema,
+  listSessionsOptionsSchema,
+  updateGymPreferencesSchema,
+} from "@/lib/gym";
+import {
+  createWorkoutSession,
+  deleteWorkoutSession,
+  getGymMeta,
+  getWorkoutSession,
+  getUserPreferences,
+  listWorkoutSessions,
+  updateUserPreferences,
+  updateWorkoutSession,
+} from "@/lib/gym/server/gymService";
 import { prisma } from "@/lib/db/prisma";
 
-export async function createWorkoutSessionAction(session: unknown) {
-  const { userId } = await auth();
-  if (!userId) {
-    throw new Error("User is not signed in.");
-  }
+// =============================================================================
+// HELPERS
+// =============================================================================
 
+async function requireUserId(): Promise<string> {
+  const { userId } = await auth();
+  if (!userId) throw new Error("User is not signed in.");
+  return userId;
+}
+
+// =============================================================================
+// WORKOUT SESSION ACTIONS
+// =============================================================================
+
+export async function createWorkoutSessionAction(session: unknown) {
+  const userId = await requireUserId();
   const parsed = workoutSessionSchema.parse(session);
   return createWorkoutSession(userId, parsed);
 }
 
-export async function listWorkoutSessionsAction(options?: { startDate?: string; endDate?: string }) {
-  const { userId } = await auth();
-  if (!userId) {
-    throw new Error("User is not signed in.");
-  }
-
-  return listWorkoutSessions(userId, options);
+export async function getWorkoutSessionAction(sessionId: string) {
+  const userId = await requireUserId();
+  if (!sessionId) throw new Error("Session ID is required.");
+  return getWorkoutSession(userId, sessionId);
 }
 
-export async function getGymMetaAction() {
-  const { userId } = await auth();
-  if (!userId) {
-    throw new Error("User is not signed in.");
-  }
+export async function listWorkoutSessionsAction(options?: unknown) {
+  const userId = await requireUserId();
+  const parsed = options ? listSessionsOptionsSchema.parse(options) : undefined;
+  return listWorkoutSessions(userId, parsed);
+}
 
+export async function updateWorkoutSessionAction(sessionId: string, session: unknown) {
+  const userId = await requireUserId();
+  if (!sessionId) throw new Error("Session ID is required.");
+  const parsed = workoutSessionSchema.parse(session);
+  return updateWorkoutSession(userId, sessionId, parsed);
+}
+
+export async function deleteWorkoutSessionAction(sessionId: string) {
+  const userId = await requireUserId();
+  if (!sessionId) throw new Error("Session ID is required.");
+  return deleteWorkoutSession(userId, sessionId);
+}
+
+// =============================================================================
+// METADATA ACTIONS
+// =============================================================================
+
+export async function getGymMetaAction() {
+  const userId = await requireUserId();
   return getGymMeta(userId);
 }
 
-export async function createCustomExerciseAction(input: {
-  key: string;
-  name: string;
-  category: string;
-  repMode?: "bilateral" | "dualUnilateral";
-  targets?: Array<{ muscle: string; weight: number }>;
-  variationSupports?: Array<{ templateId: string; labelOverride?: string }>;
-  optionLabelOverrides?: Array<{
-    templateId: string;
-    optionKey: string;
-    labelOverride: string;
-  }>;
-  variationEffects?: Array<{
-    templateId: string;
-    optionKey: string;
-    multipliers?: Record<string, number>;
-    deltas?: Record<string, number>;
-  }>;
-}) {
-  const { userId } = await auth();
-  if (!userId) {
-    throw new Error("User is not signed in.");
-  }
+// =============================================================================
+// CUSTOM EXERCISE ACTIONS
+// =============================================================================
 
-  const {
-    key,
-    name,
-    category,
-    repMode = "bilateral",
-    targets = [],
-    variationSupports = [],
-    optionLabelOverrides = [],
-    variationEffects = [],
-  } = input;
-  if (!key || !name || !category) {
-    throw new Error("Missing custom exercise fields.");
-  }
+export async function createCustomExerciseAction(input: unknown) {
+  const userId = await requireUserId();
+  const parsed = createCustomExerciseInputSchema.parse(input);
 
   return prisma.gymCustomExercise.create({
     data: {
       userId,
-      key,
-      name,
-      category,
-      repMode,
-      targets: targets.length
+      key: parsed.key,
+      name: parsed.name,
+      category: parsed.category,
+      repMode: parsed.repMode,
+      targets: parsed.targets.length
         ? {
-            create: targets.map((target) => ({
+            create: parsed.targets.map((target) => ({
               muscle: target.muscle,
               weight: target.weight,
             })),
           }
         : undefined,
-      variationSupports: variationSupports.length
+      variationSupports: parsed.variationSupports.length
         ? {
-            create: variationSupports.map((support) => ({
+            create: parsed.variationSupports.map((support) => ({
               templateId: support.templateId,
               labelOverride: support.labelOverride ?? null,
+              defaultOptionKey: support.defaultOptionKey ?? null,
             })),
           }
         : undefined,
-      optionOverrides: optionLabelOverrides.length
+      optionOverrides: parsed.optionLabelOverrides.length
         ? {
-            create: optionLabelOverrides.map((override) => ({
+            create: parsed.optionLabelOverrides.map((override) => ({
               templateId: override.templateId,
               optionKey: override.optionKey,
               labelOverride: override.labelOverride,
             })),
           }
         : undefined,
-      effects: variationEffects.length
+      effects: parsed.variationEffects.length
         ? {
-            create: variationEffects.map((effect) => ({
+            create: parsed.variationEffects.map((effect) => ({
               templateId: effect.templateId,
               optionKey: effect.optionKey,
               multipliers: effect.multipliers ?? undefined,
@@ -115,4 +126,19 @@ export async function createCustomExerciseAction(input: {
         : undefined,
     },
   });
+}
+
+// =============================================================================
+// USER PREFERENCES ACTIONS
+// =============================================================================
+
+export async function getGymUserPreferencesAction() {
+  const userId = await requireUserId();
+  return getUserPreferences(userId);
+}
+
+export async function updateGymUserPreferencesAction(input: unknown) {
+  const userId = await requireUserId();
+  const parsed = updateGymPreferencesSchema.parse(input);
+  return updateUserPreferences(userId, parsed);
 }
