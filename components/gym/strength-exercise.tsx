@@ -207,20 +207,24 @@ function ExerciseSettingDialog({ control, index }: { control: any, index: number
         />
         <FormField
           control={control}
-          name={`exercises.${index}.variations.plane`}
+          name={`exercises.${index}.variations.planeAngle`}
           render={({ field }) => (
             <FormItem className="w-full">
-              <FormLabel>Movement Plane</FormLabel>
+              <FormLabel>Plane Angle</FormLabel>
               <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Normal" />
+                    <SelectValue placeholder="0° (Flat)" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="flat">{`Flat`}</SelectItem>
-                  <SelectItem value="incline">{`Incline`}</SelectItem>
-                  <SelectItem value="decline">{`Decline`}</SelectItem>
+                  <SelectItem value="untracked">{`Untracked`}</SelectItem>
+                  <SelectItem value="-15">{`Decline 15°`}</SelectItem>
+                  <SelectItem value="0">{`0° (Flat)`}</SelectItem>
+                  <SelectItem value="15">{`15° Incline`}</SelectItem>
+                  <SelectItem value="30">{`30° Incline`}</SelectItem>
+                  <SelectItem value="45">{`45° Incline`}</SelectItem>
+                  <SelectItem value="60">{`60° Incline`}</SelectItem>
                 </SelectContent>
               </Select>
             </FormItem>
@@ -268,10 +272,10 @@ export default function StrengthExercise({
     const sets = useWatch({ control, name: `exercises.${index}.sets` })
     const exerciseType = useWatch({ control, name: `exercises.${index}.exerciseType` })
     const mod_grip = useWatch({ control, name: `exercises.${index}.variations.grip` })
-    const mod_plane = useWatch({ control, name: `exercises.${index}.variations.plane` })
-    return { sets, exerciseType, mod_grip, mod_plane }
+    const mod_planeAngle = useWatch({ control, name: `exercises.${index}.variations.planeAngle` })
+    return { sets, exerciseType, mod_grip, mod_planeAngle }
   }
-  const { sets, exerciseType, mod_grip, mod_plane } = WatchTheseThings(index)
+  const { sets, exerciseType, mod_grip, mod_planeAngle } = WatchTheseThings(index)
   const [customExercise, setCustomExercise] = useState<string>("")
   const [selectedCategory, setSelectedCategory] = useState<string>("")
   const [dialogOpen, setDialogOpen] = useState<boolean>(false)
@@ -283,6 +287,20 @@ export default function StrengthExercise({
   const { toast } = useToast()
   const [exerciseName, setExerciseName] = useState<string>(`New Exercise`)
   const [internalExerciseName, setInternalExerciseName] = useState<string>(exerciseName)
+
+  const planeAngleLabel = useCallback((value?: string) => {
+    if (!value) return "";
+    const labels: Record<string, string> = {
+      untracked: "Untracked",
+      "-15": "Decline 15°",
+      "0": "Flat",
+      "15": "15° Incline",
+      "30": "30° Incline",
+      "45": "45° Incline",
+      "60": "60° Incline",
+    }
+    return labels[value] ?? value
+  }, [])
 
   const handleAddCustomExercise = useCallback(async () => {
     if (customExercise.trim() && selectedCategory) {
@@ -347,12 +365,23 @@ export default function StrengthExercise({
           <div className="justify-start items-baseline flex">
             {`${exerciseName}`}
             <span className="px-2">
-              {(mod_grip && mod_grip !== "normal") || (mod_plane && mod_plane !== "flat") ? " // " : ""}
+              {(mod_grip && mod_grip !== "normal") ||
+              (mod_planeAngle && mod_planeAngle !== "0" && mod_planeAngle !== "untracked")
+                ? " // "
+                : ""}
             </span>
             <span className="text-xs font-extralight italic flex flex-wrap">
               {`${mod_grip && mod_grip !== "normal" ? capitalize(mod_grip) : ""}`}
-              {mod_grip && mod_grip !== "normal" && mod_plane && mod_plane !== "flat" && <p className="mr-1">,</p>}
-              {`${mod_plane && mod_plane !== "flat" ? capitalize(mod_plane) : ""}`}
+              {mod_grip &&
+                mod_grip !== "normal" &&
+                mod_planeAngle &&
+                mod_planeAngle !== "0" &&
+                mod_planeAngle !== "untracked" && <p className="mr-1">,</p>}
+              {`${
+                mod_planeAngle && mod_planeAngle !== "0" && mod_planeAngle !== "untracked"
+                  ? planeAngleLabel(mod_planeAngle)
+                  : ""
+              }`}
             </span>
           </div>
         </AccordionTrigger>

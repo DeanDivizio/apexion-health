@@ -1,0 +1,2903 @@
+/**
+ * Exercise Definitions - Apexion Health
+ * 
+ * Default exercise definitions, groups, and lookup utilities.
+ * This is the single source of truth for built-in exercises.
+ */
+
+import type {
+  ExerciseDefinition,
+  ExerciseGroup,
+  MuscleGroup,
+  StrengthRepMode,
+} from "./types";
+
+import {
+  WIDTH_TEMPLATE,
+  PLANE_ANGLE_TEMPLATE,
+  GRIP_TEMPLATE,
+  CABLE_ATTACHMENT_TEMPLATE,
+  RESISTANCE_SOURCE_TEMPLATE,
+  BODY_POSITION_TEMPLATE,
+  SUPPORT_TEMPLATE,
+  RANGE_OF_MOTION_TEMPLATE,
+  KNEE_ANGLE_TEMPLATE,
+  CADENCE_TEMPLATE,
+  PAUSE_TEMPLATE,
+  BAR_TYPE_TEMPLATE,
+  GRIP_TECHNIQUE_TEMPLATE,
+  GRIP_ASSISTANCE_TEMPLATE,
+  FOOT_VERTICAL_POSITION_TEMPLATE,
+  FOOT_ANGLE_TEMPLATE,
+  HEEL_ELEVATION_TEMPLATE,
+} from "./variations";
+
+// =============================================================================
+// INTERNAL TYPES & HELPERS
+// =============================================================================
+
+/**
+ * Raw exercise definition without derived fields.
+ * The `key` field is derived from `id` during export.
+ */
+type RawExerciseDefinition = Omit<ExerciseDefinition, 'key' | 'repMode'> & {
+  repMode?: StrengthRepMode;
+};
+
+/**
+ * Helper for creating a normalized muscle target list.
+ * Throws if weights don't sum to 1.0 (prevents subtle analytics bugs).
+ */
+function targets(...pairs: Array<[MuscleGroup, number]>) {
+  const sum = pairs.reduce((acc, [, w]) => acc + w, 0);
+  if (Math.abs(sum - 1) > 1e-6) {
+    throw new Error(`Muscle targets must sum to 1.0. Got ${sum}`);
+  }
+  return pairs.map(([muscle, weight]) => ({ muscle, weight }));
+}
+
+/**
+ * Helper to derive `key` from `id` for default exercises.
+ * For default exercises, key always equals id.
+ */
+function withDerivedKey<T extends { id: string }>(exercise: T): T & { key: string } {
+  return { ...exercise, key: exercise.id };
+}
+
+// =============================================================================
+// STRENGTH EXERCISE DEFINITIONS
+// =============================================================================
+
+const RAW_DEFAULT_EXERCISES: RawExerciseDefinition[] = [
+  // ===== UPPER BODY - CHEST =====
+  {
+    id: "benchPress",
+    name: "Bench Press",
+    category: "upperBody",
+    baseTargets: targets(
+      ["chestMid", 0.58],
+      ["chestUpper", 0.12],
+      ["chestLower", 0.08],
+      ["deltsFront", 0.12],
+      ["triceps", 0.10],
+    ),
+    variationTemplates: {
+      width: { templateId: WIDTH_TEMPLATE.id, labelOverride: "Grip Width" },
+      planeAngle: { templateId: PLANE_ANGLE_TEMPLATE.id, labelOverride: "Bench Angle" },
+      barType: { templateId: BAR_TYPE_TEMPLATE.id, labelOverride: "Bar Type" },
+      gripTechnique: { templateId: GRIP_TECHNIQUE_TEMPLATE.id, labelOverride: "Grip Technique" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+    },
+    variationEffects: {
+      width: {
+        closest: { deltas: { triceps: +0.08, chestMid: -0.06, deltsFront: +0.02 } },
+        close: { deltas: { triceps: +0.05, chestMid: -0.04, deltsFront: +0.01 } },
+        neutral: {},
+        wide: { deltas: { chestMid: +0.05, triceps: -0.04, deltsFront: -0.01 } },
+        widest: { deltas: { chestMid: +0.07, triceps: -0.06, deltsFront: -0.01 } },
+      },
+      planeAngle: {
+        "-15": { deltas: { chestLower: +0.10, chestUpper: -0.07, deltsFront: -0.03 } },
+        "0": {},
+        "15": { deltas: { chestUpper: +0.05, chestLower: -0.04, deltsFront: +0.02 } },
+        "30": { deltas: { chestUpper: +0.10, chestLower: -0.06, deltsFront: +0.04 } },
+        "45": { deltas: { chestUpper: +0.12, chestMid: -0.06, chestLower: -0.08, deltsFront: +0.10 } },
+        "60": { deltas: { chestUpper: +0.08, chestMid: -0.15, chestLower: -0.08, deltsFront: +0.18 } },
+        untracked: {},
+      },
+      barType: {
+        straightBar: {},
+        ezBar: {},
+        trapBar: {},
+        safetySquatBar: {},
+        camberedBar: {},
+        swissBar: {},
+        axleBar: {},
+      },
+      gripTechnique: {
+        standard: {},
+        mixed: {},
+        hook: {},
+        thumbless: {},
+      },
+      cadence: {
+        untracked: {},
+        even: {},
+        fastConcentric: {},
+        slowEccentric: {},
+        fastConcentricSlowEccentric: {},
+        slowConcentricFastEccentric: {},
+        slowConcentric: {},
+        fastEccentric: {},
+      },
+      pause: {
+        untracked: {},
+        none: {},
+        end: {},
+        start: {},
+        both: {},
+      },
+    },
+  },
+  {
+    id: "chestPress",
+    name: "Chest Press",
+    category: "upperBody",
+    baseTargets: targets(
+      ["chestMid", 0.60],
+      ["chestUpper", 0.12],
+      ["chestLower", 0.08],
+      ["deltsFront", 0.10],
+      ["triceps", 0.10],
+    ),
+    variationTemplates: {
+      width: { templateId: WIDTH_TEMPLATE.id, labelOverride: "Grip Width" },
+      planeAngle: { templateId: PLANE_ANGLE_TEMPLATE.id, labelOverride: "Movement Plane Angle" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
+    },
+    variationEffects: {
+      width: {
+        closest: { deltas: { triceps: +0.08, chestMid: -0.06, deltsFront: +0.02 } },
+        close: { deltas: { triceps: +0.05, chestMid: -0.04, deltsFront: +0.01 } },
+        neutral: {},
+        wide: { deltas: { chestMid: +0.05, triceps: -0.04, deltsFront: -0.01 } },
+        widest: { deltas: { chestMid: +0.07, triceps: -0.06, deltsFront: -0.01 } },
+      },
+      planeAngle: {
+        "-15": { deltas: { chestLower: +0.10, chestUpper: -0.07, deltsFront: -0.03 } },
+        "0": {},
+        "15": { deltas: { chestUpper: +0.05, chestLower: -0.04, deltsFront: +0.02 } },
+        "30": { deltas: { chestUpper: +0.10, chestLower: -0.06, deltsFront: +0.04 } },
+        "45": { deltas: { chestUpper: +0.12, chestMid: -0.06, chestLower: -0.08, deltsFront: +0.10 } },
+        "60": { deltas: { chestUpper: +0.08, chestMid: -0.15, chestLower: -0.08, deltsFront: +0.18 } },
+        untracked: {},
+      },
+      cadence: {
+        even: {},
+        fastConcentric: {},
+        slowEccentric: {},
+        fastConcentricSlowEccentric: {},
+        slowConcentricFastEccentric: {},
+        slowConcentric: {},
+        fastEccentric: {},
+        untracked: {},
+      },
+      pause: {
+        none: {},
+        end: {},
+        start: {},
+        both: {},
+        untracked: {},
+      },
+      resistanceSource: {
+        dumbbell: {},
+        kettlebell: {},
+        cable: {},
+        band: {},
+        machineSelectorized: {},
+        machinePlateLoaded: {},
+        untracked: {},
+      },
+    },
+  },
+  {
+    id: "pecFly",
+    name: "Pec Fly",
+    category: "upperBody",
+    baseTargets: targets(
+      ["chestMid", 0.70],
+      ["chestUpper", 0.15],
+      ["chestLower", 0.15],
+    ),
+    variationTemplates: {
+      planeAngle: { templateId: PLANE_ANGLE_TEMPLATE.id, labelOverride: "Movement Angle" },
+      bodyPosition: { templateId: BODY_POSITION_TEMPLATE.id, labelOverride: "Body Position" },
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+    },
+    variationEffects: {
+      planeAngle: {
+        "-15": { deltas: { chestLower: +0.12, chestUpper: -0.08, chestMid: -0.04 } },
+        "0": {},
+        "15": { deltas: { chestUpper: +0.06, chestLower: -0.06 } },
+        "30": { deltas: { chestUpper: +0.10, chestLower: -0.08, chestMid: -0.02 } },
+        "45": { deltas: { chestUpper: +0.12, chestLower: -0.10, chestMid: -0.02 } },
+        "60": { deltas: { chestUpper: +0.10, chestMid: -0.08, chestLower: -0.10, deltsFront: +0.08 } },
+        untracked: {},
+      },
+      bodyPosition: {
+        standing: {},
+        seated: {},
+        supine: {},
+        prone: {},
+        kneeling: {},
+        halfKneeling: {},
+        hipHinged: {},
+      },
+      resistanceSource: {
+        untracked: {},
+        bodyweight: {},
+        dumbbell: {},
+        barbell: {},
+        kettlebell: {},
+        cable: {},
+        band: {},
+        smithMachine: {},
+        machineSelectorized: {},
+        machinePlateLoaded: {},
+      },
+      cadence: {
+        untracked: {},
+        even: {},
+        fastConcentric: {},
+        slowEccentric: {},
+        fastConcentricSlowEccentric: {},
+        slowConcentricFastEccentric: {},
+        slowConcentric: {},
+        fastEccentric: {},
+      },
+      pause: {
+        untracked: {},
+        none: {},
+        end: {},
+        start: {},
+        both: {},
+      },
+    },
+  },
+  {
+    id: "pushUp",
+    name: "Push Up",
+    category: "upperBody",
+    baseTargets: targets(
+      ["chestMid", 0.55],
+      ["deltsFront", 0.15],
+      ["triceps", 0.20],
+      ["absUpper", 0.10],
+    ),
+    variationTemplates: {
+      width: { templateId: WIDTH_TEMPLATE.id, labelOverride: "Hand Width" },
+      planeAngle: { templateId: PLANE_ANGLE_TEMPLATE.id, labelOverride: "Body Angle" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+    },
+    variationEffects: {
+      width: {
+        closest: { deltas: { triceps: +0.10, chestMid: -0.08, deltsFront: +0.02 } },
+        close: { deltas: { triceps: +0.06, chestMid: -0.05, deltsFront: +0.01 } },
+        neutral: {},
+        wide: { deltas: { chestMid: +0.06, triceps: -0.05, deltsFront: -0.01 } },
+        widest: { deltas: { chestMid: +0.08, triceps: -0.07, deltsFront: -0.01 } },
+      },
+      planeAngle: {
+        "-15": { deltas: { chestLower: +0.08, chestUpper: -0.06, deltsFront: -0.02 } },
+        "0": {},
+        "15": { deltas: { chestUpper: +0.05, chestMid: -0.03, deltsFront: +0.02 } },
+        "30": { deltas: { chestUpper: +0.08, chestMid: -0.05, deltsFront: +0.04 } },
+        "45": { deltas: { chestUpper: +0.10, chestMid: -0.08, deltsFront: +0.06 } },
+        "60": { deltas: { deltsFront: +0.12, chestMid: -0.10, chestUpper: +0.04 } },
+        untracked: {},
+      },
+      cadence: {
+        untracked: {},
+        even: {},
+        fastConcentric: {},
+        slowEccentric: {},
+        fastConcentricSlowEccentric: {},
+        slowConcentricFastEccentric: {},
+        slowConcentric: {},
+        fastEccentric: {},
+      },
+      pause: {
+        untracked: {},
+        none: {},
+        end: {},
+        start: {},
+        both: {},
+      },
+    },
+  },
+  {
+    id: "dip",
+    name: "Dip",
+    category: "upperBody",
+    baseTargets: targets(
+      ["triceps", 0.40],
+      ["chestLower", 0.30],
+      ["chestMid", 0.15],
+      ["deltsFront", 0.15],
+    ),
+    variationTemplates: {
+      width: { templateId: WIDTH_TEMPLATE.id, labelOverride: "Grip Width" },
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+    },
+    variationEffects: {
+      // NOTE(research): Forward lean increases chest activation, upright increases tricep focus.
+      // Width also affects emphasis - wider grip tends to favor chest, narrower favors triceps.
+      width: {
+        closest: { deltas: { triceps: +0.08, chestLower: -0.05, chestMid: -0.03 } },
+        close: { deltas: { triceps: +0.04, chestLower: -0.03, chestMid: -0.01 } },
+        neutral: {},
+        wide: { deltas: { chestLower: +0.06, chestMid: +0.04, triceps: -0.08, deltsFront: -0.02 } },
+        widest: { deltas: { chestLower: +0.08, chestMid: +0.06, triceps: -0.12, deltsFront: -0.02 } },
+      },
+      resistanceSource: {
+        untracked: {},
+        bodyweight: {},
+        dumbbell: {},
+        barbell: {},
+        kettlebell: {},
+        cable: {},
+        band: {},
+        smithMachine: {},
+        machineSelectorized: {},
+        machinePlateLoaded: {},
+      },
+      cadence: {
+        untracked: {},
+        even: {},
+        fastConcentric: {},
+        slowEccentric: {},
+        fastConcentricSlowEccentric: {},
+        slowConcentricFastEccentric: {},
+        slowConcentric: {},
+        fastEccentric: {},
+      },
+      pause: {
+        untracked: {},
+        none: {},
+        end: {},
+        start: {},
+        both: {},
+      },
+    },
+  },
+  
+  // ===== UPPER BODY - BACK =====
+  {
+    id: "lateralPulldown",
+    name: "Lateral Pulldown",
+    category: "upperBody",
+    baseTargets: targets(
+      ["lats", 0.62],
+      ["rhomboids", 0.18],
+      ["trapsLower", 0.10],
+      ["biceps", 0.10],
+    ),
+    variationTemplates: {
+      width: { templateId: WIDTH_TEMPLATE.id, labelOverride: "Handle Width" },
+      grip: { templateId: GRIP_TEMPLATE.id, labelOverride: "Grip" },
+      cableAttachment: { templateId: CABLE_ATTACHMENT_TEMPLATE.id, labelOverride: "Attachment" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+    },
+    variationEffects: {
+      width: {
+        closest: { deltas: { rhomboids: +0.02, lats: -0.02 } },
+        close: { deltas: { rhomboids: +0.01, lats: -0.01 } },
+        neutral: {},
+        wide: { deltas: { lats: +0.02, rhomboids: -0.02 } },
+        widest: { deltas: { lats: +0.03, rhomboids: -0.03 } },
+      },
+      grip: {
+        normal: {},
+        pronated: {},
+        supinated: { deltas: { biceps: +0.06, lats: -0.04, rhomboids: -0.02 } },
+        neutral: { deltas: { biceps: +0.03, lats: -0.02, rhomboids: -0.01 } },
+        neutralSupinated: { deltas: { biceps: +0.04, lats: -0.03, rhomboids: -0.01 } },
+      },
+      cableAttachment: {
+        straightBar: {},
+        angledBar: {},
+        curvedBar: {},
+        rope: {},
+        strap: {},
+        singleDHandle: {},
+        doubleDHandle: {},
+        vHandle: {},
+      },
+      cadence: {
+        untracked: {},
+        even: {},
+        fastConcentric: {},
+        slowEccentric: {},
+        fastConcentricSlowEccentric: {},
+        slowConcentricFastEccentric: {},
+        slowConcentric: {},
+        fastEccentric: {},
+      },
+      pause: {
+        untracked: {},
+        none: {},
+        end: {},
+        start: {},
+        both: {},
+      },
+    },
+  },
+  {
+    id: "seatedRow",
+    name: "Seated Row",
+    category: "upperBody",
+    baseTargets: targets(
+      ["lats", 0.45],
+      ["rhomboids", 0.30],
+      ["trapsMid", 0.15],
+      ["biceps", 0.10],
+    ),
+    variationTemplates: {
+      width: { templateId: WIDTH_TEMPLATE.id, labelOverride: "Handle Width" },
+      grip: { templateId: GRIP_TEMPLATE.id, labelOverride: "Grip" },
+      cableAttachment: { templateId: CABLE_ATTACHMENT_TEMPLATE.id, labelOverride: "Attachment" },
+      support: { templateId: SUPPORT_TEMPLATE.id, labelOverride: "Support" },
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+    },
+    variationEffects: {
+      width: {
+        closest: { deltas: { rhomboids: +0.06, lats: -0.04, trapsMid: +0.02 } },
+        close: { deltas: { rhomboids: +0.03, lats: -0.02, trapsMid: +0.01 } },
+        neutral: {},
+        wide: { deltas: { lats: +0.05, rhomboids: -0.04, deltsRear: +0.02 } },
+        widest: { deltas: { lats: +0.07, rhomboids: -0.05, deltsRear: +0.03 } },
+      },
+      grip: {
+        normal: {},
+        pronated: { deltas: { rhomboids: +0.04, biceps: -0.02, deltsRear: +0.02 } },
+        supinated: { deltas: { biceps: +0.05, rhomboids: -0.03, lats: -0.02 } },
+        neutral: {},
+        neutralSupinated: { deltas: { biceps: +0.03, rhomboids: -0.02, lats: -0.01 } },
+      },
+      cableAttachment: {
+        straightBar: {},
+        angledBar: {},
+        curvedBar: {},
+        rope: {},
+        strap: {},
+        singleDHandle: {},
+        doubleDHandle: {},
+        vHandle: {},
+      },
+      support: {
+        none: {},
+        inclineBenchSupported: {},
+        chestSupported: { deltas: { lowerBack: -0.05, lats: +0.03, rhomboids: +0.02 } },
+      },
+      resistanceSource: {
+        untracked: {},
+        bodyweight: {},
+        dumbbell: {},
+        barbell: {},
+        kettlebell: {},
+        cable: {},
+        band: {},
+        smithMachine: {},
+        machineSelectorized: {},
+        machinePlateLoaded: {},
+      },
+      cadence: {
+        untracked: {},
+        even: {},
+        fastConcentric: {},
+        slowEccentric: {},
+        fastConcentricSlowEccentric: {},
+        slowConcentricFastEccentric: {},
+        slowConcentric: {},
+        fastEccentric: {},
+      },
+      pause: {
+        untracked: {},
+        none: {},
+        end: {},
+        start: {},
+        both: {},
+      },
+    },
+  },
+  {
+    id: "pullUp",
+    name: "Pull Up",
+    category: "upperBody",
+    baseTargets: targets(
+      ["lats", 0.55],
+      ["biceps", 0.20],
+      ["rhomboids", 0.15],
+      ["deltsRear", 0.10],
+    ),
+    variationTemplates: {
+      width: { templateId: WIDTH_TEMPLATE.id, labelOverride: "Grip Width" },
+      grip: { templateId: GRIP_TEMPLATE.id, labelOverride: "Grip" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+    },
+    variationEffects: {
+      width: {
+        closest: { deltas: { rhomboids: +0.02, lats: -0.02 } },
+        close: { deltas: { rhomboids: +0.01, lats: -0.01 } },
+        neutral: {},
+        wide: { deltas: { lats: +0.02, rhomboids: -0.02 } },
+        widest: { deltas: { lats: +0.03, rhomboids: -0.03 } },
+      },
+      grip: {
+        normal: {},
+        pronated: {},
+        supinated: { deltas: { biceps: +0.10, lats: -0.06, rhomboids: -0.04 } },
+        neutral: { deltas: { biceps: +0.05, lats: -0.03, rhomboids: -0.02 } },
+        neutralSupinated: { deltas: { biceps: +0.07, lats: -0.04, rhomboids: -0.03 } },
+      },
+      cadence: {
+        untracked: {},
+        even: {},
+        fastConcentric: {},
+        slowEccentric: {},
+        fastConcentricSlowEccentric: {},
+        slowConcentricFastEccentric: {},
+        slowConcentric: {},
+        fastEccentric: {},
+      },
+      pause: {
+        untracked: {},
+        none: {},
+        end: {},
+        start: {},
+        both: {},
+      },
+    },
+  },
+  {
+    id: "rearDelt",
+    name: "Rear Delt",
+    category: "upperBody",
+    baseTargets: targets(
+      ["deltsRear", 0.65],
+      ["rhomboids", 0.20],
+      ["trapsMid", 0.15],
+    ),
+    variationTemplates: {
+      bodyPosition: { templateId: BODY_POSITION_TEMPLATE.id, labelOverride: "Body Position" },
+      support: { templateId: SUPPORT_TEMPLATE.id, labelOverride: "Support" },
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+    },
+    variationEffects: {
+      bodyPosition: {
+        standing: {},
+        seated: {},
+        supine: {},
+        prone: { deltas: { deltsRear: +0.05, trapsMid: -0.03, rhomboids: -0.02 } },
+        kneeling: {},
+        halfKneeling: {},
+        hipHinged: {},
+      },
+      support: {
+        none: {},
+        inclineBenchSupported: { deltas: { deltsRear: +0.05, trapsMid: -0.03, rhomboids: -0.02 } },
+        chestSupported: { deltas: { deltsRear: +0.05, trapsMid: -0.03, rhomboids: -0.02 } },
+      },
+      resistanceSource: {
+        untracked: {},
+        bodyweight: {},
+        dumbbell: {},
+        barbell: {},
+        kettlebell: {},
+        cable: {},
+        band: {},
+        smithMachine: {},
+        machineSelectorized: {},
+        machinePlateLoaded: {},
+      },
+      cadence: {
+        untracked: {},
+        even: {},
+        fastConcentric: {},
+        slowEccentric: {},
+        fastConcentricSlowEccentric: {},
+        slowConcentricFastEccentric: {},
+        slowConcentric: {},
+        fastEccentric: {},
+      },
+      pause: {
+        untracked: {},
+        none: {},
+        end: {},
+        start: {},
+        both: {},
+      },
+    },
+  },
+  {
+    id: "bentOverRow",
+    name: "Bent Over Row",
+    category: "upperBody",
+    baseTargets: targets(
+      ["lats", 0.40],
+      ["rhomboids", 0.25],
+      ["trapsMid", 0.15],
+      ["biceps", 0.10],
+      ["lowerBack", 0.10],
+    ),
+    variationTemplates: {
+      width: { templateId: WIDTH_TEMPLATE.id, labelOverride: "Grip Width" },
+      grip: { templateId: GRIP_TEMPLATE.id, labelOverride: "Grip" },
+      barType: { templateId: BAR_TYPE_TEMPLATE.id, labelOverride: "Bar Type" },
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+    },
+    variationEffects: {
+      width: {
+        closest: { deltas: { rhomboids: +0.06, lats: -0.04, trapsMid: +0.02 } },
+        close: { deltas: { rhomboids: +0.03, lats: -0.02, trapsMid: +0.01 } },
+        neutral: {},
+        wide: { deltas: { lats: +0.05, rhomboids: -0.04, deltsRear: +0.02 } },
+        widest: { deltas: { lats: +0.07, rhomboids: -0.05, deltsRear: +0.03 } },
+      },
+      grip: {
+        normal: {},
+        pronated: {},
+        supinated: { deltas: { biceps: +0.06, lats: -0.04, rhomboids: -0.02 } },
+        neutral: { deltas: { biceps: +0.03, lats: -0.02, rhomboids: -0.01 } },
+        neutralSupinated: { deltas: { biceps: +0.04, lats: -0.03, rhomboids: -0.01 } },
+      },
+      barType: {
+        straightBar: {},
+        ezBar: {},
+        trapBar: {},
+        safetySquatBar: {},
+        camberedBar: {},
+        swissBar: {},
+        axleBar: {},
+      },
+      resistanceSource: {
+        untracked: {},
+        bodyweight: {},
+        dumbbell: {},
+        barbell: {},
+        kettlebell: {},
+        cable: {},
+        band: {},
+        smithMachine: {},
+        machineSelectorized: {},
+        machinePlateLoaded: {},
+      },
+      cadence: {
+        untracked: {},
+        even: {},
+        fastConcentric: {},
+        slowEccentric: {},
+        fastConcentricSlowEccentric: {},
+        slowConcentricFastEccentric: {},
+        slowConcentric: {},
+        fastEccentric: {},
+      },
+      pause: {
+        untracked: {},
+        none: {},
+        end: {},
+        start: {},
+        both: {},
+      },
+    },
+  },
+  {
+    id: "shrug",
+    name: "Shrug",
+    category: "upperBody",
+    baseTargets: targets(
+      ["trapsUpper", 0.80],
+      ["trapsMid", 0.20],
+    ),
+    variationTemplates: {
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
+      barType: { templateId: BAR_TYPE_TEMPLATE.id, labelOverride: "Bar Type" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+    },
+    variationEffects: {
+      resistanceSource: {
+        untracked: {},
+        bodyweight: {},
+        dumbbell: {},
+        barbell: {},
+        kettlebell: {},
+        cable: {},
+        band: {},
+        smithMachine: {},
+        machineSelectorized: {},
+        machinePlateLoaded: {},
+      },
+      barType: {
+        straightBar: {},
+        ezBar: {},
+        trapBar: { deltas: { trapsUpper: +0.05, trapsMid: -0.05 } },
+        safetySquatBar: {},
+        camberedBar: {},
+        swissBar: {},
+        axleBar: {},
+      },
+      cadence: {
+        untracked: {},
+        even: {},
+        fastConcentric: {},
+        slowEccentric: {},
+        fastConcentricSlowEccentric: {},
+        slowConcentricFastEccentric: {},
+        slowConcentric: {},
+        fastEccentric: {},
+      },
+      pause: {
+        untracked: {},
+        none: {},
+        end: {},
+        start: {},
+        both: {},
+      },
+    },
+  },
+  {
+    id: "facePull",
+    name: "Face Pull",
+    category: "upperBody",
+    baseTargets: targets(
+      ["deltsRear", 0.45],
+      ["rhomboids", 0.25],
+      ["trapsMid", 0.20],
+      ["trapsLower", 0.10],
+    ),
+    variationTemplates: {
+      cableAttachment: { templateId: CABLE_ATTACHMENT_TEMPLATE.id, labelOverride: "Attachment" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+    },
+    variationEffects: {
+      cableAttachment: {
+        straightBar: {},
+        angledBar: {},
+        curvedBar: {},
+        rope: {},
+        strap: {},
+        singleDHandle: {},
+        doubleDHandle: {},
+        vHandle: {},
+      },
+      cadence: {
+        untracked: {},
+        even: {},
+        fastConcentric: {},
+        slowEccentric: {},
+        fastConcentricSlowEccentric: {},
+        slowConcentricFastEccentric: {},
+        slowConcentric: {},
+        fastEccentric: {},
+      },
+      pause: {
+        untracked: {},
+        none: {},
+        end: {},
+        start: {},
+        both: {},
+      },
+    },
+  },
+  
+  // ===== UPPER BODY - SHOULDERS =====
+  {
+    id: "lateralRaise",
+    name: "Lateral Raise",
+    category: "upperBody",
+    baseTargets: targets(
+      ["deltsSide", 0.80],
+      ["trapsUpper", 0.20],
+    ),
+    isUnilateral: true,
+    variationTemplates: {
+      bodyPosition: { templateId: BODY_POSITION_TEMPLATE.id, labelOverride: "Body Position" },
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
+      rangeOfMotion: { templateId: RANGE_OF_MOTION_TEMPLATE.id, labelOverride: "Range of Motion" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+    },
+    variationEffects: {
+      bodyPosition: {
+        standing: {},
+        seated: { deltas: { deltsSide: +0.04, trapsUpper: -0.04 } },
+        supine: {},
+        prone: {},
+        kneeling: {},
+        halfKneeling: {},
+        hipHinged: { deltas: { deltsSide: +0.05, deltsRear: +0.05, trapsUpper: -0.10 } },
+      },
+      resistanceSource: {
+        untracked: {},
+        bodyweight: {},
+        dumbbell: {},
+        barbell: {},
+        kettlebell: {},
+        cable: {},
+        band: {},
+        smithMachine: {},
+        machineSelectorized: {},
+        machinePlateLoaded: {},
+      },
+      rangeOfMotion: {
+        full: {},
+        extended: {},
+        partialTop: {},
+        partialBottom: {},
+        partialMid: {},
+      },
+      cadence: {
+        untracked: {},
+        even: {},
+        fastConcentric: {},
+        slowEccentric: {},
+        fastConcentricSlowEccentric: {},
+        slowConcentricFastEccentric: {},
+        slowConcentric: {},
+        fastEccentric: {},
+      },
+      pause: {
+        untracked: {},
+        none: {},
+        end: {},
+        start: {},
+        both: {},
+      },
+    },
+  },
+  {
+    id: "shoulderPress",
+    name: "Shoulder Press",
+    category: "upperBody",
+    baseTargets: targets(
+      ["deltsFront", 0.55],
+      ["deltsSide", 0.20],
+      ["triceps", 0.25],
+    ),
+    variationTemplates: {
+      width: { templateId: WIDTH_TEMPLATE.id, labelOverride: "Grip Width" },
+      bodyPosition: { templateId: BODY_POSITION_TEMPLATE.id, labelOverride: "Body Position" },
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
+      barType: { templateId: BAR_TYPE_TEMPLATE.id, labelOverride: "Bar Type" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+    },
+    variationEffects: {
+      width: {
+        closest: { deltas: { triceps: +0.06, deltsFront: -0.04, deltsSide: -0.02 } },
+        close: { deltas: { triceps: +0.03, deltsFront: -0.02, deltsSide: -0.01 } },
+        neutral: {},
+        wide: { deltas: { deltsSide: +0.04, triceps: -0.03, deltsFront: -0.01 } },
+        widest: { deltas: { deltsSide: +0.06, triceps: -0.05, deltsFront: -0.01 } },
+      },
+      bodyPosition: {
+        standing: { deltas: { absUpper: +0.05 } },
+        seated: {},
+        supine: {},
+        prone: {},
+        kneeling: {},
+        halfKneeling: {},
+        hipHinged: {},
+      },
+      resistanceSource: {
+        untracked: {},
+        bodyweight: {},
+        dumbbell: {},
+        barbell: {},
+        kettlebell: {},
+        cable: {},
+        band: {},
+        smithMachine: {},
+        machineSelectorized: {},
+        machinePlateLoaded: {},
+      },
+      barType: {
+        straightBar: {},
+        ezBar: {},
+        trapBar: {},
+        safetySquatBar: {},
+        camberedBar: {},
+        swissBar: {},
+        axleBar: {},
+      },
+      cadence: {
+        untracked: {},
+        even: {},
+        fastConcentric: {},
+        slowEccentric: {},
+        fastConcentricSlowEccentric: {},
+        slowConcentricFastEccentric: {},
+        slowConcentric: {},
+        fastEccentric: {},
+      },
+      pause: {
+        untracked: {},
+        none: {},
+        end: {},
+        start: {},
+        both: {},
+      },
+    },
+  },
+  {
+    id: "frontRaise",
+    name: "Front Raise",
+    category: "upperBody",
+    baseTargets: targets(
+      ["deltsFront", 0.90],
+      ["deltsSide", 0.10],
+    ),
+    isUnilateral: true,
+    variationTemplates: {
+      grip: { templateId: GRIP_TEMPLATE.id, labelOverride: "Grip" },
+      bodyPosition: { templateId: BODY_POSITION_TEMPLATE.id, labelOverride: "Body Position" },
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+    },
+    variationEffects: {
+      grip: {
+        normal: {},
+        pronated: {},
+        supinated: { deltas: { biceps: +0.05, deltsFront: -0.05 } },
+        neutral: { deltas: { deltsSide: +0.05, deltsFront: -0.05 } },
+        neutralSupinated: { deltas: { deltsSide: +0.03, biceps: +0.02, deltsFront: -0.05 } },
+      },
+      bodyPosition: {
+        standing: {},
+        seated: {},
+        supine: {},
+        prone: {},
+        kneeling: {},
+        halfKneeling: {},
+        hipHinged: {},
+      },
+      resistanceSource: {
+        untracked: {},
+        bodyweight: {},
+        dumbbell: {},
+        barbell: {},
+        kettlebell: {},
+        cable: {},
+        band: {},
+        smithMachine: {},
+        machineSelectorized: {},
+        machinePlateLoaded: {},
+      },
+      cadence: {
+        untracked: {},
+        even: {},
+        fastConcentric: {},
+        slowEccentric: {},
+        fastConcentricSlowEccentric: {},
+        slowConcentricFastEccentric: {},
+        slowConcentric: {},
+        fastEccentric: {},
+      },
+      pause: {
+        untracked: {},
+        none: {},
+        end: {},
+        start: {},
+        both: {},
+      },
+    },
+  },
+  
+  // ===== UPPER BODY - ARMS =====
+  {
+    id: "bicepCurl",
+    name: "Bicep Curl",
+    category: "upperBody",
+    baseTargets: targets(
+      ["biceps", 0.80],
+      ["forearms", 0.20],
+    ),
+    isUnilateral: true,
+    variationTemplates: {
+      grip: { templateId: GRIP_TEMPLATE.id, labelOverride: "Grip" },
+      bodyPosition: { templateId: BODY_POSITION_TEMPLATE.id, labelOverride: "Body Position" },
+      support: { templateId: SUPPORT_TEMPLATE.id, labelOverride: "Support" },
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
+      barType: { templateId: BAR_TYPE_TEMPLATE.id, labelOverride: "Bar Type" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+    },
+    variationEffects: {
+      grip: {
+        normal: {},
+        pronated: { deltas: { forearms: +0.08, biceps: -0.08 } },
+        supinated: {},
+        neutral: { deltas: { forearms: +0.05, biceps: -0.05 } },
+        neutralSupinated: { deltas: { forearms: +0.03, biceps: -0.03 } },
+      },
+      bodyPosition: {
+        standing: {},
+        seated: {},
+        supine: { deltas: { biceps: +0.03, forearms: -0.03 } },
+        prone: {},
+        kneeling: {},
+        halfKneeling: {},
+        hipHinged: {},
+      },
+      support: {
+        none: {},
+        inclineBenchSupported: { deltas: { biceps: +0.05, forearms: -0.05 } },
+        chestSupported: {},
+      },
+      resistanceSource: {
+        untracked: {},
+        bodyweight: {},
+        dumbbell: {},
+        barbell: {},
+        kettlebell: {},
+        cable: {},
+        band: {},
+        smithMachine: {},
+        machineSelectorized: {},
+        machinePlateLoaded: {},
+      },
+      barType: {
+        straightBar: {},
+        ezBar: { deltas: { forearms: -0.03, biceps: +0.03 } },
+        trapBar: {},
+        safetySquatBar: {},
+        camberedBar: {},
+        swissBar: {},
+        axleBar: { deltas: { forearms: +0.05, biceps: -0.05 } },
+      },
+      cadence: {
+        untracked: {},
+        even: {},
+        fastConcentric: {},
+        slowEccentric: {},
+        fastConcentricSlowEccentric: {},
+        slowConcentricFastEccentric: {},
+        slowConcentric: {},
+        fastEccentric: {},
+      },
+      pause: {
+        untracked: {},
+        none: {},
+        end: {},
+        start: {},
+        both: {},
+      },
+    },
+  },
+  {
+    id: "tricepExtension",
+    name: "Tricep Extension",
+    category: "upperBody",
+    baseTargets: targets(
+      ["triceps", 1.0],
+    ),
+    variationTemplates: {
+      bodyPosition: { templateId: BODY_POSITION_TEMPLATE.id, labelOverride: "Body Position" },
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
+      cableAttachment: { templateId: CABLE_ATTACHMENT_TEMPLATE.id, labelOverride: "Attachment" },
+      barType: { templateId: BAR_TYPE_TEMPLATE.id, labelOverride: "Bar Type" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+    },
+    variationEffects: {
+      bodyPosition: {
+        standing: {},
+        seated: {},
+        supine: {},
+        prone: {},
+        kneeling: {},
+        halfKneeling: {},
+        hipHinged: {},
+      },
+      resistanceSource: {
+        untracked: {},
+        bodyweight: {},
+        dumbbell: {},
+        barbell: {},
+        kettlebell: {},
+        cable: {},
+        band: {},
+        smithMachine: {},
+        machineSelectorized: {},
+        machinePlateLoaded: {},
+      },
+      cableAttachment: {
+        straightBar: {},
+        angledBar: {},
+        curvedBar: {},
+        rope: {},
+        strap: {},
+        singleDHandle: {},
+        doubleDHandle: {},
+        vHandle: {},
+      },
+      barType: {
+        straightBar: {},
+        ezBar: {},
+        trapBar: {},
+        safetySquatBar: {},
+        camberedBar: {},
+        swissBar: {},
+        axleBar: {},
+      },
+      cadence: {
+        untracked: {},
+        even: {},
+        fastConcentric: {},
+        slowEccentric: {},
+        fastConcentricSlowEccentric: {},
+        slowConcentricFastEccentric: {},
+        slowConcentric: {},
+        fastEccentric: {},
+      },
+      pause: {
+        untracked: {},
+        none: {},
+        end: {},
+        start: {},
+        both: {},
+      },
+    },
+  },
+  {
+    id: "tricepPushdown",
+    name: "Tricep Pushdown",
+    category: "upperBody",
+    baseTargets: targets(
+      ["triceps", 0.85],
+      ["forearms", 0.15],
+    ),
+    variationTemplates: {
+      grip: { templateId: GRIP_TEMPLATE.id, labelOverride: "Grip" },
+      cableAttachment: { templateId: CABLE_ATTACHMENT_TEMPLATE.id, labelOverride: "Attachment" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+    },
+    variationEffects: {
+      grip: {
+        normal: {},
+        pronated: {},
+        supinated: { deltas: { triceps: +0.03, forearms: -0.03 } },
+        neutral: {},
+        neutralSupinated: { deltas: { triceps: +0.015, forearms: -0.015 } },
+      },
+      cableAttachment: {
+        straightBar: {},
+        angledBar: {},
+        curvedBar: {},
+        rope: {},
+        strap: {},
+        singleDHandle: {},
+        doubleDHandle: {},
+        vHandle: {},
+      },
+      cadence: {
+        untracked: {},
+        even: {},
+        fastConcentric: {},
+        slowEccentric: {},
+        fastConcentricSlowEccentric: {},
+        slowConcentricFastEccentric: {},
+        slowConcentric: {},
+        fastEccentric: {},
+      },
+      pause: {
+        untracked: {},
+        none: {},
+        end: {},
+        start: {},
+        both: {},
+      },
+    },
+  },
+  {
+    id: "hammerCurl",
+    name: "Hammer Curl",
+    category: "upperBody",
+    baseTargets: targets(
+      ["biceps", 0.60],
+      ["forearms", 0.40],
+    ),
+    isUnilateral: true,
+    variationTemplates: {
+      bodyPosition: { templateId: BODY_POSITION_TEMPLATE.id, labelOverride: "Body Position" },
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+    },
+    variationEffects: {
+      bodyPosition: {
+        standing: {},
+        seated: {},
+        supine: { deltas: { biceps: +0.05, forearms: -0.05 } },
+        prone: {},
+        kneeling: {},
+        halfKneeling: {},
+        hipHinged: {},
+      },
+      resistanceSource: {
+        untracked: {},
+        bodyweight: {},
+        dumbbell: {},
+        barbell: {},
+        kettlebell: {},
+        cable: {},
+        band: {},
+        smithMachine: {},
+        machineSelectorized: {},
+        machinePlateLoaded: {},
+      },
+      cadence: {
+        untracked: {},
+        even: {},
+        fastConcentric: {},
+        slowEccentric: {},
+        fastConcentricSlowEccentric: {},
+        slowConcentricFastEccentric: {},
+        slowConcentric: {},
+        fastEccentric: {},
+      },
+      pause: {
+        untracked: {},
+        none: {},
+        end: {},
+        start: {},
+        both: {},
+      },
+    },
+  },
+  
+  // ===== CORE =====
+  {
+    id: "abdominalCrunch",
+    name: "Abdominal Crunch",
+    category: "core",
+    baseTargets: targets(
+      ["absUpper", 0.55],
+      ["absLower", 0.45],
+    ),
+    variationTemplates: {
+      planeAngle: { templateId: PLANE_ANGLE_TEMPLATE.id, labelOverride: "Bench Angle" },
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+    },
+    variationEffects: {
+      planeAngle: {
+        "-15": {},
+        "0": {},
+        "15": {},
+        "30": {},
+        "45": {},
+        "60": {},
+        untracked: {},
+      },
+      resistanceSource: {
+        untracked: {},
+        bodyweight: {},
+        dumbbell: {},
+        barbell: {},
+        kettlebell: {},
+        cable: {},
+        band: {},
+        smithMachine: {},
+        machineSelectorized: {},
+        machinePlateLoaded: {},
+      },
+      cadence: {
+        untracked: {},
+        even: {},
+        fastConcentric: {},
+        slowEccentric: {},
+        fastConcentricSlowEccentric: {},
+        slowConcentricFastEccentric: {},
+        slowConcentric: {},
+        fastEccentric: {},
+      },
+      pause: {
+        untracked: {},
+        none: {},
+        end: {},
+        start: {},
+        both: {},
+      },
+    },
+  },
+  {
+    id: "backExtension",
+    name: "Back Extension",
+    category: "core",
+    baseTargets: targets(
+      ["lowerBack", 0.55],
+      ["glutes", 0.25],
+      ["hamstrings", 0.20],
+    ),
+    variationTemplates: {
+      planeAngle: { templateId: PLANE_ANGLE_TEMPLATE.id, labelOverride: "Bench Angle" },
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+    },
+    variationEffects: {
+      planeAngle: {
+        "-15": {},
+        "0": {},
+        "15": {},
+        "30": {},
+        "45": { deltas: { lowerBack: +0.05, glutes: -0.03, hamstrings: -0.02 } },
+        "60": {},
+        untracked: {},
+      },
+      resistanceSource: {
+        untracked: {},
+        bodyweight: {},
+        dumbbell: {},
+        barbell: {},
+        kettlebell: {},
+        cable: {},
+        band: {},
+        smithMachine: {},
+        machineSelectorized: {},
+        machinePlateLoaded: {},
+      },
+      cadence: {
+        untracked: {},
+        even: {},
+        fastConcentric: {},
+        slowEccentric: {},
+        fastConcentricSlowEccentric: {},
+        slowConcentricFastEccentric: {},
+        slowConcentric: {},
+        fastEccentric: {},
+      },
+      pause: {
+        untracked: {},
+        none: {},
+        end: {},
+        start: {},
+        both: {},
+      },
+    },
+  },
+  {
+    id: "plank",
+    name: "Plank",
+    category: "core",
+    baseTargets: targets(
+      ["transverseAbs", 0.40],
+      ["absUpper", 0.25],
+      ["absLower", 0.15],
+      ["obliques", 0.20],
+    ),
+    variationTemplates: {
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
+    },
+    variationEffects: {
+      resistanceSource: {
+        untracked: {},
+        bodyweight: {},
+        dumbbell: {},
+        barbell: {},
+        kettlebell: {},
+        cable: {},
+        band: {},
+        smithMachine: {},
+        machineSelectorized: {},
+        machinePlateLoaded: {},
+      },
+    },
+  },
+  {
+    id: "russianTwist",
+    name: "Russian Twist",
+    category: "core",
+    baseTargets: targets(
+      ["obliques", 0.55],
+      ["absUpper", 0.25],
+      ["absLower", 0.20],
+    ),
+    variationTemplates: {
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+    },
+    variationEffects: {
+      resistanceSource: {
+        untracked: {},
+        bodyweight: {},
+        dumbbell: {},
+        barbell: {},
+        kettlebell: {},
+        cable: {},
+        band: {},
+        smithMachine: {},
+        machineSelectorized: {},
+        machinePlateLoaded: {},
+      },
+      cadence: {
+        untracked: {},
+        even: {},
+        fastConcentric: {},
+        slowEccentric: {},
+        fastConcentricSlowEccentric: {},
+        slowConcentricFastEccentric: {},
+        slowConcentric: {},
+        fastEccentric: {},
+      },
+      pause: {
+        untracked: {},
+        none: {},
+        end: {},
+        start: {},
+        both: {},
+      },
+    },
+  },
+  {
+    id: "legRaise",
+    name: "Leg Raise",
+    category: "core",
+    baseTargets: targets(
+      ["absLower", 0.60],
+      ["hipFlexors", 0.40],
+    ),
+    variationTemplates: {
+      bodyPosition: { templateId: BODY_POSITION_TEMPLATE.id, labelOverride: "Body Position" },
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+    },
+    variationEffects: {
+      bodyPosition: {
+        standing: { deltas: { absLower: +0.10, hipFlexors: -0.10 } },
+        seated: {},
+        supine: {},
+        prone: {},
+        kneeling: {},
+        halfKneeling: {},
+        hipHinged: {},
+      },
+      resistanceSource: {
+        untracked: {},
+        bodyweight: {},
+        dumbbell: {},
+        barbell: {},
+        kettlebell: {},
+        cable: {},
+        band: {},
+        smithMachine: {},
+        machineSelectorized: {},
+        machinePlateLoaded: {},
+      },
+      cadence: {
+        untracked: {},
+        even: {},
+        fastConcentric: {},
+        slowEccentric: {},
+        fastConcentricSlowEccentric: {},
+        slowConcentricFastEccentric: {},
+        slowConcentric: {},
+        fastEccentric: {},
+      },
+      pause: {
+        untracked: {},
+        none: {},
+        end: {},
+        start: {},
+        both: {},
+      },
+    },
+  },
+  {
+    id: "sitUp",
+    name: "Sit Up",
+    category: "core",
+    baseTargets: targets(
+      ["absUpper", 0.50],
+      ["absLower", 0.25],
+      ["hipFlexors", 0.25],
+    ),
+    variationTemplates: {
+      planeAngle: { templateId: PLANE_ANGLE_TEMPLATE.id, labelOverride: "Bench Angle" },
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+    },
+    variationEffects: {
+      planeAngle: {
+        "-15": { deltas: { absLower: +0.10, absUpper: -0.05, hipFlexors: -0.05 } },
+        "0": {},
+        "15": {},
+        "30": {},
+        "45": {},
+        "60": {},
+        untracked: {},
+      },
+      resistanceSource: {
+        untracked: {},
+        bodyweight: {},
+        dumbbell: {},
+        barbell: {},
+        kettlebell: {},
+        cable: {},
+        band: {},
+        smithMachine: {},
+        machineSelectorized: {},
+        machinePlateLoaded: {},
+      },
+      cadence: {
+        untracked: {},
+        even: {},
+        fastConcentric: {},
+        slowEccentric: {},
+        fastConcentricSlowEccentric: {},
+        slowConcentricFastEccentric: {},
+        slowConcentric: {},
+        fastEccentric: {},
+      },
+      pause: {
+        untracked: {},
+        none: {},
+        end: {},
+        start: {},
+        both: {},
+      },
+    },
+  },
+  {
+    id: "sidePlank",
+    name: "Side Plank",
+    category: "core",
+    baseTargets: targets(
+      ["obliques", 0.60],
+      ["transverseAbs", 0.25],
+      ["glutes", 0.15],
+    ),
+    isUnilateral: true,
+    variationTemplates: {
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
+    },
+    variationEffects: {
+      resistanceSource: {
+        untracked: {},
+        bodyweight: {},
+        dumbbell: {},
+        barbell: {},
+        kettlebell: {},
+        cable: {},
+        band: {},
+        smithMachine: {},
+        machineSelectorized: {},
+        machinePlateLoaded: {},
+      },
+    },
+  },
+  
+  // ===== LOWER BODY =====
+  {
+    id: "backSquat",
+    name: "Back Squat",
+    category: "lowerBody",
+    baseTargets: targets(
+      ["quads", 0.55],
+      ["glutes", 0.25],
+      ["hamstrings", 0.10],
+      ["lowerBack", 0.10],
+    ),
+    variationTemplates: {
+      width: {
+        templateId: WIDTH_TEMPLATE.id,
+        labelOverride: "Stance Width",
+        optionLabelOverrides: { closest: "Narrowest", neutral: "Standard" },
+      },
+      barType: { templateId: BAR_TYPE_TEMPLATE.id, labelOverride: "Bar Type" },
+      heelElevation: { templateId: HEEL_ELEVATION_TEMPLATE.id, labelOverride: "Heel Elevation" },
+      footAngle: { templateId: FOOT_ANGLE_TEMPLATE.id, labelOverride: "Foot Angle" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+    },
+    variationEffects: {
+      width: {
+        closest: { deltas: { quads: +0.08, glutes: -0.05, adductors: -0.03 } },
+        close: { deltas: { quads: +0.04, glutes: -0.03, adductors: -0.01 } },
+        neutral: {},
+        wide: { deltas: { glutes: +0.06, adductors: +0.06, quads: -0.10, hamstrings: +0.02 } },
+        widest: { deltas: { glutes: +0.08, adductors: +0.10, quads: -0.15, hamstrings: +0.03 } },
+      },
+      barType: {
+        straightBar: {},
+        ezBar: {},
+        trapBar: {},
+        safetySquatBar: { deltas: { quads: +0.05, lowerBack: -0.05 } },
+        camberedBar: {},
+        swissBar: {},
+        axleBar: {},
+      },
+      heelElevation: {
+        flat: {},
+        heelElevated: { deltas: { quads: +0.05, glutes: -0.03, hamstrings: -0.02 } },
+      },
+      footAngle: {
+        toesForward: {},
+        toesOut: { deltas: { adductors: +0.03, quads: -0.03 } },
+      },
+      cadence: {
+        untracked: {},
+        even: {},
+        fastConcentric: {},
+        slowEccentric: {},
+        fastConcentricSlowEccentric: {},
+        slowConcentricFastEccentric: {},
+        slowConcentric: {},
+        fastEccentric: {},
+      },
+      pause: {
+        untracked: {},
+        none: {},
+        end: {},
+        start: {},
+        both: {},
+      },
+    },
+  },
+  {
+    id: "frontSquat",
+    name: "Front Squat",
+    category: "lowerBody",
+    baseTargets: targets(
+      ["quads", 0.65],
+      ["glutes", 0.18],
+      ["absUpper", 0.10],
+      ["lowerBack", 0.07],
+    ),
+    variationTemplates: {
+      width: { templateId: WIDTH_TEMPLATE.id, labelOverride: "Stance Width" },
+      heelElevation: { templateId: HEEL_ELEVATION_TEMPLATE.id, labelOverride: "Heel Elevation" },
+      footAngle: { templateId: FOOT_ANGLE_TEMPLATE.id, labelOverride: "Foot Angle" },
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+    },
+    variationEffects: {
+      width: {
+        closest: { deltas: { quads: +0.06, glutes: -0.04, adductors: -0.02 } },
+        close: { deltas: { quads: +0.03, glutes: -0.02, adductors: -0.01 } },
+        neutral: {},
+        wide: { deltas: { glutes: +0.05, adductors: +0.05, quads: -0.08, absUpper: -0.02 } },
+        widest: { deltas: { glutes: +0.07, adductors: +0.08, quads: -0.12, absUpper: -0.03 } },
+      },
+      heelElevation: {
+        flat: {},
+        heelElevated: { deltas: { quads: +0.04, glutes: -0.02, absUpper: -0.02 } },
+      },
+      footAngle: {
+        toesForward: {},
+        toesOut: { deltas: { adductors: +0.03, quads: -0.03 } },
+      },
+      resistanceSource: {
+        untracked: {},
+        bodyweight: {},
+        dumbbell: {},
+        barbell: {},
+        kettlebell: {},
+        cable: {},
+        band: {},
+        smithMachine: {},
+        machineSelectorized: {},
+        machinePlateLoaded: {},
+      },
+      cadence: {
+        untracked: {},
+        even: {},
+        fastConcentric: {},
+        slowEccentric: {},
+        fastConcentricSlowEccentric: {},
+        slowConcentricFastEccentric: {},
+        slowConcentric: {},
+        fastEccentric: {},
+      },
+      pause: {
+        untracked: {},
+        none: {},
+        end: {},
+        start: {},
+        both: {},
+      },
+    },
+  },
+  {
+    id: "deadlift",
+    name: "Deadlift",
+    category: "lowerBody",
+    baseTargets: targets(
+      ["hamstrings", 0.30],
+      ["glutes", 0.30],
+      ["lowerBack", 0.25],
+      ["lats", 0.10],
+      ["trapsUpper", 0.05],
+    ),
+    variationTemplates: {
+      width: { templateId: WIDTH_TEMPLATE.id, labelOverride: "Stance Width" },
+      barType: { templateId: BAR_TYPE_TEMPLATE.id, labelOverride: "Bar Type" },
+      gripTechnique: { templateId: GRIP_TECHNIQUE_TEMPLATE.id, labelOverride: "Grip Technique" },
+      gripAssistance: { templateId: GRIP_ASSISTANCE_TEMPLATE.id, labelOverride: "Grip Assistance" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+    },
+    variationEffects: {
+      width: {
+        closest: { deltas: { quads: +0.08, hamstrings: -0.05, glutes: -0.03 } },
+        close: { deltas: { quads: +0.04, hamstrings: -0.03, glutes: -0.01 } },
+        neutral: {},
+        wide: { deltas: { adductors: +0.08, quads: +0.05, hamstrings: -0.08, lowerBack: -0.05 } },
+        widest: { deltas: { adductors: +0.12, quads: +0.08, hamstrings: -0.12, lowerBack: -0.08 } },
+      },
+      barType: {
+        straightBar: {},
+        ezBar: {},
+        trapBar: { deltas: { quads: +0.12, hamstrings: -0.06, lowerBack: -0.06 } },
+        safetySquatBar: {},
+        camberedBar: {},
+        swissBar: {},
+        axleBar: { deltas: { forearms: +0.05, lats: -0.03, trapsUpper: -0.02 } },
+      },
+      gripTechnique: {
+        standard: {},
+        mixed: {},
+        hook: {},
+        thumbless: {},
+      },
+      gripAssistance: {
+        none: {},
+        straps: {},
+      },
+      cadence: {
+        untracked: {},
+        even: {},
+        fastConcentric: {},
+        slowEccentric: {},
+        fastConcentricSlowEccentric: {},
+        slowConcentricFastEccentric: {},
+        slowConcentric: {},
+        fastEccentric: {},
+      },
+      pause: {
+        untracked: {},
+        none: {},
+        end: {},
+        start: {},
+        both: {},
+      },
+    },
+  },
+  {
+    id: "romanianDeadlift",
+    name: "Romanian Deadlift",
+    category: "lowerBody",
+    baseTargets: targets(
+      ["hamstrings", 0.45],
+      ["glutes", 0.30],
+      ["lowerBack", 0.25],
+    ),
+    variationTemplates: {
+      width: { templateId: WIDTH_TEMPLATE.id, labelOverride: "Stance Width" },
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
+      barType: { templateId: BAR_TYPE_TEMPLATE.id, labelOverride: "Bar Type" },
+      gripAssistance: { templateId: GRIP_ASSISTANCE_TEMPLATE.id, labelOverride: "Grip Assistance" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+    },
+    variationEffects: {
+      width: {
+        closest: { deltas: { hamstrings: +0.05, glutes: -0.03, lowerBack: -0.02 } },
+        close: { deltas: { hamstrings: +0.03, glutes: -0.02, lowerBack: -0.01 } },
+        neutral: {},
+        wide: { deltas: { glutes: +0.05, adductors: +0.05, hamstrings: -0.08, lowerBack: -0.02 } },
+        widest: { deltas: { glutes: +0.07, adductors: +0.08, hamstrings: -0.12, lowerBack: -0.03 } },
+      },
+      resistanceSource: {
+        untracked: {},
+        bodyweight: {},
+        dumbbell: {},
+        barbell: {},
+        kettlebell: {},
+        cable: {},
+        band: {},
+        smithMachine: {},
+        machineSelectorized: {},
+        machinePlateLoaded: {},
+      },
+      barType: {
+        straightBar: {},
+        ezBar: {},
+        trapBar: {},
+        safetySquatBar: {},
+        camberedBar: {},
+        swissBar: {},
+        axleBar: {},
+      },
+      gripAssistance: {
+        none: {},
+        straps: {},
+      },
+      cadence: {
+        untracked: {},
+        even: {},
+        fastConcentric: {},
+        slowEccentric: {},
+        fastConcentricSlowEccentric: {},
+        slowConcentricFastEccentric: {},
+        slowConcentric: {},
+        fastEccentric: {},
+      },
+      pause: {
+        untracked: {},
+        none: {},
+        end: {},
+        start: {},
+        both: {},
+      },
+    },
+  },
+  {
+    id: "legPress",
+    name: "Leg Press",
+    category: "lowerBody",
+    baseTargets: targets(
+      ["quads", 0.60],
+      ["glutes", 0.25],
+      ["hamstrings", 0.15],
+    ),
+    variationTemplates: {
+      width: { templateId: WIDTH_TEMPLATE.id, labelOverride: "Stance Width" },
+      footVerticalPosition: { templateId: FOOT_VERTICAL_POSITION_TEMPLATE.id, labelOverride: "Foot Height" },
+      footAngle: { templateId: FOOT_ANGLE_TEMPLATE.id, labelOverride: "Foot Angle" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+    },
+    variationEffects: {
+      width: {
+        closest: { deltas: { quads: +0.06, glutes: -0.04, adductors: -0.02 } },
+        close: { deltas: { quads: +0.03, glutes: -0.02, adductors: -0.01 } },
+        neutral: {},
+        wide: { deltas: { adductors: +0.06, glutes: +0.04, quads: -0.08, hamstrings: -0.02 } },
+        widest: { deltas: { adductors: +0.10, glutes: +0.06, quads: -0.12, hamstrings: -0.04 } },
+      },
+      footVerticalPosition: {
+        standard: {},
+        low: { deltas: { quads: +0.10, glutes: -0.06, hamstrings: -0.04 } },
+        mid: {},
+        high: { deltas: { glutes: +0.10, hamstrings: +0.08, quads: -0.18 } },
+      },
+      footAngle: {
+        toesForward: {},
+        toesOut: { deltas: { adductors: +0.04, quads: -0.04 } },
+      },
+      cadence: {
+        untracked: {},
+        even: {},
+        fastConcentric: {},
+        slowEccentric: {},
+        fastConcentricSlowEccentric: {},
+        slowConcentricFastEccentric: {},
+        slowConcentric: {},
+        fastEccentric: {},
+      },
+      pause: {
+        untracked: {},
+        none: {},
+        end: {},
+        start: {},
+        both: {},
+      },
+    },
+  },
+  {
+    id: "hackSquat",
+    name: "Hack Squat",
+    category: "lowerBody",
+    baseTargets: targets(
+      ["quads", 0.70],
+      ["glutes", 0.20],
+      ["hamstrings", 0.10],
+    ),
+    variationTemplates: {
+      width: { templateId: WIDTH_TEMPLATE.id, labelOverride: "Stance Width" },
+      footVerticalPosition: { templateId: FOOT_VERTICAL_POSITION_TEMPLATE.id, labelOverride: "Foot Height" },
+      footAngle: { templateId: FOOT_ANGLE_TEMPLATE.id, labelOverride: "Foot Angle" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+    },
+    variationEffects: {
+      width: {
+        closest: { deltas: { quads: +0.06, glutes: -0.04, adductors: -0.02 } },
+        close: { deltas: { quads: +0.03, glutes: -0.02, adductors: -0.01 } },
+        neutral: {},
+        wide: { deltas: { adductors: +0.06, glutes: +0.04, quads: -0.08, hamstrings: -0.02 } },
+        widest: { deltas: { adductors: +0.10, glutes: +0.06, quads: -0.12, hamstrings: -0.04 } },
+      },
+      footVerticalPosition: {
+        standard: {},
+        low: { deltas: { quads: +0.08, glutes: -0.05, hamstrings: -0.03 } },
+        mid: {},
+        high: { deltas: { glutes: +0.08, hamstrings: +0.06, quads: -0.14 } },
+      },
+      footAngle: {
+        toesForward: {},
+        toesOut: { deltas: { adductors: +0.04, quads: -0.04 } },
+      },
+      cadence: {
+        untracked: {},
+        even: {},
+        fastConcentric: {},
+        slowEccentric: {},
+        fastConcentricSlowEccentric: {},
+        slowConcentricFastEccentric: {},
+        slowConcentric: {},
+        fastEccentric: {},
+      },
+      pause: {
+        untracked: {},
+        none: {},
+        end: {},
+        start: {},
+        both: {},
+      },
+    },
+  },
+  {
+    id: "legExtension",
+    name: "Leg Extension",
+    category: "lowerBody",
+    baseTargets: targets(
+      ["quads", 1.0],
+    ),
+    variationTemplates: {
+      footAngle: { templateId: FOOT_ANGLE_TEMPLATE.id, labelOverride: "Foot Angle" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+    },
+    variationEffects: {
+      footAngle: {
+        toesForward: {},
+        toesOut: {},
+      },
+      cadence: {
+        untracked: {},
+        even: {},
+        fastConcentric: {},
+        slowEccentric: {},
+        fastConcentricSlowEccentric: {},
+        slowConcentricFastEccentric: {},
+        slowConcentric: {},
+        fastEccentric: {},
+      },
+      pause: {
+        untracked: {},
+        none: {},
+        end: {},
+        start: {},
+        both: {},
+      },
+    },
+  },
+  {
+    id: "legCurl",
+    name: "Leg Curl",
+    category: "lowerBody",
+    baseTargets: targets(
+      ["hamstrings", 1.0],
+    ),
+    variationTemplates: {
+      bodyPosition: { templateId: BODY_POSITION_TEMPLATE.id, labelOverride: "Body Position" },
+      footAngle: { templateId: FOOT_ANGLE_TEMPLATE.id, labelOverride: "Foot Angle" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+    },
+    variationEffects: {
+      bodyPosition: {
+        standing: {},
+        seated: {},
+        supine: {},
+        prone: {},
+        kneeling: {},
+        halfKneeling: {},
+        hipHinged: {},
+      },
+      footAngle: {
+        toesForward: {},
+        toesOut: {},
+      },
+      cadence: {
+        untracked: {},
+        even: {},
+        fastConcentric: {},
+        slowEccentric: {},
+        fastConcentricSlowEccentric: {},
+        slowConcentricFastEccentric: {},
+        slowConcentric: {},
+        fastEccentric: {},
+      },
+      pause: {
+        untracked: {},
+        none: {},
+        end: {},
+        start: {},
+        both: {},
+      },
+    },
+  },
+  {
+    id: "hipThrust",
+    name: "Hip Thrust",
+    category: "lowerBody",
+    baseTargets: targets(
+      ["glutes", 0.80],
+      ["hamstrings", 0.20],
+    ),
+    variationTemplates: {
+      width: { templateId: WIDTH_TEMPLATE.id, labelOverride: "Stance Width" },
+      kneeAngle: { templateId: KNEE_ANGLE_TEMPLATE.id, labelOverride: "Knee Angle (Foot Placement)" },
+      footAngle: { templateId: FOOT_ANGLE_TEMPLATE.id, labelOverride: "Foot Angle" },
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+    },
+    variationEffects: {
+      // NOTE(research): Evidence is strongest for hip thrust variations changing foot position / intent.
+      // - Feet away from body (longer lever) can increase hamstring EMG vs traditional hip thrust.
+      // - Feet external rotation / "rotation hip thrust" can increase glute max EMG vs traditional hip thrust.
+      // We don't currently track "feet distance from body" as a variation dimension, and stance-width-specific
+      // evidence is limited, so stance-width deltas below are intentionally conservative.
+      width: {
+        closest: { deltas: { hamstrings: +0.02, glutes: -0.02 } },
+        close: { deltas: { hamstrings: +0.01, glutes: -0.01 } },
+        neutral: {},
+        wide: { deltas: { glutes: +0.01, adductors: +0.02 } },
+        widest: { deltas: { glutes: +0.02, adductors: +0.03 } },
+      },
+      kneeAngle: {
+        // More knee flexion (feet closer) biases contribution toward glutes and away from hamstrings.
+        flexed: { deltas: { glutes: +0.03, hamstrings: -0.03 } },
+        neutral: {},
+        // Less knee flexion (feet farther) increases hamstring involvement.
+        extended: { deltas: { hamstrings: +0.04, glutes: -0.04 } },
+      },
+      footAngle: {
+        toesForward: {},
+        toesOut: { deltas: { glutes: +0.03 } },
+      },
+      resistanceSource: {
+        untracked: {},
+        bodyweight: {},
+        dumbbell: {},
+        barbell: {},
+        kettlebell: {},
+        cable: {},
+        band: {},
+        smithMachine: {},
+        machineSelectorized: {},
+        machinePlateLoaded: {},
+      },
+      cadence: {
+        untracked: {},
+        even: {},
+        fastConcentric: {},
+        slowEccentric: {},
+        fastConcentricSlowEccentric: {},
+        slowConcentricFastEccentric: {},
+        slowConcentric: {},
+        fastEccentric: {},
+      },
+      pause: {
+        untracked: {},
+        none: {},
+        end: {},
+        start: {},
+        both: {},
+      },
+    },
+  },
+  {
+    id: "gluteBridge",
+    name: "Glute Bridge",
+    category: "lowerBody",
+    baseTargets: targets(
+      ["glutes", 0.75],
+      ["hamstrings", 0.25],
+    ),
+    variationTemplates: {
+      width: { templateId: WIDTH_TEMPLATE.id, labelOverride: "Stance Width" },
+      kneeAngle: { templateId: KNEE_ANGLE_TEMPLATE.id, labelOverride: "Knee Angle (Foot Placement)" },
+      footAngle: { templateId: FOOT_ANGLE_TEMPLATE.id, labelOverride: "Foot Angle" },
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+    },
+    variationEffects: {
+      width: {
+        closest: { deltas: { hamstrings: +0.03, glutes: -0.03 } },
+        close: { deltas: { hamstrings: +0.02, glutes: -0.02 } },
+        neutral: {},
+        wide: { deltas: { glutes: +0.02, adductors: +0.02 } },
+        widest: { deltas: { glutes: +0.03, adductors: +0.03 } },
+      },
+      kneeAngle: {
+        flexed: { deltas: { glutes: +0.04, hamstrings: -0.04 } },
+        neutral: {},
+        extended: { deltas: { hamstrings: +0.05, glutes: -0.05 } },
+      },
+      footAngle: {
+        toesForward: {},
+        toesOut: { deltas: { glutes: +0.03 } },
+      },
+      resistanceSource: {
+        untracked: {},
+        bodyweight: {},
+        dumbbell: {},
+        barbell: {},
+        kettlebell: {},
+        cable: {},
+        band: {},
+        smithMachine: {},
+        machineSelectorized: {},
+        machinePlateLoaded: {},
+      },
+      cadence: {
+        untracked: {},
+        even: {},
+        fastConcentric: {},
+        slowEccentric: {},
+        fastConcentricSlowEccentric: {},
+        slowConcentricFastEccentric: {},
+        slowConcentric: {},
+        fastEccentric: {},
+      },
+      pause: {
+        untracked: {},
+        none: {},
+        end: {},
+        start: {},
+        both: {},
+      },
+    },
+  },
+  {
+    id: "stepUp",
+    name: "Step Up",
+    category: "lowerBody",
+    baseTargets: targets(
+      ["quads", 0.45],
+      ["glutes", 0.35],
+      ["hamstrings", 0.20],
+    ),
+    isUnilateral: true,
+    variationTemplates: {
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+    },
+    variationEffects: {
+      resistanceSource: {
+        untracked: {},
+        bodyweight: {},
+        dumbbell: {},
+        barbell: {},
+        kettlebell: {},
+        cable: {},
+        band: {},
+        smithMachine: {},
+        machineSelectorized: {},
+        machinePlateLoaded: {},
+      },
+      cadence: {
+        untracked: {},
+        even: {},
+        fastConcentric: {},
+        slowEccentric: {},
+        fastConcentricSlowEccentric: {},
+        slowConcentricFastEccentric: {},
+        slowConcentric: {},
+        fastEccentric: {},
+      },
+      pause: {
+        untracked: {},
+        none: {},
+        end: {},
+        start: {},
+        both: {},
+      },
+    },
+  },
+  {
+    id: "lunge",
+    name: "Lunge",
+    category: "lowerBody",
+    baseTargets: targets(
+      ["quads", 0.45],
+      ["glutes", 0.35],
+      ["hamstrings", 0.20],
+    ),
+    isUnilateral: true,
+    variationTemplates: {
+      width: { templateId: WIDTH_TEMPLATE.id, labelOverride: "Stance Width" },
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+    },
+    variationEffects: {
+      width: {
+        closest: { deltas: { quads: +0.06, glutes: -0.04, hamstrings: -0.02 } },
+        close: { deltas: { quads: +0.03, glutes: -0.02, hamstrings: -0.01 } },
+        neutral: {},
+        wide: { deltas: { glutes: +0.06, hamstrings: +0.04, quads: -0.10 } },
+        widest: { deltas: { glutes: +0.08, hamstrings: +0.06, quads: -0.14 } },
+      },
+      resistanceSource: {
+        untracked: {},
+        bodyweight: {},
+        dumbbell: {},
+        barbell: {},
+        kettlebell: {},
+        cable: {},
+        band: {},
+        smithMachine: {},
+        machineSelectorized: {},
+        machinePlateLoaded: {},
+      },
+      cadence: {
+        untracked: {},
+        even: {},
+        fastConcentric: {},
+        slowEccentric: {},
+        fastConcentricSlowEccentric: {},
+        slowConcentricFastEccentric: {},
+        slowConcentric: {},
+        fastEccentric: {},
+      },
+      pause: {
+        untracked: {},
+        none: {},
+        end: {},
+        start: {},
+        both: {},
+      },
+    },
+  },
+  {
+    id: "lateralLunge",
+    name: "Lateral Lunge",
+    category: "lowerBody",
+    baseTargets: targets(
+      ["adductors", 0.45],
+      ["quads", 0.35],
+      ["glutes", 0.20],
+    ),
+    isUnilateral: true,
+    variationTemplates: {
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+    },
+    variationEffects: {
+      resistanceSource: {
+        untracked: {},
+        bodyweight: {},
+        dumbbell: {},
+        barbell: {},
+        kettlebell: {},
+        cable: {},
+        band: {},
+        smithMachine: {},
+        machineSelectorized: {},
+        machinePlateLoaded: {},
+      },
+      cadence: {
+        untracked: {},
+        even: {},
+        fastConcentric: {},
+        slowEccentric: {},
+        fastConcentricSlowEccentric: {},
+        slowConcentricFastEccentric: {},
+        slowConcentric: {},
+        fastEccentric: {},
+      },
+      pause: {
+        untracked: {},
+        none: {},
+        end: {},
+        start: {},
+        both: {},
+      },
+    },
+  },
+  {
+    id: "bulgarianSplitSquat",
+    name: "Bulgarian Split Squat",
+    category: "lowerBody",
+    baseTargets: targets(
+      ["quads", 0.45],
+      ["glutes", 0.35],
+      ["hamstrings", 0.20],
+    ),
+    isUnilateral: true,
+    variationTemplates: {
+      heelElevation: { templateId: HEEL_ELEVATION_TEMPLATE.id, labelOverride: "Front Heel Elevation" },
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+    },
+    variationEffects: {
+      heelElevation: {
+        flat: {},
+        heelElevated: { deltas: { quads: +0.08, glutes: -0.05, hamstrings: -0.03 } },
+      },
+      resistanceSource: {
+        untracked: {},
+        bodyweight: {},
+        dumbbell: {},
+        barbell: {},
+        kettlebell: {},
+        cable: {},
+        band: {},
+        smithMachine: {},
+        machineSelectorized: {},
+        machinePlateLoaded: {},
+      },
+      cadence: {
+        untracked: {},
+        even: {},
+        fastConcentric: {},
+        slowEccentric: {},
+        fastConcentricSlowEccentric: {},
+        slowConcentricFastEccentric: {},
+        slowConcentric: {},
+        fastEccentric: {},
+      },
+      pause: {
+        untracked: {},
+        none: {},
+        end: {},
+        start: {},
+        both: {},
+      },
+    },
+  },
+  {
+    id: "calfRaise",
+    name: "Calf Raise",
+    category: "lowerBody",
+    baseTargets: targets(
+      ["calves", 1.0],
+    ),
+    variationTemplates: {
+      bodyPosition: { templateId: BODY_POSITION_TEMPLATE.id, labelOverride: "Body Position" },
+      footAngle: { templateId: FOOT_ANGLE_TEMPLATE.id, labelOverride: "Foot Angle" },
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+    },
+    variationEffects: {
+      bodyPosition: {
+        standing: {},
+        seated: {},
+        supine: {},
+        prone: {},
+        kneeling: {},
+        halfKneeling: {},
+        hipHinged: {},
+      },
+      footAngle: {
+        toesForward: {},
+        toesOut: {},
+      },
+      resistanceSource: {
+        untracked: {},
+        bodyweight: {},
+        dumbbell: {},
+        barbell: {},
+        kettlebell: {},
+        cable: {},
+        band: {},
+        smithMachine: {},
+        machineSelectorized: {},
+        machinePlateLoaded: {},
+      },
+      cadence: {
+        untracked: {},
+        even: {},
+        fastConcentric: {},
+        slowEccentric: {},
+        fastConcentricSlowEccentric: {},
+        slowConcentricFastEccentric: {},
+        slowConcentric: {},
+        fastEccentric: {},
+      },
+      pause: {
+        untracked: {},
+        none: {},
+        end: {},
+        start: {},
+        both: {},
+      },
+    },
+  },
+  {
+    id: "kettlebellSwing",
+    name: "Kettlebell Swing",
+    category: "lowerBody",
+    baseTargets: targets(
+      ["glutes", 0.45],
+      ["hamstrings", 0.25],
+      ["lowerBack", 0.20],
+      ["deltsFront", 0.10],
+    ),
+    variationTemplates: {
+      width: { templateId: WIDTH_TEMPLATE.id, labelOverride: "Stance Width" },
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
+    },
+    variationEffects: {
+      width: {
+        closest: { deltas: { hamstrings: +0.05, glutes: -0.03, lowerBack: -0.02 } },
+        close: { deltas: { hamstrings: +0.03, glutes: -0.02, lowerBack: -0.01 } },
+        neutral: {},
+        wide: { deltas: { glutes: +0.05, adductors: +0.03, hamstrings: -0.06, lowerBack: -0.02 } },
+        widest: { deltas: { glutes: +0.07, adductors: +0.05, hamstrings: -0.08, lowerBack: -0.04 } },
+      },
+      resistanceSource: {
+        untracked: {},
+        bodyweight: {},
+        dumbbell: {},
+        barbell: {},
+        kettlebell: {},
+        cable: {},
+        band: {},
+        smithMachine: {},
+        machineSelectorized: {},
+        machinePlateLoaded: {},
+      },
+      cadence: {
+        untracked: {},
+        even: {},
+        fastConcentric: {},
+        slowEccentric: {},
+        fastConcentricSlowEccentric: {},
+        slowConcentricFastEccentric: {},
+        slowConcentric: {},
+        fastEccentric: {},
+      },
+    },
+  },
+  {
+    id: "hipAbduction",
+    name: "Hip Abduction",
+    category: "lowerBody",
+    baseTargets: targets(
+      ["abductors", 1.0],
+    ),
+    variationTemplates: {
+      bodyPosition: { templateId: BODY_POSITION_TEMPLATE.id, labelOverride: "Body Position" },
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+    },
+    variationEffects: {
+      bodyPosition: {
+        standing: {},
+        seated: {},
+        supine: {},
+        prone: {},
+        kneeling: {},
+        halfKneeling: {},
+        hipHinged: {},
+      },
+      resistanceSource: {
+        untracked: {},
+        bodyweight: {},
+        dumbbell: {},
+        barbell: {},
+        kettlebell: {},
+        cable: {},
+        band: {},
+        smithMachine: {},
+        machineSelectorized: {},
+        machinePlateLoaded: {},
+      },
+      cadence: {
+        untracked: {},
+        even: {},
+        fastConcentric: {},
+        slowEccentric: {},
+        fastConcentricSlowEccentric: {},
+        slowConcentricFastEccentric: {},
+        slowConcentric: {},
+        fastEccentric: {},
+      },
+      pause: {
+        untracked: {},
+        none: {},
+        end: {},
+        start: {},
+        both: {},
+      },
+    },
+  },
+  {
+    id: "hipAdduction",
+    name: "Hip Adduction",
+    category: "lowerBody",
+    baseTargets: targets(
+      ["adductors", 1.0],
+    ),
+    variationTemplates: {
+      bodyPosition: { templateId: BODY_POSITION_TEMPLATE.id, labelOverride: "Body Position" },
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause" },
+    },
+    variationEffects: {
+      bodyPosition: {
+        standing: {},
+        seated: {},
+        supine: {},
+        prone: {},
+        kneeling: {},
+        halfKneeling: {},
+        hipHinged: {},
+      },
+      resistanceSource: {
+        untracked: {},
+        bodyweight: {},
+        dumbbell: {},
+        barbell: {},
+        kettlebell: {},
+        cable: {},
+        band: {},
+        smithMachine: {},
+        machineSelectorized: {},
+        machinePlateLoaded: {},
+      },
+      cadence: {
+        untracked: {},
+        even: {},
+        fastConcentric: {},
+        slowEccentric: {},
+        fastConcentricSlowEccentric: {},
+        slowConcentricFastEccentric: {},
+        slowConcentric: {},
+        fastEccentric: {},
+      },
+      pause: {
+        untracked: {},
+        none: {},
+        end: {},
+        start: {},
+        both: {},
+      },
+    },
+  },
+];
+
+/**
+ * Default strength exercise definitions with derived fields.
+ */
+export const DEFAULT_EXERCISES: ExerciseDefinition[] = RAW_DEFAULT_EXERCISES.map((exercise) => 
+  withDerivedKey({
+    ...exercise,
+    repMode: exercise.repMode ?? (exercise.isUnilateral ? "dualUnilateral" : "bilateral"),
+  })
+);
+
+// =============================================================================
+// CARDIO EXERCISE DEFINITIONS
+// =============================================================================
+
+const RAW_CARDIO_EXERCISES: RawExerciseDefinition[] = [
+  {
+    id: "running",
+    name: "Running",
+    category: "cardio",
+    baseTargets: targets(
+      ["quads", 0.40],
+      ["hamstrings", 0.20],
+      ["calves", 0.20],
+      ["glutes", 0.20],
+    ),
+  },
+  {
+    id: "cycling",
+    name: "Cycling",
+    category: "cardio",
+    baseTargets: targets(
+      ["quads", 0.55],
+      ["hamstrings", 0.25],
+      ["calves", 0.20],
+    ),
+  },
+  {
+    id: "swimming",
+    name: "Swimming",
+    category: "cardio",
+    baseTargets: targets(
+      ["lats", 0.55],
+      ["deltsFront", 0.25],
+      ["deltsSide", 0.20],
+    ),
+  },
+  {
+    id: "rowing",
+    name: "Rowing",
+    category: "cardio",
+    baseTargets: targets(
+      ["lats", 0.35],
+      ["quads", 0.35],
+      ["lowerBack", 0.15],
+      ["biceps", 0.15],
+    ),
+  },
+  {
+    id: "elliptical",
+    name: "Elliptical",
+    category: "cardio",
+    baseTargets: targets(
+      ["quads", 0.45],
+      ["glutes", 0.30],
+      ["hamstrings", 0.25],
+    ),
+  },
+  {
+    id: "stairClimber",
+    name: "Stair Climber",
+    category: "cardio",
+    baseTargets: targets(
+      ["quads", 0.35],
+      ["glutes", 0.40],
+      ["calves", 0.25],
+    ),
+  },
+  {
+    id: "jumpRope",
+    name: "Jump Rope",
+    category: "cardio",
+    baseTargets: targets(
+      ["calves", 0.55],
+      ["quads", 0.35],
+      ["deltsSide", 0.10],
+    ),
+  },
+  {
+    id: "walking",
+    name: "Walking",
+    category: "cardio",
+    baseTargets: targets(
+      ["quads", 0.45],
+      ["hamstrings", 0.20],
+      ["calves", 0.20],
+      ["glutes", 0.15],
+    ),
+  },
+  {
+    id: "hiking",
+    name: "Hiking",
+    category: "cardio",
+    baseTargets: targets(
+      ["quads", 0.35],
+      ["glutes", 0.30],
+      ["hamstrings", 0.15],
+      ["calves", 0.20],
+    ),
+  },
+];
+
+/**
+ * Default cardio exercise definitions with derived fields.
+ */
+export const DEFAULT_CARDIO_EXERCISES: ExerciseDefinition[] = RAW_CARDIO_EXERCISES.map(withDerivedKey);
+
+// =============================================================================
+// EXERCISE GROUPS (for UI pickers)
+// =============================================================================
+
+/**
+ * Default exercise groups for the exercise picker UI.
+ * Each group contains exercise keys (camelCase).
+ */
+export const DEFAULT_EXERCISE_GROUPS: ExerciseGroup[] = [
+  {
+    group: "upperBody",
+    items: [
+      "benchPress",
+      "bentOverRow",
+      "bicepCurl",
+      "chestPress",
+      "dip",
+      "facePull",
+      "frontRaise",
+      "hammerCurl",
+      "lateralPulldown",
+      "lateralRaise",
+      "pecFly",
+      "pullUp",
+      "pushUp",
+      "rearDelt",
+      "seatedRow",
+      "shoulderPress",
+      "shrug",
+      "tricepExtension",
+      "tricepPushdown",
+    ],
+  },
+  {
+    group: "core",
+    items: [
+      "abdominalCrunch",
+      "backExtension",
+      "legRaise",
+      "plank",
+      "russianTwist",
+      "sidePlank",
+      "sitUp",
+    ],
+  },
+  {
+    group: "lowerBody",
+    items: [
+      "backSquat",
+      "bulgarianSplitSquat",
+      "calfRaise",
+      "deadlift",
+      "frontSquat",
+      "gluteBridge",
+      "hackSquat",
+      "hipAbduction",
+      "hipAdduction",
+      "hipThrust",
+      "kettlebellSwing",
+      "lateralLunge",
+      "legCurl",
+      "legExtension",
+      "legPress",
+      "lunge",
+      "romanianDeadlift",
+      "stepUp",
+    ],
+  },
+  {
+    group: "cardio",
+    items: [
+      "cycling",
+      "elliptical",
+      "hiking",
+      "jumpRope",
+      "rowing",
+      "running",
+      "stairClimber",
+      "swimming",
+      "walking",
+    ],
+  },
+];
+
+// =============================================================================
+// LOOKUP UTILITIES
+// =============================================================================
+
+/**
+ * Map of all exercises by key for O(1) lookups.
+ */
+export const EXERCISE_MAP: Map<string, ExerciseDefinition> = new Map(
+  [...DEFAULT_EXERCISES, ...DEFAULT_CARDIO_EXERCISES].map((ex) => [ex.key, ex])
+);
+
+/**
+ * Get an exercise definition by key.
+ */
+export function getExerciseByKey(key: string): ExerciseDefinition | undefined {
+  return EXERCISE_MAP.get(key);
+}
+
+/**
+ * Check if an exercise is typically unilateral.
+ */
+export function isUnilateralExercise(key: string): boolean {
+  return EXERCISE_MAP.get(key)?.isUnilateral ?? false;
+}
+
+/**
+ * Get all exercises for a specific category.
+ */
+export function getExercisesByCategory(category: ExerciseDefinition["category"]): ExerciseDefinition[] {
+  return [...DEFAULT_EXERCISES, ...DEFAULT_CARDIO_EXERCISES].filter(
+    (ex) => ex.category === category
+  );
+}
+
+/**
+ * Get all exercises that target a specific muscle group (primary or secondary).
+ */
+export function getExercisesByMuscle(muscle: MuscleGroup): ExerciseDefinition[] {
+  return [...DEFAULT_EXERCISES, ...DEFAULT_CARDIO_EXERCISES].filter(
+    (ex) => ex.baseTargets.some((t) => t.muscle === muscle)
+  );
+}
+
+// =============================================================================
+// UI DISPLAY HELPERS
+// =============================================================================
+
+/**
+ * Display names for exercise categories.
+ */
+export const CATEGORY_DISPLAY_NAMES: Record<ExerciseDefinition["category"], string> = {
+  upperBody: "Upper Body",
+  lowerBody: "Lower Body",
+  core: "Core",
+  cardio: "Cardio",
+};
+
+// =============================================================================
+// FORM DEFAULTS
+// =============================================================================
+
+/**
+ * Default values for a new strength set.
+ */
+export const DEFAULT_STRENGTH_SET = {
+  weight: 0,
+  reps: { bilateral: 1 },
+} as const;
+
+/**
+ * Default values for a new unilateral strength set.
+ */
+export const DEFAULT_UNILATERAL_SET = {
+  weight: 0,
+  reps: { left: 0, right: 0 },
+} as const;
+
+/**
+ * RPE (Rating of Perceived Exertion) scale labels.
+ */
+export const RPE_LABELS: Record<number, string> = {
+  0: "Not Recorded",
+  1: "1",
+  2: "2",
+  3: "3",
+  4: "4",
+  5: "5",
+  6: "6",
+  7: "7",
+  8: "8",
+  9: "One From Failure",
+  10: "Failure",
+};

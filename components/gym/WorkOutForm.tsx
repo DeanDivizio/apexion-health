@@ -48,7 +48,7 @@ const FormSchema = z.object({
       variations: z
         .object({
           grip: z.enum(["normal", "pronated", "supinated", "neutral", "neutralSupinated"]).optional(),
-          plane: z.enum(["flat", "incline", "decline"]).optional(),
+          planeAngle: z.enum(["untracked", "-15", "0", "15", "30", "45", "60"]).optional(),
         })
         .optional(),
       notes: z.string().optional(),
@@ -214,7 +214,7 @@ export default function WorkoutForm({ onSuccess, gymMeta }: { onSuccess: () => v
         startTime: formattedStartTime,
         endTime: formattedEndTime,
         exercises: data.exercises.map((exercise) => {
-          const variations = exercise.variations
+          const rawVariations = exercise.variations
             ? Object.fromEntries(
                 Object.entries(exercise.variations).filter(([, value]) => value),
               )
@@ -227,7 +227,7 @@ export default function WorkoutForm({ onSuccess, gymMeta }: { onSuccess: () => v
               duration: exercise.duration ?? 0,
               distance: exercise.distance ?? undefined,
               unit: exercise.unit ?? undefined,
-              variations,
+              variations: rawVariations,
               notes: exercise.notes ?? undefined,
             };
           }
@@ -246,7 +246,7 @@ export default function WorkoutForm({ onSuccess, gymMeta }: { onSuccess: () => v
                 effort: set.effort,
                 duration: set.duration,
               })) ?? [],
-            variations,
+            variations: rawVariations,
             notes: exercise.notes ?? undefined,
           };
         }),

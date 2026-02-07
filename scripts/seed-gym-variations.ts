@@ -1,5 +1,15 @@
 import { prisma } from "../lib/db/prisma";
-import { GRIP_TEMPLATE, PLANE_TEMPLATE, WIDTH_TEMPLATE } from "../lib/gym/constants";
+import {
+  FOOT_ANGLE_TEMPLATE,
+  FOOT_VERTICAL_POSITION_TEMPLATE,
+  GRIP_ASSISTANCE_TEMPLATE,
+  GRIP_TECHNIQUE_TEMPLATE,
+  GRIP_TEMPLATE,
+  HEEL_ELEVATION_TEMPLATE,
+  PLANE_ANGLE_TEMPLATE,
+  SUPPORT_TEMPLATE,
+  WIDTH_TEMPLATE,
+} from "../lib/gym";
 
 type TemplateInput = {
   id: string;
@@ -37,8 +47,14 @@ async function upsertTemplate(template: TemplateInput) {
 
 async function main() {
   await upsertTemplate(GRIP_TEMPLATE);
-  await upsertTemplate(PLANE_TEMPLATE);
+  await upsertTemplate(PLANE_ANGLE_TEMPLATE);
   await upsertTemplate(WIDTH_TEMPLATE);
+  await upsertTemplate(SUPPORT_TEMPLATE);
+  await upsertTemplate(GRIP_TECHNIQUE_TEMPLATE);
+  await upsertTemplate(GRIP_ASSISTANCE_TEMPLATE);
+  await upsertTemplate(FOOT_VERTICAL_POSITION_TEMPLATE);
+  await upsertTemplate(FOOT_ANGLE_TEMPLATE);
+  await upsertTemplate(HEEL_ELEVATION_TEMPLATE);
 }
 
 main()

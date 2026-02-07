@@ -120,17 +120,39 @@ export type {
   StrengthRepModeSchema,
 } from "./schemas";
 
-// Constants
+// Variation templates
+export {
+  // Individual templates
+  WIDTH_TEMPLATE,
+  PLANE_ANGLE_TEMPLATE,
+  GRIP_TEMPLATE,
+  CABLE_ATTACHMENT_TEMPLATE,
+  RESISTANCE_SOURCE_TEMPLATE,
+  BODY_POSITION_TEMPLATE,
+  SUPPORT_TEMPLATE,
+  UNILATERAL_MODE_TEMPLATE,
+  RANGE_OF_MOTION_TEMPLATE,
+  CADENCE_TEMPLATE,
+  PAUSE_TEMPLATE,
+  BAR_TYPE_TEMPLATE,
+  GRIP_TECHNIQUE_TEMPLATE,
+  GRIP_ASSISTANCE_TEMPLATE,
+  FOOT_VERTICAL_POSITION_TEMPLATE,
+  FOOT_ANGLE_TEMPLATE,
+  HEEL_ELEVATION_TEMPLATE,
+  // Registry & utilities
+  VARIATION_TEMPLATES,
+  VARIATION_TEMPLATE_MAP,
+  getVariationOptionLabel,
+} from "./variations";
+
+// Exercise definitions & utilities
 export {
   // Exercise data
   DEFAULT_EXERCISES,
   DEFAULT_CARDIO_EXERCISES,
   DEFAULT_EXERCISE_GROUPS,
   EXERCISE_MAP,
-  // Variation templates (portable)
-  WIDTH_TEMPLATE,
-  PLANE_TEMPLATE,
-  GRIP_TEMPLATE,
   // Lookup utilities
   getExerciseByKey,
   isUnilateralExercise,
@@ -138,11 +160,8 @@ export {
   getExercisesByMuscle,
   // Display helpers
   CATEGORY_DISPLAY_NAMES,
-  GRIP_DISPLAY_NAMES,
-  MOVEMENT_PLANE_DISPLAY_NAMES,
-  MUSCLE_GROUP_DISPLAY_NAMES,
-  // Defaults
+  // Form defaults
   DEFAULT_STRENGTH_SET,
   DEFAULT_UNILATERAL_SET,
   RPE_LABELS,
-} from "./constants";
+} from "./exercises";

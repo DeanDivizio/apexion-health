@@ -70,11 +70,13 @@ export const muscleTargetsSchema = z
 export const variationTemplateSchema = z.object({
   id: z.string().min(1),
   label: z.string().min(1),
+  description: z.string().min(1),
   options: z
     .array(
       z.object({
         key: z.string().min(1),
         label: z.string().min(1),
+        description: z.string().min(1),
         order: z.number().optional(),
       }),
     )

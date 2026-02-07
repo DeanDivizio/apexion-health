@@ -125,10 +125,14 @@ export interface VariationTemplate {
   id: string;
   /** Default user-facing label */
   label: string;
+  /** Short UI helper text describing what this dimension controls */
+  description: string;
   /** Allowed options (portable keys) */
   options: Array<{
     key: string;
     label: string;
+    /** Short UI helper text explaining what selecting this option means */
+    description: string;
     /** Optional ordering for UI */
     order?: number;
   }>;

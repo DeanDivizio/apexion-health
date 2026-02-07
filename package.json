@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "validate:gym-defaults": "tsx scripts/validate-gym-defaults.ts"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.637.0",
@@ -62,6 +63,7 @@
     "eslint-config-next": "15.1.4",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
+    "tsx": "^4.21.0",
     "typescript": "^5"
   },
   "overrides": {

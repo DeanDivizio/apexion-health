@@ -118,7 +118,7 @@ export interface ExerciseDefinition {
    * Example:
    *   {
    *     width: { template: WIDTH_TEMPLATE, labelOverride: "Grip Width" },
-   *     plane: { template: PLANE_TEMPLATE },
+ *     planeAngle: { template: PLANE_ANGLE_TEMPLATE },
    *   }
    */
   variationTemplates: Record<string, VariationTemplateOverride>;
@@ -153,13 +153,17 @@ export const WIDTH_TEMPLATE: VariationTemplate = {
   ],
 };
 
-export const PLANE_TEMPLATE: VariationTemplate = {
-  id: "plane",
-  label: "Plane",
+export const PLANE_ANGLE_TEMPLATE: VariationTemplate = {
+  id: "planeAngle",
+  label: "Plane Angle",
   options: [
-    { key: "decline", label: "Decline", order: 1 },
-    { key: "flat", label: "Flat", order: 2 },
-    { key: "incline", label: "Incline", order: 3 },
+    { key: "untracked", label: "Untracked", order: 1 },
+    { key: "-15", label: "-15°", order: 2 },
+    { key: "0", label: "0°", order: 3 },
+    { key: "15", label: "15°", order: 4 },
+    { key: "30", label: "30°", order: 5 },
+    { key: "45", label: "45°", order: 6 },
+    { key: "60", label: "60°", order: 7 },
   ],
 };
 
@@ -188,8 +192,8 @@ export const BENCH_PRESS: ExerciseDefinition = {
       template: WIDTH_TEMPLATE,
       labelOverride: "Grip Width",
     },
-    plane: {
-      template: PLANE_TEMPLATE,
+    planeAngle: {
+      template: PLANE_ANGLE_TEMPLATE,
       labelOverride: "Bench Angle",
     },
   },
@@ -213,10 +217,14 @@ export const BENCH_PRESS: ExerciseDefinition = {
      * - incline biases chestUpper + deltsFront
      * - decline biases chestLower
      */
-    plane: {
-      incline: { deltas: { chestUpper: +0.10, chestLower: -0.07, deltsFront: +0.03 } },
-      flat: {},
-      decline: { deltas: { chestLower: +0.10, chestUpper: -0.07, deltsFront: -0.03 } },
+    planeAngle: {
+      "-15": { deltas: { chestLower: +0.10, chestUpper: -0.07, deltsFront: -0.03 } },
+      "0": {},
+      "15": { deltas: { chestUpper: +0.10, chestLower: -0.07, deltsFront: +0.03 } },
+      "30": { deltas: { chestUpper: +0.10, chestLower: -0.07, deltsFront: +0.03 } },
+      "45": { deltas: { chestUpper: +0.10, chestLower: -0.07, deltsFront: +0.03 } },
+      "60": { deltas: { chestUpper: +0.10, chestLower: -0.07, deltsFront: +0.03 } },
+      untracked: {},
     },
   },
 };
@@ -361,11 +369,11 @@ function normalizeTargets(targets: MuscleTargets): MuscleTargets {
  *
  * In the real system, the workout entry would store:
  * - exerciseId or exerciseType key
- * - selected variations like { plane: "incline", width: "close" }
+ * - selected variations like { planeAngle: "30", width: "close" }
  * - sets, reps, etc.
  */
 export const exampleSelectedVariations: SelectedVariations = {
-  plane: "incline",
+  planeAngle: "30",
   width: "close",
 };
 

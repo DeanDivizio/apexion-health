@@ -113,14 +113,12 @@ function mapLegacyVariation(modifications?: LegacyExercise["modifications"]) {
 
   if (modifications.movementPlane) {
     const planeMap: Record<string, string> = {
-      normal: "flat",
-      inclined: "incline",
-      declined: "decline",
+      normal: "0",
+      inclined: "30",
+      declined: "-15",
     };
-    const mappedPlane = planeMap[modifications.movementPlane];
-    if (mappedPlane) {
-      rows.push({ templateId: "plane", optionKey: mappedPlane });
-    }
+    const mappedPlaneAngle = planeMap[modifications.movementPlane] ?? "untracked";
+    rows.push({ templateId: "planeAngle", optionKey: mappedPlaneAngle });
   }
 
   return rows;
