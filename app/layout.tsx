@@ -31,6 +31,16 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en">
+        <head>
+          {/* Workaround for Next.js bug #86060 – performance.measure negative timestamp */}
+          {process.env.NODE_ENV === "development" && (
+            <script
+              dangerouslySetInnerHTML={{
+                __html: `(function(){try{var p=window.performance;if(!p||typeof p.measure!=="function"||p.__patched)return;var o=p.measure.bind(p);p.measure=function(){try{return o.apply(p,arguments)}catch(e){var m=(e&&e.message)||"";if(m.indexOf("negative")!==-1||m.indexOf("cannot be negative")!==-1)return;throw e}};p.__patched=true}catch(_){}})();`,
+              }}
+            />
+          )}
+        </head>
         <body className="w-full h-auto overflow-clip bg-black">
           <MobileHeaderProvider>
             <MealFormProvider>

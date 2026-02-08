@@ -10,14 +10,17 @@ import {
 import {
   createWorkoutSession,
   deleteWorkoutSession,
+  getExerciseDefaults,
   getGymMeta,
   getWorkoutSession,
   getUserPreferences,
   listWorkoutSessions,
+  saveExerciseDefaults,
   updateUserPreferences,
   updateWorkoutSession,
 } from "@/lib/gym/server/gymService";
 import { prisma } from "@/lib/db/prisma";
+import { z } from "zod";
 
 // =============================================================================
 // HELPERS
@@ -126,6 +129,27 @@ export async function createCustomExerciseAction(input: unknown) {
         : undefined,
     },
   });
+}
+
+// =============================================================================
+// EXERCISE DEFAULTS ACTIONS
+// =============================================================================
+
+const exerciseDefaultsInputSchema = z.object({
+  exerciseKey: z.string().min(1),
+  defaults: z.record(z.string(), z.string()),
+});
+
+export async function getExerciseDefaultsAction(exerciseKey: string) {
+  const userId = await requireUserId();
+  if (!exerciseKey) throw new Error("Exercise key is required.");
+  return getExerciseDefaults(userId, exerciseKey);
+}
+
+export async function saveExerciseDefaultsAction(input: unknown) {
+  const userId = await requireUserId();
+  const parsed = exerciseDefaultsInputSchema.parse(input);
+  return saveExerciseDefaults(userId, parsed.exerciseKey, parsed.defaults);
 }
 
 // =============================================================================

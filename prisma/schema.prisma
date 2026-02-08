@@ -183,3 +183,14 @@ model GymUserPreferences {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 }
+
+model GymUserExerciseDefault {
+  id          String @id @default(cuid())
+  userId      String
+  exerciseKey String
+  templateId  String
+  optionKey   String
+
+  @@unique([userId, exerciseKey, templateId])
+  @@index([userId, exerciseKey])
+}

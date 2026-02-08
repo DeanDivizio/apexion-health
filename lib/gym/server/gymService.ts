@@ -698,6 +698,57 @@ export async function getGymMeta(userId: string): Promise<GymUserMeta> {
 }
 
 // =============================================================================
+// EXERCISE DEFAULTS (User-specific variation preferences per exercise)
+// =============================================================================
+
+/**
+ * Retrieves a user's saved default variation selections for a specific exercise.
+ * Returns a map of templateId -> optionKey.
+ */
+export async function getExerciseDefaults(
+  userId: string,
+  exerciseKey: string,
+): Promise<Record<string, string>> {
+  const rows = await prisma.gymUserExerciseDefault.findMany({
+    where: { userId, exerciseKey },
+  });
+  const defaults: Record<string, string> = {};
+  for (const row of rows) {
+    defaults[row.templateId] = row.optionKey;
+  }
+  return defaults;
+}
+
+/**
+ * Saves (upserts) a user's default variation selections for a specific exercise.
+ * Deletes all existing defaults for this exercise/user pair and creates new ones.
+ */
+export async function saveExerciseDefaults(
+  userId: string,
+  exerciseKey: string,
+  defaults: Record<string, string>,
+) {
+  return prisma.$transaction(async (tx) => {
+    // Remove existing defaults for this exercise
+    await tx.gymUserExerciseDefault.deleteMany({
+      where: { userId, exerciseKey },
+    });
+
+    // Create new defaults
+    const rows = Object.entries(defaults).map(([templateId, optionKey]) => ({
+      userId,
+      exerciseKey,
+      templateId,
+      optionKey,
+    }));
+
+    if (rows.length > 0) {
+      await tx.gymUserExerciseDefault.createMany({ data: rows });
+    }
+  });
+}
+
+// =============================================================================
 // USER PREFERENCES
 // =============================================================================
 
