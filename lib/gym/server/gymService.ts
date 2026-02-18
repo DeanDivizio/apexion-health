@@ -661,6 +661,7 @@ export async function getGymMeta(userId: string): Promise<GymUserMeta> {
       displayName,
       category,
       recordSet,
+      bestSessionVolume: 0,
       notes: row.notes ?? undefined,
     };
   }
@@ -672,9 +673,25 @@ export async function getGymMeta(userId: string): Promise<GymUserMeta> {
 
       const exerciseKey = exercise.exerciseType;
       const existing = exerciseData[exerciseKey];
+      const sessionVolume = exercise.sets.reduce(
+        (sum, set) => sum + calculateSetVolume(set),
+        0,
+      );
+      const bestSessionVolume = Math.max(existing?.bestSessionVolume ?? 0, sessionVolume);
 
       // Skip if we already found a more recent session for this exercise
-      if (existing?.mostRecentSession) continue;
+      if (existing?.mostRecentSession) {
+        exerciseData[exerciseKey] = {
+          exerciseKey,
+          displayName: existing.displayName,
+          category: existing.category,
+          mostRecentSession: existing.mostRecentSession,
+          recordSet: existing.recordSet,
+          bestSessionVolume,
+          notes: existing.notes,
+        };
+        continue;
+      }
 
       exerciseData[exerciseKey] = {
         exerciseKey,
@@ -685,6 +702,7 @@ export async function getGymMeta(userId: string): Promise<GymUserMeta> {
           sets: exercise.sets,
         },
         recordSet: existing?.recordSet,
+        bestSessionVolume,
         notes: existing?.notes,
       };
     }

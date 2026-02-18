@@ -60,7 +60,7 @@ function WorkoutSkeleton() {
 // ---------------------------------------------------------------------------
 export default async function LogWorkoutPage() {
   return (
-    <main className="w-full min-h-screen overflow-y-auto pb-20">
+    <main className="w-full min-h-screen overflow-y-auto pt-16 pb-20">
       <Suspense fallback={<WorkoutSkeleton />}>
         <WorkoutFlowLoader />
       </Suspense>

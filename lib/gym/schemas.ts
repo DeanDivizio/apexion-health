@@ -210,6 +210,7 @@ export const exerciseStatsSchema = z.object({
     sets: z.array(strengthSetSchema),
   }).optional(),
   recordSet: exerciseRecordSchema.optional(),
+  bestSessionVolume: z.number().min(0).optional(),
   notes: z.string().optional(),
 });
 

@@ -22,7 +22,7 @@ export function AddExercise({
   const hasExercises = sessionExercises.length > 0;
 
   return (
-    <div className="flex flex-col items-center justify-center px-2 py-8 space-y-8">
+    <div className="flex flex-col items-center justify-center px-2 py-8 space-y-8 w-full">
       {/* Header */}
       <div className="text-center space-y-2">
         <h2 className="text-2xl font-semibold bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent">

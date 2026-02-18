@@ -1,9 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { MoreHorizontal, Info, SplitSquareHorizontal } from "lucide-react";
+import { MoreVertical, Info, SplitSquareHorizontal, Trash2 } from "lucide-react";
 import {
-  Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
@@ -22,9 +21,21 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui_primitives/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui_primitives/alert-dialog";
+import { Button } from "@/components/ui_primitives/button";
 import { Input } from "@/components/ui_primitives/input";
 import { Label } from "@/components/ui_primitives/label";
-import type { StrengthSet } from "@/lib/gym";
+import type { StrengthRepMode, StrengthSet } from "@/lib/gym";
 
 // ---------------------------------------------------------------------------
 // RPE labels per the spec
@@ -64,10 +75,12 @@ const DURATION_TOOLTIP =
 interface SetCardProps {
   index: number;
   set: StrengthSet;
-  isOpen: boolean;
+  isPr?: boolean;
   splitReps: boolean;
+  repMode?: StrengthRepMode;
   onUpdate: (set: StrengthSet) => void;
   onSplitRepsToggle: () => void;
+  onDelete: () => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -87,6 +100,8 @@ function isValidWeight(value: string): boolean {
   return /^\d+(\.\d)?$/.test(value);
 }
 
+const TITLE_UPDATE_DEBOUNCE_MS = 200;
+
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
@@ -94,8 +109,8 @@ function FieldPopover({ text }: { text: string }) {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <button type="button" className="inline-flex">
-          <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help shrink-0" />
+        <button type="button" className="inline-flex cursor-pointer">
+          <Info className="h-3.5 w-3.5 text-muted-foreground cursor-pointer shrink-0" />
         </button>
       </PopoverTrigger>
       <PopoverContent side="top" className="max-w-xs text-xs">
@@ -108,24 +123,98 @@ function FieldPopover({ text }: { text: string }) {
 export function SetCard({
   index,
   set,
-  isOpen,
+  isPr = false,
   splitReps,
+  repMode = "bilateral",
   onUpdate,
   onSplitRepsToggle,
+  onDelete,
 }: SetCardProps) {
-  const hasData = set.weight > 0 || (set.reps.bilateral ?? 0) > 0;
+  const [draftSet, setDraftSet] = React.useState<StrengthSet>(set);
+  const debounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const latestDraftRef = React.useRef<StrengthSet>(set);
+
+  const flushPendingUpdate = React.useCallback(() => {
+    if (!debounceRef.current) return;
+    clearTimeout(debounceRef.current);
+    debounceRef.current = null;
+    onUpdate(latestDraftRef.current);
+  }, [onUpdate]);
+
+  const queueUpdate = React.useCallback(
+    (nextSet: StrengthSet) => {
+      latestDraftRef.current = nextSet;
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+      debounceRef.current = setTimeout(() => {
+        debounceRef.current = null;
+        onUpdate(latestDraftRef.current);
+      }, TITLE_UPDATE_DEBOUNCE_MS);
+    },
+    [onUpdate],
+  );
+
+  const applySetUpdate = React.useCallback(
+    (updater: (prev: StrengthSet) => StrengthSet) => {
+      setDraftSet((prev) => {
+        const next = updater(prev);
+        queueUpdate(next);
+        return next;
+      });
+    },
+    [queueUpdate],
+  );
+
+  React.useEffect(() => {
+    setDraftSet(set);
+    latestDraftRef.current = set;
+  }, [set]);
+
+  React.useEffect(() => {
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+        debounceRef.current = null;
+        onUpdate(latestDraftRef.current);
+      }
+    };
+  }, [onUpdate]);
+
+  const hasData =
+    draftSet.weight > 0 ||
+    (draftSet.reps.bilateral ?? 0) > 0 ||
+    (draftSet.reps.left ?? 0) > 0 ||
+    (draftSet.reps.right ?? 0) > 0;
+  const isUnilateral = repMode === "dualUnilateral";
+  const repsLabel = !isUnilateral
+    ? "Reps (bilateral)"
+    : splitReps
+      ? "Reps (Left // Right)"
+      : "Reps (unilateral)";
 
   // ---- weight ----
-  const [weightStr, setWeightStr] = React.useState(set.weight > 0 ? String(set.weight) : "");
+  const [weightStr, setWeightStr] = React.useState(
+    draftSet.weight > 0 ? String(draftSet.weight) : "",
+  );
+
+  React.useEffect(() => {
+    setWeightStr(draftSet.weight > 0 ? String(draftSet.weight) : "");
+  }, [draftSet.weight]);
 
   const handleWeightChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const v = e.target.value;
     // Allow intermediate typing: empty, digits, or digits with one decimal
     if (v === "" || /^\d+\.?(\d)?$/.test(v)) {
       setWeightStr(v);
-      if (v === "" || v.endsWith(".")) return;
+      if (v === "") {
+        applySetUpdate((prev) => ({ ...prev, weight: 0 }));
+        return;
+      }
+      if (v.endsWith(".")) return;
       if (isValidWeight(v)) {
-        onUpdate({ ...set, weight: parseFloat(v) });
+        const nextWeight = parseFloat(v);
+        applySetUpdate((prev) => ({ ...prev, weight: nextWeight }));
       }
     }
   };
@@ -134,7 +223,7 @@ export function SetCard({
   const handleRepsBilateral = (val: string) => {
     if (val === "custom") return; // handled below
     const n = parseInt(val, 10);
-    onUpdate({ ...set, reps: { bilateral: n } });
+    applySetUpdate((prev) => ({ ...prev, reps: { bilateral: n } }));
   };
 
   // custom reps bilateral
@@ -142,46 +231,104 @@ export function SetCard({
   const handleCustomRepsBilateralChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const v = e.target.value.replace(/\D/g, "");
     setCustomRepsBilateral(v);
-    if (v) onUpdate({ ...set, reps: { bilateral: parseInt(v, 10) } });
+    if (v) {
+      const n = parseInt(v, 10);
+      applySetUpdate((prev) => ({ ...prev, reps: { bilateral: n } }));
+    }
   };
 
   // ---- reps (split L/R) ----
-  const [leftStr, setLeftStr] = React.useState(String(set.reps.left ?? ""));
-  const [rightStr, setRightStr] = React.useState(String(set.reps.right ?? ""));
+  const [leftSelectOverride, setLeftSelectOverride] = React.useState<string | undefined>(
+    undefined,
+  );
+  const [rightSelectOverride, setRightSelectOverride] = React.useState<string | undefined>(
+    undefined,
+  );
 
-  const handleLeftReps = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [customRepsLeft, setCustomRepsLeft] = React.useState("");
+  const [customRepsRight, setCustomRepsRight] = React.useState("");
+
+  const leftVal = draftSet.reps.left;
+  const rightVal = draftSet.reps.right;
+  const isCustomLeft = leftVal !== undefined && leftVal > 20;
+  const isCustomRight = rightVal !== undefined && rightVal > 20;
+
+  React.useEffect(() => {
+    if (isCustomLeft) setCustomRepsLeft(String(leftVal));
+  }, [isCustomLeft, leftVal]);
+
+  React.useEffect(() => {
+    if (isCustomRight) setCustomRepsRight(String(rightVal));
+  }, [isCustomRight, rightVal]);
+
+  const leftRepsSelectVal =
+    leftSelectOverride ??
+    (isCustomLeft ? "custom" : leftVal !== undefined ? String(leftVal) : undefined);
+  const rightRepsSelectVal =
+    rightSelectOverride ??
+    (isCustomRight ? "custom" : rightVal !== undefined ? String(rightVal) : undefined);
+
+  const handleRepsLeft = (val: string) => {
+    if (val === "custom") {
+      setLeftSelectOverride("custom");
+      return;
+    }
+    setLeftSelectOverride(undefined);
+    const n = parseInt(val, 10);
+    applySetUpdate((prev) => ({ ...prev, reps: { left: n, right: prev.reps.right ?? 0 } }));
+  };
+
+  const handleRepsRight = (val: string) => {
+    if (val === "custom") {
+      setRightSelectOverride("custom");
+      return;
+    }
+    setRightSelectOverride(undefined);
+    const n = parseInt(val, 10);
+    applySetUpdate((prev) => ({ ...prev, reps: { left: prev.reps.left ?? 0, right: n } }));
+  };
+
+  const handleCustomRepsLeftChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const v = e.target.value.replace(/\D/g, "");
-    setLeftStr(v);
+    setCustomRepsLeft(v);
     if (v) {
-      onUpdate({ ...set, reps: { left: parseInt(v, 10), right: set.reps.right ?? 0 } });
+      setLeftSelectOverride(undefined);
+      const n = parseInt(v, 10);
+      applySetUpdate((prev) => ({ ...prev, reps: { left: n, right: prev.reps.right ?? 0 } }));
     }
   };
-  const handleRightReps = (e: React.ChangeEvent<HTMLInputElement>) => {
+
+  const handleCustomRepsRightChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const v = e.target.value.replace(/\D/g, "");
-    setRightStr(v);
+    setCustomRepsRight(v);
     if (v) {
-      onUpdate({ ...set, reps: { left: set.reps.left ?? 0, right: parseInt(v, 10) } });
+      setRightSelectOverride(undefined);
+      const n = parseInt(v, 10);
+      applySetUpdate((prev) => ({ ...prev, reps: { left: prev.reps.left ?? 0, right: n } }));
     }
   };
 
   // ---- effort ----
   const handleEffort = (val: string) => {
     const n = parseInt(val, 10);
-    onUpdate({ ...set, effort: n === 0 ? undefined : n });
+    applySetUpdate((prev) => ({ ...prev, effort: n === 0 ? undefined : n }));
   };
 
   // ---- duration ----
   const [durationStr, setDurationStr] = React.useState(
-    set.duration !== undefined ? String(set.duration) : "",
+    draftSet.duration !== undefined ? String(draftSet.duration) : "",
   );
+  React.useEffect(() => {
+    setDurationStr(draftSet.duration !== undefined ? String(draftSet.duration) : "");
+  }, [draftSet.duration]);
   const handleDuration = (e: React.ChangeEvent<HTMLInputElement>) => {
     const v = e.target.value.replace(/\D/g, "");
     setDurationStr(v);
-    onUpdate({ ...set, duration: v ? parseInt(v, 10) : undefined });
+    applySetUpdate((prev) => ({ ...prev, duration: v ? parseInt(v, 10) : undefined }));
   };
 
   // Determine if custom reps are in use
-  const bilateralVal = set.reps.bilateral;
+  const bilateralVal = draftSet.reps.bilateral;
   const isCustomReps = bilateralVal !== undefined && bilateralVal > 20;
   const repsSelectVal =
     splitReps
@@ -192,16 +339,24 @@ export function SetCard({
           ? String(bilateralVal)
           : undefined;
 
+  React.useEffect(() => {
+    if (isCustomReps && bilateralVal !== undefined) {
+      setCustomRepsBilateral(String(bilateralVal));
+    }
+  }, [isCustomReps, bilateralVal]);
+
   return (
     <AccordionItem
       value={`set-${index}`}
-      className="border border-border/50 rounded-lg bg-card/40 px-4"
+      className={`border rounded-xl px-4 transition-colors ${
+        isPr
+          ? "border-emerald-600 bg-gradient-to-br from-emerald-950/50 to-teal-950/40"
+          : "border-teal-800 bg-card/40"
+      }`}
     >
       <AccordionTrigger className="text-sm hover:no-underline">
         <span className="text-muted-foreground text-xs mr-2">#{index + 1}</span>
-        <span className="flex-1 text-left">
-          {!isOpen && hasData ? formatTitle(index, set, hasData) : `Set ${index + 1}`}
-        </span>
+        <span className="flex-1 text-left">{hasData ? formatTitle(index, draftSet, hasData) : `Set ${index + 1}`}</span>
       </AccordionTrigger>
       <AccordionContent className="space-y-4 pt-2">
         <div className="space-y-3">
@@ -225,38 +380,89 @@ export function SetCard({
             {/* Reps */}
             <div className="space-y-1.5 min-w-0">
               <div className="flex items-center gap-1.5">
-                <Label className="text-xs text-muted-foreground">Reps</Label>
+                <Label className="text-xs text-muted-foreground">{repsLabel}</Label>
                 <FieldPopover text={REPS_TOOLTIP} />
               </div>
 
               {splitReps ? (
-                <div className="flex gap-2">
-                  <div className="flex-1 space-y-1">
-                    <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">
-                      Left
-                    </Label>
-                    <Input
-                      type="text"
-                      inputMode="numeric"
-                      placeholder="0"
-                      value={leftStr}
-                      onChange={handleLeftReps}
-                      className="h-10"
-                    />
+                <div className="flex items-start gap-2">
+                  <div className="flex-1 min-w-0 space-y-2">
+                    <Select value={leftRepsSelectVal} onValueChange={handleRepsLeft}>
+                      <SelectTrigger className="h-10 min-w-0">
+                        <SelectValue placeholder="L" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 21 }, (_, i) => (
+                          <SelectItem key={i} value={String(i)}>
+                            {i}
+                          </SelectItem>
+                        ))}
+                        <SelectItem value="custom">Custom...</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    {leftRepsSelectVal === "custom" && (
+                      <Input
+                        type="text"
+                        inputMode="numeric"
+                        placeholder="Custom"
+                        value={customRepsLeft}
+                        onChange={handleCustomRepsLeftChange}
+                        className="h-10"
+                        aria-label="Left reps custom value"
+                      />
+                    )}
                   </div>
-                  <div className="flex-1 space-y-1">
-                    <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">
-                      Right
-                    </Label>
-                    <Input
-                      type="text"
-                      inputMode="numeric"
-                      placeholder="0"
-                      value={rightStr}
-                      onChange={handleRightReps}
-                      className="h-10"
-                    />
+
+                  <div className="flex-1 min-w-0 space-y-2">
+                    <Select value={rightRepsSelectVal} onValueChange={handleRepsRight}>
+                      <SelectTrigger className="h-10 min-w-0">
+                        <SelectValue placeholder="R" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 21 }, (_, i) => (
+                          <SelectItem key={i} value={String(i)}>
+                            {i}
+                          </SelectItem>
+                        ))}
+                        <SelectItem value="custom">Custom...</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    {rightRepsSelectVal === "custom" && (
+                      <Input
+                        type="text"
+                        inputMode="numeric"
+                        placeholder="Custom"
+                        value={customRepsRight}
+                        onChange={handleCustomRepsRightChange}
+                        className="h-10"
+                        aria-label="Right reps custom value"
+                      />
+                    )}
                   </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        type="button"
+                        className="h-10 w-6 flex items-center justify-center rounded-md border border-input hover:bg-accent shrink-0"
+                        aria-label="Reps options"
+                      >
+                        <MoreVertical className="h-4 w-4" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={() => {
+                          flushPendingUpdate();
+                          onSplitRepsToggle();
+                        }}
+                      >
+                        <SplitSquareHorizontal className="mr-2 h-4 w-4" />
+                        Merge L/R Reps
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               ) : (
                 <div className="flex items-center gap-1">
@@ -274,20 +480,31 @@ export function SetCard({
                     </SelectContent>
                   </Select>
 
-                  {/* Three-dot menu for split reps */}
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button className="h-10 w-10 flex items-center justify-center rounded-md border border-input hover:bg-accent shrink-0">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={onSplitRepsToggle}>
-                        <SplitSquareHorizontal className="mr-2 h-4 w-4" />
-                        Split L/R Reps
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  {/* Context menu: only relevant for unilateral lifts */}
+                  {isUnilateral && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          type="button"
+                          className="h-10 w-6 flex items-center justify-center rounded-md border border-input hover:bg-accent shrink-0"
+                          aria-label="Reps options"
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={() => {
+                            flushPendingUpdate();
+                            onSplitRepsToggle();
+                          }}
+                        >
+                          <SplitSquareHorizontal className="mr-2 h-4 w-4" />
+                          Split L/R Reps
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
                 </div>
               )}
 
@@ -314,7 +531,7 @@ export function SetCard({
                 <FieldPopover text={EFFORT_TOOLTIP} />
               </div>
               <Select
-                value={set.effort !== undefined ? String(set.effort) : "0"}
+                value={draftSet.effort !== undefined ? String(draftSet.effort) : "0"}
                 onValueChange={handleEffort}
               >
                 <SelectTrigger className="h-10 min-w-0">
@@ -346,6 +563,35 @@ export function SetCard({
               />
             </div>
           </div>
+
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button type="button" variant="destructive" className="w-full h-10">
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete set
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete this set?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will permanently remove Set {index + 1} from this exercise.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => {
+                    flushPendingUpdate();
+                    onDelete();
+                  }}
+                  className="bg-red-600 text-white hover:bg-red-700"
+                >
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </AccordionContent>
     </AccordionItem>

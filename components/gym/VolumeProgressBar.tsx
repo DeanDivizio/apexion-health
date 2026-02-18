@@ -27,7 +27,7 @@ export function VolumeProgressBar({
           {isNewRecord && " (NEW PR!)"}
         </span>
       </div>
-      <div className="h-2 rounded-full bg-muted overflow-hidden">
+      <div className="h-2 rounded-full bg-neutral-500/50 overflow-hidden">
         <div
           className={cn(
             "h-full rounded-full transition-all duration-500",

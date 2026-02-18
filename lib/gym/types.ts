@@ -375,6 +375,8 @@ export interface ExerciseStats {
   };
   /** Personal record (highest volume single set) */
   recordSet?: ExerciseRecord;
+  /** Highest total session volume recorded for this exercise */
+  bestSessionVolume?: number;
   /** Persistent notes about this exercise (form cues, etc.) */
   notes?: string;
 }

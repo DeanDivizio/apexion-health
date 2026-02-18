@@ -48,6 +48,7 @@ export function ExerciseSettingsSheet({
   onVariationsChange,
   onExerciseNameUpdate,
 }: ExerciseSettingsSheetProps) {
+  const HALF_WIDTH_CHAR_BUDGET = 14;
   const { toast } = useToast();
   const [showAdoptList, setShowAdoptList] = React.useState(false);
   const [savingDefault, setSavingDefault] = React.useState(false);
@@ -68,6 +69,40 @@ export function ExerciseSettingsSheet({
   const availableTemplates = VARIATION_TEMPLATES.filter(
     (t) => !activeTemplateIds.includes(t.id),
   );
+
+  const selectorConfigs = activeTemplateIds.flatMap((templateId) => {
+    const template = VARIATION_TEMPLATE_MAP.get(templateId);
+    if (!template) return [];
+
+    const override = exercise.variationTemplates?.[templateId];
+    const label = override?.labelOverride ?? template.label;
+    const longestOptionLabelLength = template.options.reduce((maxLength, option) => {
+      const optionLabel = override?.optionLabelOverrides?.[option.key] ?? option.label;
+      return Math.max(maxLength, optionLabel.length);
+    }, 0);
+
+    const shouldUseHalfWidth =
+      label.length <= HALF_WIDTH_CHAR_BUDGET &&
+      longestOptionLabelLength <= HALF_WIDTH_CHAR_BUDGET;
+
+    return [
+      {
+        templateId,
+        template,
+        override,
+        label,
+        shouldUseHalfWidth,
+      },
+    ];
+  });
+
+  const hasFullWidthSelector = selectorConfigs.some(
+    (selector) => !selector.shouldUseHalfWidth,
+  );
+  const orderedSelectorConfigs = [
+    ...selectorConfigs.filter((selector) => selector.shouldUseHalfWidth),
+    ...selectorConfigs.filter((selector) => !selector.shouldUseHalfWidth),
+  ];
 
   const handleVariationChange = (templateId: string, optionKey: string) => {
     onVariationsChange({ ...variations, [templateId]: optionKey });
@@ -145,55 +180,59 @@ export function ExerciseSettingsSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="left" className="w-[85vw] sm:max-w-md flex flex-col overflow-y-auto">
+      <SheetContent side="left" className="w-screen sm:max-w-md flex flex-col overflow-y-auto bg-gradient-to-br from-blue-800/10 to-emerald-950/25 backdrop-blur-lg">
         <SheetHeader className="pb-2">
           <SheetTitle className="text-lg">Exercise Settings</SheetTitle>
           <SheetDescription>{exercise.name}</SheetDescription>
         </SheetHeader>
 
         {/* Variation Selectors */}
-        <div className="flex-1 space-y-4 py-4">
-          <h3 className="text-sm font-medium text-muted-foreground">Active Variations</h3>
-
+        <div className="flex-1 space-y-4">
           {activeTemplateIds.length === 0 && (
-            <p className="text-sm text-muted-foreground/60 italic">
+            <p className="text-sm text-muted-foreground/60 italic py-4">
               No variations configured for this exercise.
             </p>
           )}
+          <div className="grid grid-cols-2 gap-3">
+            {orderedSelectorConfigs.map((selector, index) => {
+              const forceFullWidth = !hasFullWidthSelector && index === 0;
+              const spanClass =
+                selector.shouldUseHalfWidth && !forceFullWidth
+                  ? "col-span-1"
+                  : "col-span-2";
 
-          {activeTemplateIds.map((templateId) => {
-            const template = VARIATION_TEMPLATE_MAP.get(templateId);
-            if (!template) return null;
-
-            // Check for exercise-specific label override
-            const override = exercise.variationTemplates?.[templateId];
-            const label = override?.labelOverride ?? template.label;
-
-            return (
-              <div key={templateId} className="space-y-1.5">
-                <label className="text-xs text-muted-foreground">{label}</label>
-                <Select
-                  value={variations[templateId] ?? override?.defaultOptionKey ?? template.options[0]?.key}
-                  onValueChange={(val) => handleVariationChange(templateId, val)}
-                >
-                  <SelectTrigger className="h-10">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {template.options.map((opt) => {
-                      const optLabel =
-                        override?.optionLabelOverrides?.[opt.key] ?? opt.label;
-                      return (
-                        <SelectItem key={opt.key} value={opt.key}>
-                          {optLabel}
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectContent>
-                </Select>
-              </div>
-            );
-          })}
+              return (
+                <div key={selector.templateId} className={`${spanClass} space-y-1.5`}>
+                  <label className="text-xs text-muted-foreground">{selector.label}</label>
+                  <Select
+                    value={
+                      variations[selector.templateId] ??
+                      selector.override?.defaultOptionKey ??
+                      selector.template.options[0]?.key
+                    }
+                    onValueChange={(val) =>
+                      handleVariationChange(selector.templateId, val)
+                    }
+                  >
+                    <SelectTrigger className="h-10 w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {selector.template.options.map((opt) => {
+                        const optLabel =
+                          selector.override?.optionLabelOverrides?.[opt.key] ?? opt.label;
+                        return (
+                          <SelectItem key={opt.key} value={opt.key}>
+                            {optLabel}
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                </div>
+              );
+            })}
+          </div>
 
           {/* Adopt new variation */}
           {!showAdoptList ? (
@@ -243,7 +282,7 @@ export function ExerciseSettingsSheet({
         <Separator />
 
         {/* Save Section */}
-        <div className="space-y-6 py-4">
+        <div className="space-y-6 py-4 pb-6">
           {/* Save Default */}
           <div className="space-y-2">
             <div className="flex items-center gap-1.5">

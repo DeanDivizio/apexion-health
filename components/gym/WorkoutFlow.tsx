@@ -9,7 +9,6 @@ import { AddExercise } from "./AddExercise";
 import { ExerciseLogger } from "./ExerciseLogger";
 import { ExerciseSettingsSheet } from "./ExerciseSettingsSheet";
 import { SessionOverviewSheet } from "./SessionOverviewSheet";
-import { ExerciseStatsPanel } from "./ExerciseStatsPanel";
 import type { ExerciseGroupOption } from "./ExerciseCombobox";
 import { createWorkoutSessionAction, getExerciseDefaultsAction } from "@/actions/gym";
 import type {
@@ -354,7 +353,7 @@ export function WorkoutFlow({ userMeta, customExerciseGroups }: WorkoutFlowProps
 
   // ---- Render ----
   return (
-    <div className="relative min-h-[calc(100vh-4rem)] px-4 pt-2 pb-24">
+    <div className="relative px-4 pt-2 flex flex-col items-center justify-center w-full">
       {view === "addExercise" && (
         <AddExercise
           strengthGroups={strengthGroups}
@@ -370,7 +369,9 @@ export function WorkoutFlow({ userMeta, customExerciseGroups }: WorkoutFlowProps
           sets={activeSets}
           onSetsChange={setActiveSets}
           onSaveExercise={handleSaveExercise}
+          onEditVariations={() => setSettingsOpen(true)}
           variations={activeVariations}
+          stats={exerciseStats}
         />
       )}
 
@@ -393,13 +394,6 @@ export function WorkoutFlow({ userMeta, customExerciseGroups }: WorkoutFlowProps
         onStartTimeChange={setStartTime}
         endTimeLabel={endTime ?? "now"}
         onEndTimeChange={setEndTime}
-      />
-
-      {/* Stats Panel */}
-      <ExerciseStatsPanel
-        stats={exerciseStats}
-        currentSets={activeSets}
-        visible={view === "logExercise" && !!activeExercise}
       />
     </div>
   );
