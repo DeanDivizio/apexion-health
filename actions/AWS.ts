@@ -163,6 +163,7 @@ export async function getAllDataFromTableByUser(table: string) {
 }
 
 export async function getGymMeta_CACHED(userID: string) {
+  // Legacy gym meta read (DynamoDB). Replaced by actions/gym.getGymMetaAction.
   "use cache"
   cacheTag('gymMeta')
   const params: QueryCommandInput = {
@@ -184,6 +185,7 @@ export async function getGymMeta_CACHED(userID: string) {
 }
 
 export async function updateCustomExercises(customExercises: any) {
+  // Legacy gym custom exercise write (DynamoDB). Replaced by actions/gym.createCustomExerciseAction.
   const { userId } = await auth();
   if (!userId) {
     throw new Error("User is not signed in.");
@@ -217,6 +219,7 @@ export async function updateCustomExercises(customExercises: any) {
 }
 
 export async function updateExerciseData(exerciseData: any) {
+  // Legacy gym PR/metadata write (DynamoDB). Replaced by GymUserExerciseStat in Prisma.
   const { userId } = await auth();
   if (!userId) {
     throw new Error("User is not signed in.");
@@ -250,6 +253,7 @@ export async function updateExerciseData(exerciseData: any) {
 }
 
 export async function updateGymSession(date: string, data: any) {
+  // Legacy gym session update (DynamoDB). Replaced by Prisma-backed gym module.
   const { userId } = await auth();
   if (!userId) {
     throw new Error("User is not signed in.");

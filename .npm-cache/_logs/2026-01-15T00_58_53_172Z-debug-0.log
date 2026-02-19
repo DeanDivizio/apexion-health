@@ -1,0 +1,120 @@
+0 verbose cli /usr/local/bin/node /usr/local/bin/npm
+1 info using npm@10.9.2
+2 info using node@v22.14.0
+3 silly config load:file:/usr/local/lib/node_modules/npm/npmrc
+4 silly config load:file:/Users/dean/Documents/Code/apexion-health/.npmrc
+5 silly config load:file:/Users/dean/.npmrc
+6 silly config load:file:/usr/local/etc/npmrc
+7 verbose title npm install prisma@latest @prisma/client@latest @prisma/adapter-pg@latest
+8 verbose argv "install" "prisma@latest" "@prisma/client@latest" "@prisma/adapter-pg@latest"
+9 verbose logfile logs-max:10 dir:/Users/dean/Documents/Code/apexion-health/.npm-cache/_logs/2026-01-15T00_58_53_172Z-
+10 verbose logfile /Users/dean/Documents/Code/apexion-health/.npm-cache/_logs/2026-01-15T00_58_53_172Z-debug-0.log
+11 silly logfile done cleaning log files
+12 silly packumentCache heap:4345298944 maxSize:1086324736 maxEntrySize:543162368
+13 silly packumentCache corgi:https://registry.npmjs.org/prisma cache-miss
+14 silly packumentCache corgi:https://registry.npmjs.org/@prisma%2fclient cache-miss
+15 silly packumentCache corgi:https://registry.npmjs.org/@prisma%2fadapter-pg cache-miss
+16 verbose shrinkwrap failed to load node_modules/.package-lock.json out of date, updated: node_modules
+17 http fetch GET 200 https://registry.npmjs.org/@prisma%2fadapter-pg 572ms (cache miss)
+18 silly packumentCache corgi:https://registry.npmjs.org/@prisma%2fadapter-pg set size:undefined disposed:false
+19 http fetch GET 200 https://registry.npmjs.org/prisma 1168ms (cache miss)
+20 silly packumentCache corgi:https://registry.npmjs.org/prisma set size:undefined disposed:false
+21 http fetch GET 200 https://registry.npmjs.org/@prisma%2fclient 1671ms (cache miss)
+22 silly packumentCache corgi:https://registry.npmjs.org/@prisma%2fclient set size:undefined disposed:false
+23 silly idealTree buildDeps
+24 silly fetch manifest @prisma/client@7.2.0
+25 silly packumentCache full:https://registry.npmjs.org/@prisma%2fclient cache-miss
+26 http fetch GET 200 https://registry.npmjs.org/@prisma%2fclient 1349ms (cache miss)
+27 silly packumentCache full:https://registry.npmjs.org/@prisma%2fclient set size:undefined disposed:false
+28 silly fetch manifest prisma@7.2.0
+29 silly packumentCache full:https://registry.npmjs.org/prisma cache-miss
+30 http fetch GET 200 https://registry.npmjs.org/prisma 825ms (cache miss)
+31 silly packumentCache full:https://registry.npmjs.org/prisma set size:undefined disposed:false
+32 silly fetch manifest better-sqlite3@>=9.0.0
+33 silly packumentCache full:https://registry.npmjs.org/better-sqlite3 cache-miss
+34 http fetch GET 200 https://registry.npmjs.org/better-sqlite3 79ms (cache miss)
+35 silly packumentCache full:https://registry.npmjs.org/better-sqlite3 set size:undefined disposed:false
+36 silly fetch manifest typescript@^5
+37 silly packumentCache full:https://registry.npmjs.org/typescript cache-miss
+38 http fetch GET 200 https://registry.npmjs.org/typescript 283ms (cache miss)
+39 silly packumentCache full:https://registry.npmjs.org/typescript set size:undefined disposed:false
+40 silly fetch manifest @prisma/adapter-pg@7.2.0
+41 silly packumentCache full:https://registry.npmjs.org/@prisma%2fadapter-pg cache-miss
+42 http fetch GET 200 https://registry.npmjs.org/@prisma%2fadapter-pg 362ms (cache miss)
+43 silly packumentCache full:https://registry.npmjs.org/@prisma%2fadapter-pg set size:undefined disposed:false
+44 silly placeDep ROOT @prisma/adapter-pg@7.2.0 OK for: apexion-health@0.1.0 want: 7.2.0
+45 silly placeDep ROOT @prisma/client@7.2.0 REPLACE for: apexion-health@0.1.0 want: 7.2.0
+46 silly placeDep ROOT prisma@7.2.0 REPLACE for: apexion-health@0.1.0 want: 7.2.0
+47 silly fetch manifest postgres-array@3.0.4
+48 silly packumentCache full:https://registry.npmjs.org/postgres-array cache-miss
+49 silly fetch manifest @prisma/driver-adapter-utils@7.2.0
+50 silly packumentCache full:https://registry.npmjs.org/@prisma%2fdriver-adapter-utils cache-miss
+51 http fetch GET 200 https://registry.npmjs.org/postgres-array 72ms (cache miss)
+52 silly packumentCache full:https://registry.npmjs.org/postgres-array set size:undefined disposed:false
+53 http fetch GET 200 https://registry.npmjs.org/@prisma%2fdriver-adapter-utils 291ms (cache miss)
+54 silly packumentCache full:https://registry.npmjs.org/@prisma%2fdriver-adapter-utils set size:undefined disposed:false
+55 silly placeDep ROOT @prisma/driver-adapter-utils@7.2.0 OK for: @prisma/adapter-pg@7.2.0 want: 7.2.0
+56 silly placeDep node_modules/@prisma/adapter-pg postgres-array@3.0.4 OK for: @prisma/adapter-pg@7.2.0 want: 3.0.4
+57 silly fetch manifest react@^16.8 || ^17.0 || ^18.0
+58 silly packumentCache full:https://registry.npmjs.org/react cache-miss
+59 http fetch GET 200 https://registry.npmjs.org/react 257ms (cache miss)
+60 silly packumentCache full:https://registry.npmjs.org/react set size:undefined disposed:false
+61 silly fetch manifest react-dom@^16.8 || ^17.0 || ^18.0
+62 silly packumentCache full:https://registry.npmjs.org/react-dom cache-miss
+63 http fetch GET 200 https://registry.npmjs.org/react-dom 233ms (cache miss)
+64 silly packumentCache full:https://registry.npmjs.org/react-dom set size:undefined disposed:false
+65 verbose stack Error: could not resolve
+65 verbose stack     at PlaceDep.failPeerConflict (/usr/local/lib/node_modules/npm/node_modules/@npmcli/arborist/lib/place-dep.js:503:25)
+65 verbose stack     at new PlaceDep (/usr/local/lib/node_modules/npm/node_modules/@npmcli/arborist/lib/place-dep.js:157:21)
+65 verbose stack     at #buildDepStep (/usr/local/lib/node_modules/npm/node_modules/@npmcli/arborist/lib/arborist/build-ideal-tree.js:920:18)
+65 verbose stack     at async Arborist.buildIdealTree (/usr/local/lib/node_modules/npm/node_modules/@npmcli/arborist/lib/arborist/build-ideal-tree.js:181:7)
+65 verbose stack     at async Promise.all (index 1)
+65 verbose stack     at async Arborist.reify (/usr/local/lib/node_modules/npm/node_modules/@npmcli/arborist/lib/arborist/reify.js:131:5)
+65 verbose stack     at async Install.exec (/usr/local/lib/node_modules/npm/lib/commands/install.js:150:5)
+65 verbose stack     at async Npm.exec (/usr/local/lib/node_modules/npm/lib/npm.js:207:9)
+65 verbose stack     at async module.exports (/usr/local/lib/node_modules/npm/lib/cli/entry.js:74:5)
+66 error code ERESOLVE
+67 error ERESOLVE could not resolve
+68 error
+69 error While resolving: vaul@0.9.9
+69 error Found: react@19.1.4
+69 error node_modules/react
+69 error   peer react@"^18.0.0 || ~19.0.3 || ~19.1.4 || ~19.2.3 || ~19.3.0-0" from @clerk/clerk-react@5.59.3
+69 error   node_modules/@clerk/clerk-react
+69 error     @clerk/clerk-react@"^5.59.3" from @clerk/nextjs@6.36.7
+69 error     node_modules/@clerk/nextjs
+69 error       @clerk/nextjs@"^6.36.7" from the root project
+69 error   peer react@"^18.0.0 || ~19.0.3 || ~19.1.4 || ~19.2.3 || ~19.3.0-0" from @clerk/nextjs@6.36.7
+69 error   node_modules/@clerk/nextjs
+69 error     @clerk/nextjs@"^6.36.7" from the root project
+69 error   73 more (@clerk/shared, @floating-ui/react-dom, ...)
+69 error
+69 error Could not resolve dependency:
+69 error peer react@"^16.8 || ^17.0 || ^18.0" from vaul@0.9.9
+69 error node_modules/vaul
+69 error   vaul@"^0.9.1" from the root project
+69 error
+69 error Conflicting peer dependency: react@18.3.1
+69 error node_modules/react
+69 error   peer react@"^16.8 || ^17.0 || ^18.0" from vaul@0.9.9
+69 error   node_modules/vaul
+69 error     vaul@"^0.9.1" from the root project
+69 error
+69 error Fix the upstream dependency conflict, or retry
+69 error this command with --force or --legacy-peer-deps
+69 error to accept an incorrect (and potentially broken) dependency resolution.
+70 error
+70 error
+70 error For a full report see:
+70 error /Users/dean/Documents/Code/apexion-health/.npm-cache/_logs/2026-01-15T00_58_53_172Z-eresolve-report.txt
+71 silly unfinished npm timer reify 1768438733426
+72 silly unfinished npm timer reify:loadTrees 1768438733428
+73 silly unfinished npm timer idealTree:buildDeps 1768438735309
+74 silly unfinished npm timer idealTree:node_modules/vaul 1768438739001
+75 verbose cwd /Users/dean/Documents/Code/apexion-health
+76 verbose os Darwin 25.0.0
+77 verbose node v22.14.0
+78 verbose npm  v10.9.2
+79 verbose exit 1
+80 verbose code 1
+81 error A complete log of this run can be found in: /Users/dean/Documents/Code/apexion-health/.npm-cache/_logs/2026-01-15T00_58_53_172Z-debug-0.log
