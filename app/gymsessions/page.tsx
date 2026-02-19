@@ -1,24 +1,44 @@
 "use client"
 
-import { useEffect, useMemo, useState, useContext } from "react"
-import { listWorkoutSessionsAction } from "@/actions/gym"
-import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui_primitives/accordion"
-import { Skeleton } from "@/components/ui_primitives/skeleton"
-import { ScrollArea, ScrollBar } from "@/components/ui_primitives/scroll-area"
-import { capitalize, spellOutDate } from "@/lib/utils"
-import { MobileHeaderContext } from "@/context/MobileHeaderContext"
+import { useContext, useEffect, useMemo, useRef, useState } from "react"
+import { Dumbbell } from "lucide-react"
+import {
+  deleteWorkoutSessionAction,
+  listWorkoutSessionsAction,
+  updateWorkoutSessionAction,
+} from "@/actions/gym"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui_primitives/alert-dialog"
 import { SideNav } from "@/components/global/SideNav"
-import type { RepCount, WorkoutSession } from "@/lib/gym"
-
-function formatRepCount(reps: RepCount): string {
-  if (reps.bilateral !== undefined) return `${reps.bilateral}`
-  if (reps.left !== undefined && reps.right !== undefined) return `${reps.left}/${reps.right}`
-  return ""
-}
+import { Skeleton } from "@/components/ui_primitives/skeleton"
+import { MobileHeaderContext } from "@/context/MobileHeaderContext"
+import { useToast } from "@/hooks/use-toast"
+import { EditableSessionContent } from "./components/EditableSessionContent"
+import { parseSessionDateTime, spellOutDateShortYear } from "./components/helpers"
+import { SessionCard } from "./components/SessionCard"
+import type { SessionWithId } from "./components/types"
 
 export default function GymSessions() {
-  const [sessions, setSessions] = useState<WorkoutSession[]>([])
+  const EDIT_TRANSITION_MS = 200
+  const [sessions, setSessions] = useState<SessionWithId[]>([])
   const [loading, setLoading] = useState(true)
+  const [openIndex, setOpenIndex] = useState<number | null>(0)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [isEditOpen, setIsEditOpen] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState(false)
+  const closeEditTimeoutRef = useRef<number | null>(null)
+
+  const { toast } = useToast()
   const { setMobileHeading, setHeaderComponentLeft, setHeaderComponentRight } = useContext(MobileHeaderContext)
 
   useEffect(() => {
@@ -41,101 +61,167 @@ export default function GymSessions() {
     load()
   }, [])
 
-  const sessionsByDate = useMemo(() => {
-    const map = new Map<string, WorkoutSession[]>()
-    for (const session of sessions) {
-      const group = map.get(session.date) ?? []
-      group.push(session)
-      map.set(session.date, group)
+  useEffect(
+    () => () => {
+      if (closeEditTimeoutRef.current !== null) {
+        window.clearTimeout(closeEditTimeoutRef.current)
+      }
+    },
+    [],
+  )
+
+  const openEditor = (sessionId: string) => {
+    if (closeEditTimeoutRef.current !== null) {
+      window.clearTimeout(closeEditTimeoutRef.current)
+      closeEditTimeoutRef.current = null
     }
-    return Array.from(map.entries())
-  }, [sessions])
+    setEditingId(sessionId)
+    requestAnimationFrame(() => setIsEditOpen(true))
+  }
+
+  const closeEditor = () => {
+    setIsEditOpen(false)
+    if (closeEditTimeoutRef.current !== null) {
+      window.clearTimeout(closeEditTimeoutRef.current)
+    }
+    closeEditTimeoutRef.current = window.setTimeout(() => {
+      setEditingId(null)
+      closeEditTimeoutRef.current = null
+    }, EDIT_TRANSITION_MS)
+  }
+
+  const sortedSessions = useMemo(
+    () => [...sessions].sort((a, b) => parseSessionDateTime(b) - parseSessionDateTime(a)),
+    [sessions],
+  )
+
+  const handleSave = async (updated: SessionWithId) => {
+    setSaving(true)
+    try {
+      const { id, ...sessionData } = updated
+      await updateWorkoutSessionAction(id, sessionData)
+      setSessions((prev) => prev.map((s) => (s.id === id ? updated : s)))
+      closeEditor()
+      toast({ title: "Session updated", description: "Your changes have been saved." })
+    } catch {
+      toast({
+        title: "Error",
+        description: "Failed to save changes. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!deleteConfirmId) return
+    setDeleting(true)
+    try {
+      await deleteWorkoutSessionAction(deleteConfirmId)
+      setSessions((prev) => prev.filter((s) => s.id !== deleteConfirmId))
+      if (editingId === deleteConfirmId) {
+        if (closeEditTimeoutRef.current !== null) {
+          window.clearTimeout(closeEditTimeoutRef.current)
+          closeEditTimeoutRef.current = null
+        }
+        setIsEditOpen(false)
+        setEditingId(null)
+      }
+      toast({ title: "Session deleted" })
+    } catch {
+      toast({
+        title: "Error",
+        description: "Failed to delete session. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setDeleting(false)
+      setDeleteConfirmId(null)
+    }
+  }
 
   if (loading) {
     return (
-      <main className="w-full min-h-screen pt-24 px-4">
-        <h1 className="w-full text-center text-3xl font-medium mb-8">Gym Sessions</h1>
-        <Skeleton className="w-full h-[75px] rounded mb-4" />
-        <Skeleton className="w-full h-[75px] rounded mb-4" />
-        <Skeleton className="w-full h-[75px] rounded mb-4" />
-        <Skeleton className="w-full h-[75px] rounded mb-4" />
-        <Skeleton className="w-full h-[75px] rounded mb-4" />
-        <Skeleton className="w-full h-[75px] rounded mb-4" />
-        <Skeleton className="w-full h-[75px] rounded" />
+      <main className="w-full min-h-screen pt-20 px-4 pb-16">
+        <div className="flex flex-col gap-3 max-w-lg mx-auto">
+          {Array.from({ length: 5 }, (_, i) => (
+            <Skeleton key={i} className="w-full h-[72px] rounded-xl" />
+          ))}
+        </div>
       </main>
     )
   }
 
-  if (sessionsByDate.length === 0) {
+  if (sortedSessions.length === 0) {
     return (
-      <main className="w-full min-h-screen pt-24 px-4">
-        <h1 className="w-full text-center text-3xl font-medium mb-8">Gym Sessions</h1>
-        <p className="text-center text-neutral-400">No sessions logged yet.</p>
+      <main className="w-full min-h-screen pt-20 px-4 pb-16 flex flex-col items-center justify-center">
+        <Dumbbell className="h-12 w-12 text-muted-foreground/30 mb-4" />
+        <p className="text-muted-foreground text-center">No sessions logged yet.</p>
       </main>
     )
   }
+
+  const deleteSession = deleteConfirmId ? sortedSessions.find((s) => s.id === deleteConfirmId) : null
 
   return (
-    <main className="w-full min-h-screen pt-24 pb-16 bg-gradient-to-br from-indigo-950/15 to-neutral-950">
-      <div className="w-full flex flex-col items-center justify-center">
-        <Accordion type="single" collapsible defaultValue={sessionsByDate[0][0]}>
-          {sessionsByDate.map(([date, dateSessions], index) => (
-            <AccordionItem
-              key={date}
-              value={date}
-              className={`min-w-[350px] w-96 max-w-[400px] flex flex-col items-start justify-center mb-8 px-4 rounded ${
-                index % 2 === 0
-                  ? "bg-gradient-to-br from-green-950/20 to-neutral-950"
-                  : "bg-gradient-to-br from-blue-950/20 to-neutral-950"
-              }`}
+    <>
+      <main className="w-full min-h-screen pt-20 pb-16 bg-gradient-to-b from-background to-background">
+        <div className="flex flex-col gap-3 max-w-lg mx-auto px-2">
+          {sortedSessions.map((session, i) =>
+            editingId === session.id ? (
+              <EditableSessionContent
+                key={`edit-${session.id}`}
+                initialSession={session}
+                onSave={handleSave}
+                onCancel={closeEditor}
+                saving={saving}
+                isOpen={isEditOpen}
+              />
+            ) : (
+              <SessionCard
+                key={session.id}
+                session={session}
+                isOpen={openIndex === i}
+                onToggle={() => setOpenIndex(openIndex === i ? null : i)}
+                onEdit={() => {
+                  openEditor(session.id)
+                  setOpenIndex(i)
+                }}
+                onRequestDelete={() => setDeleteConfirmId(session.id)}
+              />
+            ),
+          )}
+        </div>
+      </main>
+
+      <AlertDialog
+        open={deleteConfirmId !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeleteConfirmId(null)
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this session?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteSession
+                ? `This will permanently delete your ${spellOutDateShortYear(deleteSession.date)} session (${deleteSession.startTime} – ${deleteSession.endTime}) and all its data. This action cannot be undone.`
+                : "This action cannot be undone."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={deleting}
+              className="bg-red-600 text-white hover:bg-red-700"
             >
-              <div className="w-full flex flex-col items-between justify-center">
-                <AccordionTrigger className="w-full flex flex-row items-center justify-between">
-                  <h2 className="text-lg font-bold ">{spellOutDate(date)}</h2>
-                </AccordionTrigger>
-                <AccordionContent>
-                  {dateSessions.map((session) => (
-                    <div key={`${session.startTime}-${session.endTime}`} className="mb-6">
-                      <h3 className="text-xs font-thin italic mb-2">
-                        {session.startTime} - {session.endTime}
-                      </h3>
-                      <ScrollArea className="w-full max-h-[400px] pr-4">
-                        <div className="grid grid-cols-2 gap-4">
-                          {session.exercises.map((exercise) => (
-                            <div key={exercise.exerciseType} className="mb-4">
-                              <h4 className="text-md font-medium">{capitalize(exercise.exerciseType)}</h4>
-                              {exercise.type === "strength" &&
-                                exercise.sets?.map((set, setIndex) => (
-                                  <div key={setIndex} className="flex flex-row items-center justify-start gap-1 pl-4 py-1 text-sm">
-                                    <p className="font-medium">
-                                      {formatRepCount(set.reps)} <span className="text-neutral-200 font-thin">reps</span>
-                                    </p>
-                                    <p className="text-neutral-400 text-xs">@</p>
-                                    <p className="font-medium">
-                                      {set.weight}
-                                      <span className="text-neutral-300 font-thin">lbs</span>
-                                    </p>
-                                  </div>
-                                ))}
-                              {exercise.type === "cardio" && (
-                                <div className="pl-4 py-1 text-sm text-neutral-300">
-                                  {exercise.duration} min
-                                  {exercise.distance ? ` · ${exercise.distance} ${exercise.unit ?? ""}` : ""}
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                        <ScrollBar />
-                      </ScrollArea>
-                    </div>
-                  ))}
-                </AccordionContent>
-              </div>
-            </AccordionItem>
-          ))}
-        </Accordion>
-      </div>
-    </main>
+              {deleting ? "Deleting…" : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   )
 }
