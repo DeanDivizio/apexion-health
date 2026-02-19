@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useContext, useCallback, useEffect, useMemo, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { Settings2, ClipboardList } from "lucide-react";
 import { MobileHeaderContext } from "@/context/MobileHeaderContext";
 import { useToast } from "@/hooks/use-toast";
@@ -95,6 +96,7 @@ interface WorkoutFlowProps {
 // Component
 // ---------------------------------------------------------------------------
 export function WorkoutFlow({ userMeta, customExerciseGroups }: WorkoutFlowProps) {
+  const router = useRouter();
   const { toast } = useToast();
   const {
     setMobileHeading,
@@ -327,19 +329,13 @@ export function WorkoutFlow({ userMeta, customExerciseGroups }: WorkoutFlowProps
       });
 
       clearPersistedState();
-      setExercises([]);
-      setView("addExercise");
-      setActiveExerciseKey(null);
-      setActiveSets([{ weight: 0, reps: { bilateral: 0 } }]);
-      setActiveVariations({});
-      setSessionDate(new Date());
-      setStartTime(formatTimeNow());
-      setEndTime(null);
 
       toast({
         title: "Workout saved!",
         description: "Your session has been recorded.",
       });
+
+      router.push("/");
     } catch (err) {
       toast({
         title: "Error",
@@ -349,11 +345,11 @@ export function WorkoutFlow({ userMeta, customExerciseGroups }: WorkoutFlowProps
     } finally {
       setSubmitting(false);
     }
-  }, [exercises, endTime, sessionDate, startTime, toast]);
+  }, [exercises, endTime, sessionDate, startTime, toast, router]);
 
   // ---- Render ----
   return (
-    <div className="relative px-4 pt-2 flex flex-col items-center justify-center w-full">
+    <div className="relative px-2 pt-2 flex flex-col items-center justify-center w-full">
       {view === "addExercise" && (
         <AddExercise
           strengthGroups={strengthGroups}

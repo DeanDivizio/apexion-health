@@ -25,6 +25,14 @@ import {
 import { Button } from "@/components/ui_primitives/button";
 import { Input } from "@/components/ui_primitives/input";
 import { Separator } from "@/components/ui_primitives/separator";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui_primitives/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { saveExerciseDefaultsAction } from "@/actions/gym";
 import { createCustomExerciseAction } from "@/actions/gym";
@@ -50,7 +58,7 @@ export function ExerciseSettingsSheet({
 }: ExerciseSettingsSheetProps) {
   const HALF_WIDTH_CHAR_BUDGET = 14;
   const { toast } = useToast();
-  const [showAdoptList, setShowAdoptList] = React.useState(false);
+  const [addVariationOpen, setAddVariationOpen] = React.useState(false);
   const [savingDefault, setSavingDefault] = React.useState(false);
   const [savingCustom, setSavingCustom] = React.useState(false);
   const [customName, setCustomName] = React.useState("");
@@ -114,7 +122,7 @@ export function ExerciseSettingsSheet({
     if (firstKey) {
       onVariationsChange({ ...variations, [template.id]: firstKey });
     }
-    setShowAdoptList(false);
+    setAddVariationOpen(false);
   };
 
   const handleSaveDefault = async () => {
@@ -180,14 +188,14 @@ export function ExerciseSettingsSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="left" className="w-screen sm:max-w-md flex flex-col overflow-y-auto bg-gradient-to-br from-blue-800/10 to-emerald-950/25 backdrop-blur-lg">
+      <SheetContent side="left" className="w-screen sm:max-w-md flex flex-col overflow-y-auto bg-gradient-to-br from-blue-800/10 to-emerald-950/20 backdrop-blur-sm">
         <SheetHeader className="pb-2">
           <SheetTitle className="text-lg">Exercise Settings</SheetTitle>
           <SheetDescription>{exercise.name}</SheetDescription>
         </SheetHeader>
 
         {/* Variation Selectors */}
-        <div className="flex-1 space-y-4">
+        <div className="flex-1 ">
           {activeTemplateIds.length === 0 && (
             <p className="text-sm text-muted-foreground/60 italic py-4">
               No variations configured for this exercise.
@@ -235,48 +243,60 @@ export function ExerciseSettingsSheet({
           </div>
 
           {/* Adopt new variation */}
-          {!showAdoptList ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="w-full justify-start text-blue-400 hover:text-blue-300 hover:bg-blue-500/10"
-              onClick={() => setShowAdoptList(true)}
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Add variation dimension
-            </Button>
-          ) : (
-            <div className="space-y-1 border border-border/50 rounded-lg p-3">
-              <p className="text-xs text-muted-foreground mb-2">
-                Select a variation to add:
-              </p>
-              {availableTemplates.map((template) => (
-                <button
-                  key={template.id}
-                  className="w-full text-left text-sm px-2 py-1.5 rounded hover:bg-accent transition-colors"
-                  onClick={() => handleAdoptVariation(template)}
+          <div className="mt-8 space-y-2">
+            <Dialog open={addVariationOpen} onOpenChange={setAddVariationOpen}>
+              <DialogTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  role="combobox"
+                  aria-expanded={addVariationOpen}
+                  disabled={availableTemplates.length === 0}
+                  className="w-full justify-center text-blue-400 hover:text-blue-300 hover:bg-blue-500/10"
                 >
-                  {template.label}
-                  <span className="text-xs text-muted-foreground ml-2">
-                    {template.description}
-                  </span>
-                </button>
-              ))}
-              {availableTemplates.length === 0 && (
-                <p className="text-xs text-muted-foreground italic">
-                  All available variations are already active.
-                </p>
-              )}
-              <Button
-                variant="ghost"
-                size="sm"
-                className="mt-1 text-xs"
-                onClick={() => setShowAdoptList(false)}
-              >
-                Cancel
-              </Button>
-            </div>
-          )}
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add variation dimension
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="w-[98vw] max-w-[98vw] sm:max-w-[98vw] rounded-2xl border border-white/10 bg-gradient-to-br from-blue-500/10 via-emerald-500/5 to-transparent backdrop-blur-xl p-0 overflow-hidden">
+                <DialogHeader className="px-4 pt-4 pb-1">
+                  <DialogTitle className="text-base">Add variation dimension</DialogTitle>
+                  <DialogDescription>
+                    Select a variation to add to this exercise.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="border-t">
+                  <div className="max-h-64 overflow-y-auto overscroll-contain p-2">
+                    {availableTemplates.map((template) => (
+                      <button
+                        key={template.id}
+                        type="button"
+                        onClick={() => handleAdoptVariation(template)}
+                        className="w-full rounded-sm px-2 py-2 text-left hover:bg-accent transition-colors"
+                      >
+                        <div className="flex flex-col">
+                          <span className="text-sm">{template.label}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {template.description}
+                          </span>
+                        </div>
+                      </button>
+                    ))}
+                    {availableTemplates.length === 0 && (
+                      <p className="py-4 text-center text-sm text-muted-foreground">
+                        No variation available.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+            {availableTemplates.length === 0 && (
+              <p className="text-xs text-muted-foreground italic">
+                All available variations are already active.
+              </p>
+            )}
+          </div>
         </div>
 
         <Separator />

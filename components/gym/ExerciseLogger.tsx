@@ -223,7 +223,7 @@ export function ExerciseLogger({
   return (
     <div className="flex flex-col w-full pb-12">
       {/* Exercise Header */}
-      <div className="w-[calc(100vw-0.5rem)] -translate-x-3 align-self-start px-3 pt-3 pb-1 bg-gradient-to-br from-blue-950/35 to-emerald-950/60 rounded-xl border border-blue-400">
+      <div className="w-[calc(100vw-0.5rem)] -translate-x-1 align-self-start px-3 pt-3 pb-1 bg-gradient-to-br from-blue-950/35 to-emerald-950/60 rounded-xl border border-blue-400">
         <h2 className="text-xl font-semibold text-foreground">{exercise.name}</h2>
         {visibleVariationChips.length > 0 && (
           <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
@@ -266,7 +266,7 @@ export function ExerciseLogger({
       </div>
 
       {/* Set Cards */}
-      <div className="flex flex-col flex-wrap h-fit pb-4 mt-6">
+      <div className="flex flex-col flex-wrap h-fit pb-4 mt-2">
         <Accordion
           type="single"
           collapsible
