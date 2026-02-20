@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { House, Syringe, Plus, Dumbbell, Heart, Apple  } from "lucide-react";
+import { House, Plus, Dumbbell, Heart, Apple  } from "lucide-react";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -22,28 +22,24 @@ function LogButton({open, setOpen }:{open:any, setOpen:any}){
     return (
         <DropdownMenu open={open} onOpenChange={setOpen}>
             <DropdownMenuTrigger asChild >
-                <div className="h-14 w-14 mb-6 flex justify-center items-center bg-green-500 transition duration-300 rounded-full shadow-lg shadow-black data-[state=open]:bg-neutral-900 data-[state=open]:translate-y-3 data-[state=open]:rotate-45" ><Plus className="w-8 h-8 " color={open? "grey":"white"} /></div> 
+                <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-full bg-green-500 shadow-lg shadow-black transition duration-300 data-[state=open]:translate-y-3 data-[state=open]:rotate-45 data-[state=open]:bg-neutral-900">
+                    <Plus className="h-8 w-8" color={open ? "rgb(163 163 163)" : "white"} />
+                </div>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="px-8 py-4 rounded-xl bg-gradient-to-br from-green-950/10 to-black">
-                <DropdownMenuLabel className="text-2xl font-light w-full text-center mb-4">Log a...</DropdownMenuLabel>
-                <DropdownMenuItem className="p-px bg-gradient-to-r from-green-500 to-blue-600 flex flex-col items-center justify-center mb-8 rounded" onClick={()=>handleNavClick(false)}>
-                    <Link className="bg-black w-full text-center px-12 sm:px-16 py-2 rounded text-xl font-thin text-neutral-300" href={"/logmeal"}>Meal</Link>
+            <DropdownMenuContent className="w-[calc(100vw-2rem)] max-w-[400px] rounded-xl border border-white/10 bg-gradient-to-b from-blue-950/20 to-blue-950/5 px-8 py-4 shadow-lg backdrop-blur-xl data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0">
+                <DropdownMenuLabel className="text-2xl font-light w-full text-center mb-4">Log...</DropdownMenuLabel>
+                <DropdownMenuItem className="mb-8 flex flex-col items-center justify-center rounded bg-gradient-to-r from-green-500 to-blue-600 p-px" onClick={()=>handleNavClick(false)}>
+                    <Link className="w-full rounded bg-black px-12 py-2 text-center text-xl font-thin text-neutral-300 sm:px-16" href={"/logmeal"}>Meal</Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem className="p-px bg-gradient-to-r from-green-500 to-blue-600 flex flex-col items-center justify-center mb-8 rounded" onClick={()=>handleNavClick(false)}>
-                    <Link className="bg-black w-full text-center px-12 sm:px-16 py-2 rounded text-xl font-thin text-neutral-300" href={"/logmedication"}>Medication</Link>
+                <DropdownMenuItem className="mb-8 flex flex-col items-center justify-center rounded bg-gradient-to-r from-green-500 to-blue-600 p-px" onClick={()=>handleNavClick(false)}>
+                    <Link className="w-full rounded bg-black px-12 py-2 text-center text-xl font-thin text-neutral-300 sm:px-16" href={"/logmedication"}>Meds/Supplements</Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem className="p-px bg-gradient-to-r from-green-500 to-blue-600 flex flex-col items-center justify-center mb-8 rounded" onClick={()=>handleNavClick(false)}>
-                    <Link className="bg-black w-full text-center px-12 sm:px-16 py-2 rounded text-xl font-thin text-neutral-300" href={"/logsupplement"}>Supplement</Link>
+                <DropdownMenuItem className="mb-8 flex flex-col items-center justify-center rounded bg-gradient-to-r from-green-500 to-blue-600 p-px" onClick={()=>handleNavClick(false)}>
+                    <Link className="w-full rounded bg-black px-12 py-2 text-center text-xl font-thin text-neutral-300 sm:px-16" href={"/logworkout"}>Workout</Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem className="p-px bg-gradient-to-r from-green-500 to-blue-600 flex flex-col items-center justify-center mb-8 rounded" onClick={()=>handleNavClick(false)}>
-                    <Link className="bg-black w-full text-center px-12 sm:px-16 py-2 rounded text-xl font-thin text-neutral-300" href={"/logworkout"}>Workout</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem className="p-px bg-gradient-to-r from-green-500 to-blue-600 flex flex-col items-center justify-center mb-8 rounded" onClick={()=>handleNavClick(false)}>
-                    <Link className="bg-black w-full text-center px-12 sm:px-16 py-2 rounded text-xl font-thin text-neutral-300" href={"/loghrt"}>Hormone Treatment</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem className="p-px bg-gradient-to-r from-green-500 to-blue-600 flex flex-col items-center justify-center mb-8 rounded" onClick={()=>handleNavClick(false)}>
-                    <Link className="bg-black w-full text-center px-12 sm:px-16 py-2 rounded text-xl font-thin text-neutral-300" href={"/logbody"}>Body Measurment</Link>
-                </DropdownMenuItem>
+                {/* <DropdownMenuItem className="mb-0 flex flex-col items-center justify-center rounded bg-gradient-to-r from-green-500 to-blue-600 p-px" onClick={()=>handleNavClick(false)}>
+                    <Link className="w-full rounded bg-black px-12 py-2 text-center text-xl font-thin text-neutral-300 sm:px-16" href={"/logbody"}>Body Measurement</Link>
+                </DropdownMenuItem> */}
             </DropdownMenuContent>
         </DropdownMenu>
     )
@@ -56,13 +52,13 @@ export default function MobileNav() {
     
 
     return(
-        <nav className="w-full h-20 flex items-center justify-around pb-2 fixed z-10 bottom-0 md:hidden bg-slate-950/45 backdrop-blur-xl">
+        <nav className="fixed bottom-0 z-10 flex h-20 w-full items-center justify-around border-t border-white/10 bg-gradient-to-b from-blue-950/20 to-blue-950/5 pb-2 backdrop-blur-xl md:hidden">
             <Link href="/" className="flex justify-center"><House /></Link>
             <Link href="/meals" className="flex justify-center"><Apple /></Link>
             <LogButton open={open} setOpen={setOpen} />
             <Link href="/gymsessions" className="flex justify-center"><Dumbbell /></Link>
             <Link href="/" className="flex justify-center"><Heart /></Link>
-            <div className={`${open ? "bg-black/20 backdrop-blur-lg":"bg-transparent backdrop-blur-none"} fixed z-10 w-[100vw] h-[100vh] -translate-y-full top-0 left-0 transition duration-1500 pointer-events-none`}></div>
+            <div className={`${open ? "bg-black/80 backdrop-blur-sm":"bg-transparent backdrop-blur-none"} pointer-events-none fixed left-0 top-0 z-10 h-[100vh] w-[100vw] -translate-y-full transition duration-500`}></div>
         </nav>
     )
 }
