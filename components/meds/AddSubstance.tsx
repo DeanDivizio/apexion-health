@@ -1,6 +1,6 @@
 "use client";
 
-import { ClipboardList, Layers, PlusCircle } from "lucide-react";
+import { Layers, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui_primitives/button";
 import {
   Select,
@@ -21,11 +21,12 @@ interface AddSubstanceProps {
   onSelectSubstance: (substanceId: string) => void;
   onCreateNewSubstance: () => void;
   stagedCount: number;
-  onOpenOverview: () => void;
   presets: MedicationPresetView[];
   selectedPresetId: string;
   onSelectedPresetIdChange: (presetId: string) => void;
   onApplyPreset: () => void;
+  onLogPreset: () => void;
+  submitting: boolean;
 }
 
 export function AddSubstance({
@@ -34,11 +35,12 @@ export function AddSubstance({
   onSelectSubstance,
   onCreateNewSubstance,
   stagedCount,
-  onOpenOverview,
   presets,
   selectedPresetId,
   onSelectedPresetIdChange,
   onApplyPreset,
+  onLogPreset,
+  submitting,
 }: AddSubstanceProps) {
   return (
     <div className="flex flex-col items-center justify-center px-2 py-8 space-y-8 w-full">
@@ -83,13 +85,13 @@ export function AddSubstance({
             Preset
           </span>
         </div>
-        <div className="flex gap-2">
+        <div className="space-y-2">
           <Select
             value={selectedPresetId || undefined}
             onValueChange={onSelectedPresetIdChange}
             disabled={presets.length === 0}
           >
-            <SelectTrigger className="flex-1">
+            <SelectTrigger className="w-full">
               <SelectValue
                 placeholder={
                   presets.length === 0 ? "None saved" : "Select a preset..."
@@ -108,27 +110,26 @@ export function AddSubstance({
               ))}
             </SelectContent>
           </Select>
-          <Button
-            type="button"
-            onClick={onApplyPreset}
-            disabled={!selectedPresetId}
-            className="bg-green-600 hover:bg-green-700 text-white"
-          >
-            Apply
-          </Button>
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              type="button"
+              onClick={onApplyPreset}
+              disabled={!selectedPresetId}
+              variant="outline"
+            >
+              Stage
+            </Button>
+            <Button
+              type="button"
+              onClick={onLogPreset}
+              disabled={!selectedPresetId || submitting}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              {submitting ? "Logging..." : "Log"}
+            </Button>
+          </div>
         </div>
       </div>
-
-      {stagedCount > 0 && (
-        <Button
-          onClick={onOpenOverview}
-          variant="outline"
-          className="w-full h-12"
-        >
-          <ClipboardList className="mr-2 h-4 w-4" />
-          Review Staged Items
-        </Button>
-      )}
     </div>
   );
 }

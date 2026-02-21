@@ -35,6 +35,8 @@ interface MedicationOverviewSheetProps {
   onSessionDateChange: (date: Date) => void;
   sessionTime: string;
   onSessionTimeChange: (time: string) => void;
+  useManualTimestamp: boolean;
+  onUseManualTimestampChange: (manual: boolean) => void;
   onRemoveItem: (index: number) => void;
   onSavePreset: () => void;
   onSaveSession: () => void;
@@ -83,6 +85,8 @@ export function MedicationOverviewSheet({
   onSessionDateChange,
   sessionTime,
   onSessionTimeChange,
+  useManualTimestamp,
+  onUseManualTimestampChange,
   onRemoveItem,
   onSavePreset,
   onSaveSession,
@@ -114,38 +118,58 @@ export function MedicationOverviewSheet({
         {/* ── Date / time ────────────────────────────────────────── */}
         <div className="px-4 py-3 space-y-3">
           <div className="flex items-center gap-2">
-            <CalendarDays className="h-4 w-4 text-muted-foreground" />
-            <Popover>
-              <PopoverTrigger asChild>
-                <button className="text-sm hover:text-blue-400 transition-colors">
-                  {sessionDate.toLocaleDateString("en-US", {
-                    weekday: "short",
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
-                </button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={sessionDate}
-                  onSelect={(date) => date && onSessionDateChange(date)}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
+            <Clock className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">
+              {useManualTimestamp ? "Manual time" : "Now"}
+            </span>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="ml-auto h-7 px-2 text-xs"
+              onClick={() => onUseManualTimestampChange(!useManualTimestamp)}
+            >
+              {useManualTimestamp ? "Use now" : "Set manually"}
+            </Button>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-muted-foreground" />
-            <Input
-              type="time"
-              className="h-8 text-xs"
-              value={sessionTime}
-              onChange={(e) => onSessionTimeChange(e.target.value)}
-            />
-          </div>
+          {useManualTimestamp ? (
+            <>
+              <div className="flex items-center gap-2">
+                <CalendarDays className="h-4 w-4 text-muted-foreground" />
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button className="text-sm hover:text-blue-400 transition-colors">
+                      {sessionDate.toLocaleDateString("en-US", {
+                        weekday: "short",
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })}
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={sessionDate}
+                      onSelect={(date) => date && onSessionDateChange(date)}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="time"
+                  className="h-8 text-xs"
+                  value={sessionTime}
+                  onChange={(e) => onSessionTimeChange(e.target.value)}
+                />
+              </div>
+            </>
+          ) : null}
         </div>
 
         <Separator />

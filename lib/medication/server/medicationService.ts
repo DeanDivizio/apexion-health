@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db/prisma";
 import type {
   MedicationBootstrap,
   MedicationDraftItem,
+  MedicationLogSessionView,
   MedicationPresetView,
   SubstanceCatalogItemView,
 } from "@/lib/medication/types";
@@ -83,6 +84,16 @@ function toDraftItem(row: any): MedicationDraftItem {
     deliveryMethodId: row.deliveryMethodId,
     variantId: row.variantId,
     injectionDepth: row.injectionDepth ?? null,
+  };
+}
+
+function toSessionView(row: any): MedicationLogSessionView {
+  return {
+    id: row.id,
+    loggedAtIso: row.loggedAt.toISOString(),
+    presetId: row.presetId ?? null,
+    notes: row.notes ?? null,
+    items: (row.items ?? []).map(toDraftItem),
   };
 }
 
@@ -177,6 +188,130 @@ async function validateItemReferences(
   }
 }
 
+async function persistLogItemsForSession(
+  tx: TxClient,
+  userId: string,
+  sessionId: string,
+  items: MedicationDraftItemInput[],
+) {
+  // Pre-fetch all substance data needed for ingredient persistence
+  const substanceIds = [...new Set(items.map((i) => i.substanceId))];
+  const [compoundIngredients, substanceMeta] = await Promise.all([
+    tx.substanceIngredient.findMany({
+      where: { substanceId: { in: substanceIds }, active: true },
+      select: {
+        id: true,
+        substanceId: true,
+        ingredientKey: true,
+        ingredientName: true,
+        amountPerServing: true,
+        unit: true,
+      },
+    }),
+    tx.substance.findMany({
+      where: { id: { in: substanceIds } },
+      select: { id: true, selfIngredientKey: true, displayName: true },
+    }),
+  ]);
+
+  const ingredientsBySubstance = new Map<string, any[]>();
+  for (const ing of compoundIngredients) {
+    const list = ingredientsBySubstance.get(ing.substanceId) ?? [];
+    list.push(ing);
+    ingredientsBySubstance.set(ing.substanceId, list);
+  }
+  const substanceMap = new Map<
+    string,
+    { id: string; selfIngredientKey: string | null; displayName: string }
+  >(substanceMeta.map((s: any) => [s.id, s]));
+
+  // Build canonical ingredient name lookup from compound ingredients
+  const canonicalNameByKey = new Map<string, string>();
+  for (const ing of compoundIngredients) {
+    if (!canonicalNameByKey.has(ing.ingredientKey)) {
+      canonicalNameByKey.set(ing.ingredientKey, ing.ingredientName);
+    }
+  }
+
+  // For self-ingredient keys not already covered, check globally
+  const selfIngredientKeys = substanceMeta
+    .filter((s: any) => s.selfIngredientKey)
+    .map((s: any) => s.selfIngredientKey as string)
+    .filter((k: string) => !canonicalNameByKey.has(k));
+
+  if (selfIngredientKeys.length) {
+    const globalIngredients = await tx.substanceIngredient.findMany({
+      where: { ingredientKey: { in: selfIngredientKeys }, active: true },
+      select: { ingredientKey: true, ingredientName: true },
+    });
+    for (const gi of globalIngredients) {
+      if (!canonicalNameByKey.has(gi.ingredientKey)) {
+        canonicalNameByKey.set(gi.ingredientKey, gi.ingredientName);
+      }
+    }
+  }
+
+  // Create log items and collect ingredient rows for batch insert
+  const ingredientRows: any[] = [];
+  for (const [index, item] of items.entries()) {
+    const logItem = await tx.substanceLogItem.create({
+      data: {
+        sessionId,
+        userId,
+        substanceId: item.substanceId,
+        snapshotName: item.snapshotName,
+        doseValue: item.doseValue ?? null,
+        doseUnit: item.doseUnit ?? null,
+        compoundServings: item.compoundServings ?? null,
+        deliveryMethodId: item.deliveryMethodId ?? null,
+        variantId: item.variantId ?? null,
+        injectionDepth: item.injectionDepth ?? null,
+        sortOrder: index,
+      },
+    });
+
+    if (item.compoundServings != null) {
+      const ings = ingredientsBySubstance.get(item.substanceId) ?? [];
+      for (const ing of ings) {
+        ingredientRows.push({
+          logItemId: logItem.id,
+          sourceIngredientId: ing.id,
+          ingredientKey: ing.ingredientKey,
+          ingredientName: ing.ingredientName,
+          amountTotal: ing.amountPerServing * item.compoundServings,
+          unit: ing.unit,
+          sourceAmountPerServing: ing.amountPerServing,
+          sourceServings: item.compoundServings,
+        });
+      }
+    }
+
+    if (item.doseValue != null && item.doseValue > 0) {
+      const substance = substanceMap.get(item.substanceId);
+      if (substance?.selfIngredientKey) {
+        ingredientRows.push({
+          logItemId: logItem.id,
+          sourceIngredientId: null,
+          ingredientKey: substance.selfIngredientKey,
+          ingredientName:
+            canonicalNameByKey.get(substance.selfIngredientKey) ??
+            substance.displayName,
+          amountTotal: item.doseValue,
+          unit: item.doseUnit ?? "mg",
+          sourceAmountPerServing: item.doseValue,
+          sourceServings: 1,
+        });
+      }
+    }
+  }
+
+  if (ingredientRows.length) {
+    await tx.substanceLogItemIngredient.createMany({
+      data: ingredientRows,
+    });
+  }
+}
+
 // ─── Public API ──────────────────────────────────────────────────────────────
 
 export async function getMedicationBootstrap(
@@ -240,6 +375,34 @@ export async function getMedicationBootstrap(
     deliveryMethods,
     presets: mappedPresets,
   };
+}
+
+export async function listMedicationLogSessions(
+  userId: string,
+): Promise<MedicationLogSessionView[]> {
+  assertCatalogModelsAvailable();
+
+  const sessions = await db.substanceLogSession.findMany({
+    where: { userId },
+    orderBy: { loggedAt: "desc" },
+    include: {
+      items: {
+        orderBy: { sortOrder: "asc" },
+        select: {
+          substanceId: true,
+          snapshotName: true,
+          doseValue: true,
+          doseUnit: true,
+          compoundServings: true,
+          deliveryMethodId: true,
+          variantId: true,
+          injectionDepth: true,
+        },
+      },
+    },
+  });
+
+  return sessions.map(toSessionView);
 }
 
 export async function createSubstance(
@@ -309,125 +472,58 @@ export async function createMedicationLogSession(
       },
     });
 
-    // Pre-fetch all substance data needed for ingredient persistence
-    const substanceIds = [...new Set(input.items.map((i) => i.substanceId))];
-    const [compoundIngredients, substanceMeta] = await Promise.all([
-      tx.substanceIngredient.findMany({
-        where: { substanceId: { in: substanceIds }, active: true },
-        select: {
-          id: true,
-          substanceId: true,
-          ingredientKey: true,
-          ingredientName: true,
-          amountPerServing: true,
-          unit: true,
-        },
-      }),
-      tx.substance.findMany({
-        where: { id: { in: substanceIds } },
-        select: { id: true, selfIngredientKey: true, displayName: true },
-      }),
-    ]);
-
-    const ingredientsBySubstance = new Map<string, any[]>();
-    for (const ing of compoundIngredients) {
-      const list = ingredientsBySubstance.get(ing.substanceId) ?? [];
-      list.push(ing);
-      ingredientsBySubstance.set(ing.substanceId, list);
-    }
-    const substanceMap = new Map<
-      string,
-      { id: string; selfIngredientKey: string | null; displayName: string }
-    >(substanceMeta.map((s: any) => [s.id, s]));
-
-    // Build canonical ingredient name lookup from compound ingredients
-    const canonicalNameByKey = new Map<string, string>();
-    for (const ing of compoundIngredients) {
-      if (!canonicalNameByKey.has(ing.ingredientKey)) {
-        canonicalNameByKey.set(ing.ingredientKey, ing.ingredientName);
-      }
-    }
-
-    // For self-ingredient keys not already covered, check globally
-    const selfIngredientKeys = substanceMeta
-      .filter((s: any) => s.selfIngredientKey)
-      .map((s: any) => s.selfIngredientKey as string)
-      .filter((k: string) => !canonicalNameByKey.has(k));
-
-    if (selfIngredientKeys.length) {
-      const globalIngredients = await tx.substanceIngredient.findMany({
-        where: { ingredientKey: { in: selfIngredientKeys }, active: true },
-        select: { ingredientKey: true, ingredientName: true },
-      });
-      for (const gi of globalIngredients) {
-        if (!canonicalNameByKey.has(gi.ingredientKey)) {
-          canonicalNameByKey.set(gi.ingredientKey, gi.ingredientName);
-        }
-      }
-    }
-
-    // Create log items and collect ingredient rows for batch insert
-    const ingredientRows: any[] = [];
-    for (const [index, item] of input.items.entries()) {
-      const logItem = await tx.substanceLogItem.create({
-        data: {
-          sessionId: session.id,
-          userId,
-          substanceId: item.substanceId,
-          snapshotName: item.snapshotName,
-          doseValue: item.doseValue ?? null,
-          doseUnit: item.doseUnit ?? null,
-          compoundServings: item.compoundServings ?? null,
-          deliveryMethodId: item.deliveryMethodId ?? null,
-          variantId: item.variantId ?? null,
-          injectionDepth: item.injectionDepth ?? null,
-          sortOrder: index,
-        },
-      });
-
-      if (item.compoundServings != null) {
-        const ings = ingredientsBySubstance.get(item.substanceId) ?? [];
-        for (const ing of ings) {
-          ingredientRows.push({
-            logItemId: logItem.id,
-            sourceIngredientId: ing.id,
-            ingredientKey: ing.ingredientKey,
-            ingredientName: ing.ingredientName,
-            amountTotal: ing.amountPerServing * item.compoundServings,
-            unit: ing.unit,
-            sourceAmountPerServing: ing.amountPerServing,
-            sourceServings: item.compoundServings,
-          });
-        }
-      }
-
-      if (item.doseValue != null && item.doseValue > 0) {
-        const substance = substanceMap.get(item.substanceId);
-        if (substance?.selfIngredientKey) {
-          ingredientRows.push({
-            logItemId: logItem.id,
-            sourceIngredientId: null,
-            ingredientKey: substance.selfIngredientKey,
-            ingredientName:
-              canonicalNameByKey.get(substance.selfIngredientKey) ??
-              substance.displayName,
-            amountTotal: item.doseValue,
-            unit: item.doseUnit ?? "mg",
-            sourceAmountPerServing: item.doseValue,
-            sourceServings: 1,
-          });
-        }
-      }
-    }
-
-    if (ingredientRows.length) {
-      await tx.substanceLogItemIngredient.createMany({
-        data: ingredientRows,
-      });
-    }
+    await persistLogItemsForSession(tx, userId, session.id, input.items);
 
     return session;
   });
+}
+
+export async function updateMedicationLogSession(
+  userId: string,
+  sessionId: string,
+  input: CreateMedicationLogSessionInput,
+) {
+  assertCatalogModelsAvailable();
+
+  return db.$transaction(async (tx: TxClient) => {
+    const existing = await tx.substanceLogSession.findFirst({
+      where: { id: sessionId, userId },
+      select: { id: true },
+    });
+
+    if (!existing) {
+      throw new Error("Medication log session not found.");
+    }
+
+    await validateItemReferences(tx, userId, input.items);
+
+    await tx.substanceLogSession.update({
+      where: { id: sessionId },
+      data: {
+        loggedAt: new Date(input.loggedAtIso),
+        presetId: input.presetId ?? null,
+        notes: input.notes ?? null,
+      },
+    });
+
+    await tx.substanceLogItem.deleteMany({ where: { sessionId } });
+    await persistLogItemsForSession(tx, userId, sessionId, input.items);
+  });
+}
+
+export async function deleteMedicationLogSession(userId: string, sessionId: string) {
+  assertCatalogModelsAvailable();
+
+  const session = await db.substanceLogSession.findFirst({
+    where: { id: sessionId, userId },
+    select: { id: true },
+  });
+
+  if (!session) {
+    throw new Error("Medication log session not found.");
+  }
+
+  await db.substanceLogSession.delete({ where: { id: sessionId } });
 }
 
 export async function createMedicationPreset(

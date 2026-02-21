@@ -63,3 +63,11 @@ export interface MedicationBootstrap {
   deliveryMethods: SubstanceDeliveryMethodView[];
   presets: MedicationPresetView[];
 }
+
+export interface MedicationLogSessionView {
+  id: string;
+  loggedAtIso: string;
+  presetId: string | null;
+  notes: string | null;
+  items: MedicationDraftItem[];
+}

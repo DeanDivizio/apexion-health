@@ -82,6 +82,7 @@ interface PersistedMedicationState {
   stagedItems: MedicationDraftItem[];
   sessionDateIso: string;
   sessionTime: string;
+  useManualTimestamp: boolean;
 }
 
 const STORAGE_KEY = "apexion-medication-session";
@@ -143,6 +144,7 @@ export function MedicationFlow({ bootstrap }: MedicationFlowProps) {
   );
   const [sessionDate, setSessionDate] = React.useState<Date>(new Date());
   const [sessionTime, setSessionTime] = React.useState(nowTimeInputValue());
+  const [useManualTimestamp, setUseManualTimestamp] = React.useState(false);
   const [overviewOpen, setOverviewOpen] = React.useState(false);
   const [selectedPresetId, setSelectedPresetId] = React.useState("");
   const [submitting, setSubmitting] = React.useState(false);
@@ -188,6 +190,7 @@ export function MedicationFlow({ bootstrap }: MedicationFlowProps) {
     setStagedItems(saved.stagedItems);
     setSessionDate(new Date(saved.sessionDateIso));
     setSessionTime(saved.sessionTime);
+    setUseManualTimestamp(saved.useManualTimestamp === true);
   }, []);
 
   React.useEffect(() => {
@@ -198,8 +201,16 @@ export function MedicationFlow({ bootstrap }: MedicationFlowProps) {
       stagedItems,
       sessionDateIso: sessionDate.toISOString(),
       sessionTime,
+      useManualTimestamp,
     });
-  }, [selectedSubstanceId, logValues, stagedItems, sessionDate, sessionTime]);
+  }, [
+    selectedSubstanceId,
+    logValues,
+    stagedItems,
+    sessionDate,
+    sessionTime,
+    useManualTimestamp,
+  ]);
 
   // ── Header ───────────────────────────────────────────────────────────
   const overviewButton = useMemo(
@@ -309,7 +320,11 @@ export function MedicationFlow({ bootstrap }: MedicationFlowProps) {
   }, [resetActiveEntry, toast, validateAndBuildDraftItem]);
 
   const handleSaveSession = React.useCallback(
-    async (items: MedicationDraftItem[], presetId?: string | null) => {
+    async (
+      items: MedicationDraftItem[],
+      presetId?: string | null,
+      loggedAtIsoOverride?: string,
+    ) => {
       if (!items.length) {
         toast({
           title: "No items",
@@ -322,10 +337,22 @@ export function MedicationFlow({ bootstrap }: MedicationFlowProps) {
       setSubmitting(true);
       try {
         await createMedicationLogSessionAction({
-          loggedAtIso: combineDateAndTime(sessionDate, sessionTime),
+          loggedAtIso:
+            loggedAtIsoOverride ??
+            (useManualTimestamp
+              ? combineDateAndTime(sessionDate, sessionTime)
+              : new Date().toISOString()),
           presetId: presetId ?? null,
           items,
         });
+        // Clear in-memory flow state before navigation in case this route is cached.
+        resetActiveEntry();
+        setStagedItems([]);
+        setSelectedPresetId("");
+        setOverviewOpen(false);
+        setUseManualTimestamp(false);
+        setSessionDate(new Date());
+        setSessionTime(nowTimeInputValue());
         clearPersistedState();
         toast({
           title: "Medication log saved",
@@ -342,13 +369,13 @@ export function MedicationFlow({ bootstrap }: MedicationFlowProps) {
         setSubmitting(false);
       }
     },
-    [router, sessionDate, sessionTime, toast],
+    [resetActiveEntry, router, sessionDate, sessionTime, toast, useManualTimestamp],
   );
 
   const handleQuickLog = React.useCallback(async () => {
     const item = validateAndBuildDraftItem();
     if (!item) return;
-    await handleSaveSession([item]);
+    await handleSaveSession([item], null, new Date().toISOString());
   }, [handleSaveSession, validateAndBuildDraftItem]);
 
   const handleSavePreset = React.useCallback(() => {
@@ -410,6 +437,13 @@ export function MedicationFlow({ bootstrap }: MedicationFlowProps) {
     }
     applyPresetItems(preset);
   }, [applyPresetItems, presets, selectedPresetId, stagedItems.length]);
+
+  const handleLogPreset = React.useCallback(async () => {
+    if (!selectedPresetId) return;
+    const preset = presets.find((p) => p.id === selectedPresetId);
+    if (!preset) return;
+    await handleSaveSession(preset.items, preset.id, new Date().toISOString());
+  }, [handleSaveSession, presets, selectedPresetId]);
 
   const handleConfirmApplyPreset = React.useCallback(() => {
     const preset = presets.find((p) => p.id === selectedPresetId);
@@ -501,11 +535,12 @@ export function MedicationFlow({ bootstrap }: MedicationFlowProps) {
         onSelectSubstance={handleSelectSubstance}
         onCreateNewSubstance={() => setCreateDialogOpen(true)}
         stagedCount={stagedItems.length}
-        onOpenOverview={() => setOverviewOpen(true)}
         presets={presets}
         selectedPresetId={selectedPresetId}
         onSelectedPresetIdChange={setSelectedPresetId}
         onApplyPreset={handleApplyPreset}
+        onLogPreset={handleLogPreset}
+        submitting={submitting}
       />
 
       {/* ── Log substance dialog ──────────────────────────── */}
@@ -549,9 +584,10 @@ export function MedicationFlow({ bootstrap }: MedicationFlowProps) {
             <Button
               onClick={handleQuickLog}
               className="flex-1 h-11 bg-green-600 hover:bg-green-700 text-white"
+              disabled={submitting}
             >
               <CheckCircle2 className="mr-2 h-4 w-4" />
-              Log
+              {submitting ? "Submitting..." : "Log"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -567,6 +603,8 @@ export function MedicationFlow({ bootstrap }: MedicationFlowProps) {
         onSessionDateChange={setSessionDate}
         sessionTime={sessionTime}
         onSessionTimeChange={setSessionTime}
+        useManualTimestamp={useManualTimestamp}
+        onUseManualTimestampChange={setUseManualTimestamp}
         onRemoveItem={(index) =>
           setStagedItems((prev) => prev.filter((_, i) => i !== index))
         }
@@ -654,8 +692,8 @@ export function MedicationFlow({ bootstrap }: MedicationFlowProps) {
                     size="sm"
                     onClick={() =>
                       setNewIngredients((prev) => [
-                        ...prev,
                         { name: "", amountPerServing: "", unit: "mg" },
+                        ...prev,
                       ])
                     }
                     className="h-7 text-xs gap-1"

@@ -10,7 +10,10 @@ import {
   createMedicationLogSession,
   createMedicationPreset,
   createSubstance,
+  deleteMedicationLogSession,
   getMedicationBootstrap,
+  listMedicationLogSessions,
+  updateMedicationLogSession,
 } from "@/lib/medication/server/medicationService";
 
 async function requireUserId(): Promise<string> {
@@ -40,4 +43,25 @@ export async function createMedicationLogSessionAction(input: unknown) {
   const userId = await requireUserId();
   const parsed = createMedicationLogSessionInputSchema.parse(input);
   return createMedicationLogSession(userId, parsed);
+}
+
+export async function listMedicationLogSessionsAction() {
+  const userId = await requireUserId();
+  return listMedicationLogSessions(userId);
+}
+
+export async function updateMedicationLogSessionAction(
+  sessionId: string,
+  input: unknown,
+) {
+  const userId = await requireUserId();
+  if (!sessionId) throw new Error("Session ID is required.");
+  const parsed = createMedicationLogSessionInputSchema.parse(input);
+  return updateMedicationLogSession(userId, sessionId, parsed);
+}
+
+export async function deleteMedicationLogSessionAction(sessionId: string) {
+  const userId = await requireUserId();
+  if (!sessionId) throw new Error("Session ID is required.");
+  return deleteMedicationLogSession(userId, sessionId);
 }
