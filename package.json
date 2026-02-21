@@ -7,7 +7,8 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
-    "validate:gym-defaults": "tsx scripts/validate-gym-defaults.ts"
+    "validate:gym-defaults": "tsx scripts/validate-gym-defaults.ts",
+    "seed:substances": "tsx scripts/seed-substance-catalog.ts"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.637.0",

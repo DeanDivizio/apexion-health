@@ -27,8 +27,7 @@ export function SideNav() {
                         <p className="text-xs font-thin italic mb-4">Your personal databases, orgnaized by day. Clear, accurate, editable.</p>
                         <Link href="/gymsessions" className="flex items-center gap-2 mb-4 "><Dumbbell className="w-4 h-4" />Gym Sessions</Link>
                         <Link href="/nutrientrecords" className="flex items-center gap-2 mb-4"><Apple className="w-4 h-4" />Nutrient Records</Link>
-                        <Link href="/supplementrecords" className="flex items-center gap-2 mb-4"><Pill className="w-4 h-4" />Supplement Records</Link>
-                        <Link href="/medicationrecords" className="flex items-center gap-2 mb-4"><ClipboardPlus className="w-4 h-4" />Medication Records</Link>
+                        <Link href="/meds" className="flex items-center gap-2 mb-4"><ClipboardPlus className="w-4 h-4" />Medication & Supplement Logs</Link>
                         <Link href="/hrtrecords" className="flex items-center gap-2 mb-4"><Syringe className="w-4 h-4" />HRT Records</Link>
                         <Link href="/bodymeasurements" className="flex items-center gap-2 mb-4"><Scale className="w-4 h-4" />Body Measurements</Link>
                     </div>

@@ -194,3 +194,193 @@ model GymUserExerciseDefault {
   @@unique([userId, exerciseKey, templateId])
   @@index([userId, exerciseKey])
 }
+
+// ─── Substance / Medication Logging ──────────────────────────────────────────
+
+model Substance {
+  id                String  @id @default(uuid())
+  ownerUserId       String?
+  key               String  @unique
+  displayName       String
+  isCompound        Boolean @default(false)
+  defaultDoseUnit   String? @default("mg")
+  selfIngredientKey String?
+  brand             String?
+  notes             String?
+  active            Boolean @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  methodLinks SubstanceMethodLink[]
+  variants    SubstanceVariant[]
+  ingredients SubstanceIngredient[]
+  logItems    SubstanceLogItem[]
+  presetItems SubstancePresetItem[]
+
+  @@index([ownerUserId])
+  @@index([selfIngredientKey])
+}
+
+model SubstanceDeliveryMethod {
+  id        String  @id @default(uuid())
+  key       String  @unique
+  label     String
+  active    Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  methodLinks SubstanceMethodLink[]
+  variants    SubstanceVariant[]
+  logItems    SubstanceLogItem[]
+  presetItems SubstancePresetItem[]
+}
+
+model SubstanceMethodLink {
+  substanceId      String
+  substance        Substance              @relation(fields: [substanceId], references: [id], onDelete: Cascade)
+  deliveryMethodId String
+  deliveryMethod   SubstanceDeliveryMethod @relation(fields: [deliveryMethodId], references: [id], onDelete: Cascade)
+
+  @@id([substanceId, deliveryMethodId])
+}
+
+model SubstanceVariant {
+  id               String                   @id @default(uuid())
+  substanceId      String
+  substance        Substance                @relation(fields: [substanceId], references: [id], onDelete: Cascade)
+  deliveryMethodId String?
+  deliveryMethod   SubstanceDeliveryMethod? @relation(fields: [deliveryMethodId], references: [id], onDelete: SetNull)
+  key              String
+  label            String
+  active           Boolean                  @default(true)
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
+
+  logItems    SubstanceLogItem[]
+  presetItems SubstancePresetItem[]
+
+  @@unique([substanceId, key])
+  @@index([substanceId])
+  @@index([deliveryMethodId])
+}
+
+model SubstanceIngredient {
+  id               String    @id @default(uuid())
+  substanceId      String
+  substance        Substance @relation(fields: [substanceId], references: [id], onDelete: Cascade)
+  ingredientKey    String
+  ingredientName   String
+  amountPerServing Float
+  unit             String    @default("mg")
+  active           Boolean   @default(true)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  logItemIngredients SubstanceLogItemIngredient[]
+
+  @@unique([substanceId, ingredientKey])
+  @@index([substanceId])
+  @@index([ingredientKey])
+}
+
+model SubstancePreset {
+  id        String   @id @default(uuid())
+  userId    String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items       SubstancePresetItem[]
+  logSessions SubstanceLogSession[]
+
+  @@index([userId, updatedAt])
+}
+
+model SubstancePresetItem {
+  id               String                   @id @default(uuid())
+  presetId         String
+  preset           SubstancePreset          @relation(fields: [presetId], references: [id], onDelete: Cascade)
+  substanceId      String
+  substance        Substance                @relation(fields: [substanceId], references: [id], onDelete: Restrict)
+  snapshotName     String
+  doseValue        Float?
+  doseUnit         String?
+  compoundServings Float?
+  deliveryMethodId String?
+  deliveryMethod   SubstanceDeliveryMethod? @relation(fields: [deliveryMethodId], references: [id], onDelete: SetNull)
+  variantId        String?
+  variant          SubstanceVariant?        @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  injectionDepth   String?
+  sortOrder        Int                      @default(0)
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
+
+  @@index([presetId, sortOrder])
+  @@index([substanceId])
+  @@index([deliveryMethodId])
+  @@index([variantId])
+}
+
+model SubstanceLogSession {
+  id       String   @id @default(uuid())
+  userId   String
+  loggedAt DateTime
+  presetId String?
+  preset   SubstancePreset? @relation(fields: [presetId], references: [id], onDelete: SetNull)
+  notes    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items SubstanceLogItem[]
+
+  @@index([userId, loggedAt])
+  @@index([presetId])
+}
+
+model SubstanceLogItem {
+  id               String                       @id @default(uuid())
+  sessionId        String
+  session          SubstanceLogSession          @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  userId           String
+  substanceId      String
+  substance        Substance                    @relation(fields: [substanceId], references: [id], onDelete: Restrict)
+  snapshotName     String
+  doseValue        Float?
+  doseUnit         String?
+  compoundServings Float?
+  deliveryMethodId String?
+  deliveryMethod   SubstanceDeliveryMethod?     @relation(fields: [deliveryMethodId], references: [id], onDelete: SetNull)
+  variantId        String?
+  variant          SubstanceVariant?            @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  injectionDepth   String?
+  sortOrder        Int                          @default(0)
+  createdAt        DateTime                     @default(now())
+  updatedAt        DateTime                     @updatedAt
+
+  ingredients SubstanceLogItemIngredient[]
+
+  @@index([sessionId, sortOrder])
+  @@index([userId, createdAt])
+  @@index([substanceId, createdAt])
+  @@index([deliveryMethodId])
+  @@index([variantId])
+}
+
+model SubstanceLogItemIngredient {
+  id                     String              @id @default(uuid())
+  logItemId              String
+  logItem                SubstanceLogItem    @relation(fields: [logItemId], references: [id], onDelete: Cascade)
+  sourceIngredientId     String?
+  sourceIngredient       SubstanceIngredient? @relation(fields: [sourceIngredientId], references: [id], onDelete: SetNull)
+  ingredientKey          String
+  ingredientName         String
+  amountTotal            Float
+  unit                   String              @default("mg")
+  sourceAmountPerServing Float
+  sourceServings         Float
+  createdAt              DateTime            @default(now())
+
+  @@index([logItemId])
+  @@index([ingredientKey, amountTotal])
+  @@index([sourceIngredientId])
+}
