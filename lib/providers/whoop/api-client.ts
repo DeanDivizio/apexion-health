@@ -179,6 +179,7 @@ export async function* paginateAll<T>(
     if (nextToken) params.nextToken = nextToken;
     const page = await fetchPage(params);
     yield { records: page.records, nextToken: page.next_token };
+    if (page.records.length === 0) break;
     nextToken = page.next_token ?? undefined;
   } while (nextToken);
 }
