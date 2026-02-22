@@ -9,7 +9,7 @@ import type {
   WhoopPaginationParams,
 } from "./types";
 
-const WHOOP_API_BASE = "https://api.prod.whoop.com";
+const WHOOP_API_BASE = "https://api.prod.whoop.com/developer";
 
 const MAX_RETRIES = 5;
 const INITIAL_BACKOFF_MS = 1000;
