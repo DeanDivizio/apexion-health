@@ -7,15 +7,23 @@ if (!connectionString) {
   throw new Error("DATABASE_URL is not set.");
 }
 
-const pool = new Pool({ connectionString });
-const adapter = new PrismaPg(pool);
+const globalForPrisma = globalThis as unknown as {
+  prisma?: PrismaClient;
+  pgPool?: Pool;
+};
 
-const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
+if (!globalForPrisma.pgPool) {
+  globalForPrisma.pgPool = new Pool({
+    connectionString,
+    max: 5,
+    idleTimeoutMillis: 30_000,
+  });
+}
 
 export const prisma =
   globalForPrisma.prisma ??
   new PrismaClient({
-    adapter,
+    adapter: new PrismaPg(globalForPrisma.pgPool),
     log: ["error", "warn"],
   });
 
