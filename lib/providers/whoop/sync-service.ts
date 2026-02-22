@@ -64,6 +64,10 @@ export async function syncWhoopData(
     ? {}
     : ((connection.syncCursor as SyncCursor) ?? {});
 
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/f386e4cd-f893-42f7-8f94-a5549b547210',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sync-service.ts:entry',message:'syncWhoopData called',data:{cursor,fullBackfill:options?.fullBackfill,maxPagesPerType},timestamp:Date.now(),hypothesisId:'H2-H3'})}).catch(()=>{});
+  // #endregion
+
   let totalPagesProcessed = 0;
 
   async function syncDataType<T>(
@@ -73,6 +77,9 @@ export async function syncWhoopData(
     fetchPage: (params: api.WhoopPaginationParamsPublic) => Promise<{ records: T[]; next_token: string | null }>,
     processPage: (records: T[], connId: string, uid: string) => Promise<void>,
   ) {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/f386e4cd-f893-42f7-8f94-a5549b547210',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sync-service.ts:syncDataType',message:`syncDataType ${key} start`,data:{key,isDone:!!cursor[doneKey],hasToken:!!cursor[tokenKey],token:cursor[tokenKey]?.slice(0,20)},timestamp:Date.now(),hypothesisId:'H2'})}).catch(()=>{});
+    // #endregion
     if (cursor[doneKey]) return;
 
     let typePages = 0;
@@ -157,6 +164,10 @@ export async function syncWhoopData(
     !!cursor.workoutDone &&
     !!cursor.cycleDone &&
     !!cursor.bodyDone;
+
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/f386e4cd-f893-42f7-8f94-a5549b547210',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sync-service.ts:result',message:'sync result',data:{complete,totalPagesProcessed,sleepDone:!!cursor.sleepDone,recoveryDone:!!cursor.recoveryDone,workoutDone:!!cursor.workoutDone,cycleDone:!!cursor.cycleDone,bodyDone:!!cursor.bodyDone,cycleToken:cursor.cycleToken?.slice(0,30)},timestamp:Date.now(),hypothesisId:'H3'})}).catch(()=>{});
+  // #endregion
 
   if (complete) {
     await prisma.providerConnection.update({

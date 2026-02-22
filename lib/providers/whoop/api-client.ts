@@ -179,11 +179,19 @@ export async function* paginateAll<T>(
 
   do {
     if (nextToken) {
-      if (seenTokens.has(nextToken)) break;
+      if (seenTokens.has(nextToken)) {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/f386e4cd-f893-42f7-8f94-a5549b547210',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'api-client.ts:paginateAll',message:'circular token detected',data:{nextToken:nextToken?.slice(0,30)},timestamp:Date.now(),hypothesisId:'H4'})}).catch(()=>{});
+        // #endregion
+        break;
+      }
       seenTokens.add(nextToken);
       params.nextToken = nextToken;
     }
     const page = await fetchPage(params);
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/f386e4cd-f893-42f7-8f94-a5549b547210',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'api-client.ts:paginateAll',message:'page fetched',data:{recordCount:page.records.length,limit,hasNextToken:!!page.next_token,nextTokenPreview:page.next_token?.slice(0,30),sentToken:nextToken?.slice(0,30)},timestamp:Date.now(),hypothesisId:'H1'})}).catch(()=>{});
+    // #endregion
     yield { records: page.records, nextToken: page.next_token };
     if (page.records.length === 0) break;
     if (page.records.length < limit) break;
