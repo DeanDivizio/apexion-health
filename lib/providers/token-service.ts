@@ -178,7 +178,7 @@ export async function revokeConnection(connectionId: string): Promise<void> {
   // Provider-specific revocation
   if (provider === "whoop") {
     try {
-      await fetch("https://api.prod.whoop.com/v2/user/access", {
+      await fetch("https://api.prod.whoop.com/developer/v2/user/access", {
         method: "DELETE",
         headers: { Authorization: `Bearer ${connection.accessToken}` },
       });
