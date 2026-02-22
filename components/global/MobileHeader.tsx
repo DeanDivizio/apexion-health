@@ -3,6 +3,8 @@
 import { useContext } from "react";
 import { MobileHeaderContext } from "@/context/MobileHeaderContext";
 import { useSyncStatus } from "@/context/SyncStatusContext";
+import { SideNav } from "@/components/global/SideNav";
+import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 
 export default function MobileHeader() {
     const { headerComponentRight, headerComponentLeft, mobileHeading } = useContext(MobileHeaderContext);
@@ -11,7 +13,7 @@ export default function MobileHeader() {
     return (
         <header className="fixed md:hidden z-10 w-full grid grid-cols-5 px-6 py-2 bg-gradient-to-br from-slate-950 via-neutral-950/60 to-black/60 backdrop-blur">
             <div className="col-span-1 w-full flex flex-row items-center justify-start">
-                {headerComponentLeft}
+                {headerComponentLeft ?? <SideNav />}
             </div>
             <div className="col-span-3 flex flex-col items-center justify-center">
                 {mobileHeading === "generic"?
@@ -27,7 +29,16 @@ export default function MobileHeader() {
                 )}
             </div>
             <div className="col-span-1 flex flex-row items-center justify-end">
-                {headerComponentRight}
+                {headerComponentRight ?? (
+                    <div className="flex items-center justify-center">
+                        <SignedIn>
+                            <UserButton />
+                        </SignedIn>
+                        <SignedOut>
+                            <SignInButton />
+                        </SignedOut>
+                    </div>
+                )}
             </div>
         </header>
         )

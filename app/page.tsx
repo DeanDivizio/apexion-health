@@ -4,12 +4,24 @@ import { homeFetch } from "@/actions/InternalLogic";
 import { SignedIn, SignedOut, SignInButton, UserButton, useUser } from "@clerk/nextjs";
 import { WeeklyDataDisplayComponent } from "@/components/home/WeeklySummary";
 import Footer from "@/components/global/Footer";
-import { UniversalRingChart } from "@/components/charts/radialcharts/UniversalRingChart";
 import Defocuser from "@/components/global/Defocuser";
 import type { SummaryData } from "@/utils/types";
 import { MobileHeaderContext } from "@/context/MobileHeaderContext";
 import { SideNav } from "@/components/global/SideNav";
-import { BiometricsSummary } from "@/components/home/BiometricsSummary";
+import dynamic from "next/dynamic";
+
+const UniversalRingChart = dynamic(
+  () => import("@/components/charts/radialcharts/UniversalRingChart").then((m) => m.UniversalRingChart),
+  {
+    ssr: false,
+    loading: () => <div className="w-full h-[240px] rounded-xl bg-neutral-900/30 animate-pulse" />,
+  }
+);
+
+const BiometricsSummary = dynamic(
+  () => import("@/components/home/BiometricsSummary").then((m) => m.BiometricsSummary),
+  { ssr: false }
+);
 
 export default function Home() {
   const { user, isLoaded } = useUser();

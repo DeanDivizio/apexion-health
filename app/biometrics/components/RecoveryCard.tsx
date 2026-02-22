@@ -14,7 +14,7 @@ export function RecoveryCard({ recovery }: RecoveryCardProps) {
         score != null ? recoveryBgColor(score) : "border-white/10 bg-neutral-900/50"
       }`}
     >
-      <div className="col-span-2">
+      <div className="col-span-2 flex flex-col justify-center">
       <h4 className="text-sm font-medium text-neutral-300">Recovery</h4>
 
       {score != null && (
