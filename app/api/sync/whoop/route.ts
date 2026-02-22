@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
   try {
     const result = await syncWhoopData(connection.id, {
       fullBackfill,
-      maxPages: 8,
+      maxPagesPerType: 2,
     });
     return NextResponse.json({
       success: true,

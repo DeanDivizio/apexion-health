@@ -137,10 +137,11 @@ export function adaptWhoopCycle(raw: WhoopCycleResponse, userId: string) {
 
 // ─── Body Measurements ───────────────────────────────────────────────────────
 
-export function adaptWhoopBody(raw: WhoopBodyMeasurement, userId: string) {
+export function adaptWhoopBody(raw: WhoopBodyMeasurement, userId: string, dateStr: string) {
   return {
     userId,
     provider: "whoop" as const,
+    dateStr,
     heightMeter: raw.height_meter,
     weightKilogram: raw.weight_kilogram,
     maxHeartRate: raw.max_heart_rate,

@@ -18,7 +18,8 @@ import type {
 
 interface SyncOptions {
   fullBackfill?: boolean;
-  maxPages?: number;
+  /** Max pages fetched per data type (sleep, recovery, workout, cycle). */
+  maxPagesPerType?: number;
 }
 
 interface SyncCursor {
@@ -43,14 +44,15 @@ interface SyncResult {
  * Cursor-resumable: saves progress after each page so interrupted syncs
  * pick up where they left off.
  *
- * `maxPages` limits pages per invocation to stay within Vercel function
- * timeout. The client should call repeatedly until `complete` is true.
+ * Each data type (sleep, recovery, workout, cycle) gets its own independent
+ * page budget so no single type can starve the others. The client should
+ * call repeatedly until `complete` is true.
  */
 export async function syncWhoopData(
   connectionId: string,
   options?: SyncOptions,
 ): Promise<SyncResult> {
-  const maxPages = options?.maxPages ?? 8;
+  const maxPagesPerType = options?.maxPagesPerType ?? 2;
   const connection = await prisma.providerConnection.findUniqueOrThrow({
     where: { id: connectionId },
   });
@@ -62,10 +64,8 @@ export async function syncWhoopData(
     ? {}
     : ((connection.syncCursor as SyncCursor) ?? {});
 
-  let pagesProcessed = 0;
-  let hitLimit = false;
+  let totalPagesProcessed = 0;
 
-  // Helper: process pages from an iterator up to the remaining budget
   async function syncDataType<T>(
     key: "sleep" | "recovery" | "workout" | "cycle",
     tokenKey: "sleepToken" | "recoveryToken" | "workoutToken" | "cycleToken",
@@ -73,7 +73,9 @@ export async function syncWhoopData(
     fetchPage: (params: api.WhoopPaginationParamsPublic) => Promise<{ records: T[]; next_token: string | null }>,
     processPage: (records: T[], connId: string, uid: string) => Promise<void>,
   ) {
-    if (cursor[doneKey] || hitLimit) return;
+    if (cursor[doneKey]) return;
+
+    let typePages = 0;
 
     try {
       const pageIter = api.paginateAll(
@@ -86,12 +88,10 @@ export async function syncWhoopData(
         await processPage(page.records, connectionId, userId);
         cursor = { ...cursor, [tokenKey]: page.nextToken ?? undefined };
         await saveCursor(connectionId, cursor);
-        pagesProcessed++;
+        typePages++;
+        totalPagesProcessed++;
 
-        if (pagesProcessed >= maxPages) {
-          hitLimit = true;
-          return;
-        }
+        if (typePages >= maxPagesPerType) return;
       }
     } catch (err) {
       console.error(`${key} sync error:`, err);
@@ -128,12 +128,19 @@ export async function syncWhoopData(
   );
 
   // ─── Body Measurements (single call, no pagination) ────────────────
-  if (!cursor.bodyDone && !hitLimit) {
+  if (!cursor.bodyDone) {
     try {
       const body = await api.getBodyMeasurements(token);
-      const adapted = adaptWhoopBody(body, userId);
+      const now = new Date();
+      const dateStr =
+        String(now.getUTCFullYear()) +
+        String(now.getUTCMonth() + 1).padStart(2, "0") +
+        String(now.getUTCDate()).padStart(2, "0");
+      const adapted = adaptWhoopBody(body, userId, dateStr);
       await prisma.biometricBodyMeasurement.upsert({
-        where: { userId_provider: { userId, provider: "whoop" } },
+        where: {
+          userId_provider_dateStr: { userId, provider: "whoop", dateStr },
+        },
         create: adapted,
         update: adapted,
       });
@@ -144,7 +151,12 @@ export async function syncWhoopData(
     await saveCursor(connectionId, cursor);
   }
 
-  const complete = !hitLimit;
+  const complete =
+    !!cursor.sleepDone &&
+    !!cursor.recoveryDone &&
+    !!cursor.workoutDone &&
+    !!cursor.cycleDone &&
+    !!cursor.bodyDone;
 
   if (complete) {
     await prisma.providerConnection.update({
@@ -158,7 +170,7 @@ export async function syncWhoopData(
     });
   }
 
-  return { pagesProcessed, complete };
+  return { pagesProcessed: totalPagesProcessed, complete };
 }
 
 // ─── Page processors ─────────────────────────────────────────────────────────

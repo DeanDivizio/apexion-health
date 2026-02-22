@@ -638,6 +638,7 @@ model BiometricBodyMeasurement {
   id             String   @id @default(uuid())
   userId         String
   provider       String
+  dateStr        String
   heightMeter    Float?
   weightKilogram Float?
   maxHeartRate   Int?
@@ -645,6 +646,6 @@ model BiometricBodyMeasurement {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  @@unique([userId, provider])
-  @@index([userId])
+  @@unique([userId, provider, dateStr])
+  @@index([userId, dateStr])
 }
