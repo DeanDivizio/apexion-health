@@ -2,7 +2,7 @@
 
 import { useContext, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Activity } from "lucide-react";
+import { Activity, RefreshCw } from "lucide-react";
 import { MobileHeaderContext } from "@/context/MobileHeaderContext";
 import { SideNav } from "@/components/global/SideNav";
 import { Skeleton } from "@/components/ui_primitives/skeleton";
@@ -58,6 +58,8 @@ export default function BiometricsPage() {
 
         if (justConnected) {
           startSync(true);
+        } else if (conn.syncCursor) {
+          startSync(false);
         }
 
         const data = await getBiometricDays();
@@ -128,10 +130,20 @@ export default function BiometricsPage() {
           </div>
         )}
 
-        {syncing && (
+        {syncing ? (
           <div className="mb-4 rounded-lg border border-blue-500/20 bg-blue-950/20 px-4 py-3 text-sm text-blue-300 flex items-center gap-2">
             <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-blue-400" />
             Syncing data from Whoop...
+          </div>
+        ) : (
+          <div className="mb-4 flex justify-end">
+            <button
+              onClick={() => startSync(false)}
+              className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-neutral-400 transition-colors hover:bg-white/10 hover:text-neutral-200"
+            >
+              <RefreshCw className="h-3 w-3" />
+              Sync Now
+            </button>
           </div>
         )}
 

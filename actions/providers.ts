@@ -17,6 +17,7 @@ export async function getProviderConnection(provider: Provider) {
       status: true,
       scopes: true,
       lastSyncAt: true,
+      syncCursor: true,
       errorMessage: true,
       createdAt: true,
     },
