@@ -41,15 +41,18 @@ export interface BiometricDaySummary {
 
 export async function getBiometricDays(
   limit = 14,
+  beforeDateStr?: string,
 ): Promise<BiometricDaySummary[]> {
   const { userId } = await auth();
   if (!userId) throw new Error("Not authenticated");
 
-  // Get all unique dateStrs from sleep data (primary driver)
   const sleepRecords = await prisma.biometricSleep.findMany({
-    where: { userId },
+    where: {
+      userId,
+      ...(beforeDateStr ? { dateStr: { lt: beforeDateStr } } : {}),
+    },
     orderBy: { dateStr: "desc" },
-    take: limit * 2, // over-fetch to account for naps
+    take: limit * 2,
   });
 
   const dateStrs = [...new Set(sleepRecords.map((s) => s.dateStr))].slice(

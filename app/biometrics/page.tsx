@@ -1,6 +1,6 @@
 "use client";
 
-import { useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Activity, RefreshCw } from "lucide-react";
 import { MobileHeaderContext } from "@/context/MobileHeaderContext";
@@ -25,6 +25,8 @@ export default function BiometricsPage() {
 
   const [days, setDays] = useState<BiometricDaySummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
   const [connected, setConnected] = useState<boolean | null>(null);
   const [connectionError, setConnectionError] = useState<string | null>(null);
 
@@ -62,8 +64,9 @@ export default function BiometricsPage() {
           startSync(false);
         }
 
-        const data = await getBiometricDays();
+        const data = await getBiometricDays(14);
         setDays(data);
+        setHasMore(data.length >= 14);
       } catch (err) {
         console.error(err);
       } finally {
@@ -74,17 +77,36 @@ export default function BiometricsPage() {
     load();
   }, [justConnected, startSync]);
 
-  // Refresh displayed data while sync is running
+  // Refresh the most recent page while sync is running (keeps older loaded days)
   useEffect(() => {
     if (!syncing) return;
     const interval = setInterval(async () => {
       try {
-        const freshData = await getBiometricDays();
-        setDays(freshData);
+        const freshTop = await getBiometricDays(14);
+        setDays((prev) => {
+          const freshDateStrs = new Set(freshTop.map((d) => d.dateStr));
+          const older = prev.filter((d) => !freshDateStrs.has(d.dateStr));
+          return [...freshTop, ...older];
+        });
       } catch { /* ignore */ }
     }, 5000);
     return () => clearInterval(interval);
   }, [syncing]);
+
+  const loadMore = useCallback(async () => {
+    if (loadingMore || !hasMore || days.length === 0) return;
+    setLoadingMore(true);
+    try {
+      const oldestDateStr = days[days.length - 1].dateStr;
+      const older = await getBiometricDays(14, oldestDateStr);
+      setHasMore(older.length >= 14);
+      setDays((prev) => [...prev, ...older]);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [days, loadingMore, hasMore]);
 
   if (loading) {
     return (
@@ -155,7 +177,20 @@ export default function BiometricsPage() {
             </p>
           </div>
         ) : (
-          days.map((day) => <DayGroup key={day.dateStr} day={day} />)
+          <>
+            {days.map((day) => (
+              <DayGroup key={day.dateStr} day={day} />
+            ))}
+            {hasMore && (
+              <button
+                onClick={loadMore}
+                disabled={loadingMore}
+                className="mt-4 w-full rounded-lg border border-white/10 bg-white/5 py-3 text-sm text-neutral-400 transition-colors hover:bg-white/10 hover:text-neutral-200 disabled:opacity-50"
+              >
+                {loadingMore ? "Loading..." : "Load More"}
+              </button>
+            )}
+          </>
         )}
       </div>
     </main>
