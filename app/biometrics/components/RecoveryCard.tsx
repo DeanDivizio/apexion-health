@@ -10,10 +10,11 @@ export function RecoveryCard({ recovery }: RecoveryCardProps) {
 
   return (
     <div
-      className={`rounded-xl border p-4 ${
+      className={`rounded-xl grid grid-cols-5 gap-3 border p-4 ${
         score != null ? recoveryBgColor(score) : "border-white/10 bg-neutral-900/50"
       }`}
     >
+      <div className="col-span-2">
       <h4 className="text-sm font-medium text-neutral-300">Recovery</h4>
 
       {score != null && (
@@ -23,8 +24,8 @@ export function RecoveryCard({ recovery }: RecoveryCardProps) {
           </span>
         </div>
       )}
-
-      <div className="mt-3 grid grid-cols-2 gap-3 text-xs">
+</div>
+      <div className="mt-3 col-span-3 grid grid-cols-2 gap-3 text-xs">
         {recovery.restingHeartRate != null && (
           <div>
             <p className="text-neutral-400">Resting HR</p>
