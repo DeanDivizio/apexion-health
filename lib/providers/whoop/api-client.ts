@@ -173,13 +173,20 @@ export async function* paginateAll<T>(
   startToken?: string,
 ): AsyncGenerator<{ records: T[]; nextToken: string | null }> {
   let nextToken: string | undefined = startToken;
-  const params: WhoopPaginationParams = { limit: 25, ...baseParams };
+  const limit = baseParams?.limit ?? 25;
+  const params: WhoopPaginationParams = { limit, ...baseParams };
+  const seenTokens = new Set<string>();
 
   do {
-    if (nextToken) params.nextToken = nextToken;
+    if (nextToken) {
+      if (seenTokens.has(nextToken)) break;
+      seenTokens.add(nextToken);
+      params.nextToken = nextToken;
+    }
     const page = await fetchPage(params);
     yield { records: page.records, nextToken: page.next_token };
     if (page.records.length === 0) break;
+    if (page.records.length < limit) break;
     nextToken = page.next_token ?? undefined;
   } while (nextToken);
 }
