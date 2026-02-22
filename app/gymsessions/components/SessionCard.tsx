@@ -9,6 +9,7 @@ import {
 } from "@/components/ui_primitives/dropdown-menu"
 import { calcSessionVolume, formatVolume, spellOutDateShortYear } from "./helpers"
 import { ExerciseBlock } from "./ExerciseBlock"
+import { WhoopWorkoutData } from "./WhoopWorkoutData"
 import type { SessionWithId } from "./types"
 
 interface SessionCardProps {
@@ -115,6 +116,13 @@ export function SessionCard({
                   </span>
                 </div>
               )}
+
+              <WhoopWorkoutData
+                sessionId={session.id}
+                dateStr={session.date}
+                startTimeStr={session.startTime}
+                endTimeStr={session.endTime}
+              />
             </div>
           </div>
         </div>

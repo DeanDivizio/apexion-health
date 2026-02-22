@@ -9,6 +9,7 @@ import Defocuser from "@/components/global/Defocuser";
 import type { SummaryData } from "@/utils/types";
 import { MobileHeaderContext } from "@/context/MobileHeaderContext";
 import { SideNav } from "@/components/global/SideNav";
+import { BiometricsSummary } from "@/components/home/BiometricsSummary";
 
 export default function Home() {
   const { user, isLoaded } = useUser();
@@ -147,6 +148,8 @@ export default function Home() {
               goal={fatGoal}
               shade="indigo" />
               </div>
+
+          <BiometricsSummary />
               
           {/* {isMobile ? null :
           <><InteractiveAreaChart

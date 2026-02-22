@@ -1,6 +1,6 @@
 "use client";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui_primitives/sheet";
-import { Apple, ClipboardPlus, Dumbbell, MenuIcon, MessageSquareWarning, Pill, Scale, Settings, Syringe, TestTube, UserPen } from "lucide-react";
+import { Activity, Apple, ClipboardPlus, Dumbbell, MenuIcon, MessageSquareWarning, Pill, Scale, Settings, Syringe, TestTube, UserPen } from "lucide-react";
 import Link from "next/link";
 import { SignIn, useUser } from "@clerk/nextjs";
 import { SignInButton, SignedIn, SignedOut } from "@clerk/nextjs";
@@ -30,6 +30,7 @@ export function SideNav() {
                         <Link href="/meds" className="flex items-center gap-2 mb-4"><ClipboardPlus className="w-4 h-4" />Medication & Supplement Logs</Link>
                         <Link href="/hrtrecords" className="flex items-center gap-2 mb-4"><Syringe className="w-4 h-4" />HRT Records</Link>
                         <Link href="/bodymeasurements" className="flex items-center gap-2 mb-4"><Scale className="w-4 h-4" />Body Measurements</Link>
+                        <Link href="/biometrics" className="flex items-center gap-2 mb-4"><Activity className="w-4 h-4" />Biometrics</Link>
                     </div>
                     <div id="side-nav-graphs" className="flex flex-col text-sm font-light">
                         <h3 className="text-lg font-bold mb-0">Dashboards</h3>
