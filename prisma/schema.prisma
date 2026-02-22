@@ -17,14 +17,15 @@ enum GymRepMode {
 }
 
 model GymWorkoutSession {
-  id           String               @id @default(uuid())
-  userId       String
-  dateStr      String
-  startTimeStr String
-  endTimeStr   String
-  createdAt    DateTime             @default(now())
-  updatedAt    DateTime             @updatedAt
-  exercises    GymWorkoutExercise[]
+  id                String               @id @default(uuid())
+  userId            String
+  dateStr           String
+  startTimeStr      String
+  endTimeStr        String
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  exercises         GymWorkoutExercise[]
+  biometricWorkouts BiometricWorkout[]
 
   @@index([userId, dateStr])
 }
@@ -383,4 +384,267 @@ model SubstanceLogItemIngredient {
   @@index([logItemId])
   @@index([ingredientKey, amountTotal])
   @@index([sourceIngredientId])
+}
+
+// ─── Provider Connections (extensible for any OAuth provider) ────────────────
+
+enum ProviderConnectionStatus {
+  ACTIVE
+  EXPIRED
+  REVOKED
+  ERROR
+}
+
+model ProviderConnection {
+  id             String                   @id @default(uuid())
+  userId         String
+  provider       String
+  providerUserId String?
+  accessToken    String
+  refreshToken   String?
+  tokenExpiresAt DateTime?
+  scopes         String[]
+  status         ProviderConnectionStatus @default(ACTIVE)
+  lastSyncAt     DateTime?
+  syncCursor     Json?
+  errorMessage   String?
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime                 @updatedAt
+
+  whoopCycles    WhoopCycle[]
+  whoopSleeps    WhoopSleep[]
+  whoopRecoveries WhoopRecovery[]
+  whoopWorkouts  WhoopWorkout[]
+
+  @@unique([userId, provider])
+  @@index([userId])
+  @@index([provider, status])
+  @@index([providerUserId, provider])
+}
+
+// ─── Whoop Raw Data (mirrors Whoop API shapes) ──────────────────────────────
+
+model WhoopCycle {
+  id               String             @id @default(uuid())
+  connectionId     String
+  connection       ProviderConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  whoopCycleId     Int                @unique
+  whoopUserId      Int
+  start            DateTime
+  end              DateTime?
+  timezoneOffset   String
+  scoreState       String
+  strain           Float?
+  kilojoule        Float?
+  averageHeartRate Int?
+  maxHeartRate     Int?
+  rawJson          Json
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  @@index([connectionId])
+  @@index([whoopUserId, start])
+}
+
+model WhoopSleep {
+  id                          String             @id @default(uuid())
+  connectionId                String
+  connection                  ProviderConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  whoopSleepId                String             @unique
+  whoopCycleId                Int
+  whoopUserId                 Int
+  start                       DateTime
+  end                         DateTime
+  timezoneOffset              String
+  nap                         Boolean
+  scoreState                  String
+  totalInBedTimeMilli         Int?
+  totalAwakeTimeMilli         Int?
+  totalNoDataTimeMilli        Int?
+  totalLightSleepTimeMilli    Int?
+  totalSlowWaveSleepTimeMilli Int?
+  totalRemSleepTimeMilli      Int?
+  sleepCycleCount             Int?
+  disturbanceCount            Int?
+  sleepNeededBaselineMilli    Int?
+  needFromSleepDebtMilli      Int?
+  needFromRecentStrainMilli   Int?
+  needFromRecentNapMilli      Int?
+  respiratoryRate             Float?
+  sleepPerformancePct         Float?
+  sleepConsistencyPct         Float?
+  sleepEfficiencyPct          Float?
+  rawJson                     Json
+  createdAt                   DateTime           @default(now())
+  updatedAt                   DateTime           @updatedAt
+
+  @@index([connectionId])
+  @@index([whoopUserId, start])
+  @@index([whoopCycleId])
+}
+
+model WhoopRecovery {
+  id               String             @id @default(uuid())
+  connectionId     String
+  connection       ProviderConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  whoopCycleId     Int                @unique
+  whoopSleepId     String
+  whoopUserId      Int
+  scoreState       String
+  userCalibrating  Boolean?
+  recoveryScore    Float?
+  restingHeartRate Float?
+  hrvRmssdMilli    Float?
+  spo2Percentage   Float?
+  skinTempCelsius  Float?
+  rawJson          Json
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  @@index([connectionId])
+  @@index([whoopUserId])
+}
+
+model WhoopWorkout {
+  id                  String             @id @default(uuid())
+  connectionId        String
+  connection          ProviderConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  whoopWorkoutId      String             @unique
+  whoopUserId         Int
+  start               DateTime
+  end                 DateTime
+  timezoneOffset      String
+  sportName           String
+  sportId             Int?
+  scoreState          String
+  strain              Float?
+  averageHeartRate    Int?
+  maxHeartRate        Int?
+  kilojoule           Float?
+  percentRecorded     Float?
+  distanceMeter       Float?
+  altitudeGainMeter   Float?
+  altitudeChangeMeter Float?
+  zoneZeroMilli       Int?
+  zoneOneMilli        Int?
+  zoneTwoMilli        Int?
+  zoneThreeMilli      Int?
+  zoneFourMilli       Int?
+  zoneFiveMilli       Int?
+  rawJson             Json
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  @@index([connectionId])
+  @@index([whoopUserId, start])
+}
+
+// ─── Canonical Biometric Tables (provider-agnostic, day-indexed) ─────────────
+
+model BiometricSleep {
+  id                       String   @id @default(uuid())
+  userId                   String
+  dateStr                  String
+  provider                 String
+  providerSleepId          String?
+  nap                      Boolean  @default(false)
+  start                    DateTime
+  end                      DateTime
+  totalInBedTimeMilli      Int?
+  totalAwakeTimeMilli      Int?
+  totalLightSleepTimeMilli Int?
+  totalDeepSleepTimeMilli  Int?
+  totalRemSleepTimeMilli   Int?
+  sleepCycleCount          Int?
+  disturbanceCount         Int?
+  sleepNeededMilli         Int?
+  respiratoryRate          Float?
+  sleepPerformancePct      Float?
+  sleepConsistencyPct      Float?
+  sleepEfficiencyPct       Float?
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  @@unique([userId, providerSleepId])
+  @@index([userId, dateStr])
+}
+
+model BiometricRecovery {
+  id                  String   @id @default(uuid())
+  userId              String
+  dateStr             String
+  provider            String
+  providerRecoveryRef String?
+  recoveryScore       Float?
+  restingHeartRate    Float?
+  hrvRmssdMilli       Float?
+  spo2Percentage      Float?
+  skinTempCelsius     Float?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@unique([userId, dateStr, provider])
+  @@index([userId, dateStr])
+}
+
+model BiometricWorkout {
+  id                String             @id @default(uuid())
+  userId            String
+  dateStr           String
+  provider          String
+  providerWorkoutId String?
+  sportName         String?
+  start             DateTime
+  end               DateTime
+  strain            Float?
+  averageHeartRate  Int?
+  maxHeartRate      Int?
+  kilojoule         Float?
+  distanceMeter     Float?
+  zoneZeroMilli     Int?
+  zoneOneMilli      Int?
+  zoneTwoMilli      Int?
+  zoneThreeMilli    Int?
+  zoneFourMilli     Int?
+  zoneFiveMilli     Int?
+  gymSessionId      String?
+  gymSession        GymWorkoutSession? @relation(fields: [gymSessionId], references: [id], onDelete: SetNull)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  @@unique([userId, providerWorkoutId])
+  @@index([userId, dateStr])
+  @@index([gymSessionId])
+}
+
+model BiometricCycleSummary {
+  id               String   @id @default(uuid())
+  userId           String
+  dateStr          String
+  provider         String
+  providerCycleRef String?
+  strain           Float?
+  kilojoule        Float?
+  averageHeartRate Int?
+  maxHeartRate     Int?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([userId, dateStr, provider])
+  @@index([userId, dateStr])
+}
+
+model BiometricBodyMeasurement {
+  id             String   @id @default(uuid())
+  userId         String
+  provider       String
+  heightMeter    Float?
+  weightKilogram Float?
+  maxHeartRate   Int?
+  fetchedAt      DateTime
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([userId, provider])
+  @@index([userId])
 }

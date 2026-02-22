@@ -8,6 +8,7 @@ import MobileHeader from "@/components/global/MobileHeader";
 import { Toaster } from "@/components/ui_primitives/toaster";
 import { MobileHeaderProvider } from "@/context/MobileHeaderContext";
 import { MealFormProvider } from "@/context/MealFormContext";
+import { SyncStatusProvider } from "@/context/SyncStatusContext";
 import { Suspense } from "react";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -45,13 +46,15 @@ export default function RootLayout({
         <Suspense>
           <ClerkProvider>
             <MobileHeaderProvider>
-              <MealFormProvider>
-                <MobileHeader />
-                <SubNavContextProvider>
-                  {children}
-                  <MobileNav />
-                </SubNavContextProvider>
-              </MealFormProvider>
+              <SyncStatusProvider>
+                <MealFormProvider>
+                  <MobileHeader />
+                  <SubNavContextProvider>
+                    {children}
+                    <MobileNav />
+                  </SubNavContextProvider>
+                </MealFormProvider>
+              </SyncStatusProvider>
             </MobileHeaderProvider>
             <Toaster />
           </ClerkProvider>
