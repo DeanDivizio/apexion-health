@@ -21,13 +21,12 @@ export default function BiometricsPage() {
 
   const { setMobileHeading, setHeaderComponentLeft, setHeaderComponentRight } =
     useContext(MobileHeaderContext);
-  const { setSyncing: setGlobalSyncing } = useSyncStatus();
+  const { isSyncing: syncing, startSync } = useSyncStatus();
 
   const [days, setDays] = useState<BiometricDaySummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [connected, setConnected] = useState<boolean | null>(null);
   const [connectionError, setConnectionError] = useState<string | null>(null);
-  const [syncing, setSyncing] = useState(false);
 
   useEffect(() => {
     setMobileHeading("Biometrics");
@@ -57,22 +56,8 @@ export default function BiometricsPage() {
           );
         }
 
-        // If just connected, trigger initial backfill
         if (justConnected) {
-          setSyncing(true);
-          setGlobalSyncing(true);
-          fetch("/api/sync/whoop", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ fullBackfill: true }),
-          })
-            .then(() => getBiometricDays())
-            .then(setDays)
-            .catch(console.error)
-            .finally(() => {
-              setSyncing(false);
-              setGlobalSyncing(false);
-            });
+          startSync(true);
         }
 
         const data = await getBiometricDays();
@@ -85,7 +70,19 @@ export default function BiometricsPage() {
     }
 
     load();
-  }, [justConnected]);
+  }, [justConnected, startSync]);
+
+  // Refresh displayed data while sync is running
+  useEffect(() => {
+    if (!syncing) return;
+    const interval = setInterval(async () => {
+      try {
+        const freshData = await getBiometricDays();
+        setDays(freshData);
+      } catch { /* ignore */ }
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [syncing]);
 
   if (loading) {
     return (

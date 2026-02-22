@@ -24,10 +24,14 @@ export async function POST(request: NextRequest) {
   const fullBackfill = body.fullBackfill === true;
 
   try {
-    const result = await syncWhoopData(connection.id, { fullBackfill });
+    const result = await syncWhoopData(connection.id, {
+      fullBackfill,
+      maxPages: 8,
+    });
     return NextResponse.json({
       success: true,
       pagesProcessed: result.pagesProcessed,
+      complete: result.complete,
     });
   } catch (err) {
     console.error("Whoop sync error:", err);

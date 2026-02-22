@@ -18,6 +18,7 @@ import type {
 
 interface SyncOptions {
   fullBackfill?: boolean;
+  maxPages?: number;
 }
 
 interface SyncCursor {
@@ -29,17 +30,27 @@ interface SyncCursor {
   recoveryDone?: boolean;
   workoutDone?: boolean;
   cycleDone?: boolean;
+  bodyDone?: boolean;
+}
+
+interface SyncResult {
+  pagesProcessed: number;
+  complete: boolean;
 }
 
 /**
- * Main sync function. Fetches all Whoop data, writes raw + canonical.
+ * Main sync function. Fetches Whoop data in batches, writes raw + canonical.
  * Cursor-resumable: saves progress after each page so interrupted syncs
  * pick up where they left off.
+ *
+ * `maxPages` limits pages per invocation to stay within Vercel function
+ * timeout. The client should call repeatedly until `complete` is true.
  */
 export async function syncWhoopData(
   connectionId: string,
   options?: SyncOptions,
-): Promise<{ pagesProcessed: number }> {
+): Promise<SyncResult> {
+  const maxPages = options?.maxPages ?? 8;
   const connection = await prisma.providerConnection.findUniqueOrThrow({
     where: { id: connectionId },
   });
@@ -52,128 +63,102 @@ export async function syncWhoopData(
     : ((connection.syncCursor as SyncCursor) ?? {});
 
   let pagesProcessed = 0;
+  let hitLimit = false;
 
-  // ─── Sleep ──────────────────────────────────────────────────────────
-  if (!cursor.sleepDone) {
+  // Helper: process pages from an iterator up to the remaining budget
+  async function syncDataType<T>(
+    key: "sleep" | "recovery" | "workout" | "cycle",
+    tokenKey: "sleepToken" | "recoveryToken" | "workoutToken" | "cycleToken",
+    doneKey: "sleepDone" | "recoveryDone" | "workoutDone" | "cycleDone",
+    fetchPage: (params: api.WhoopPaginationParamsPublic) => Promise<{ records: T[]; next_token: string | null }>,
+    processPage: (records: T[], connId: string, uid: string) => Promise<void>,
+  ) {
+    if (cursor[doneKey] || hitLimit) return;
+
     try {
       const pageIter = api.paginateAll(
-        (params) => api.getSleepCollection(token, params),
+        fetchPage,
         undefined,
-        cursor.sleepToken,
+        cursor[tokenKey],
       );
 
       for await (const page of pageIter) {
-        await processSleepPage(page.records, connectionId, userId);
-        cursor = { ...cursor, sleepToken: page.nextToken ?? undefined };
+        await processPage(page.records, connectionId, userId);
+        cursor = { ...cursor, [tokenKey]: page.nextToken ?? undefined };
         await saveCursor(connectionId, cursor);
         pagesProcessed++;
+
+        if (pagesProcessed >= maxPages) {
+          hitLimit = true;
+          return;
+        }
       }
     } catch (err) {
-      console.error("Sleep sync error:", err);
+      console.error(`${key} sync error:`, err);
       await saveCursor(connectionId, cursor);
       throw err;
     }
-    cursor.sleepDone = true;
+
+    cursor[doneKey] = true;
     await saveCursor(connectionId, cursor);
   }
 
-  // ─── Recovery ───────────────────────────────────────────────────────
-  if (!cursor.recoveryDone) {
-    try {
-      const pageIter = api.paginateAll(
-        (params) => api.getRecoveryCollection(token, params),
-        undefined,
-        cursor.recoveryToken,
-      );
+  await syncDataType(
+    "sleep", "sleepToken", "sleepDone",
+    (params) => api.getSleepCollection(token, params),
+    processSleepPage,
+  );
 
-      for await (const page of pageIter) {
-        await processRecoveryPage(page.records, connectionId, userId);
-        cursor = { ...cursor, recoveryToken: page.nextToken ?? undefined };
-        await saveCursor(connectionId, cursor);
-        pagesProcessed++;
-      }
-    } catch (err) {
-      console.error("Recovery sync error:", err);
-      await saveCursor(connectionId, cursor);
-      throw err;
-    }
-    cursor.recoveryDone = true;
-    await saveCursor(connectionId, cursor);
-  }
+  await syncDataType(
+    "recovery", "recoveryToken", "recoveryDone",
+    (params) => api.getRecoveryCollection(token, params),
+    processRecoveryPage,
+  );
 
-  // ─── Workouts ───────────────────────────────────────────────────────
-  if (!cursor.workoutDone) {
-    try {
-      const pageIter = api.paginateAll(
-        (params) => api.getWorkoutCollection(token, params),
-        undefined,
-        cursor.workoutToken,
-      );
+  await syncDataType(
+    "workout", "workoutToken", "workoutDone",
+    (params) => api.getWorkoutCollection(token, params),
+    processWorkoutPage,
+  );
 
-      for await (const page of pageIter) {
-        await processWorkoutPage(page.records, connectionId, userId);
-        cursor = { ...cursor, workoutToken: page.nextToken ?? undefined };
-        await saveCursor(connectionId, cursor);
-        pagesProcessed++;
-      }
-    } catch (err) {
-      console.error("Workout sync error:", err);
-      await saveCursor(connectionId, cursor);
-      throw err;
-    }
-    cursor.workoutDone = true;
-    await saveCursor(connectionId, cursor);
-  }
-
-  // ─── Cycles ─────────────────────────────────────────────────────────
-  if (!cursor.cycleDone) {
-    try {
-      const pageIter = api.paginateAll(
-        (params) => api.getCycles(token, params),
-        undefined,
-        cursor.cycleToken,
-      );
-
-      for await (const page of pageIter) {
-        await processCyclePage(page.records, connectionId, userId);
-        cursor = { ...cursor, cycleToken: page.nextToken ?? undefined };
-        await saveCursor(connectionId, cursor);
-        pagesProcessed++;
-      }
-    } catch (err) {
-      console.error("Cycle sync error:", err);
-      await saveCursor(connectionId, cursor);
-      throw err;
-    }
-    cursor.cycleDone = true;
-    await saveCursor(connectionId, cursor);
-  }
+  await syncDataType(
+    "cycle", "cycleToken", "cycleDone",
+    (params) => api.getCycles(token, params),
+    processCyclePage,
+  );
 
   // ─── Body Measurements (single call, no pagination) ────────────────
-  try {
-    const body = await api.getBodyMeasurements(token);
-    const adapted = adaptWhoopBody(body, userId);
-    await prisma.biometricBodyMeasurement.upsert({
-      where: { userId_provider: { userId, provider: "whoop" } },
-      create: adapted,
-      update: adapted,
-    });
-  } catch (err) {
-    console.error("Body measurement sync error:", err);
+  if (!cursor.bodyDone && !hitLimit) {
+    try {
+      const body = await api.getBodyMeasurements(token);
+      const adapted = adaptWhoopBody(body, userId);
+      await prisma.biometricBodyMeasurement.upsert({
+        where: { userId_provider: { userId, provider: "whoop" } },
+        create: adapted,
+        update: adapted,
+      });
+    } catch (err) {
+      console.error("Body measurement sync error:", err);
+    }
+    cursor.bodyDone = true;
+    await saveCursor(connectionId, cursor);
   }
 
-  // ─── Finalize ──────────────────────────────────────────────────────
-  await prisma.providerConnection.update({
-    where: { id: connectionId },
-    data: {
-      lastSyncAt: new Date(),
-      syncCursor: Prisma.JsonNull,
-      status: "ACTIVE",
-      errorMessage: null,
-    },
-  });
+  const complete = !hitLimit;
 
-  return { pagesProcessed };
+  if (complete) {
+    await prisma.providerConnection.update({
+      where: { id: connectionId },
+      data: {
+        lastSyncAt: new Date(),
+        syncCursor: Prisma.JsonNull,
+        status: "ACTIVE",
+        errorMessage: null,
+      },
+    });
+  }
+
+  return { pagesProcessed, complete };
 }
 
 // ─── Page processors ─────────────────────────────────────────────────────────

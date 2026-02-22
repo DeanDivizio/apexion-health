@@ -77,6 +77,8 @@ async function whoopFetch<T>(
   throw lastError ?? new Error("Whoop API request failed after retries");
 }
 
+export type WhoopPaginationParamsPublic = WhoopPaginationParams;
+
 function buildPaginationParams(p?: WhoopPaginationParams): Record<string, string> {
   const params: Record<string, string> = {};
   if (p?.limit) params.limit = String(p.limit);
