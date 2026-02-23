@@ -313,6 +313,30 @@ export function WorkoutFlow({ userMeta, customExerciseGroups }: WorkoutFlowProps
     });
   }, [activeExerciseKey, activeSets, activeVariations, toast]);
 
+  const handleDeleteExercise = useCallback((index: number) => {
+    setExercises((prev) => prev.filter((_, i) => i !== index));
+    toast({
+      title: "Exercise removed",
+      description: "The exercise has been removed from this session.",
+    });
+  }, [toast]);
+
+  const handleDiscardSession = useCallback(() => {
+    clearPersistedState();
+    setExercises([]);
+    setActiveExerciseKey(null);
+    setActiveSets([{ weight: 0, reps: { bilateral: 0 } }]);
+    setActiveVariations({});
+    setView("addExercise");
+
+    toast({
+      title: "Session discarded",
+      description: "Your workout session has been discarded.",
+    });
+
+    router.push("/");
+  }, [toast, router]);
+
   const handleEndSession = useCallback(async () => {
     if (exercises.length === 0) return;
     setSubmitting(true);
@@ -356,6 +380,7 @@ export function WorkoutFlow({ userMeta, customExerciseGroups }: WorkoutFlowProps
           onSelectExercise={handleSelectExercise}
           sessionExercises={exercises}
           onEndSession={handleEndSession}
+          onDiscardSession={handleDiscardSession}
         />
       )}
 
@@ -384,12 +409,14 @@ export function WorkoutFlow({ userMeta, customExerciseGroups }: WorkoutFlowProps
         open={overviewOpen}
         onOpenChange={setOverviewOpen}
         exercises={exercises}
+        onDeleteExercise={handleDeleteExercise}
         sessionDate={sessionDate}
         onSessionDateChange={setSessionDate}
         startTime={startTime}
         onStartTimeChange={setStartTime}
         endTimeLabel={endTime ?? "now"}
         onEndTimeChange={setEndTime}
+        onDiscardSession={handleDiscardSession}
       />
     </div>
   );

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { X, Clock, CalendarDays, Dumbbell, Flame, Weight } from "lucide-react";
+import { X, Clock, CalendarDays, Dumbbell, Flame, Weight, Trash2, XCircle } from "lucide-react";
 import { UserButton } from "@clerk/nextjs";
 import {
   Sheet,
@@ -24,6 +24,17 @@ import {
 import { Input } from "@/components/ui_primitives/input";
 import { Separator } from "@/components/ui_primitives/separator";
 import { ScrollArea } from "@/components/ui_primitives/scroll-area";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui_primitives/alert-dialog";
 import type {
   ExerciseEntry,
   ExerciseDefinition,
@@ -37,12 +48,14 @@ interface SessionOverviewSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   exercises: ExerciseEntry[];
+  onDeleteExercise: (index: number) => void;
   sessionDate: Date;
   onSessionDateChange: (date: Date) => void;
   startTime: string; // e.g. "5:10 AM"
   onStartTimeChange: (time: string) => void;
   endTimeLabel: string; // "now" or a specific time
   onEndTimeChange: (time: string | null) => void; // null = use "now"
+  onDiscardSession: () => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -89,12 +102,14 @@ export function SessionOverviewSheet({
   open,
   onOpenChange,
   exercises,
+  onDeleteExercise,
   sessionDate,
   onSessionDateChange,
   startTime,
   onStartTimeChange,
   endTimeLabel,
   onEndTimeChange,
+  onDiscardSession,
 }: SessionOverviewSheetProps) {
   const [editingStartTime, setEditingStartTime] = React.useState(false);
   const [editingEndTime, setEditingEndTime] = React.useState(false);
@@ -288,12 +303,75 @@ export function SessionOverviewSheet({
                         {entry.distance ? `, ${entry.distance} ${entry.unit ?? "mi"}` : ""}
                       </div>
                     )}
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="w-full mt-2 h-8 text-xs text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                        >
+                          <Trash2 className="mr-1.5 h-3 w-3" />
+                          Remove exercise
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Remove exercise?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will remove {getExerciseName(entry.exerciseType)} and all its sets from this session.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => onDeleteExercise(i)}
+                            className="bg-red-600 text-white hover:bg-red-700"
+                          >
+                            Remove
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </AccordionContent>
                 </AccordionItem>
               ))}
             </Accordion>
           )}
         </ScrollArea>
+
+        <Separator />
+
+        {/* Discard Session */}
+        <div className="px-4 py-2">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="ghost"
+                className="w-full h-10 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 border border-red-500/20"
+              >
+                <XCircle className="mr-2 h-4 w-4" />
+                Discard Session
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Discard this session?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will permanently discard your current workout session and all logged exercises. This cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Keep logging</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={onDiscardSession}
+                  className="bg-red-600 text-white hover:bg-red-700"
+                >
+                  Discard
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
 
         <Separator />
 
