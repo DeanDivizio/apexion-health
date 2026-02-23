@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/db/prisma";
-import { syncWhoopData } from "@/lib/providers/whoop/sync-service";
+import {
+  syncWhoopData,
+  purgeAllBiometricData,
+} from "@/lib/providers/whoop/sync-service";
 
 export async function POST(request: NextRequest) {
   const { userId } = await auth();
@@ -22,11 +25,16 @@ export async function POST(request: NextRequest) {
 
   const body = await request.json().catch(() => ({}));
   const fullBackfill = body.fullBackfill === true;
+  const purge = body.purge === true;
 
   try {
+    if (purge) {
+      await purgeAllBiometricData(connection.id);
+    }
+
     const result = await syncWhoopData(connection.id, {
-      fullBackfill,
-      maxPagesPerType: 2,
+      fullBackfill: fullBackfill || purge,
+      maxPagesPerType: fullBackfill || purge ? 10 : 2,
     });
     return NextResponse.json({
       success: true,

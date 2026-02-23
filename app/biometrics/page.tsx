@@ -2,7 +2,7 @@
 
 import { useCallback, useContext, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Activity, RefreshCw } from "lucide-react";
+import { Activity, RefreshCw, RotateCcw } from "lucide-react";
 import { MobileHeaderContext } from "@/context/MobileHeaderContext";
 import { SideNav } from "@/components/global/SideNav";
 import { Skeleton } from "@/components/ui_primitives/skeleton";
@@ -158,7 +158,23 @@ export default function BiometricsPage() {
             Syncing data from Whoop...
           </div>
         ) : (
-          <div className="mb-4 flex justify-end">
+          <div className="mb-4 flex justify-end gap-2">
+            <button
+              onClick={() => {
+                if (
+                  window.confirm(
+                    "This will delete all synced biometric data and re-import everything from Whoop. Continue?",
+                  )
+                ) {
+                  setDays([]);
+                  startSync(true, true);
+                }
+              }}
+              className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-neutral-400 transition-colors hover:bg-white/10 hover:text-neutral-200"
+            >
+              <RotateCcw className="h-3 w-3" />
+              Full Backfill
+            </button>
             <button
               onClick={() => startSync(false)}
               className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-neutral-400 transition-colors hover:bg-white/10 hover:text-neutral-200"

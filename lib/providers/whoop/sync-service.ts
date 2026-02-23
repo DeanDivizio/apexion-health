@@ -40,6 +40,33 @@ interface SyncResult {
 }
 
 /**
+ * Deletes all raw Whoop data and canonical biometric records for a connection,
+ * then resets the sync cursor. Use before a full backfill to start fresh.
+ */
+export async function purgeAllBiometricData(connectionId: string) {
+  const connection = await prisma.providerConnection.findUniqueOrThrow({
+    where: { id: connectionId },
+  });
+  const userId = connection.userId;
+
+  await prisma.$transaction([
+    prisma.whoopCycle.deleteMany({ where: { connectionId } }),
+    prisma.whoopSleep.deleteMany({ where: { connectionId } }),
+    prisma.whoopRecovery.deleteMany({ where: { connectionId } }),
+    prisma.whoopWorkout.deleteMany({ where: { connectionId } }),
+    prisma.biometricSleep.deleteMany({ where: { userId, provider: "whoop" } }),
+    prisma.biometricRecovery.deleteMany({ where: { userId, provider: "whoop" } }),
+    prisma.biometricWorkout.deleteMany({ where: { userId, provider: "whoop" } }),
+    prisma.biometricCycleSummary.deleteMany({ where: { userId, provider: "whoop" } }),
+    prisma.biometricBodyMeasurement.deleteMany({ where: { userId, provider: "whoop" } }),
+    prisma.providerConnection.update({
+      where: { id: connectionId },
+      data: { syncCursor: Prisma.JsonNull, lastSyncAt: null },
+    }),
+  ]);
+}
+
+/**
  * Main sync function. Fetches Whoop data in batches, writes raw + canonical.
  * Cursor-resumable: saves progress after each page so interrupted syncs
  * pick up where they left off.
@@ -86,12 +113,19 @@ export async function syncWhoopData(
 
       for await (const page of pageIter) {
         await processPage(page.records, connectionId, userId);
-        cursor = { ...cursor, [tokenKey]: page.nextToken ?? undefined };
-        await saveCursor(connectionId, cursor);
         typePages++;
         totalPagesProcessed++;
 
-        if (typePages >= maxPagesPerType) return;
+        if (page.nextToken) {
+          cursor = { ...cursor, [tokenKey]: page.nextToken };
+          await saveCursor(connectionId, cursor);
+          if (typePages >= maxPagesPerType) return;
+        } else {
+          cursor = { ...cursor, [tokenKey]: undefined };
+          cursor[doneKey] = true;
+          await saveCursor(connectionId, cursor);
+          return;
+        }
       }
     } catch (err) {
       console.error(`${key} sync error:`, err);

@@ -11,7 +11,7 @@ import {
 
 interface SyncStatusState {
   isSyncing: boolean;
-  startSync: (fullBackfill?: boolean) => void;
+  startSync: (fullBackfill?: boolean, purge?: boolean) => void;
 }
 
 const SyncStatusContext = createContext<SyncStatusState>({
@@ -23,13 +23,14 @@ export function SyncStatusProvider({ children }: { children: ReactNode }) {
   const [isSyncing, setIsSyncing] = useState(false);
   const runningRef = useRef(false);
 
-  const startSync = useCallback((fullBackfill = false) => {
+  const startSync = useCallback((fullBackfill = false, purge = false) => {
     if (runningRef.current) return;
     runningRef.current = true;
     setIsSyncing(true);
 
     (async () => {
       let isFullBackfill = fullBackfill;
+      let isPurge = purge;
       let complete = false;
 
       while (!complete) {
@@ -37,11 +38,15 @@ export function SyncStatusProvider({ children }: { children: ReactNode }) {
           const res = await fetch("/api/sync/whoop", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ fullBackfill: isFullBackfill }),
+            body: JSON.stringify({
+              fullBackfill: isFullBackfill,
+              purge: isPurge,
+            }),
           });
           const json = await res.json();
           complete = json.complete === true;
           isFullBackfill = false;
+          isPurge = false;
         } catch (err) {
           console.error("Sync batch error:", err);
           break;
