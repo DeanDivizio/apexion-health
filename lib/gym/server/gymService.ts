@@ -23,6 +23,7 @@
 import { prisma } from "@/lib/db/prisma";
 import {
   EXERCISE_MAP,
+  VARIATION_TEMPLATES,
   calculateSetVolume,
   type DistanceUnit,
   type ExerciseCategory,
@@ -101,6 +102,41 @@ function variationsToRows(variations?: Record<string, string>) {
     templateId,
     optionKey,
   }));
+}
+
+/**
+ * Lazy singleton that ensures all variation templates exist in the database.
+ * Runs once per process — subsequent calls return the cached promise.
+ */
+let _templatesSeeded: Promise<void> | null = null;
+
+function ensureVariationTemplatesSeeded(): Promise<void> {
+  if (_templatesSeeded) return _templatesSeeded;
+  _templatesSeeded = (async () => {
+    const existing = await prisma.gymVariationTemplate.count();
+    if (existing >= VARIATION_TEMPLATES.length) return;
+
+    for (const template of VARIATION_TEMPLATES) {
+      await prisma.gymVariationTemplate.upsert({
+        where: { id: template.id },
+        create: {
+          id: template.id,
+          label: template.label,
+          options: {
+            create: template.options.map((o) => ({
+              key: o.key,
+              label: o.label,
+              order: o.order,
+            })),
+          },
+        },
+        update: {
+          label: template.label,
+        },
+      });
+    }
+  })();
+  return _templatesSeeded;
 }
 
 /**
@@ -394,6 +430,7 @@ async function recalculateExerciseStat(
  * the entire workout is rolled back.
  */
 export async function createWorkoutSession(userId: string, session: WorkoutSession) {
+  await ensureVariationTemplatesSeeded();
   return prisma.$transaction(async (tx) => {
     const createdSession = await tx.gymWorkoutSession.create({
       data: {
@@ -503,6 +540,7 @@ export async function updateWorkoutSession(
   sessionId: string,
   session: WorkoutSession,
 ) {
+  await ensureVariationTemplatesSeeded();
   return prisma.$transaction(async (tx) => {
     // Verify ownership and collect old exercise keys
     const existing = await tx.gymWorkoutSession.findFirst({

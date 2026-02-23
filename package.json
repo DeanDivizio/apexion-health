@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "validate:gym-defaults": "tsx scripts/validate-gym-defaults.ts",
-    "seed:substances": "tsx scripts/seed-substance-catalog.ts"
+    "seed:substances": "tsx scripts/seed-substance-catalog.ts",
+    "seed:gym-variations": "tsx scripts/seed-gym-variations.ts"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.637.0",
