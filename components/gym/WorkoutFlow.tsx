@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Settings2, ClipboardList } from "lucide-react";
 import { MobileHeaderContext } from "@/context/MobileHeaderContext";
 import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui_primitives/button";
 import { AddExercise } from "./AddExercise";
 import { ExerciseLogger } from "./ExerciseLogger";
 import { ExerciseSettingsSheet } from "./ExerciseSettingsSheet";
@@ -120,6 +121,7 @@ export function WorkoutFlow({ userMeta, customExerciseGroups }: WorkoutFlowProps
   // Overlay state
   const [settingsOpen, setSettingsOpen] = React.useState(false);
   const [overviewOpen, setOverviewOpen] = React.useState(false);
+  const hasWarnedMissingExercise = React.useRef(false);
 
   // ---- Restore from localStorage on mount ----
   const hasRestored = useRef(false);
@@ -155,10 +157,19 @@ export function WorkoutFlow({ userMeta, customExerciseGroups }: WorkoutFlowProps
   }, [view, exercises, activeExerciseKey, activeSets, activeVariations, sessionDate, startTime, endTime]);
 
   // ---- Derived ----
+  const runtimeExerciseMap = useMemo(() => {
+    const merged = new Map(EXERCISE_MAP);
+    const customDefinitions = userMeta?.customExerciseDefinitions ?? {};
+    for (const [key, definition] of Object.entries(customDefinitions)) {
+      merged.set(key, definition);
+    }
+    return merged;
+  }, [userMeta]);
+
   const activeExercise: ExerciseDefinition | null = useMemo(() => {
     if (!activeExerciseKey) return null;
-    return EXERCISE_MAP.get(activeExerciseKey) ?? null;
-  }, [activeExerciseKey]);
+    return runtimeExerciseMap.get(activeExerciseKey) ?? null;
+  }, [activeExerciseKey, runtimeExerciseMap]);
 
   const exerciseStats = useMemo(() => {
     if (!activeExerciseKey || !userMeta) return null;
@@ -173,7 +184,7 @@ export function WorkoutFlow({ userMeta, customExerciseGroups }: WorkoutFlowProps
         label: CATEGORY_DISPLAY_NAMES[g.group] ?? g.group,
         exercises: g.items
           .map((key) => {
-            const def = EXERCISE_MAP.get(key);
+            const def = runtimeExerciseMap.get(key);
             return def ? { key: def.key, name: def.name } : null;
           })
           .filter(Boolean) as { key: string; name: string }[],
@@ -184,7 +195,7 @@ export function WorkoutFlow({ userMeta, customExerciseGroups }: WorkoutFlowProps
       return [...customExerciseGroups, ...defaultGroups];
     }
     return defaultGroups;
-  }, [customExerciseGroups]);
+  }, [customExerciseGroups, runtimeExerciseMap]);
 
   // ---- Header overrides ----
   const settingsButton = useMemo(
@@ -217,6 +228,21 @@ export function WorkoutFlow({ userMeta, customExerciseGroups }: WorkoutFlowProps
     ),
     [exercises.length],
   );
+
+  useEffect(() => {
+    if (view === "logExercise" && activeExerciseKey && !activeExercise) {
+      if (!hasWarnedMissingExercise.current) {
+        hasWarnedMissingExercise.current = true;
+        toast({
+          title: "Exercise unavailable",
+          description: "We couldn't load that exercise. Please select it again.",
+          variant: "destructive",
+        });
+      }
+      return;
+    }
+    hasWarnedMissingExercise.current = false;
+  }, [view, activeExerciseKey, activeExercise, toast]);
 
   useEffect(() => {
     setMobileHeading("generic");
@@ -256,7 +282,7 @@ export function WorkoutFlow({ userMeta, customExerciseGroups }: WorkoutFlowProps
           setActiveVariations(defaults);
         } else {
           // Use exercise's built-in defaults
-          const def = EXERCISE_MAP.get(key);
+          const def = runtimeExerciseMap.get(key);
           if (def?.variationTemplates) {
             const v: Record<string, string> = {};
             for (const [tid, override] of Object.entries(def.variationTemplates)) {
@@ -273,7 +299,7 @@ export function WorkoutFlow({ userMeta, customExerciseGroups }: WorkoutFlowProps
         setActiveVariations({});
       }
     },
-    [],
+    [runtimeExerciseMap],
   );
 
   const handleSaveExercise = useCallback(() => {
@@ -309,9 +335,9 @@ export function WorkoutFlow({ userMeta, customExerciseGroups }: WorkoutFlowProps
 
     toast({
       title: "Exercise saved",
-      description: `${EXERCISE_MAP.get(activeExerciseKey)?.name ?? activeExerciseKey} added to session.`,
+      description: `${runtimeExerciseMap.get(activeExerciseKey)?.name ?? activeExerciseKey} added to session.`,
     });
-  }, [activeExerciseKey, activeSets, activeVariations, toast]);
+  }, [activeExerciseKey, activeSets, activeVariations, runtimeExerciseMap, toast]);
 
   const handleDeleteExercise = useCallback((index: number) => {
     setExercises((prev) => prev.filter((_, i) => i !== index));
@@ -396,6 +422,24 @@ export function WorkoutFlow({ userMeta, customExerciseGroups }: WorkoutFlowProps
         />
       )}
 
+      {view === "logExercise" && activeExerciseKey && !activeExercise && (
+        <div className="w-full max-w-md rounded-lg border border-red-500/40 bg-red-500/10 p-4 text-sm">
+          <p className="text-red-100">
+            We couldn't load that exercise definition. Please return and select it again.
+          </p>
+          <Button
+            variant="outline"
+            className="mt-3 w-full"
+            onClick={() => {
+              setActiveExerciseKey(null);
+              setView("addExercise");
+            }}
+          >
+            Back to exercise picker
+          </Button>
+        </div>
+      )}
+
       {/* Overlays */}
       <ExerciseSettingsSheet
         open={settingsOpen}
@@ -409,6 +453,7 @@ export function WorkoutFlow({ userMeta, customExerciseGroups }: WorkoutFlowProps
         open={overviewOpen}
         onOpenChange={setOverviewOpen}
         exercises={exercises}
+        exerciseMap={runtimeExerciseMap}
         onDeleteExercise={handleDeleteExercise}
         sessionDate={sessionDate}
         onSessionDateChange={setSessionDate}

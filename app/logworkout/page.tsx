@@ -26,8 +26,9 @@ async function WorkoutFlowLoader() {
     for (const group of userMeta.customExercises) {
       const exercises = group.items
         .map((key) => {
+          const customDefinition = userMeta!.customExerciseDefinitions[key];
           const stat = userMeta!.exerciseData[key];
-          return { key, name: stat?.displayName ?? key };
+          return { key, name: customDefinition?.name ?? stat?.displayName ?? key };
         })
         .filter(Boolean);
 

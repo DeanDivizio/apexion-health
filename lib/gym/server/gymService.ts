@@ -25,6 +25,7 @@ import {
   EXERCISE_MAP,
   VARIATION_TEMPLATES,
   calculateSetVolume,
+  type CustomExerciseDefinition,
   type DistanceUnit,
   type ExerciseCategory,
   type ExerciseEntry,
@@ -32,6 +33,9 @@ import {
   type ExerciseRecord,
   type ExerciseStats,
   type GymUserMeta,
+  type VariationEffect,
+  type VariationEffects,
+  type VariationTemplateOverride,
   type RepCount,
   type StrengthSet,
   type WorkoutSession,
@@ -642,6 +646,86 @@ function buildCustomExerciseGroups(
 }
 
 /**
+ * Converts a custom exercise DB row into the app's ExerciseDefinition-like shape.
+ */
+function toCustomExerciseDefinition(customExercise: {
+  id: string;
+  key: string;
+  name: string;
+  category: string;
+  repMode: string;
+  targets: Array<{ muscle: string; weight: number }>;
+  variationSupports: Array<{
+    templateId: string;
+    labelOverride: string | null;
+    defaultOptionKey: string | null;
+  }>;
+  optionOverrides: Array<{
+    templateId: string;
+    optionKey: string;
+    labelOverride: string;
+  }>;
+  effects: Array<{
+    templateId: string;
+    optionKey: string;
+    multipliers: unknown;
+    deltas: unknown;
+  }>;
+}): CustomExerciseDefinition {
+  const optionLabelOverridesByTemplate: Record<string, Record<string, string>> = {};
+  for (const override of customExercise.optionOverrides) {
+    if (!optionLabelOverridesByTemplate[override.templateId]) {
+      optionLabelOverridesByTemplate[override.templateId] = {};
+    }
+    optionLabelOverridesByTemplate[override.templateId][override.optionKey] =
+      override.labelOverride;
+  }
+
+  const variationTemplates: Record<string, VariationTemplateOverride> = {};
+  for (const support of customExercise.variationSupports) {
+    const optionLabelOverrides = optionLabelOverridesByTemplate[support.templateId];
+    variationTemplates[support.templateId] = {
+      templateId: support.templateId,
+      labelOverride: support.labelOverride ?? undefined,
+      defaultOptionKey: support.defaultOptionKey ?? undefined,
+      optionLabelOverrides:
+        optionLabelOverrides && Object.keys(optionLabelOverrides).length > 0
+          ? optionLabelOverrides
+          : undefined,
+    };
+  }
+
+  const variationEffects: VariationEffects = {};
+  for (const effectRow of customExercise.effects) {
+    if (!variationEffects[effectRow.templateId]) {
+      variationEffects[effectRow.templateId] = {};
+    }
+    const effect: VariationEffect = {
+      multipliers: (effectRow.multipliers as VariationEffect["multipliers"]) ?? undefined,
+      deltas: (effectRow.deltas as VariationEffect["deltas"]) ?? undefined,
+    };
+    variationEffects[effectRow.templateId][effectRow.optionKey] = effect;
+  }
+
+  return {
+    id: customExercise.id,
+    key: customExercise.key,
+    name: customExercise.name,
+    category: customExercise.category as ExerciseCategory,
+    repMode: customExercise.repMode as CustomExerciseDefinition["repMode"],
+    baseTargets: customExercise.targets.map((target) => ({
+      muscle: target.muscle as CustomExerciseDefinition["baseTargets"][number]["muscle"],
+      weight: target.weight,
+    })),
+    isCustom: true,
+    variationTemplates:
+      Object.keys(variationTemplates).length > 0 ? variationTemplates : undefined,
+    variationEffects:
+      Object.keys(variationEffects).length > 0 ? variationEffects : undefined,
+  };
+}
+
+/**
  * Retrieves comprehensive gym metadata for a user.
  *
  * This is the main "bootstrap" call that loads everything the gym UI needs:
@@ -653,7 +737,41 @@ export async function getGymMeta(userId: string): Promise<GymUserMeta> {
   const [customExercises, statRows, sessions] = await Promise.all([
     prisma.gymCustomExercise.findMany({
       where: { userId },
-      select: { key: true, category: true, name: true },
+      select: {
+        id: true,
+        key: true,
+        category: true,
+        name: true,
+        repMode: true,
+        targets: {
+          select: {
+            muscle: true,
+            weight: true,
+          },
+        },
+        variationSupports: {
+          select: {
+            templateId: true,
+            labelOverride: true,
+            defaultOptionKey: true,
+          },
+        },
+        optionOverrides: {
+          select: {
+            templateId: true,
+            optionKey: true,
+            labelOverride: true,
+          },
+        },
+        effects: {
+          select: {
+            templateId: true,
+            optionKey: true,
+            multipliers: true,
+            deltas: true,
+          },
+        },
+      },
     }),
     prisma.gymUserExerciseStat.findMany({
       where: { userId },
@@ -664,6 +782,11 @@ export async function getGymMeta(userId: string): Promise<GymUserMeta> {
   ]);
 
   const exerciseData: Record<string, ExerciseStats> = {};
+  const customExerciseDefinitions: Record<string, CustomExerciseDefinition> = {};
+  for (const customExercise of customExercises) {
+    customExerciseDefinitions[customExercise.key] =
+      toCustomExerciseDefinition(customExercise);
+  }
   const customExerciseMap = new Map(
     customExercises.map((exercise) => [exercise.key, exercise]),
   );
@@ -749,6 +872,7 @@ export async function getGymMeta(userId: string): Promise<GymUserMeta> {
   return {
     userID: userId,
     customExercises: buildCustomExerciseGroups(customExercises),
+    customExerciseDefinitions,
     exerciseData,
   };
 }

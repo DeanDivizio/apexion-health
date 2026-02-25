@@ -382,6 +382,22 @@ export interface ExerciseStats {
 }
 
 /**
+ * Runtime definition for a user-created custom exercise.
+ * Mirrors the subset of ExerciseDefinition needed by workout logging UI.
+ */
+export interface CustomExerciseDefinition {
+  id: string;
+  key: string;
+  name: string;
+  category: ExerciseCategory;
+  repMode: StrengthRepMode;
+  baseTargets: MuscleTargets;
+  isCustom: true;
+  variationTemplates?: Record<string, VariationTemplateOverride>;
+  variationEffects?: VariationEffects;
+}
+
+/**
  * Per-user gym metadata stored in PostgreSQL.
  * Contains custom exercises and historical stats.
  */
@@ -390,6 +406,8 @@ export interface GymUserMeta {
   userID: string;
   /** User's custom exercises grouped by category */
   customExercises: ExerciseGroup[];
+  /** Full custom exercise definitions keyed by exercise key */
+  customExerciseDefinitions: Record<string, CustomExerciseDefinition>;
   /** Stats for each exercise the user has performed */
   exerciseData: Record<string, ExerciseStats>;
 }

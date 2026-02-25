@@ -1,11 +1,13 @@
 "use server";
 
 import { auth } from "@clerk/nextjs/server";
+import { Prisma } from "@prisma/client";
 import {
   workoutSessionSchema,
   createCustomExerciseInputSchema,
   listSessionsOptionsSchema,
   updateGymPreferencesSchema,
+  EXERCISE_MAP,
 } from "@/lib/gym";
 import {
   createWorkoutSession,
@@ -84,51 +86,74 @@ export async function createCustomExerciseAction(input: unknown) {
   const userId = await requireUserId();
   const parsed = createCustomExerciseInputSchema.parse(input);
 
-  return prisma.gymCustomExercise.create({
-    data: {
-      userId,
-      key: parsed.key,
-      name: parsed.name,
-      category: parsed.category,
-      repMode: parsed.repMode,
-      targets: parsed.targets.length
-        ? {
-            create: parsed.targets.map((target) => ({
-              muscle: target.muscle,
-              weight: target.weight,
-            })),
-          }
-        : undefined,
-      variationSupports: parsed.variationSupports.length
-        ? {
-            create: parsed.variationSupports.map((support) => ({
-              templateId: support.templateId,
-              labelOverride: support.labelOverride ?? null,
-              defaultOptionKey: support.defaultOptionKey ?? null,
-            })),
-          }
-        : undefined,
-      optionOverrides: parsed.optionLabelOverrides.length
-        ? {
-            create: parsed.optionLabelOverrides.map((override) => ({
-              templateId: override.templateId,
-              optionKey: override.optionKey,
-              labelOverride: override.labelOverride,
-            })),
-          }
-        : undefined,
-      effects: parsed.variationEffects.length
-        ? {
-            create: parsed.variationEffects.map((effect) => ({
-              templateId: effect.templateId,
-              optionKey: effect.optionKey,
-              multipliers: effect.multipliers ?? undefined,
-              deltas: effect.deltas ?? undefined,
-            })),
-          }
-        : undefined,
-    },
+  if (EXERCISE_MAP.has(parsed.key)) {
+    throw new Error("That name matches a built-in exercise. Try a more specific custom name.");
+  }
+
+  const existingCustom = await prisma.gymCustomExercise.findUnique({
+    where: { userId_key: { userId, key: parsed.key } },
+    select: { id: true },
   });
+  if (existingCustom) {
+    throw new Error("You already have a custom exercise with that name.");
+  }
+
+  try {
+    return prisma.gymCustomExercise.create({
+      data: {
+        userId,
+        key: parsed.key,
+        name: parsed.name,
+        category: parsed.category,
+        repMode: parsed.repMode,
+        targets: parsed.targets.length
+          ? {
+              create: parsed.targets.map((target) => ({
+                muscle: target.muscle,
+                weight: target.weight,
+              })),
+            }
+          : undefined,
+        variationSupports: parsed.variationSupports.length
+          ? {
+              create: parsed.variationSupports.map((support) => ({
+                templateId: support.templateId,
+                labelOverride: support.labelOverride ?? null,
+                defaultOptionKey: support.defaultOptionKey ?? null,
+              })),
+            }
+          : undefined,
+        optionOverrides: parsed.optionLabelOverrides.length
+          ? {
+              create: parsed.optionLabelOverrides.map((override) => ({
+                templateId: override.templateId,
+                optionKey: override.optionKey,
+                labelOverride: override.labelOverride,
+              })),
+            }
+          : undefined,
+        effects: parsed.variationEffects.length
+          ? {
+              create: parsed.variationEffects.map((effect) => ({
+                templateId: effect.templateId,
+                optionKey: effect.optionKey,
+                multipliers: effect.multipliers ?? undefined,
+                deltas: effect.deltas ?? undefined,
+              })),
+            }
+          : undefined,
+      },
+    });
+  } catch (error) {
+    // Guard against race conditions where another request inserts the same key.
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      throw new Error("You already have a custom exercise with that name.");
+    }
+    throw error;
+  }
 }
 
 // =============================================================================

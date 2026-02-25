@@ -48,6 +48,7 @@ interface SessionOverviewSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   exercises: ExerciseEntry[];
+  exerciseMap: Map<string, ExerciseDefinition>;
   onDeleteExercise: (index: number) => void;
   sessionDate: Date;
   onSessionDateChange: (date: Date) => void;
@@ -61,8 +62,11 @@ interface SessionOverviewSheetProps {
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-function getExerciseName(key: string): string {
-  return EXERCISE_MAP.get(key)?.name ?? key;
+function getExerciseName(
+  key: string,
+  exerciseMap: Map<string, ExerciseDefinition>,
+): string {
+  return exerciseMap.get(key)?.name ?? EXERCISE_MAP.get(key)?.name ?? key;
 }
 
 function formatReps(entry: ExerciseEntry): string {
@@ -102,6 +106,7 @@ export function SessionOverviewSheet({
   open,
   onOpenChange,
   exercises,
+  exerciseMap,
   onDeleteExercise,
   sessionDate,
   onSessionDateChange,
@@ -266,7 +271,7 @@ export function SessionOverviewSheet({
                       <span className="text-xs text-muted-foreground font-mono">
                         {i + 1}.
                       </span>
-                      <span>{getExerciseName(entry.exerciseType)}</span>
+                      <span>{getExerciseName(entry.exerciseType, exerciseMap)}</span>
                       {entry.type === "strength" && (
                         <span className="text-xs text-muted-foreground ml-auto mr-2">
                           {entry.sets.length} set{entry.sets.length !== 1 ? "s" : ""}
@@ -318,7 +323,7 @@ export function SessionOverviewSheet({
                         <AlertDialogHeader>
                           <AlertDialogTitle>Remove exercise?</AlertDialogTitle>
                           <AlertDialogDescription>
-                            This will remove {getExerciseName(entry.exerciseType)} and all its sets from this session.
+                            This will remove {getExerciseName(entry.exerciseType, exerciseMap)} and all its sets from this session.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>

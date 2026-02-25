@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { Info, Plus, Save, BookmarkPlus } from "lucide-react";
+import { useRouter } from "next/navigation";
 import {
   Sheet,
   SheetContent,
@@ -56,6 +57,7 @@ export function ExerciseSettingsSheet({
   onVariationsChange,
   onExerciseNameUpdate,
 }: ExerciseSettingsSheetProps) {
+  const router = useRouter();
   const HALF_WIDTH_CHAR_BUDGET = 14;
   const { toast } = useToast();
   const [addVariationOpen, setAddVariationOpen] = React.useState(false);
@@ -160,8 +162,9 @@ export function ExerciseSettingsSheet({
         category: exercise.category,
         repMode: exercise.repMode ?? "bilateral",
         targets: exercise.baseTargets,
-        variationSupports: Object.entries(variations).map(([templateId]) => ({
+        variationSupports: Object.entries(variations).map(([templateId, defaultOptionKey]) => ({
           templateId,
+          defaultOptionKey,
         })),
         optionLabelOverrides: [],
         variationEffects: [],
@@ -175,10 +178,15 @@ export function ExerciseSettingsSheet({
       onExerciseNameUpdate?.(customName.trim());
       setShowCustomInput(false);
       setCustomName("");
-    } catch {
+      router.refresh();
+    } catch (error) {
+      const description =
+        error instanceof Error && error.message
+          ? error.message
+          : "Failed to create custom exercise. Please try again.";
       toast({
         title: "Error",
-        description: "Failed to create custom exercise. Please try again.",
+        description,
         variant: "destructive",
       });
     } finally {

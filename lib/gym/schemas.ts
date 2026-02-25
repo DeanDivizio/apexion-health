@@ -214,9 +214,22 @@ export const exerciseStatsSchema = z.object({
   notes: z.string().optional(),
 });
 
+export const customExerciseDefinitionSchema = z.object({
+  id: z.string().min(1),
+  key: z.string().min(1),
+  name: z.string().min(1),
+  category: exerciseCategorySchema,
+  repMode: strengthRepModeSchema,
+  baseTargets: muscleTargetsSchema,
+  isCustom: z.literal(true),
+  variationTemplates: z.record(z.string(), variationTemplateOverrideSchema).optional(),
+  variationEffects: variationEffectsSchema.optional(),
+});
+
 export const gymUserMetaSchema = z.object({
   userID: z.string().min(1),
   customExercises: z.array(exerciseGroupSchema),
+  customExerciseDefinitions: z.record(z.string(), customExerciseDefinitionSchema),
   exerciseData: z.record(z.string(), exerciseStatsSchema),
 });
 
@@ -278,6 +291,7 @@ export type VariationEffectsSchema = z.infer<typeof variationEffectsSchema>;
 
 export type ExerciseRecordSchema = z.infer<typeof exerciseRecordSchema>;
 export type ExerciseStatsSchema = z.infer<typeof exerciseStatsSchema>;
+export type CustomExerciseDefinitionSchema = z.infer<typeof customExerciseDefinitionSchema>;
 export type GymUserMetaSchema = z.infer<typeof gymUserMetaSchema>;
 
 export type DateFormFieldsSchema = z.infer<typeof dateFormFieldsSchema>;

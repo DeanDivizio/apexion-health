@@ -40,6 +40,7 @@ export type {
   // User metadata
   ExerciseRecord,
   ExerciseStats,
+  CustomExerciseDefinition,
   GymUserMeta,
   // Form state
   DateFormFields,
@@ -93,6 +94,7 @@ export {
   // User metadata
   exerciseRecordSchema,
   exerciseStatsSchema,
+  customExerciseDefinitionSchema,
   gymUserMetaSchema,
   // Form state
   dateFormFieldsSchema,
@@ -117,6 +119,7 @@ export type {
   VariationTemplateOverrideSchema,
   VariationEffectSchema,
   VariationEffectsSchema,
+  CustomExerciseDefinitionSchema,
   WorkoutSessionSchema,
   WorkoutFormSchema,
   StrengthRepModeSchema,
