@@ -387,9 +387,12 @@ export function WorkoutFlow({ userMeta, customExerciseGroups }: WorkoutFlowProps
 
       router.push("/");
     } catch (err) {
+      const detail =
+        err instanceof Error ? err.message : "Unknown error";
+      console.error("[handleEndSession] Workout submit failed:", err);
       toast({
-        title: "Error",
-        description: "Failed to save workout. Please try again.",
+        title: "Failed to save workout",
+        description: detail,
         variant: "destructive",
       });
     } finally {

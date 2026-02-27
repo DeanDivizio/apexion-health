@@ -40,8 +40,19 @@ async function requireUserId(): Promise<string> {
 
 export async function createWorkoutSessionAction(session: unknown) {
   const userId = await requireUserId();
-  const parsed = workoutSessionSchema.parse(session);
-  return createWorkoutSession(userId, parsed);
+  try {
+    const parsed = workoutSessionSchema.parse(session);
+    return await createWorkoutSession(userId, parsed);
+  } catch (error) {
+    const label = "[createWorkoutSessionAction]";
+    if (error instanceof z.ZodError) {
+      const details = error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ");
+      console.error(label, "Zod validation failed:", details, JSON.stringify(error.issues));
+      throw new Error(`Validation failed: ${details}`);
+    }
+    console.error(label, error);
+    throw error;
+  }
 }
 
 export async function getWorkoutSessionAction(sessionId: string) {
