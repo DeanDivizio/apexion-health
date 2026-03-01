@@ -15,18 +15,17 @@ const globalForPrisma = globalThis as unknown as {
 if (!globalForPrisma.pgPool) {
   globalForPrisma.pgPool = new Pool({
     connectionString,
-    max: 5,
+    max: 2,
     idleTimeoutMillis: 30_000,
+    connectionTimeoutMillis: 10_000,
   });
 }
 
-export const prisma =
-  globalForPrisma.prisma ??
-  new PrismaClient({
+if (!globalForPrisma.prisma) {
+  globalForPrisma.prisma = new PrismaClient({
     adapter: new PrismaPg(globalForPrisma.pgPool),
     log: ["error", "warn"],
   });
-
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
 }
+
+export const prisma = globalForPrisma.prisma;
