@@ -27,7 +27,7 @@ function LogButton({open, setOpen, onHydrationClick }:{open:any, setOpen:any, on
                     <Plus className="h-8 w-8" color={open ? "rgb(163 163 163)" : "white"} />
                 </div>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-[calc(100vw-2rem)] max-w-[400px] rounded-xl border border-white/10 bg-gradient-to-b from-blue-950/20 to-blue-950/5 px-8 py-4 shadow-lg backdrop-blur-xl data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0">
+            <DropdownMenuContent className="w-[calc(100vw-2rem)] max-w-[400px] rounded-xl border border-white/10 bg-gradient-to-b from-blue-950/20 to-blue-950/5 px-8 py-8 shadow-lg backdrop-blur-xl data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0">
                 <DropdownMenuLabel className="text-2xl font-light w-full text-center mb-4">Log...</DropdownMenuLabel>
                 <DropdownMenuItem className="mb-8 flex flex-col items-center justify-center rounded bg-gradient-to-r from-green-500 to-blue-600 p-px" onClick={()=>handleNavClick(false)}>
                     <Link className="w-full rounded bg-black px-12 py-2 text-center text-xl font-thin text-neutral-300 sm:px-16" href={"/logmeal"}>Meal</Link>
@@ -38,6 +38,8 @@ function LogButton({open, setOpen, onHydrationClick }:{open:any, setOpen:any, on
                 <DropdownMenuItem className="mb-8 flex flex-col items-center justify-center rounded bg-gradient-to-r from-green-500 to-blue-600 p-px" onClick={()=>handleNavClick(false)}>
                     <Link className="w-full rounded bg-black px-12 py-2 text-center text-xl font-thin text-neutral-300 sm:px-16" href={"/logworkout"}>Workout</Link>
                 </DropdownMenuItem>
+                <p className="text-sm font-thin italic mb-2">Quick Log</p>
+                <hr className="border-white/10 mb-4" />
                 <DropdownMenuItem className="mb-0 flex flex-col items-center justify-center rounded bg-gradient-to-r from-green-500 to-blue-600 p-px" onClick={() => { handleNavClick(false); onHydrationClick(); }}>
                     <span className="w-full rounded bg-black px-12 py-2 text-center text-xl font-thin text-neutral-300 sm:px-16">Water</span>
                 </DropdownMenuItem>

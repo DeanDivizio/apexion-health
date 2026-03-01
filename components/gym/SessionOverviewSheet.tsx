@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { X, Clock, CalendarDays, Dumbbell, Flame, Weight, Trash2, XCircle, CheckCircle2 } from "lucide-react";
+import { X, Clock, CalendarDays, Dumbbell, Flame, Weight, Trash2, CheckCircle2, } from "lucide-react";
 import { UserButton } from "@clerk/nextjs";
 import {
   Sheet,
@@ -387,7 +387,7 @@ export function SessionOverviewSheet({
                 variant="outline"
                 className="col-span-1 h-12 border-red-500/40 text-red-400 hover:bg-red-500/10 hover:text-red-300"
               >
-                <XCircle className="h-4 w-4" />
+<Trash2 className="h-4 w-4" />
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
