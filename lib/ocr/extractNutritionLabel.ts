@@ -14,19 +14,33 @@ const nutritionLabelSchema = z.object({
 
 export type NutritionLabelData = z.infer<typeof nutritionLabelSchema>;
 
-const SYSTEM_PROMPT = `You are a nutrition label data extractor. Given an image of a nutrition facts label, extract ALL visible information into structured JSON.
+const SYSTEM_PROMPT = `You are a nutrition label data extractor. Given an image of a nutrition facts label or supplement facts panel, extract ALL visible information into structured JSON.
 
 Rules:
-- Extract every nutrient visible on the label.
+- Extract EVERY nutrient visible on the label — do not skip any.
 - Use standardized units: g (grams), mg (milligrams), mcg (micrograms), kcal (kilocalories).
 - Convert %DV to absolute amounts using standard daily values when possible:
-  - Vitamin D: 20mcg DV, Calcium: 1300mg DV, Iron: 18mg DV, Potassium: 4700mg DV
-  - Vitamin A: 900mcg DV, Vitamin C: 90mg DV
+  - Vitamin D: 20mcg, Calcium: 1300mg, Iron: 18mg, Potassium: 4700mg
+  - Vitamin A: 900mcg, Vitamin C: 90mg, Vitamin E: 15mg, Vitamin K: 120mcg
+  - Thiamin: 1.2mg, Riboflavin: 1.3mg, Niacin: 16mg, Vitamin B6: 1.7mg
+  - Folate: 400mcg DFE, Vitamin B12: 2.4mcg, Biotin: 30mcg, Pantothenic Acid: 5mg
+  - Choline: 550mg, Phosphorus: 1250mg, Iodine: 150mcg, Magnesium: 420mg
+  - Zinc: 11mg, Selenium: 55mcg, Copper: 0.9mg, Manganese: 2.3mg
+  - Chromium: 35mcg, Molybdenum: 45mcg, Chloride: 2300mg
 - Return null for values not visible on the label.
 - If the food name or brand is visible on the image, include those.
 - servingSize and servingUnit should reflect the label's "Serving Size" line.
 - All nutrient values should be per ONE serving.
-- Map nutrients to these keys: calories, protein, carbs, fat, saturatedFat, transFat, fiber, sugars, addedSugars, cholesterol, sodium, calcium, iron, potassium, magnesium, vitaminA, vitaminC, vitaminD.
+- Use these camelCase keys for common nutrients:
+  calories, protein, carbs, fat, saturatedFat, transFat, fiber, sugars, addedSugars,
+  cholesterol, sodium, calcium, iron, potassium, magnesium,
+  vitaminA, vitaminC, vitaminD, vitaminE, vitaminK,
+  vitaminB1, vitaminB2, vitaminB3, vitaminB5, vitaminB6, vitaminB7, vitaminB9, vitaminB12,
+  zinc, selenium, copper, manganese, chromium, molybdenum, phosphorus, iodine, chloride,
+  choline, omega3, omega6
+- For any nutrient NOT in the list above, generate a descriptive camelCase key (e.g. "lutein", "lycopene", "coq10").
+- Only include ingredients that have a quantity associated with them.
+- Do not include labels that are for a group of ingredients (i.e. "Focus Blend", "Active Blend", etc.).
 
 Return ONLY valid JSON matching this shape:
 {

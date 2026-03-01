@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db/prisma";
-import { NUTRIENT_KEYS } from "@/lib/nutrition/nutrientKeys";
+import { NUTRIENT_KEYS, resolveNutrientMeta } from "@/lib/nutrition/nutrientKeys";
 import type {
   FoundationFoodView,
   MacroSummaryByDate,
@@ -147,9 +147,9 @@ function buildNutrientRows(
     ? (portionGramWeight / 100) * servings
     : servings;
 
-  for (const [profileKey, meta] of Object.entries(NUTRIENT_KEYS)) {
-    const perServing = nutrients[profileKey];
+  for (const [profileKey, perServing] of Object.entries(nutrients)) {
     if (perServing == null || perServing === 0) continue;
+    const meta = resolveNutrientMeta(profileKey);
     rows.push({
       mealItemId,
       nutrientKey: meta.key,

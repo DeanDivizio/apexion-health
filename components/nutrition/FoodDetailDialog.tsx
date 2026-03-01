@@ -18,7 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui_primitives/select";
 import { Button } from "@/components/ui_primitives/button";
-import { NUTRIENT_KEYS } from "@/lib/nutrition/nutrientKeys";
+import { NUTRIENT_KEYS, resolveNutrientMeta } from "@/lib/nutrition/nutrientKeys";
 import type {
   FoundationFoodView,
   MealItemDraft,
@@ -118,14 +118,14 @@ export function FoodDetailDialog({ food, open, onOpenChange, onAddItem }: FoodDe
     onOpenChange(false);
   }
 
-  const nutrientDisplay = Object.entries(NUTRIENT_KEYS)
-    .filter(([profileKey]) => profileKey !== "calories")
-    .map(([profileKey, meta]) => {
-      const val = displayNutrients[profileKey];
-      if (val == null || val === 0) return null;
-      return { name: meta.name, value: val, unit: meta.unit };
+  const knownKeys = new Set(Object.keys(NUTRIENT_KEYS));
+  const nutrientDisplay = Object.entries(displayNutrients)
+    .filter(([key, val]) => key !== "calories" && val != null && val !== 0)
+    .map(([key, val]) => {
+      const meta = resolveNutrientMeta(key);
+      return { name: meta.name, value: val!, unit: meta.unit, known: knownKeys.has(key) };
     })
-    .filter(Boolean) as { name: string; value: number; unit: string }[];
+    .sort((a, b) => (a.known === b.known ? 0 : a.known ? -1 : 1));
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
