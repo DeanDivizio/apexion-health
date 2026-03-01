@@ -6,6 +6,8 @@ import {
   purgeAllBiometricData,
 } from "@/lib/providers/whoop/sync-service";
 
+export const maxDuration = 30;
+
 export async function POST(request: NextRequest) {
   const { userId } = await auth();
   if (!userId) {

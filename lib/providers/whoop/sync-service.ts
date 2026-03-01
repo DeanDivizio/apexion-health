@@ -210,13 +210,20 @@ export async function syncWhoopData(
 
 // ─── Page processors ─────────────────────────────────────────────────────────
 
+const UPSERT_BATCH_SIZE = 5; // stay within pg pool size
+
+async function runBatched<T>(items: T[], fn: (item: T) => Promise<void>) {
+  for (let i = 0; i < items.length; i += UPSERT_BATCH_SIZE) {
+    await Promise.all(items.slice(i, i + UPSERT_BATCH_SIZE).map(fn));
+  }
+}
+
 async function processSleepPage(
   records: WhoopSleepResponse[],
   connectionId: string,
   userId: string,
 ) {
-  for (const raw of records) {
-    // Upsert raw
+  await runBatched(records, async (raw) => {
     await prisma.whoopSleep.upsert({
       where: { whoopSleepId: raw.id },
       create: {
@@ -269,7 +276,6 @@ async function processSleepPage(
       },
     });
 
-    // Adapt and upsert canonical
     const canonical = adaptWhoopSleep(raw, userId);
     await prisma.biometricSleep.upsert({
       where: {
@@ -278,7 +284,7 @@ async function processSleepPage(
       create: canonical,
       update: canonical,
     });
-  }
+  });
 }
 
 async function processRecoveryPage(
@@ -286,8 +292,7 @@ async function processRecoveryPage(
   connectionId: string,
   userId: string,
 ) {
-  for (const raw of records) {
-    // Look up the associated sleep to get its end time and timezone for dateStr
+  await runBatched(records, async (raw) => {
     const linkedSleep = await prisma.whoopSleep.findFirst({
       where: { whoopCycleId: raw.cycle_id, connectionId },
       select: { end: true, timezoneOffset: true },
@@ -336,7 +341,7 @@ async function processRecoveryPage(
       create: canonical,
       update: canonical,
     });
-  }
+  });
 }
 
 async function processWorkoutPage(
@@ -344,7 +349,7 @@ async function processWorkoutPage(
   connectionId: string,
   userId: string,
 ) {
-  for (const raw of records) {
+  await runBatched(records, async (raw) => {
     await prisma.whoopWorkout.upsert({
       where: { whoopWorkoutId: raw.id },
       create: {
@@ -401,7 +406,7 @@ async function processWorkoutPage(
       create: canonical,
       update: canonical,
     });
-  }
+  });
 }
 
 async function processCyclePage(
@@ -409,7 +414,7 @@ async function processCyclePage(
   connectionId: string,
   userId: string,
 ) {
-  for (const raw of records) {
+  await runBatched(records, async (raw) => {
     await prisma.whoopCycle.upsert({
       where: { whoopCycleId: raw.id },
       create: {
@@ -451,7 +456,7 @@ async function processCyclePage(
         update: canonical,
       });
     }
-  }
+  });
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
