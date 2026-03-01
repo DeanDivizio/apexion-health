@@ -210,7 +210,7 @@ export async function syncWhoopData(
 
 // ─── Page processors ─────────────────────────────────────────────────────────
 
-const UPSERT_BATCH_SIZE = 5; // stay within pg pool size
+const UPSERT_BATCH_SIZE = 3; // pool is 5; leave headroom for cursor saves + token ops
 
 async function runBatched<T>(items: T[], fn: (item: T) => Promise<void>) {
   for (let i = 0; i < items.length; i += UPSERT_BATCH_SIZE) {
