@@ -649,3 +649,14 @@ model BiometricBodyMeasurement {
   @@unique([userId, provider, dateStr])
   @@index([userId, dateStr])
 }
+
+model HydrationLog {
+  id        String   @id @default(uuid())
+  userId    String
+  amountOz  Float
+  dateStr   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, dateStr])
+}
