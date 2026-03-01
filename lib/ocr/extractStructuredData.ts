@@ -1,16 +1,16 @@
 import OpenAI from "openai";
-import { type ZodSchema } from "zod";
+import { type ZodType, type ZodTypeDef } from "zod";
 
-interface ExtractionRequest<T> {
+interface ExtractionRequest<TOut, TDef extends ZodTypeDef, TIn> {
   image: string;
   systemPrompt: string;
-  responseSchema: ZodSchema<T>;
+  responseSchema: ZodType<TOut, TDef, TIn>;
   model?: string;
 }
 
-export async function extractStructuredData<T>(
-  req: ExtractionRequest<T>,
-): Promise<T> {
+export async function extractStructuredData<TOut, TDef extends ZodTypeDef, TIn>(
+  req: ExtractionRequest<TOut, TDef, TIn>,
+): Promise<TOut> {
   const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
   const imageContent: OpenAI.Chat.Completions.ChatCompletionContentPart = req.image.startsWith("data:")

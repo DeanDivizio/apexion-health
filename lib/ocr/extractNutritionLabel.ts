@@ -39,7 +39,8 @@ Rules:
   zinc, selenium, copper, manganese, chromium, molybdenum, phosphorus, iodine, chloride,
   choline, omega3, omega6
 - For any nutrient NOT in the list above, generate a descriptive camelCase key (e.g. "lutein", "lycopene", "coq10").
-- Only include ingredients that have a quantity associated with them.
+- Only include nutrients that are visible on the label with a numeric value. Do not invent values.
+- Supplement facts panels may not list macros (calories, protein, carbs, fat) — omit any that are absent.
 - Do not include labels that are for a group of ingredients (i.e. "Focus Blend", "Active Blend", etc.).
 
 Return ONLY valid JSON matching this shape:
@@ -49,7 +50,7 @@ Return ONLY valid JSON matching this shape:
   "servingSize": number,
   "servingUnit": string,
   "servingsPerContainer": number | null,
-  "nutrients": { calories, protein, carbs, fat, ... },
+  "nutrients": { ... only nutrients visible on the label ... },
   "ingredients": string | null
 }`;
 

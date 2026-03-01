@@ -1,10 +1,10 @@
 import { z } from "zod";
 
 export const nutrientProfileSchema = z.object({
-  calories: z.number(),
-  protein: z.number(),
-  carbs: z.number(),
-  fat: z.number(),
+  calories: z.number().optional().default(0),
+  protein: z.number().optional().default(0),
+  carbs: z.number().optional().default(0),
+  fat: z.number().optional().default(0),
   saturatedFat: z.number().optional(),
   transFat: z.number().optional(),
   fiber: z.number().optional(),
