@@ -339,6 +339,13 @@ export function WorkoutFlow({ userMeta, customExerciseGroups }: WorkoutFlowProps
     });
   }, [activeExerciseKey, activeSets, activeVariations, runtimeExerciseMap, toast]);
 
+  const handleDiscardExercise = useCallback(() => {
+    setActiveExerciseKey(null);
+    setActiveSets([{ weight: 0, reps: { bilateral: 0 } }]);
+    setActiveVariations({});
+    setView("addExercise");
+  }, []);
+
   const handleDeleteExercise = useCallback((index: number) => {
     setExercises((prev) => prev.filter((_, i) => i !== index));
     toast({
@@ -408,7 +415,7 @@ export function WorkoutFlow({ userMeta, customExerciseGroups }: WorkoutFlowProps
           strengthGroups={strengthGroups}
           onSelectExercise={handleSelectExercise}
           sessionExercises={exercises}
-          onEndSession={handleEndSession}
+          onReviewSession={() => setOverviewOpen(true)}
           onDiscardSession={handleDiscardSession}
         />
       )}
@@ -419,6 +426,7 @@ export function WorkoutFlow({ userMeta, customExerciseGroups }: WorkoutFlowProps
           sets={activeSets}
           onSetsChange={setActiveSets}
           onSaveExercise={handleSaveExercise}
+          onDiscardExercise={handleDiscardExercise}
           onEditVariations={() => setSettingsOpen(true)}
           variations={activeVariations}
           stats={exerciseStats}
@@ -465,6 +473,8 @@ export function WorkoutFlow({ userMeta, customExerciseGroups }: WorkoutFlowProps
         endTimeLabel={endTime ?? "now"}
         onEndTimeChange={setEndTime}
         onDiscardSession={handleDiscardSession}
+        onEndSession={handleEndSession}
+        submitting={submitting}
       />
     </div>
   );

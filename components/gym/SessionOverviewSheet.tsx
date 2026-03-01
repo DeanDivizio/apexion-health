@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { X, Clock, CalendarDays, Dumbbell, Flame, Weight, Trash2, XCircle } from "lucide-react";
+import { X, Clock, CalendarDays, Dumbbell, Flame, Weight, Trash2, XCircle, CheckCircle2 } from "lucide-react";
 import { UserButton } from "@clerk/nextjs";
 import {
   Sheet,
@@ -57,6 +57,8 @@ interface SessionOverviewSheetProps {
   endTimeLabel: string; // "now" or a specific time
   onEndTimeChange: (time: string | null) => void; // null = use "now"
   onDiscardSession: () => void;
+  onEndSession: () => void;
+  submitting?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -115,6 +117,8 @@ export function SessionOverviewSheet({
   endTimeLabel,
   onEndTimeChange,
   onDiscardSession,
+  onEndSession,
+  submitting = false,
 }: SessionOverviewSheetProps) {
   const [editingStartTime, setEditingStartTime] = React.useState(false);
   const [editingEndTime, setEditingEndTime] = React.useState(false);
@@ -405,6 +409,20 @@ export function SessionOverviewSheet({
               Volume (lbs)
             </p>
           </div>
+        </div>
+
+        <Separator />
+
+        {/* Submit */}
+        <div className="px-4 py-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
+          <Button
+            onClick={onEndSession}
+            disabled={exercises.length === 0 || submitting}
+            className="w-full h-12 text-base bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white shadow-lg shadow-green-900/30"
+          >
+            <CheckCircle2 className="mr-2 h-5 w-5" />
+            {submitting ? "Saving..." : "Save and End Session"}
+          </Button>
         </div>
       </SheetContent>
     </Sheet>

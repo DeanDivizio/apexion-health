@@ -1,9 +1,20 @@
 "use client";
 
 import * as React from "react";
-import { Plus, Save } from "lucide-react";
+import { Plus, Save, Trash2 } from "lucide-react";
 import { Accordion } from "@/components/ui_primitives/accordion";
 import { Button } from "@/components/ui_primitives/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui_primitives/alert-dialog";
 import { SetCard } from "./SetCard";
 import { ExerciseStatsInline } from "./ExerciseStatsPanel";
 import type { StrengthSet, ExerciseDefinition, ExerciseStats } from "@/lib/gym";
@@ -14,6 +25,7 @@ interface ExerciseLoggerProps {
   sets: StrengthSet[];
   onSetsChange: (sets: StrengthSet[]) => void;
   onSaveExercise: () => void;
+  onDiscardExercise: () => void;
   onEditVariations?: () => void;
   variations?: Record<string, string>;
   stats?: ExerciseStats | null;
@@ -55,6 +67,7 @@ export function ExerciseLogger({
   sets,
   onSetsChange,
   onSaveExercise,
+  onDiscardExercise,
   onEditVariations,
   variations,
   stats,
@@ -300,17 +313,44 @@ export function ExerciseLogger({
 
       {/* Action Buttons */}
       <div className="fixed bottom-0 left-0 right-0 pb-8 z-30 bg-background/95 backdrop-blur-md border-t border-border">
-        <div className="mx-auto w-full px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+1rem)] flex gap-3">
+        <div className="mx-auto w-full px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+1rem)] grid grid-cols-5 gap-3">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="outline"
+                className="col-span-1 h-12 border-red-500/40 text-red-400 hover:bg-red-500/10 hover:text-red-300"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Discard this exercise?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will discard {exercise.name} and all sets you&apos;ve entered. You&apos;ll return to the exercise selection screen.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Keep logging</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={onDiscardExercise}
+                  className="bg-red-600 text-white hover:bg-red-700"
+                >
+                  Discard
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
           <Button
             variant="outline"
-            className="flex-1 h-12 border-dashed border-blue-500/50 text-blue-400 hover:bg-blue-500/10 hover:text-blue-300"
+            className="col-span-2 h-12 border-dashed border-blue-500/50 text-blue-400 hover:bg-blue-500/10 hover:text-blue-300"
             onClick={handleAddSet}
           >
             <Plus className="mr-2 h-4 w-4" />
             Add Set
           </Button>
           <Button
-            className="flex-1 h-12 bg-green-600 hover:bg-green-700 text-white"
+            className="col-span-2 h-12 bg-green-600 hover:bg-green-700 text-white"
             disabled={!canSave}
             onClick={onSaveExercise}
           >

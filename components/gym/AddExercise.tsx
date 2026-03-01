@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Dumbbell, Activity, CheckCircle2, XCircle } from "lucide-react";
+import { Dumbbell, Activity, ClipboardCheck, XCircle } from "lucide-react";
 import { Button } from "@/components/ui_primitives/button";
 import {
   AlertDialog,
@@ -21,7 +21,7 @@ interface AddExerciseProps {
   strengthGroups: ExerciseGroupOption[];
   onSelectExercise: (exerciseKey: string) => void;
   sessionExercises: ExerciseEntry[];
-  onEndSession: () => void;
+  onReviewSession: () => void;
   onDiscardSession: () => void;
 }
 
@@ -29,7 +29,7 @@ export function AddExercise({
   strengthGroups,
   onSelectExercise,
   sessionExercises,
-  onEndSession,
+  onReviewSession,
   onDiscardSession,
 }: AddExerciseProps) {
   const hasExercises = sessionExercises.length > 0;
@@ -81,11 +81,11 @@ export function AddExercise({
       {hasExercises && (
         <div className="w-full space-y-3">
           <Button
-            onClick={onEndSession}
+            onClick={onReviewSession}
             className="w-full h-14 text-base bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white shadow-lg shadow-green-900/30"
           >
-            <CheckCircle2 className="mr-2 h-5 w-5" />
-            Save and End Session
+            <ClipboardCheck className="mr-2 h-5 w-5" />
+            Review and Save
           </Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
