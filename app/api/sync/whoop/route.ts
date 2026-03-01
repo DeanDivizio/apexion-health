@@ -23,6 +23,10 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Connections in ERROR state can still be recovered — getValidToken will
+  // attempt a refresh which may succeed (e.g. after a concurrent-refresh race).
+  // No need to block syncs for ERROR connections.
+
   const body = await request.json().catch(() => ({}));
   const fullBackfill = body.fullBackfill === true;
   const purge = body.purge === true;

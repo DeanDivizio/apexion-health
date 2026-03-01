@@ -40,17 +40,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  // Find the connection for this Whoop user
+  // Find the connection for this Whoop user. Include ERROR status so we can
+  // attempt recovery — the token may have been refreshed by another instance
+  // since the error was recorded.
   const connection = await prisma.providerConnection.findFirst({
     where: {
       providerUserId: String(payload.user_id),
       provider: "whoop",
-      status: "ACTIVE",
+      status: { in: ["ACTIVE", "ERROR"] },
     },
   });
 
   if (!connection) {
-    // No active connection — acknowledge but do nothing
     return NextResponse.json({ ok: true });
   }
 

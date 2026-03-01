@@ -24,6 +24,10 @@ function getProviderCredentials(provider: Provider) {
   return { ...config, clientId, clientSecret };
 }
 
+function tokenIsValid(expiresAt: Date | null): boolean {
+  return !!expiresAt && expiresAt.getTime() - Date.now() >= TOKEN_REFRESH_BUFFER_MS;
+}
+
 /**
  * Exchange an authorization code for tokens.
  */
@@ -63,24 +67,42 @@ export async function exchangeCodeForTokens(
 
 /**
  * Refresh an expired access token using the stored refresh token.
- * Updates the DB row and returns the new token pair.
+ *
+ * Uses optimistic concurrency to handle the case where multiple serverless
+ * instances attempt to refresh the same token simultaneously. Whoop (Hydra)
+ * rotates refresh tokens on each use, so the first instance to succeed
+ * invalidates the old token. If a concurrent instance loses the race, we
+ * re-read the DB and return the token the winner already persisted.
  */
 export async function refreshAccessToken(connectionId: string): Promise<TokenPair> {
   const connection = await prisma.providerConnection.findUniqueOrThrow({
     where: { id: connectionId },
   });
 
+  // Another instance may have already refreshed between our caller's check
+  // and this point. Re-validate before hitting the provider.
+  if (tokenIsValid(connection.tokenExpiresAt)) {
+    return {
+      accessToken: connection.accessToken,
+      refreshToken: connection.refreshToken!,
+      expiresIn: Math.floor(
+        (connection.tokenExpiresAt!.getTime() - Date.now()) / 1000,
+      ),
+    };
+  }
+
   if (!connection.refreshToken) {
     await markConnectionError(connectionId, "No refresh token available");
     throw new Error("No refresh token available for connection");
   }
 
+  const oldRefreshToken = connection.refreshToken;
   const provider = connection.provider as Provider;
   const { tokenUrl, clientId, clientSecret } = getProviderCredentials(provider);
 
   const body = new URLSearchParams({
     grant_type: "refresh_token",
-    refresh_token: connection.refreshToken,
+    refresh_token: oldRefreshToken,
     client_id: clientId,
     client_secret: clientSecret,
     scope: "offline",
@@ -94,6 +116,22 @@ export async function refreshAccessToken(connectionId: string): Promise<TokenPai
 
   if (!res.ok) {
     const text = await res.text();
+
+    // Before marking as error, check if a concurrent instance already
+    // refreshed successfully (its update would show a fresh tokenExpiresAt).
+    const current = await prisma.providerConnection.findUniqueOrThrow({
+      where: { id: connectionId },
+    });
+    if (tokenIsValid(current.tokenExpiresAt)) {
+      return {
+        accessToken: current.accessToken,
+        refreshToken: current.refreshToken!,
+        expiresIn: Math.floor(
+          (current.tokenExpiresAt!.getTime() - Date.now()) / 1000,
+        ),
+      };
+    }
+
     if (res.status === 401 || res.status === 400) {
       await markConnectionError(connectionId, `Refresh failed: ${text}`);
     }
@@ -103,12 +141,15 @@ export async function refreshAccessToken(connectionId: string): Promise<TokenPai
   const data = await res.json();
   const tokenPair: TokenPair = {
     accessToken: data.access_token,
-    refreshToken: data.refresh_token ?? connection.refreshToken,
+    refreshToken: data.refresh_token ?? oldRefreshToken,
     expiresIn: data.expires_in,
   };
 
-  await prisma.providerConnection.update({
-    where: { id: connectionId },
+  // Optimistic update: only write if the refresh token in the DB is still the
+  // one we used. If another instance already rotated it, their tokens win and
+  // we avoid overwriting with potentially stale data.
+  const updated = await prisma.providerConnection.updateMany({
+    where: { id: connectionId, refreshToken: oldRefreshToken },
     data: {
       accessToken: tokenPair.accessToken,
       refreshToken: tokenPair.refreshToken,
@@ -117,6 +158,20 @@ export async function refreshAccessToken(connectionId: string): Promise<TokenPai
       errorMessage: null,
     },
   });
+
+  if (updated.count === 0) {
+    // Lost the race — another instance already updated. Read their result.
+    const current = await prisma.providerConnection.findUniqueOrThrow({
+      where: { id: connectionId },
+    });
+    return {
+      accessToken: current.accessToken,
+      refreshToken: current.refreshToken!,
+      expiresIn: Math.floor(
+        ((current.tokenExpiresAt?.getTime() ?? Date.now()) - Date.now()) / 1000,
+      ),
+    };
+  }
 
   return tokenPair;
 }
@@ -134,16 +189,16 @@ export async function getValidToken(connectionId: string): Promise<string> {
     throw new Error("Connection has been revoked");
   }
 
-  const needsRefresh =
-    !connection.tokenExpiresAt ||
-    connection.tokenExpiresAt.getTime() - Date.now() < TOKEN_REFRESH_BUFFER_MS;
-
-  if (needsRefresh) {
-    const refreshed = await refreshAccessToken(connectionId);
-    return refreshed.accessToken;
+  if (tokenIsValid(connection.tokenExpiresAt)) {
+    return connection.accessToken;
   }
 
-  return connection.accessToken;
+  // Token needs refresh. If the connection is in ERROR state from a previous
+  // failed refresh, we still attempt it — a concurrent instance may have
+  // rotated the token since the error was recorded, or the issue may have
+  // been transient.
+  const refreshed = await refreshAccessToken(connectionId);
+  return refreshed.accessToken;
 }
 
 /**
@@ -175,7 +230,6 @@ export async function revokeConnection(connectionId: string): Promise<void> {
 
   const provider = connection.provider as Provider;
 
-  // Provider-specific revocation
   if (provider === "whoop") {
     try {
       await fetch("https://api.prod.whoop.com/developer/v2/user/access", {
@@ -193,12 +247,23 @@ export async function revokeConnection(connectionId: string): Promise<void> {
   });
 }
 
+/**
+ * Mark a connection as errored, but only if no concurrent instance has
+ * already refreshed it successfully (indicated by a valid tokenExpiresAt).
+ */
 export async function markConnectionError(
   connectionId: string,
   message: string,
 ): Promise<void> {
-  await prisma.providerConnection.update({
-    where: { id: connectionId },
+  await prisma.providerConnection.updateMany({
+    where: {
+      id: connectionId,
+      status: { not: "REVOKED" },
+      OR: [
+        { tokenExpiresAt: null },
+        { tokenExpiresAt: { lt: new Date(Date.now() + TOKEN_REFRESH_BUFFER_MS) } },
+      ],
+    },
     data: { status: "ERROR", errorMessage: message },
   });
 }
