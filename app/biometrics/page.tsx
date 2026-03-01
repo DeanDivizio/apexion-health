@@ -58,9 +58,15 @@ export default function BiometricsPage() {
           );
         }
 
+        const stale =
+          !conn.lastSyncAt ||
+          Date.now() - new Date(conn.lastSyncAt).getTime() > 60 * 60 * 1000;
+
         if (justConnected) {
           startSync(true);
         } else if (conn.syncCursor) {
+          startSync(false);
+        } else if (stale) {
           startSync(false);
         }
 
