@@ -16,6 +16,7 @@ import { Label } from "@/components/ui_primitives/label";
 import { useToast } from "@/hooks/use-toast";
 import { extractNutritionLabelAction } from "@/actions/ocr";
 import { createRetailUserItemAction } from "@/actions/nutrition";
+import { compressImage } from "@/lib/compressImage";
 import type { MealItemDraft, NutrientProfile } from "@/lib/nutrition";
 
 
@@ -78,30 +79,26 @@ export function RetailItemCreator({
   }, [state]);
 
   async function handleFile(file: File) {
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const base64 = reader.result as string;
+    try {
+      const base64 = await compressImage(file);
       setState({ step: "scanning", preview: base64 });
-      try {
-        const result = await extractNutritionLabelAction(base64);
-        setState({
-          step: "manual",
-          prefill: {
-            name: result.foodName ?? "",
-            calories: result.nutrients.calories,
-            protein: result.nutrients.protein,
-            carbs: result.nutrients.carbs,
-            fat: result.nutrients.fat,
-          },
-        });
-      } catch (err) {
-        setState({
-          step: "scanError",
-          message: err instanceof Error ? err.message : "Extraction failed.",
-        });
-      }
-    };
-    reader.readAsDataURL(file);
+      const result = await extractNutritionLabelAction(base64);
+      setState({
+        step: "manual",
+        prefill: {
+          name: result.foodName ?? "",
+          calories: result.nutrients.calories,
+          protein: result.nutrients.protein,
+          carbs: result.nutrients.carbs,
+          fat: result.nutrients.fat,
+        },
+      });
+    } catch (err) {
+      setState({
+        step: "scanError",
+        message: err instanceof Error ? err.message : "Extraction failed.",
+      });
+    }
   }
 
   function onInputChange(e: React.ChangeEvent<HTMLInputElement>) {

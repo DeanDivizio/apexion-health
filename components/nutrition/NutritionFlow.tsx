@@ -208,7 +208,7 @@ export function NutritionFlow({ bootstrap }: NutritionFlowProps) {
   }, []);
 
   return (
-    <div className="relative px-2 pt-2 flex flex-col items-center w-full">
+    <div className="relative px-2 pt-16 flex flex-col items-center w-full">
       <Tabs
         value={activeTab}
         onValueChange={(v) => setActiveTab(v as "food" | "restaurant")}

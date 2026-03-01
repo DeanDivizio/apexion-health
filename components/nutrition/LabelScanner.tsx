@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui_primitives/button";
 import { ManualFoodForm } from "./ManualFoodForm";
 import { extractNutritionLabelAction } from "@/actions/ocr";
+import { compressImage } from "@/lib/compressImage";
 import type { MealItemDraft, NutrientProfile, NutritionUserFoodView } from "@/lib/nutrition";
 
 interface LabelScannerProps {
@@ -46,32 +47,28 @@ export function LabelScanner({ open, onOpenChange, onAddItem, onUserFoodCreated 
   }, [open]);
 
   async function handleFile(file: File) {
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const base64 = reader.result as string;
+    try {
+      const base64 = await compressImage(file);
       setState({ step: "processing", preview: base64 });
-      try {
-        const result = await extractNutritionLabelAction(base64);
-        const nutrients = result.nutrients as Partial<NutrientProfile>;
-        setState({
-          step: "review",
-          data: {
-            name: result.foodName ?? "",
-            brand: result.brand ?? "",
-            servingSize: result.servingSize,
-            servingUnit: result.servingUnit,
-            nutrients,
-            ingredients: result.ingredients ?? "",
-          },
-        });
-      } catch (err) {
-        setState({
-          step: "error",
-          message: err instanceof Error ? err.message : "OCR extraction failed.",
-        });
-      }
-    };
-    reader.readAsDataURL(file);
+      const result = await extractNutritionLabelAction(base64);
+      const nutrients = result.nutrients as Partial<NutrientProfile>;
+      setState({
+        step: "review",
+        data: {
+          name: result.foodName ?? "",
+          brand: result.brand ?? "",
+          servingSize: result.servingSize,
+          servingUnit: result.servingUnit,
+          nutrients,
+          ingredients: result.ingredients ?? "",
+        },
+      });
+    } catch (err) {
+      setState({
+        step: "error",
+        message: err instanceof Error ? err.message : "OCR extraction failed.",
+      });
+    }
   }
 
   function onInputChange(e: React.ChangeEvent<HTMLInputElement>) {
