@@ -350,40 +350,6 @@ export function SessionOverviewSheet({
 
         <Separator />
 
-        {/* Discard Session */}
-        <div className="px-4 py-2">
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button
-                variant="ghost"
-                className="w-full h-10 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 border border-red-500/20"
-              >
-                <XCircle className="mr-2 h-4 w-4" />
-                Discard Session
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Discard this session?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This will permanently discard your current workout session and all logged exercises. This cannot be undone.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Keep logging</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={onDiscardSession}
-                  className="bg-red-600 text-white hover:bg-red-700"
-                >
-                  Discard
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
-
-        <Separator />
-
         {/* Pinned Stats */}
         <div className="px-4 py-3 grid grid-cols-3 gap-3 text-center">
           <div>
@@ -413,12 +379,39 @@ export function SessionOverviewSheet({
 
         <Separator />
 
-        {/* Submit */}
-        <div className="px-4 py-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
+        {/* Discard + Submit */}
+        <div className="px-4 py-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] grid grid-cols-5 gap-3">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="outline"
+                className="col-span-1 h-12 border-red-500/40 text-red-400 hover:bg-red-500/10 hover:text-red-300"
+              >
+                <XCircle className="h-4 w-4" />
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Discard this session?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will permanently discard your current workout session and all logged exercises. This cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Keep logging</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={onDiscardSession}
+                  className="bg-red-600 text-white hover:bg-red-700"
+                >
+                  Discard
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
           <Button
             onClick={onEndSession}
             disabled={exercises.length === 0 || submitting}
-            className="w-full h-12 text-base bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white shadow-lg shadow-green-900/30"
+            className="col-span-4 h-12 text-base bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white shadow-lg shadow-green-900/30"
           >
             <CheckCircle2 className="mr-2 h-5 w-5" />
             {submitting ? "Saving..." : "Save and End Session"}

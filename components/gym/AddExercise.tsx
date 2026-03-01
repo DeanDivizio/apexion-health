@@ -1,19 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { Dumbbell, Activity, ClipboardCheck, XCircle } from "lucide-react";
+import { Dumbbell, Activity, ClipboardCheck } from "lucide-react";
 import { Button } from "@/components/ui_primitives/button";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui_primitives/alert-dialog";
 import { ExerciseCombobox, type ExerciseGroupOption } from "./ExerciseCombobox";
 import type { ExerciseEntry } from "@/lib/gym";
 
@@ -22,7 +11,6 @@ interface AddExerciseProps {
   onSelectExercise: (exerciseKey: string) => void;
   sessionExercises: ExerciseEntry[];
   onReviewSession: () => void;
-  onDiscardSession: () => void;
 }
 
 export function AddExercise({
@@ -30,7 +18,6 @@ export function AddExercise({
   onSelectExercise,
   sessionExercises,
   onReviewSession,
-  onDiscardSession,
 }: AddExerciseProps) {
   const hasExercises = sessionExercises.length > 0;
 
@@ -77,9 +64,9 @@ export function AddExercise({
         />
       </div>
 
-      {/* Save and End Session */}
+      {/* Review and Save */}
       {hasExercises && (
-        <div className="w-full space-y-3">
+        <div className="w-full">
           <Button
             onClick={onReviewSession}
             className="w-full h-14 text-base bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white shadow-lg shadow-green-900/30"
@@ -87,34 +74,6 @@ export function AddExercise({
             <ClipboardCheck className="mr-2 h-5 w-5" />
             Review and Save
           </Button>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button
-                variant="ghost"
-                className="w-full h-10 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10"
-              >
-                <XCircle className="mr-2 h-4 w-4" />
-                Discard Session
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Discard this session?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This will permanently discard your current workout session and all logged exercises. This cannot be undone.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Keep logging</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={onDiscardSession}
-                  className="bg-red-600 text-white hover:bg-red-700"
-                >
-                  Discard
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
         </div>
       )}
     </div>

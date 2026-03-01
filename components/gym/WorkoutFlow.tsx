@@ -416,7 +416,6 @@ export function WorkoutFlow({ userMeta, customExerciseGroups }: WorkoutFlowProps
           onSelectExercise={handleSelectExercise}
           sessionExercises={exercises}
           onReviewSession={() => setOverviewOpen(true)}
-          onDiscardSession={handleDiscardSession}
         />
       )}
 
