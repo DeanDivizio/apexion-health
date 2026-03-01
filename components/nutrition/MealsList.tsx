@@ -1,997 +1,347 @@
-"use client"
+"use client";
 
-import { useState, useEffect, useContext } from "react"
-import { MobileHeaderContext } from "@/context/MobileHeaderContext"
-import { useIsMobile } from "@/hooks/use-mobile"
-import BackButton from "../global/BackButton"
-import { getAllDataFromTableByUser, updateMeal } from "@/actions/AWS"
-import { capitalize, spellOutDate } from "@/lib/utils"
-import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui_primitives/accordion"
-import { Skeleton } from "@/components/ui_primitives/skeleton"
-import { Pencil, Plus, Trash2 } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose, DialogTrigger } from "@/components/ui_primitives/dialog"
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerFooter, DrawerClose, DrawerTrigger } from "@/components/ui_primitives/drawer"
-import { Button } from "@/components/ui_primitives/button"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui_primitives/form"
-import { Input } from "@/components/ui_primitives/input"
-import { useForm, useFieldArray } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
-import { ScrollArea, ScrollBar } from "@/components/ui_primitives/scroll-area"
+import * as React from "react";
+import { useContext } from "react";
+import { format, parseISO } from "date-fns";
+import { Minus, Pencil, Plus, Trash2, X } from "lucide-react";
+import { MobileHeaderContext } from "@/context/MobileHeaderContext";
+import { Button } from "@/components/ui_primitives/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui_primitives/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui_primitives/alert-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui_primitives/select";
+import { Input } from "@/components/ui_primitives/input";
+import { Label } from "@/components/ui_primitives/label";
+import { useToast } from "@/hooks/use-toast";
+import {
+  deleteMealSessionAction,
+  updateMealSessionAction,
+} from "@/actions/nutrition";
+import type { NutritionMealSessionView, MealItemViewEntry } from "@/lib/nutrition";
 
-const calculateMacrosFromFoodItems = (meal: any) => {
-    let calories = 0;
-    let protein = 0;
-    let carbs = 0;
-    let fat = 0;
+const MEAL_LABELS = ["Breakfast", "Lunch", "Dinner", "Snack"];
 
-    meal.foodItems.forEach((item: any) => {
-        if (item.stats) {
-            calories += item.stats.calories * item.numberOfServings;
-            protein += item.stats.protein * item.numberOfServings;
-            carbs += item.stats.carbs * item.numberOfServings;
-            fat += item.stats.fat * item.numberOfServings;
-        } else {
-            calories += item.nutrients.calories * item.numberOfServings;
-            protein += item.nutrients.protein * item.numberOfServings;
-            carbs += item.nutrients.carbs * item.numberOfServings;
-            fat += item.nutrients.fats.total * item.numberOfServings;
-        }
-    });
-
-    return { calories, protein, carbs, fat };
-};
-
-const calculateMacrosFromMealItems = (meal: any) => {
-    let calories = 0;
-    let protein = 0;
-    let carbs = 0;
-    let fat = 0;
-
-    meal.mealItems.forEach((item: any) => {
-        if (item.stats) {
-            calories += item.stats.calories * item.numberOfServings;
-            protein += item.stats.protein * item.numberOfServings;
-            carbs += item.stats.carbs * item.numberOfServings;
-            fat += item.stats.fat * item.numberOfServings;
-        } else {
-            calories += item.nutrients.calories * item.numberOfServings;
-            protein += item.nutrients.protein * item.numberOfServings;
-            carbs += item.nutrients.carbs * item.numberOfServings;
-            fat += item.nutrients.fats.total * item.numberOfServings;
-        }
-    });
-
-    return { calories, protein, carbs, fat };
-};
-
-const calculateMacrosForMeal = (meal: any) => {
-    if (meal.foodItems) {
-        return calculateMacrosFromFoodItems(meal);
-    } else if (meal.mealItems) {
-        return calculateMacrosFromMealItems(meal);
-    }
-    return { calories: 0, protein: 0, carbs: 0, fat: 0 };
-};
-
-const getMealItems = (meal: any) => {
-    if (meal.foodItems) {
-        return meal.foodItems;
-    } else if (meal.mealItems) {
-        return meal.mealItems;
-    }
-    return [];
-};
-
-const mealItemSchema = z.object({
-    name: z.string(),
-    numberOfServings: z.number().min(0.25),
-    stats: z.object({
-        calories: z.number(),
-        protein: z.number(),
-        carbs: z.number(),
-        fat: z.number()
-    }).optional(),
-    nutrients: z.object({
-        calories: z.number(),
-        protein: z.number(),
-        carbs: z.number(),
-        fats: z.object({
-            total: z.number()
-        })
-    }).optional()
-})
-
-const mealSchema = z.object({
-    time: z.string(),
-    mealItems: z.array(mealItemSchema).optional(),
-    foodItems: z.array(mealItemSchema).optional()
-})
-
-function EditMeal({ setShouldToast, setShouldToastBad, userRef, mealRef, meals }: { setShouldToast: any, setShouldToastBad: any, userRef: string | null, mealRef: any, meals: any }) {
-    const isMobile = useIsMobile()
-    const [open, setOpen] = useState(false)
-    const form = useForm({
-        resolver: zodResolver(mealSchema),
-        defaultValues: {
-            time: mealRef.time,
-            mealItems: mealRef.mealItems?.map((item: any) => ({
-                name: item.name,
-                numberOfServings: item.numberOfServings,
-                stats: item.stats ? {
-                    calories: item.stats.calories,
-                    protein: item.stats.protein,
-                    carbs: item.stats.carbs,
-                    fat: item.stats.fat
-                } : undefined,
-                nutrients: item.nutrients ? {
-                    calories: item.nutrients.calories,
-                    protein: item.nutrients.protein,
-                    carbs: item.nutrients.carbs,
-                    fats: {
-                        total: item.nutrients.fats.total
-                    }
-                } : undefined
-            })) || [],
-            foodItems: mealRef.foodItems?.map((item: any) => ({
-                name: item.name,
-                numberOfServings: item.numberOfServings,
-                stats: item.stats ? {
-                    calories: item.stats.calories,
-                    protein: item.stats.protein,
-                    carbs: item.stats.carbs,
-                    fat: item.stats.fat
-                } : undefined,
-                nutrients: item.nutrients ? {
-                    calories: item.nutrients.calories,
-                    protein: item.nutrients.protein,
-                    carbs: item.nutrients.carbs,
-                    fats: {
-                        total: item.nutrients.fats.total
-                    }
-                } : undefined
-            })) || []
-        }
-    })
-
-    const { fields: mealItemFields, append: appendMealItem, remove: removeMealItem } = useFieldArray({
-        control: form.control,
-        name: "mealItems"
-    })
-
-    const { fields: foodItemFields, append: appendFoodItem, remove: removeFoodItem } = useFieldArray({
-        control: form.control,
-        name: "foodItems"
-    })
-
-    const onSubmit = async (data: any) => {
-        let date = meals.find((meal: any) => meal.date === mealRef.date)
-        let index = date.data.findIndex((meal: any) => meal.time === mealRef.time)
-        date.data[index] = data
-        let newData = date.data;
-        try {
-            let res = await updateMeal(mealRef.date, newData)
-            if (res.$metadata.httpStatusCode === 200) {
-                setShouldToast(true);
-                setOpen(false)
-            }
-        } catch (error) {
-            console.error(error)
-            setShouldToastBad(true);
-        }
-    }
-
-    const addMealItem = () => {
-        appendMealItem({
-            name: "",
-            numberOfServings: 1,
-            stats: {
-                calories: 0,
-                protein: 0,
-                carbs: 0,
-                fat: 0
-            }
-        })
-    }
-
-    const addFoodItem = () => {
-        appendFoodItem({
-            name: "",
-            numberOfServings: 1,
-            nutrients: {
-                calories: 0,
-                protein: 0,
-                carbs: 0,
-                fats: {
-                    total: 0
-                }
-            }
-        })
-    }
-
-    if (isMobile) {
-        return (
-            <Drawer open={open} onOpenChange={setOpen}>
-                <DrawerTrigger asChild>
-                    <Pencil className="w-4 h-4" />
-                </DrawerTrigger>
-                <DrawerContent className="bg-neutral-950">
-                    <DrawerHeader>
-                        <DrawerTitle className="text-white">Edit Meal: <span className="text-neutral-200 font-light italic pl-2">{mealRef.time}</span></DrawerTitle>
-                    </DrawerHeader>
-                    <Form {...form}>
-                        <form onSubmit={form.handleSubmit(onSubmit)} className="bg-neutral-950">
-                            <div className="flex flex-row gap-4 items-center justify-center mb-4 px-2">
-                                <FormField
-                                    control={form.control}
-                                    name="time"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Time</FormLabel>
-                                            <FormControl>
-                                                <Input {...field} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                            </div>
-                            <ScrollArea className="w-full h-[600px] px-4 pt-2 pb-16">
-                                <div className="space-y-8">
-                                    <div>
-                                        <div className="flex justify-between items-center mb-4">
-                                            <h3 className="text-lg font-medium">Meal Items</h3>
-                                            <Button 
-                                                type="button" 
-                                                variant="outline"
-                                                className="p-[1px] rounded bg-gradient-to-br from-blue-600 to-blue-950 text-white" 
-                                                onClick={addMealItem}
-                                            >
-                                                <div className="w-full h-full rounded px-12 py-2 flex flex-row items-center justify-center bg-neutral-950">
-                                                    <Plus className="h-4 w-4 mr-2" />
-                                                    Add Item
-                                                </div>
-                                            </Button>
-                                        </div>
-                                        {mealItemFields.map((field, index) => (
-                                            <div key={field.id} className="mb-4 p-4 rounded bg-neutral-900">
-                                                <div className="flex justify-between items-center mb-4">
-                                                    <FormField
-                                                        control={form.control}
-                                                        name={`mealItems.${index}.name`}
-                                                        render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel>Name</FormLabel>
-                                                                <FormControl>
-                                                                    <Input {...field} />
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </FormItem>
-                                                        )}
-                                                    />
-                                                    <Button
-                                                        type="button"
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        onClick={() => removeMealItem(index)}
-                                                    >
-                                                        <Trash2 className="h-4 w-4 text-red-500" />
-                                                    </Button>
-                                                </div>
-                                                <div className="grid grid-cols-2 gap-4">
-                                                    <FormField
-                                                        control={form.control}
-                                                        name={`mealItems.${index}.numberOfServings`}
-                                                        render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel>Servings</FormLabel>
-                                                                <FormControl>
-                                                                    <Input 
-                                                                        type="number" 
-                                                                        step="0.25"
-                                                                        min="0.25"
-                                                                        {...field} 
-                                                                        onChange={e => field.onChange(Number(e.target.value))}
-                                                                    />
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </FormItem>
-                                                        )}
-                                                    />
-                                                    <FormField
-                                                        control={form.control}
-                                                        name={`mealItems.${index}.stats.calories`}
-                                                        render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel>Calories</FormLabel>
-                                                                <FormControl>
-                                                                    <Input 
-                                                                        type="number" 
-                                                                        {...field} 
-                                                                        value={field.value || form.getValues(`mealItems.${index}.nutrients.calories`) || 0}
-                                                                        onChange={e => field.onChange(Number(e.target.value))}
-                                                                    />
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </FormItem>
-                                                        )}
-                                                    />
-                                                    <FormField
-                                                        control={form.control}
-                                                        name={`mealItems.${index}.stats.protein`}
-                                                        render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel>Protein (g)</FormLabel>
-                                                                <FormControl>
-                                                                    <Input 
-                                                                        type="number" 
-                                                                        {...field} 
-                                                                        value={field.value || form.getValues(`mealItems.${index}.nutrients.protein`) || 0}
-                                                                        onChange={e => field.onChange(Number(e.target.value))}
-                                                                    />
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </FormItem>
-                                                        )}
-                                                    />
-                                                    <FormField
-                                                        control={form.control}
-                                                        name={`mealItems.${index}.stats.carbs`}
-                                                        render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel>Carbs (g)</FormLabel>
-                                                                <FormControl>
-                                                                    <Input 
-                                                                        type="number" 
-                                                                        {...field} 
-                                                                        value={field.value || form.getValues(`mealItems.${index}.nutrients.carbs`) || 0}
-                                                                        onChange={e => field.onChange(Number(e.target.value))}
-                                                                    />
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </FormItem>
-                                                        )}
-                                                    />
-                                                    <FormField
-                                                        control={form.control}
-                                                        name={`mealItems.${index}.stats.fat`}
-                                                        render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel>Fat (g)</FormLabel>
-                                                                <FormControl>
-                                                                    <Input 
-                                                                        type="number" 
-                                                                        {...field} 
-                                                                        value={field.value || form.getValues(`mealItems.${index}.nutrients.fats.total`) || 0}
-                                                                        onChange={e => field.onChange(Number(e.target.value))}
-                                                                    />
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </FormItem>
-                                                        )}
-                                                    />
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <div>
-                                        <div className="flex justify-between items-center mb-4">
-                                            <h3 className="text-lg font-medium">Food Items</h3>
-                                            <Button 
-                                                type="button" 
-                                                variant="outline"
-                                                className="p-[1px] rounded bg-gradient-to-br from-blue-600 to-blue-950 text-white" 
-                                                onClick={addFoodItem}
-                                            >
-                                                <div className="w-full h-full rounded px-12 py-2 flex flex-row items-center justify-center bg-neutral-950">
-                                                    <Plus className="h-4 w-4 mr-2" />
-                                                    Add Item
-                                                </div>
-                                            </Button>
-                                        </div>
-                                        {foodItemFields.map((field, index) => (
-                                            <div key={field.id} className="mb-4 p-4 rounded bg-neutral-900">
-                                                <div className="flex justify-between items-center mb-4">
-                                                    <FormField
-                                                        control={form.control}
-                                                        name={`foodItems.${index}.name`}
-                                                        render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel>Name</FormLabel>
-                                                                <FormControl>
-                                                                    <Input {...field} />
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </FormItem>
-                                                        )}
-                                                    />
-                                                    <Button
-                                                        type="button"
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        onClick={() => removeFoodItem(index)}
-                                                    >
-                                                        <Trash2 className="h-4 w-4 text-red-500" />
-                                                    </Button>
-                                                </div>
-                                                <div className="grid grid-cols-2 gap-4">
-                                                    <FormField
-                                                        control={form.control}
-                                                        name={`foodItems.${index}.numberOfServings`}
-                                                        render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel>Servings</FormLabel>
-                                                                <FormControl>
-                                                                    <Input 
-                                                                        type="number" 
-                                                                        step="0.25"
-                                                                        min="0.25"
-                                                                        {...field} 
-                                                                        onChange={e => field.onChange(Number(e.target.value))}
-                                                                    />
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </FormItem>
-                                                        )}
-                                                    />
-                                                    <FormField
-                                                        control={form.control}
-                                                        name={`foodItems.${index}.nutrients.calories`}
-                                                        render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel>Calories</FormLabel>
-                                                                <FormControl>
-                                                                    <Input 
-                                                                        type="number" 
-                                                                        {...field} 
-                                                                        value={field.value || form.getValues(`foodItems.${index}.stats.calories`) || 0}
-                                                                        onChange={e => field.onChange(Number(e.target.value))}
-                                                                    />
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </FormItem>
-                                                        )}
-                                                    />
-                                                    <FormField
-                                                        control={form.control}
-                                                        name={`foodItems.${index}.nutrients.protein`}
-                                                        render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel>Protein (g)</FormLabel>
-                                                                <FormControl>
-                                                                    <Input 
-                                                                        type="number" 
-                                                                        {...field} 
-                                                                        value={field.value || form.getValues(`foodItems.${index}.stats.protein`) || 0}
-                                                                        onChange={e => field.onChange(Number(e.target.value))}
-                                                                    />
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </FormItem>
-                                                        )}
-                                                    />
-                                                    <FormField
-                                                        control={form.control}
-                                                        name={`foodItems.${index}.nutrients.carbs`}
-                                                        render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel>Carbs (g)</FormLabel>
-                                                                <FormControl>
-                                                                    <Input 
-                                                                        type="number" 
-                                                                        {...field} 
-                                                                        value={field.value || form.getValues(`foodItems.${index}.stats.carbs`) || 0}
-                                                                        onChange={e => field.onChange(Number(e.target.value))}
-                                                                    />
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </FormItem>
-                                                        )}
-                                                    />
-                                                    <FormField
-                                                        control={form.control}
-                                                        name={`foodItems.${index}.nutrients.fats.total`}
-                                                        render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel>Fat (g)</FormLabel>
-                                                                <FormControl>
-                                                                    <Input 
-                                                                        type="number" 
-                                                                        {...field} 
-                                                                        value={field.value || form.getValues(`foodItems.${index}.stats.fat`) || 0}
-                                                                        onChange={e => field.onChange(Number(e.target.value))}
-                                                                    />
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </FormItem>
-                                                        )}
-                                                    />
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                                <ScrollBar />
-                            </ScrollArea>
-                            <DrawerFooter className="absolute bottom-0 left-0 right-0 pb-8 flex flex-row gap-2 bg-black/80 backdrop-blur-sm">
-                                <DrawerClose asChild>
-                                    <Button 
-                                        variant="outline" 
-                                        className="flex-1 rounded border-red-900"
-                                    >
-                                        Cancel
-                                    </Button>
-                                </DrawerClose>
-                                <Button 
-                                    type="submit" 
-                                    className="p-[1px] rounded bg-gradient-to-br from-green-500 to-blue-900 text-white"
-                                    onClick={form.handleSubmit(onSubmit)}
-                                >
-                                    <div className="w-full h-full rounded px-12 py-2 flex flex-row items-center justify-center bg-neutral-950">Save Changes</div>
-                                </Button> 
-                            </DrawerFooter>
-                        </form>
-                    </Form>
-                </DrawerContent>
-            </Drawer>
-        )
-    } else {
-        return (
-            <Dialog open={open} onOpenChange={setOpen}>
-                <DialogTrigger asChild>
-                    <Pencil className="w-4 h-4" />
-                </DialogTrigger>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Edit Meal: {mealRef.time}</DialogTitle>
-                    </DialogHeader>
-                    <Form {...form}>
-                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                            <FormField
-                                control={form.control}
-                                name="time"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Time</FormLabel>
-                                        <FormControl>
-                                            <Input {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <ScrollArea className="w-full h-[500px]">
-                                <div className="space-y-8">
-                                    <div>
-                                        <div className="flex justify-between items-center mb-4">
-                                            <h3 className="text-lg font-medium">Meal Items</h3>
-                                            <Button 
-                                                type="button" 
-                                                variant="outline" 
-                                                onClick={addMealItem}
-                                            >
-                                                <Plus className="h-4 w-4 mr-2" />
-                                                Add Item
-                                            </Button>
-                                        </div>
-                                        {mealItemFields.map((field, index) => (
-                                            <div key={field.id} className="mb-4 p-4 rounded bg-neutral-900">
-                                                <div className="flex justify-between items-center mb-4">
-                                                    <FormField
-                                                        control={form.control}
-                                                        name={`mealItems.${index}.name`}
-                                                        render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel>Name</FormLabel>
-                                                                <FormControl>
-                                                                    <Input {...field} />
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </FormItem>
-                                                        )}
-                                                    />
-                                                    <Button
-                                                        type="button"
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        onClick={() => removeMealItem(index)}
-                                                    >
-                                                        <Trash2 className="h-4 w-4 text-red-500" />
-                                                    </Button>
-                                                </div>
-                                                <div className="grid grid-cols-2 gap-4">
-                                                    <FormField
-                                                        control={form.control}
-                                                        name={`mealItems.${index}.numberOfServings`}
-                                                        render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel>Servings</FormLabel>
-                                                                <FormControl>
-                                                                    <Input 
-                                                                        type="number" 
-                                                                        step="0.25"
-                                                                        min="0.25"
-                                                                        {...field} 
-                                                                        onChange={e => field.onChange(Number(e.target.value))}
-                                                                    />
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </FormItem>
-                                                        )}
-                                                    />
-                                                    <FormField
-                                                        control={form.control}
-                                                        name={`mealItems.${index}.stats.calories`}
-                                                        render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel>Calories</FormLabel>
-                                                                <FormControl>
-                                                                    <Input 
-                                                                        type="number" 
-                                                                        {...field} 
-                                                                        value={field.value || form.getValues(`mealItems.${index}.nutrients.calories`) || 0}
-                                                                        onChange={e => field.onChange(Number(e.target.value))}
-                                                                    />
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </FormItem>
-                                                        )}
-                                                    />
-                                                    <FormField
-                                                        control={form.control}
-                                                        name={`mealItems.${index}.stats.protein`}
-                                                        render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel>Protein (g)</FormLabel>
-                                                                <FormControl>
-                                                                    <Input 
-                                                                        type="number" 
-                                                                        {...field} 
-                                                                        value={field.value || form.getValues(`mealItems.${index}.nutrients.protein`) || 0}
-                                                                        onChange={e => field.onChange(Number(e.target.value))}
-                                                                    />
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </FormItem>
-                                                        )}
-                                                    />
-                                                    <FormField
-                                                        control={form.control}
-                                                        name={`mealItems.${index}.stats.carbs`}
-                                                        render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel>Carbs (g)</FormLabel>
-                                                                <FormControl>
-                                                                    <Input 
-                                                                        type="number" 
-                                                                        {...field} 
-                                                                        value={field.value || form.getValues(`mealItems.${index}.nutrients.carbs`) || 0}
-                                                                        onChange={e => field.onChange(Number(e.target.value))}
-                                                                    />
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </FormItem>
-                                                        )}
-                                                    />
-                                                    <FormField
-                                                        control={form.control}
-                                                        name={`mealItems.${index}.stats.fat`}
-                                                        render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel>Fat (g)</FormLabel>
-                                                                <FormControl>
-                                                                    <Input 
-                                                                        type="number" 
-                                                                        {...field} 
-                                                                        value={field.value || form.getValues(`mealItems.${index}.nutrients.fats.total`) || 0}
-                                                                        onChange={e => field.onChange(Number(e.target.value))}
-                                                                    />
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </FormItem>
-                                                        )}
-                                                    />
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <div>
-                                        <div className="flex justify-between items-center mb-4">
-                                            <h3 className="text-lg font-medium">Food Items</h3>
-                                            <Button 
-                                                type="button" 
-                                                variant="outline" 
-                                                onClick={addFoodItem}
-                                            >
-                                                <Plus className="h-4 w-4 mr-2" />
-                                                Add Item
-                                            </Button>
-                                        </div>
-                                        {foodItemFields.map((field, index) => (
-                                            <div key={field.id} className="mb-4 p-4 rounded bg-neutral-900">
-                                                <div className="flex justify-between items-center mb-4">
-                                                    <FormField
-                                                        control={form.control}
-                                                        name={`foodItems.${index}.name`}
-                                                        render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel>Name</FormLabel>
-                                                                <FormControl>
-                                                                    <Input {...field} />
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </FormItem>
-                                                        )}
-                                                    />
-                                                    <Button
-                                                        type="button"
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        onClick={() => removeFoodItem(index)}
-                                                    >
-                                                        <Trash2 className="h-4 w-4 text-red-500" />
-                                                    </Button>
-                                                </div>
-                                                <div className="grid grid-cols-2 gap-4">
-                                                    <FormField
-                                                        control={form.control}
-                                                        name={`foodItems.${index}.numberOfServings`}
-                                                        render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel>Servings</FormLabel>
-                                                                <FormControl>
-                                                                    <Input 
-                                                                        type="number" 
-                                                                        step="0.25"
-                                                                        min="0.25"
-                                                                        {...field} 
-                                                                        onChange={e => field.onChange(Number(e.target.value))}
-                                                                    />
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </FormItem>
-                                                        )}
-                                                    />
-                                                    <FormField
-                                                        control={form.control}
-                                                        name={`foodItems.${index}.nutrients.calories`}
-                                                        render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel>Calories</FormLabel>
-                                                                <FormControl>
-                                                                    <Input 
-                                                                        type="number" 
-                                                                        {...field} 
-                                                                        value={field.value || form.getValues(`foodItems.${index}.stats.calories`) || 0}
-                                                                        onChange={e => field.onChange(Number(e.target.value))}
-                                                                    />
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </FormItem>
-                                                        )}
-                                                    />
-                                                    <FormField
-                                                        control={form.control}
-                                                        name={`foodItems.${index}.nutrients.protein`}
-                                                        render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel>Protein (g)</FormLabel>
-                                                                <FormControl>
-                                                                    <Input 
-                                                                        type="number" 
-                                                                        {...field} 
-                                                                        value={field.value || form.getValues(`foodItems.${index}.stats.protein`) || 0}
-                                                                        onChange={e => field.onChange(Number(e.target.value))}
-                                                                    />
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </FormItem>
-                                                        )}
-                                                    />
-                                                    <FormField
-                                                        control={form.control}
-                                                        name={`foodItems.${index}.nutrients.carbs`}
-                                                        render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel>Carbs (g)</FormLabel>
-                                                                <FormControl>
-                                                                    <Input 
-                                                                        type="number" 
-                                                                        {...field} 
-                                                                        value={field.value || form.getValues(`foodItems.${index}.stats.carbs`) || 0}
-                                                                        onChange={e => field.onChange(Number(e.target.value))}
-                                                                    />
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </FormItem>
-                                                        )}
-                                                    />
-                                                    <FormField
-                                                        control={form.control}
-                                                        name={`foodItems.${index}.nutrients.fats.total`}
-                                                        render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel>Fat (g)</FormLabel>
-                                                                <FormControl>
-                                                                    <Input 
-                                                                        type="number" 
-                                                                        {...field} 
-                                                                        value={field.value || form.getValues(`foodItems.${index}.stats.fat`) || 0}
-                                                                        onChange={e => field.onChange(Number(e.target.value))}
-                                                                    />
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </FormItem>
-                                                        )}
-                                                    />
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                                <ScrollBar />
-                            </ScrollArea>
-                            <DialogFooter>
-                                <DialogClose asChild>
-                                    <Button variant="outline">Cancel</Button>
-                                </DialogClose>
-                                <Button type="submit">Save Changes</Button>
-                            </DialogFooter>
-                        </form>
-                    </Form>
-                </DialogContent>
-            </Dialog>
-        )
-    }
+interface MealsListProps {
+  initialSessions: NutritionMealSessionView[];
 }
 
-export default function MealsList() {
-    const { setMobileHeading, setHeaderComponentRight, setHeaderComponentLeft } = useContext(MobileHeaderContext)
-    const [isLoading, setIsLoading] = useState(true)
-    const [meals, setMeals] = useState<any[]>([])
-    const [userRef, setUserRef] = useState<string | null>(null)
-    const [shouldToast, setShouldToast] = useState(false)
-    const [shouldToastBad, setShouldToastBad] = useState(false)
-    const { toast } = useToast()
-    const isMobile = useIsMobile()
+function groupByDate(sessions: NutritionMealSessionView[]) {
+  const map = new Map<string, NutritionMealSessionView[]>();
+  for (const session of sessions) {
+    const group = map.get(session.dateStr) ?? [];
+    group.push(session);
+    map.set(session.dateStr, group);
+  }
+  return Array.from(map.entries()).sort(([a], [b]) => b.localeCompare(a));
+}
 
-    useEffect(() => {
-        setMobileHeading("Your Meals")
-        setHeaderComponentRight(null)
-        setHeaderComponentLeft(<BackButton />)
-        return () => {
-            setMobileHeading("generic")
-            setHeaderComponentRight(null)
-            setHeaderComponentLeft(null)
-        }
-    }, [setMobileHeading, setHeaderComponentRight, setHeaderComponentLeft])
+function formatDateStr(dateStr: string): string {
+  try {
+    const y = dateStr.slice(0, 4);
+    const m = dateStr.slice(4, 6);
+    const d = dateStr.slice(6, 8);
+    return format(new Date(`${y}-${m}-${d}T12:00:00`), "MMMM d, yyyy");
+  } catch {
+    return dateStr;
+  }
+}
 
-    useEffect(() => {
-        const fetchMeals = async () => {
-            if (meals.length === 0) {
-                const response = await getAllDataFromTableByUser("Apexion-Nutrition")
-                setMeals(response.reverse())
-            } else {
-                setIsLoading(false)
-                setUserRef(meals[0].userID)
-            }
-        }
-        fetchMeals()
-    }, [meals])
+function sessionTotals(items: MealItemViewEntry[]) {
+  let cal = 0, pro = 0, carb = 0, fat = 0;
+  for (const item of items) {
+    cal += item.snapshotCalories;
+    pro += item.snapshotProtein;
+    carb += item.snapshotCarbs;
+    fat += item.snapshotFat;
+  }
+  return { cal: Math.round(cal), pro: Math.round(pro), carb: Math.round(carb), fat: Math.round(fat) };
+}
 
-    useEffect(() => {
-        if (shouldToast) {
-            toast({
-                title: "Meal updated",
-                description: "Your meal has been updated successfully",
-                duration: 1500,
-            })
-            setShouldToast(false)
-        }
-        if (shouldToastBad) {
-            toast({
-                title: "Error updating meal",
-                description: "Your meal could not be updated",
-                variant: "destructive",
-                duration: 2000,
-            })
-            setShouldToastBad(false)
-        }
-    }, [shouldToast, shouldToastBad])
+export function MealsList({ initialSessions }: MealsListProps) {
+  const { toast } = useToast();
+  const { setMobileHeading, setHeaderComponentLeft, setHeaderComponentRight } =
+    useContext(MobileHeaderContext);
+  const [sessions, setSessions] = React.useState(initialSessions);
+  const [editSession, setEditSession] = React.useState<NutritionMealSessionView | null>(null);
+  const [deleteSessionId, setDeleteSessionId] = React.useState<string | null>(null);
+  const [submitting, setSubmitting] = React.useState(false);
 
-    if (isLoading) {
-        return (
-            <main className="w-full min-h-screen pt-24 px-4">
-                <Skeleton className="w-full h-[75px] rounded mb-4" />
-                <Skeleton className="w-full h-[75px] rounded mb-4" />
-                <Skeleton className="w-full h-[75px] rounded mb-4" />
-                <Skeleton className="w-full h-[75px] rounded mb-4" />
-                <Skeleton className="w-full h-[75px] rounded mb-4" />
-                <Skeleton className="w-full h-[75px] rounded mb-4" />
-                <Skeleton className="w-full h-[75px] rounded" />
-            </main>
-        )
+  // Edit state
+  const [editLabel, setEditLabel] = React.useState<string | null>(null);
+  const [editDate, setEditDate] = React.useState("");
+  const [editTime, setEditTime] = React.useState("");
+  const [editItems, setEditItems] = React.useState<MealItemViewEntry[]>([]);
+
+  React.useEffect(() => {
+    setMobileHeading("generic");
+    setHeaderComponentLeft(<div />);
+    setHeaderComponentRight(<div />);
+    return () => {
+      setMobileHeading("");
+      setHeaderComponentLeft(<div />);
+      setHeaderComponentRight(<div />);
+    };
+  }, [setMobileHeading, setHeaderComponentLeft, setHeaderComponentRight]);
+
+  function openEdit(session: NutritionMealSessionView) {
+    setEditSession(session);
+    setEditLabel(session.mealLabel);
+    const loggedDate = parseISO(session.loggedAtIso);
+    setEditDate(format(loggedDate, "yyyy-MM-dd"));
+    setEditTime(format(loggedDate, "HH:mm"));
+    setEditItems([...session.items]);
+  }
+
+  async function handleSaveEdit() {
+    if (!editSession || editItems.length === 0) return;
+    setSubmitting(true);
+    try {
+      const [h, m] = editTime.split(":").map(Number);
+      const d = new Date(editDate + "T12:00:00");
+      d.setHours(Number.isFinite(h) ? h : 0, Number.isFinite(m) ? m : 0, 0, 0);
+      const dateStr = editDate.replace(/-/g, "");
+
+      await updateMealSessionAction(editSession.id, {
+        loggedAtIso: d.toISOString(),
+        dateStr,
+        mealLabel: editLabel,
+        notes: null,
+        items: editItems.map((item) => ({
+          foodSource: item.foodSource,
+          sourceFoodId: item.sourceFoodId,
+          foundationFoodId: item.foundationFoodId,
+          snapshotName: item.snapshotName,
+          snapshotBrand: item.snapshotBrand,
+          servings: item.servings,
+          portionLabel: item.portionLabel,
+          portionGramWeight: item.portionGramWeight,
+          nutrients: {
+            calories: item.snapshotCalories / item.servings,
+            protein: item.snapshotProtein / item.servings,
+            carbs: item.snapshotCarbs / item.servings,
+            fat: item.snapshotFat / item.servings,
+          },
+        })),
+      });
+
+      setSessions((prev) =>
+        prev.map((s) =>
+          s.id === editSession.id
+            ? {
+                ...s,
+                mealLabel: editLabel,
+                loggedAtIso: d.toISOString(),
+                dateStr,
+                items: editItems,
+              }
+            : s,
+        ),
+      );
+      setEditSession(null);
+      toast({ title: "Meal updated" });
+    } catch {
+      toast({ title: "Error", description: "Failed to update meal.", variant: "destructive" });
+    } finally {
+      setSubmitting(false);
     }
+  }
 
-    return (
-        <main className="w-full min-h-screen pt-24 pb-16 bg-gradient-to-br from-indigo-950/15 to-neutral-950">
-            <div className="w-full flex flex-col items-center justify-center">
-                <Accordion type="single" collapsible defaultValue={meals[0].date}>
-                    {meals.map((date, index) => (
-                        <AccordionItem key={index} value={date.date}
-                            className={`min-w-[350px] w-96 max-w-[400px] flex flex-col items-start justify-center mb-8 px-4 rounded
-                    ${index % 2 === 0 ? "bg-gradient-to-br from-green-950/20 to-neutral-950" : "bg-gradient-to-br from-blue-950/20 to-neutral-950"}`}>
-                            <div key={date.date} className="w-full flex flex-col items-between justify-center">
-                                <AccordionTrigger className="w-full flex flex-row items-center justify-between">
-                                    <h2 className="text-lg font-bold ">{spellOutDate(date.date)}</h2>
-                                </AccordionTrigger>
-                                <AccordionContent>
-                                    {date.data.map((meal: any) => {
-                                        const mealMacros = calculateMacrosForMeal(meal);
-                                        const mealItems = getMealItems(meal);
-                                        return (
-                                            <div key={meal.time}>
-                                                <div className="w-full flex flex-row items-center justify-between">
-                                                    <h3 className="text-xs font-thin italic mb-2">{meal.time}</h3>
-                                                    <EditMeal 
-                                                        setShouldToast={setShouldToast} 
-                                                        setShouldToastBad={setShouldToastBad} 
-                                                        userRef={userRef} 
-                                                        mealRef={{ ...meal, date: date.date }} 
-                                                        meals={meals}
-                                                    />
-                                                </div>
-                                                <div className="grid grid-cols-2 gap-4">
-                                                    {mealItems.map((item: any) => {
-                                                        const itemMacros = item.stats ? {
-                                                            calories: Math.round(item.stats.calories * item.numberOfServings),
-                                                            protein: Math.round(item.stats.protein * item.numberOfServings),
-                                                            carbs: Math.round(item.stats.carbs * item.numberOfServings),
-                                                            fat: Math.round(item.stats.fat * item.numberOfServings)
-                                                        } : {
-                                                            calories: Math.round(item.nutrients.calories * item.numberOfServings),
-                                                            protein: Math.round(item.nutrients.protein * item.numberOfServings),
-                                                            carbs: Math.round(item.nutrients.carbs * item.numberOfServings),
-                                                            fat: Math.round(item.nutrients.fats.total * item.numberOfServings)
-                                                        };
-                                                        return (
-                                                            <div key={`${item.name}-${item.variationlabels}-${item.numberOfServings}`} className="mb-4">
-                                                                <h4 className="text-md font-medium">{capitalize(item.name)}</h4>
-                                                                <div className="flex flex-row items-center justify-start gap-1 pl-4 py-1 text-sm">
-                                                                    <p className="font-medium">{item.numberOfServings || 1} <span className="text-neutral-200 font-thin">serving{item.numberOfServings > 1 ? 's' : ''}</span></p>
-                                                                    <p className="text-neutral-400 text-xs">@</p>
-                                                                    <p className="font-medium">{Math.round(item.stats ? item.stats.calories : item.nutrients.calories)}<span className="text-neutral-300 font-thin">cal</span></p>
-                                                                </div>
-                                                                <div className="grid grid-cols-3 gap-2 pl-4 py-1 text-xs">
-                                                                    <p>P: {Math.round(itemMacros.protein)}g</p>
-                                                                    <p>C: {Math.round(itemMacros.carbs)}g</p>
-                                                                    <p>F: {Math.round(itemMacros.fat)}g</p>
-                                                                </div>
-                                                            </div>
-                                                        );
-                                                    })}
-                                                </div>
-                                                <div className="mt-4 pt-2 border-t border-neutral-800">
-                                                    <div className="flex justify-between items-center px-4">
-                                                        <span className="text-sm font-medium">Total:</span>
-                                                        <div className="grid grid-cols-4 gap-4 text-sm">
-                                                            <span>{Math.round(mealMacros.calories)} cal</span>
-                                                            <span>{Math.round(mealMacros.protein)}g P</span>
-                                                            <span>{Math.round(mealMacros.carbs)}g C</span>
-                                                            <span>{Math.round(mealMacros.fat)}g F</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </AccordionContent>
-                            </div>
-                        </AccordionItem>
-                    ))}
-                </Accordion>
+  async function handleDelete() {
+    if (!deleteSessionId) return;
+    setSubmitting(true);
+    try {
+      await deleteMealSessionAction(deleteSessionId);
+      setSessions((prev) => prev.filter((s) => s.id !== deleteSessionId));
+      setDeleteSessionId(null);
+      toast({ title: "Meal deleted" });
+    } catch {
+      toast({ title: "Error", description: "Failed to delete meal.", variant: "destructive" });
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  const grouped = groupByDate(sessions);
+
+  return (
+    <div className="max-w-2xl mx-auto px-4 pt-24 md:pt-6 pb-20 space-y-6">
+      <h1 className="text-2xl font-semibold">Your Meals</h1>
+
+      {sessions.length === 0 && (
+        <p className="text-sm text-muted-foreground text-center py-12">
+          No meals logged yet.
+        </p>
+      )}
+
+      {grouped.map(([dateStr, daySessions]) => (
+        <div key={dateStr} className="space-y-3">
+          <h2 className="text-sm font-medium text-muted-foreground">
+            {formatDateStr(dateStr)}
+          </h2>
+          {daySessions.map((session) => {
+            const totals = sessionTotals(session.items);
+            let timeStr = "";
+            try {
+              timeStr = format(parseISO(session.loggedAtIso), "h:mm a");
+            } catch { /* fallback */ }
+
+            return (
+              <div
+                key={session.id}
+                className="rounded-lg border border-border/40 p-3 space-y-2"
+              >
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium">
+                    {session.mealLabel ?? "Meal"}
+                    {timeStr && <span className="text-muted-foreground font-normal"> · {timeStr}</span>}
+                  </p>
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(session)}>
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setDeleteSessionId(session.id)}>
+                      <Trash2 className="h-3.5 w-3.5 text-red-400" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="space-y-0.5">
+                  {session.items.map((item, idx) => (
+                    <p key={idx} className="text-xs text-muted-foreground">
+                      {item.snapshotName}
+                      {item.servings !== 1 && ` (${item.servings})`}
+                      {item.portionLabel && ` · ${item.portionLabel}`}
+                    </p>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Cal: {totals.cal} · P: {totals.pro}g · C: {totals.carb}g · F: {totals.fat}g
+                </p>
+              </div>
+            );
+          })}
+        </div>
+      ))}
+
+      {/* Edit dialog */}
+      <Dialog open={editSession !== null} onOpenChange={(open) => { if (!open) setEditSession(null); }}>
+        <DialogContent className="max-h-[85vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Edit Meal</DialogTitle>
+            <DialogDescription>Update meal details and items.</DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto space-y-3 py-1">
+            <div className="space-y-1">
+              <Label>Meal Label</Label>
+              <Select value={editLabel ?? "none"} onValueChange={(v) => setEditLabel(v === "none" ? null : v)}>
+                <SelectTrigger className="h-9">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No label</SelectItem>
+                  {MEAL_LABELS.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
-        </main>
-    )
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <Label className="text-xs">Date</Label>
+                <Input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} className="h-8 text-sm" />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Time</Label>
+                <Input type="time" value={editTime} onChange={(e) => setEditTime(e.target.value)} className="h-8 text-sm" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Items</Label>
+              {editItems.map((item, idx) => (
+                <div key={idx} className="flex items-center gap-2 rounded-md border border-border/40 px-2 py-1.5">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium truncate">{item.snapshotName}</p>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-6 w-6"
+                      disabled={item.servings <= 0.25}
+                      onClick={() => {
+                        const newServings = Math.max(0.25, item.servings - 0.5);
+                        setEditItems((prev) => prev.map((it, i) => i === idx ? { ...it, servings: newServings } : it));
+                      }}
+                    >
+                      <Minus className="h-3 w-3" />
+                    </Button>
+                    <span className="text-xs w-6 text-center">{item.servings}</span>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={() => {
+                        const newServings = item.servings + 0.5;
+                        setEditItems((prev) => prev.map((it, i) => i === idx ? { ...it, servings: newServings } : it));
+                      }}
+                    >
+                      <Plus className="h-3 w-3" />
+                    </Button>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={() => setEditItems((prev) => prev.filter((_, i) => i !== idx))}
+                  >
+                    <X className="h-3 w-3 text-red-400" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </div>
+          <DialogFooter className="flex-row gap-2 sm:flex-row">
+            <Button variant="outline" className="flex-1" onClick={() => setEditSession(null)}>Cancel</Button>
+            <Button className="flex-1" onClick={handleSaveEdit} disabled={submitting || editItems.length === 0}>
+              {submitting ? "Saving..." : "Save Changes"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete confirmation */}
+      <AlertDialog open={deleteSessionId !== null} onOpenChange={(open) => { if (!open) setDeleteSessionId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this meal?</AlertDialogTitle>
+            <AlertDialogDescription>This cannot be undone.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} disabled={submitting}>
+              {submitting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
 }

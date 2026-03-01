@@ -1,9 +1,7 @@
-import MealsList from "@/components/nutrition/MealsList";
+import { listMealSessionsAction } from "@/actions/nutrition";
+import { MealsList } from "@/components/nutrition/MealsList";
 
-export default async function Meals() {
-    return (
-        <main className="w-full h-full">
-            <MealsList />
-        </main>
-    )
+export default async function MealsPage() {
+  const sessions = await listMealSessionsAction();
+  return <MealsList initialSessions={sessions} />;
 }

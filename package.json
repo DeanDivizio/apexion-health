@@ -9,7 +9,8 @@
     "lint": "next lint",
     "validate:gym-defaults": "tsx scripts/validate-gym-defaults.ts",
     "seed:substances": "tsx scripts/seed-substance-catalog.ts",
-    "seed:gym-variations": "tsx scripts/seed-gym-variations.ts"
+    "seed:gym-variations": "tsx scripts/seed-gym-variations.ts",
+    "seed:usda-foundation": "tsx scripts/import-usda-foundation.ts"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.637.0",
@@ -47,6 +48,7 @@
     "framer-motion": "^11.5.6",
     "lucide-react": "^0.436.0",
     "next": "^16.1.1",
+    "openai": "^6.25.0",
     "pg": "^8.15.6",
     "prisma": "^7.2.0",
     "react": "^19.1.4",

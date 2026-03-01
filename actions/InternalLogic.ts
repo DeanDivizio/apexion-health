@@ -1,6 +1,7 @@
 "use server";
 import { addItemToTable, genericAddItemToTable, getDataFromTable, getGymMeta_CACHED, updateCustomExercises, updateExerciseData, getAllDataFromTableByUser, updateCustomSupplements } from "@/actions/AWS";
 import { listWorkoutSessions } from "@/lib/gym/server/gymService";
+import { getMacroSummaryByDateRange } from "@/lib/nutrition/server/nutritionService";
 import { ExerciseGroup } from "@/utils/types";
 import { auth } from '@clerk/nextjs/server';
 import { unstable_cacheTag as cacheTag, revalidateTag } from 'next/cache'
@@ -19,7 +20,7 @@ export async function homeFetch({startDate, endDate}:{startDate:string, endDate:
         const [hormoneData, gymSessions, macroData, medData, suppData] = await Promise.all([
           getDataFromTable(userID, "Apexion-Hormone", startDate, endDate),
           listWorkoutSessions(userId, { startDate, endDate }),
-          getDataFromTable(userID, "Apexion-Nutrition", startDate, endDate),
+          getMacroSummaryByDateRange(userId, startDate, endDate),
           getDataFromTable(userID, "Apexion-Medication", startDate, endDate),
           getDataFromTable(userID, "Apexion-Supplements", startDate, endDate),
         ]);
@@ -40,34 +41,24 @@ export async function homeFetch({startDate, endDate}:{startDate:string, endDate:
           } else {
             summaryData.set(session.date, {date: session.date, gym: [session]})
           }
-        });//@ts-ignore
-        macroData.forEach((item: { date: string; data: []; totals?:Macros}) => {
-          let totalCalories = 0;
-          let totalProtein = 0;
-          let totalCarbs = 0;
-          let totalFat = 0;
-          try {
-            item.data.forEach((meal: any) => {
-              // this function is needed until we do the Nutrition
-              // database migration. It accounts for the new data shape
-              const mealMacros = calculateMacrosForMeal(meal);
-              totalCalories += mealMacros.calories;
-              totalProtein += mealMacros.protein;
-              totalCarbs += mealMacros.carbs;
-              totalFat += mealMacros.fat;
-            });
-            item = {...item, totals: {calories:totalCalories, protein:totalProtein, carbs:totalCarbs, fat:totalFat}}
-          } catch (err){
-            console.log(err)
-          }
-          
-          const existingItem = summaryData.get(item.date)
+        });
+
+        macroData.forEach((daySummary) => {
+          const existingItem = summaryData.get(daySummary.dateStr);
+          const macros = {
+            calories: daySummary.calories,
+            protein: daySummary.protein,
+            carbs: daySummary.carbs,
+            fat: daySummary.fat,
+          };
           if (existingItem) {
-            existingItem.macros = item.totals;
+            existingItem.macros = macros;
           } else {
-            summaryData.set(item.date, {date: item.date, macros: item.totals})
+            summaryData.set(daySummary.dateStr, { date: daySummary.dateStr, macros });
           }
-        }); //@ts-ignore
+        });
+
+        //@ts-ignore
         medData.forEach((item: { date: string; data: []}) => {
           const existingItem = summaryData.get(item.date)
           if (existingItem) {
@@ -235,57 +226,3 @@ export async function updateCustomSupplementsWrapper(customSupplements: any) {
   return response;
 }
 
-const calculateMacrosFromFoodItems = (meal: any) => {
-  let calories = 0;
-  let protein = 0;
-  let carbs = 0;
-  let fat = 0;
-
-  meal.foodItems.forEach((item: any) => {
-    if (item.stats) {
-      calories += item.stats.calories * item.numberOfServings;
-      protein += item.stats.protein * item.numberOfServings;
-      carbs += item.stats.carbs * item.numberOfServings;
-      fat += item.stats.fat * item.numberOfServings;
-    } else {
-      calories += item.nutrients.calories * item.numberOfServings;
-      protein += item.nutrients.protein * item.numberOfServings;
-      carbs += item.nutrients.carbs * item.numberOfServings;
-      fat += item.nutrients.fats.total * item.numberOfServings;
-    }
-  });
-
-  return { calories, protein, carbs, fat };
-};
-
-const calculateMacrosFromMealItems = (meal: any) => {
-  let calories = 0;
-  let protein = 0;
-  let carbs = 0;
-  let fat = 0;
-
-  meal.mealItems.forEach((item: any) => {
-    if (item.stats) {
-      calories += item.stats.calories * item.numberOfServings;
-      protein += item.stats.protein * item.numberOfServings;
-      carbs += item.stats.carbs * item.numberOfServings;
-      fat += item.stats.fat * item.numberOfServings;
-    } else {
-      calories += item.nutrients.calories * item.numberOfServings;
-      protein += item.nutrients.protein * item.numberOfServings;
-      carbs += item.nutrients.carbs * item.numberOfServings;
-      fat += item.nutrients.fats.total * item.numberOfServings;
-    }
-  });
-
-  return { calories, protein, carbs, fat };
-};
-
-const calculateMacrosForMeal = (meal: any) => {
-  if (meal.foodItems) {
-    return calculateMacrosFromFoodItems(meal);
-  } else if (meal.mealItems) {
-    return calculateMacrosFromMealItems(meal);
-  }
-  return { calories: 0, protein: 0, carbs: 0, fat: 0 };
-};

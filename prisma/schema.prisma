@@ -660,3 +660,157 @@ model HydrationLog {
 
   @@index([userId, dateStr])
 }
+
+// ─── Nutrition ──────────────────────────────────────────────────────────────
+
+enum NutritionFoodSource {
+  foundation
+  complex
+  retail
+}
+
+model NutritionFoundationFood {
+  id                 String   @id @default(uuid())
+  fdcId              Int      @unique
+  name               String
+  category           String?
+  nutrients          Json
+  portions           Json?
+  defaultServingSize Float    @default(100)
+  defaultServingUnit String   @default("g")
+  createdAt          DateTime @default(now())
+
+  @@index([name])
+}
+
+model NutritionUserFood {
+  id          String   @id @default(uuid())
+  userId      String
+  name        String
+  brand       String?
+  nutrients   Json
+  servingSize Float
+  servingUnit String   @default("g")
+  ingredients String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId, name])
+  @@index([userId, active])
+}
+
+model NutritionRetailChain {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  name      String
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  globalItems NutritionRetailItem[]
+  userItems   NutritionRetailUserItem[]
+}
+
+model NutritionRetailItem {
+  id          String               @id @default(uuid())
+  chainId     String
+  chain       NutritionRetailChain @relation(fields: [chainId], references: [id], onDelete: Cascade)
+  name        String
+  category    String?
+  nutrients   Json
+  servingSize Float?
+  servingUnit String?
+  active      Boolean              @default(true)
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+
+  @@index([chainId, name])
+}
+
+model NutritionRetailUserItem {
+  id          String               @id @default(uuid())
+  chainId     String
+  chain       NutritionRetailChain @relation(fields: [chainId], references: [id], onDelete: Cascade)
+  userId      String
+  name        String
+  category    String?
+  nutrients   Json
+  servingSize Float?
+  servingUnit String?
+  active      Boolean              @default(true)
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+
+  @@index([chainId, userId])
+  @@index([userId])
+}
+
+model NutritionMealSession {
+  id        String   @id @default(uuid())
+  userId    String
+  loggedAt  DateTime
+  dateStr   String
+  mealLabel String?
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items NutritionMealItem[]
+
+  @@index([userId, dateStr])
+  @@index([userId, loggedAt])
+}
+
+model NutritionMealItem {
+  id                String              @id @default(uuid())
+  sessionId         String
+  session           NutritionMealSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  foodSource        NutritionFoodSource
+  sourceFoodId      String?
+  foundationFoodId  String?
+  snapshotName      String
+  snapshotBrand     String?
+  servings          Float
+  portionLabel      String?
+  portionGramWeight Float?
+  sortOrder         Int                 @default(0)
+
+  snapshotCalories Float
+  snapshotProtein  Float
+  snapshotCarbs    Float
+  snapshotFat      Float
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  nutrients NutritionMealItemNutrient[]
+
+  @@index([sessionId, sortOrder])
+}
+
+model NutritionMealItemNutrient {
+  id           String            @id @default(uuid())
+  mealItemId   String
+  mealItem     NutritionMealItem @relation(fields: [mealItemId], references: [id], onDelete: Cascade)
+  nutrientKey  String
+  nutrientName String
+  amount       Float
+  unit         String
+  createdAt    DateTime          @default(now())
+
+  @@index([mealItemId])
+  @@index([nutrientKey, amount])
+}
+
+model NutritionUserGoals {
+  id         String   @id @default(uuid())
+  userId     String   @unique
+  calories   Float?
+  protein    Float?
+  carbs      Float?
+  fat        Float?
+  microGoals Json?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}

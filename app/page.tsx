@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect, useContext } from "react";
 import { homeFetch } from "@/actions/InternalLogic";
+import { getUserGoalsAction } from "@/actions/nutrition";
 import { SignedIn, SignedOut, SignInButton, UserButton, useUser } from "@clerk/nextjs";
 import { WeeklyDataDisplayComponent } from "@/components/home/WeeklySummary";
 import Footer from "@/components/global/Footer";
@@ -51,9 +52,18 @@ export default function Home() {
 
     async function dataFetch() {  
       try {
+        const [response, goals] = await Promise.all([
+          homeFetch({startDate, endDate}),
+          getUserGoalsAction(),
+        ]);
         // @ts-ignore
-        const response:SummaryData = await homeFetch({startDate, endDate});
-        setData(response);
+        setData(response as SummaryData);
+        if (goals) {
+          setCalorieLimit(goals.calories ?? 0);
+          setProteinGoal(goals.protein ?? 0);
+          setCarbGoal(goals.carbs ?? 0);
+          setFatGoal(goals.fat ?? 0);
+        }
       } catch (err) {
         console.error(err);
       } finally {
@@ -67,7 +77,6 @@ export default function Home() {
 
   useEffect(()=>{
     if(data && data.length > 0) {
-      console.log(data[0])
       if (data[0].macros) {
     setTodayCalories(data[0].macros.calories);
     setTodayProtein(data[0].macros.protein);
@@ -76,19 +85,6 @@ export default function Home() {
       }
     }
   }, [data])
-
-  useEffect(()=>{
-    if(isLoaded) {
-      // @ts-ignore
-    setCalorieLimit(user?.publicMetadata.markers.nutrition.calorieLimit);
-    // @ts-ignore
-    setProteinGoal(user?.publicMetadata.markers.nutrition.proteinGoal);
-    // @ts-ignore
-    setCarbGoal(user?.publicMetadata.markers.nutrition.carbGoal);
-    // @ts-ignore
-    setFatGoal(user?.publicMetadata.markers.nutrition.fatGoal);
-    }
-  },[isLoaded])
 
   useEffect(()=>{
     setHeaderComponentLeft(<SideNav />)

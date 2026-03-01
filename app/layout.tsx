@@ -7,7 +7,6 @@ import {SubNavContextProvider} from "@/context/SubNavOpenContext"
 import MobileHeader from "@/components/global/MobileHeader";
 import { Toaster } from "@/components/ui_primitives/toaster";
 import { MobileHeaderProvider } from "@/context/MobileHeaderContext";
-import { MealFormProvider } from "@/context/MealFormContext";
 import { SyncStatusProvider } from "@/context/SyncStatusContext";
 import { Suspense } from "react";
 
@@ -47,13 +46,11 @@ export default function RootLayout({
           <ClerkProvider>
             <MobileHeaderProvider>
               <SyncStatusProvider>
-                <MealFormProvider>
                   <MobileHeader />
                   <SubNavContextProvider>
                     {children}
                     <MobileNav />
                   </SubNavContextProvider>
-                </MealFormProvider>
               </SyncStatusProvider>
             </MobileHeaderProvider>
             <Toaster />
