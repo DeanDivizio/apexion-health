@@ -44,7 +44,7 @@ export function ExerciseCombobox({
   groups,
   value,
   onSelect,
-  placeholder = "Select exercise...",
+  placeholder = "Open Selector",
   disabled = false,
   className,
 }: ExerciseComboboxProps) {
@@ -72,7 +72,6 @@ export function ExerciseCombobox({
       )}
     >
       {value ? selectedName : placeholder}
-      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
     </Button>
   );
 
@@ -123,7 +122,6 @@ export function ExerciseCombobox({
           )}
         >
           {value ? selectedName : placeholder}
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
         <Drawer open={open} onOpenChange={setOpen}>
           <VisuallyHidden>
