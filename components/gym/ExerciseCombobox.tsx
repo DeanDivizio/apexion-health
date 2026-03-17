@@ -17,7 +17,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui_primitives/popover";
-import { Drawer, DrawerContent } from "@/components/ui_primitives/drawer";
+import { Drawer, DrawerContent, DrawerTitle } from "@/components/ui_primitives/drawer";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 export interface ExerciseOption {
@@ -125,7 +126,10 @@ export function ExerciseCombobox({
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
         <Drawer open={open} onOpenChange={setOpen}>
-          <DrawerContent className="h-[60vh] max-h-[85vh] p-0">
+          <VisuallyHidden>
+            <DrawerTitle>Select Exercise</DrawerTitle>
+          </VisuallyHidden>
+          <DrawerContent className="h-[80vh] max-h-[85vh] p-0 bg-gradient-to-br from-blue-900/10 to-blue-950/10 backdrop-blur-sm">
             {commandContent}
           </DrawerContent>
         </Drawer>
