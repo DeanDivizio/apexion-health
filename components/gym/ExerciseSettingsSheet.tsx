@@ -1,8 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Info, Plus, Save, BookmarkPlus } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { Info, Plus, Save } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -24,7 +23,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui_primitives/tooltip";
 import { Button } from "@/components/ui_primitives/button";
-import { Input } from "@/components/ui_primitives/input";
 import { Separator } from "@/components/ui_primitives/separator";
 import {
   Dialog,
@@ -36,7 +34,6 @@ import {
 } from "@/components/ui_primitives/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { saveExerciseDefaultsAction } from "@/actions/gym";
-import { createCustomExerciseAction } from "@/actions/gym";
 import type { ExerciseDefinition, VariationTemplate } from "@/lib/gym";
 import { VARIATION_TEMPLATE_MAP, VARIATION_TEMPLATES } from "@/lib/gym";
 
@@ -46,7 +43,6 @@ interface ExerciseSettingsSheetProps {
   exercise: ExerciseDefinition | null;
   variations: Record<string, string>;
   onVariationsChange: (variations: Record<string, string>) => void;
-  onExerciseNameUpdate?: (name: string) => void;
 }
 
 export function ExerciseSettingsSheet({
@@ -55,16 +51,11 @@ export function ExerciseSettingsSheet({
   exercise,
   variations,
   onVariationsChange,
-  onExerciseNameUpdate,
 }: ExerciseSettingsSheetProps) {
-  const router = useRouter();
   const HALF_WIDTH_CHAR_BUDGET = 14;
   const { toast } = useToast();
   const [addVariationOpen, setAddVariationOpen] = React.useState(false);
   const [savingDefault, setSavingDefault] = React.useState(false);
-  const [savingCustom, setSavingCustom] = React.useState(false);
-  const [customName, setCustomName] = React.useState("");
-  const [showCustomInput, setShowCustomInput] = React.useState(false);
 
   if (!exercise) return null;
 
@@ -147,50 +138,6 @@ export function ExerciseSettingsSheet({
       });
     } finally {
       setSavingDefault(false);
-    }
-  };
-
-  const handleSaveCustom = async () => {
-    if (!exercise || !customName.trim()) return;
-    setSavingCustom(true);
-    try {
-      const key = customName.trim().replace(/\s+/g, "").replace(/^./, (c) => c.toLowerCase());
-
-      await createCustomExerciseAction({
-        key,
-        name: customName.trim(),
-        category: exercise.category,
-        repMode: exercise.repMode ?? "bilateral",
-        targets: exercise.baseTargets,
-        variationSupports: Object.entries(variations).map(([templateId, defaultOptionKey]) => ({
-          templateId,
-          defaultOptionKey,
-        })),
-        optionLabelOverrides: [],
-        variationEffects: [],
-      });
-
-      toast({
-        title: "Custom exercise created",
-        description: `"${customName.trim()}" has been saved as a custom exercise.`,
-      });
-
-      onExerciseNameUpdate?.(customName.trim());
-      setShowCustomInput(false);
-      setCustomName("");
-      router.refresh();
-    } catch (error) {
-      const description =
-        error instanceof Error && error.message
-          ? error.message
-          : "Failed to create custom exercise. Please try again.";
-      toast({
-        title: "Error",
-        description,
-        variant: "destructive",
-      });
-    } finally {
-      setSavingCustom(false);
     }
   };
 
@@ -340,51 +287,6 @@ export function ExerciseSettingsSheet({
             </Button>
           </div>
 
-          {/* Save as Custom Exercise */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-1.5">
-              <h4 className="text-sm font-medium">Mix it up but do this often?</h4>
-              <TooltipProvider delayDuration={200}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-xs text-xs">
-                    This creates a new custom exercise with these variation settings
-                    baked in. It will show up in your exercise list as a separate option.
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-
-            {showCustomInput ? (
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Custom exercise name"
-                  value={customName}
-                  onChange={(e) => setCustomName(e.target.value)}
-                  className="h-11"
-                  autoFocus
-                />
-                <Button
-                  className="h-11 bg-blue-600 hover:bg-blue-700 text-white shrink-0"
-                  onClick={handleSaveCustom}
-                  disabled={savingCustom || !customName.trim()}
-                >
-                  {savingCustom ? "..." : "Save"}
-                </Button>
-              </div>
-            ) : (
-              <Button
-                variant="outline"
-                className="w-full h-11 border-blue-500/50 text-blue-400 hover:bg-blue-500/10"
-                onClick={() => setShowCustomInput(true)}
-              >
-                <BookmarkPlus className="mr-2 h-4 w-4" />
-                Save as Custom Exercise
-              </Button>
-            )}
-          </div>
         </div>
       </SheetContent>
     </Sheet>

@@ -1275,7 +1275,60 @@ const RAW_DEFAULT_EXERCISES: RawExerciseDefinition[] = [
       },
     },
   },
-  
+  {
+    id: "preacherCurl",
+    name: "Preacher Curl",
+    category: "upperBody",
+    baseTargets: targets(
+      ["biceps", 0.85],
+      ["forearms", 0.15],
+    ),
+    variationTemplates: {
+      grip: { templateId: GRIP_TEMPLATE.id, labelOverride: "Grip", defaultOptionKey: "supinated" },
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source", defaultOptionKey: "untracked" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence", defaultOptionKey: "untracked" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause", defaultOptionKey: "untracked" },
+    },
+    variationEffects: {
+      grip: {
+        normal: {},
+        pronated: { deltas: { forearms: +0.08, biceps: -0.08 } },
+        supinated: {},
+        neutral: { deltas: { forearms: +0.05, biceps: -0.05 } },
+        neutralSupinated: { deltas: { forearms: +0.03, biceps: -0.03 } },
+      },
+      resistanceSource: {
+        untracked: {},
+        bodyweight: {},
+        dumbbell: {},
+        barbell: {},
+        kettlebell: {},
+        cable: {},
+        band: {},
+        smithMachine: {},
+        machineSelectorized: {},
+        machinePlateLoaded: {},
+      },
+      cadence: {
+        untracked: {},
+        even: {},
+        fastConcentric: {},
+        slowEccentric: {},
+        fastConcentricSlowEccentric: {},
+        slowConcentricFastEccentric: {},
+        slowConcentric: {},
+        fastEccentric: {},
+      },
+      pause: {
+        untracked: {},
+        none: {},
+        end: {},
+        start: {},
+        both: {},
+      },
+    },
+  },
+
   // ===== CORE =====
   {
     id: "abdominalCrunch",
@@ -2746,6 +2799,7 @@ export const DEFAULT_EXERCISE_GROUPS: ExerciseGroup[] = [
       "lateralPulldown",
       "lateralRaise",
       "pecFly",
+      "preacherCurl",
       "pullUp",
       "pushUp",
       "rearDelt",
