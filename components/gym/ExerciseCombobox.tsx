@@ -125,7 +125,7 @@ export function ExerciseCombobox({
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
         <Drawer open={open} onOpenChange={setOpen}>
-          <DrawerContent className="max-h-[85vh] p-0">
+          <DrawerContent className="h-[60vh] max-h-[85vh] p-0">
             {commandContent}
           </DrawerContent>
         </Drawer>
