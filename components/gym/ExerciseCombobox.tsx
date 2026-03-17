@@ -17,6 +17,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui_primitives/popover";
+import { Drawer, DrawerContent } from "@/components/ui_primitives/drawer";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export interface ExerciseOption {
   key: string;
@@ -46,6 +48,7 @@ export function ExerciseCombobox({
   className,
 }: ExerciseComboboxProps) {
   const [open, setOpen] = React.useState(false);
+  const isMobile = useIsMobile();
 
   const selectedName = React.useMemo(() => {
     for (const group of groups) {
@@ -55,14 +58,63 @@ export function ExerciseCombobox({
     return "";
   }, [groups, value]);
 
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
+  const triggerButton = (
+    <Button
+      variant="outline"
+      role="combobox"
+      aria-expanded={open}
+      disabled={disabled}
+      className={cn(
+        "w-full justify-between text-left font-normal h-12",
+        !value && "text-muted-foreground",
+        className,
+      )}
+    >
+      {value ? selectedName : placeholder}
+      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+    </Button>
+  );
+
+  const commandContent = (
+    <Command>
+      <CommandInput placeholder="Search exercises..." />
+      <CommandList>
+        <CommandEmpty>No exercise found.</CommandEmpty>
+        {groups.map((group) => (
+          <CommandGroup key={group.label} heading={group.label}>
+            {group.exercises.map((exercise) => (
+              <CommandItem
+                key={exercise.key}
+                value={`${exercise.name}`}
+                onSelect={() => {
+                  onSelect(exercise.key);
+                  setOpen(false);
+                }}
+              >
+                <Check
+                  className={cn(
+                    "mr-2 h-4 w-4",
+                    value === exercise.key ? "opacity-100" : "opacity-0",
+                  )}
+                />
+                {exercise.name}
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        ))}
+      </CommandList>
+    </Command>
+  );
+
+  if (isMobile) {
+    return (
+      <>
         <Button
           variant="outline"
           role="combobox"
           aria-expanded={open}
           disabled={disabled}
+          onClick={() => setOpen(true)}
           className={cn(
             "w-full justify-between text-left font-normal h-12",
             !value && "text-muted-foreground",
@@ -72,36 +124,25 @@ export function ExerciseCombobox({
           {value ? selectedName : placeholder}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start" side="bottom" avoidCollisions={false}>
-        <Command>
-          <CommandInput placeholder="Search exercises..." />
-          <CommandList>
-            <CommandEmpty>No exercise found.</CommandEmpty>
-            {groups.map((group) => (
-              <CommandGroup key={group.label} heading={group.label}>
-                {group.exercises.map((exercise) => (
-                  <CommandItem
-                    key={exercise.key}
-                    value={`${exercise.name}`}
-                    onSelect={() => {
-                      onSelect(exercise.key);
-                      setOpen(false);
-                    }}
-                  >
-                    <Check
-                      className={cn(
-                        "mr-2 h-4 w-4",
-                        value === exercise.key ? "opacity-100" : "opacity-0",
-                      )}
-                    />
-                    {exercise.name}
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            ))}
-          </CommandList>
-        </Command>
+        <Drawer open={open} onOpenChange={setOpen}>
+          <DrawerContent className="max-h-[85vh] p-0">
+            {commandContent}
+          </DrawerContent>
+        </Drawer>
+      </>
+    );
+  }
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>{triggerButton}</PopoverTrigger>
+      <PopoverContent
+        className="w-[var(--radix-popover-trigger-width)] p-0"
+        align="start"
+        side="bottom"
+        avoidCollisions={false}
+      >
+        {commandContent}
       </PopoverContent>
     </Popover>
   );
