@@ -1,18 +1,16 @@
 /**
- * One-off migration: move all workout data from the custom "Preacher Curl"
- * exercise to the new canonical `preacherCurl` built-in exercise, then
+ * One-off migration: move all workout data from the custom "Tricep Rope Pushdown"
+ * exercise to the new canonical `tricepRopePushdown` built-in exercise, then
  * delete the custom exercise record.
  *
  * Usage:
- *   npx tsx --require dotenv/config scripts/migrate-preacher-curl-to-canonical.ts
- *
- * STATUS: Already executed.
+ *   npx tsx --require dotenv/config scripts/migrate-rope-pushdown-to-canonical.ts
  */
 
 import { prisma } from "../lib/db/prisma";
 
-const CUSTOM_EXERCISE_ID = "8de364e4-7721-417a-bfce-2f4a28f7538a";
-const CANONICAL_KEY = "preacherCurl";
+const CUSTOM_EXERCISE_ID = "6e5c40db-9d68-40f7-b72d-caa520e154a7";
+const CANONICAL_KEY = "tricepRopePushdown";
 
 async function main() {
   const customExercise = await prisma.gymCustomExercise.findUnique({

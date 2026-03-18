@@ -1220,6 +1220,38 @@ const RAW_DEFAULT_EXERCISES: RawExerciseDefinition[] = [
     },
   },
   {
+    id: "tricepRopePushdown",
+    name: "Tricep Rope Pushdown",
+    category: "upperBody",
+    baseTargets: targets(
+      ["triceps", 0.88],
+      ["forearms", 0.12],
+    ),
+    variationTemplates: {
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence", defaultOptionKey: "untracked" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause", defaultOptionKey: "untracked" },
+    },
+    variationEffects: {
+      cadence: {
+        untracked: {},
+        even: {},
+        fastConcentric: {},
+        slowEccentric: {},
+        fastConcentricSlowEccentric: {},
+        slowConcentricFastEccentric: {},
+        slowConcentric: {},
+        fastEccentric: {},
+      },
+      pause: {
+        untracked: {},
+        none: {},
+        end: {},
+        start: {},
+        both: {},
+      },
+    },
+  },
+  {
     id: "hammerCurl",
     name: "Hammer Curl",
     category: "upperBody",
@@ -2808,6 +2840,7 @@ export const DEFAULT_EXERCISE_GROUPS: ExerciseGroup[] = [
       "shrug",
       "tricepExtension",
       "tricepPushdown",
+      "tricepRopePushdown",
     ],
   },
   {

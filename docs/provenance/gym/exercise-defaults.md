@@ -24,6 +24,7 @@ This is the index of provenance pages for **built-in strength + core exercises**
 - `preacherCurl`: [preacher-curl.md](./exercises/preacher-curl.md)
 - `tricepExtension`: [tricep-extension.md](./exercises/tricep-extension.md)
 - `tricepPushdown`: [tricep-pushdown.md](./exercises/tricep-pushdown.md)
+- `tricepRopePushdown`: [tricep-rope-pushdown.md](./exercises/tricep-rope-pushdown.md)
 
 ### Core
 
