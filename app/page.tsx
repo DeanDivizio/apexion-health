@@ -8,7 +8,7 @@ import { getHydrationSummaryAction } from "@/actions/hydration";
 import { getMicroNutrientSummaryAction } from "@/actions/nutrition";
 import { getWorkoutDaySummaryAction } from "@/actions/gym";
 import { getMedsDaySummaryAction } from "@/actions/medication";
-import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
+import { SignedIn, SignedOut, SignInButton, UserButton, useUser } from "@clerk/nextjs";
 import { WeeklyDataDisplayComponent } from "@/components/home/WeeklySummary";
 import Footer from "@/components/global/Footer";
 import Defocuser from "@/components/global/Defocuser";
@@ -33,9 +33,16 @@ import type { HydrationSummaryView } from "@/actions/hydration";
 import type { WorkoutDaySummarySession } from "@/lib/gym/server/gymService";
 import type { MedsDaySummarySession } from "@/lib/medication/server/medicationService";
 import type { MicroNutrientEntry } from "@/lib/nutrition/server/nutritionService";
-import { HomeMacroRingCharts } from "@/components/home/MacroRingGauge";
 import dynamic from "next/dynamic";
 import { toCompactDateStr } from "@/lib/dates/dateStr";
+
+const UniversalRingChart = dynamic(
+  () => import("@/components/charts/radialcharts/UniversalRingChart").then((m) => m.UniversalRingChart),
+  {
+    ssr: false,
+    loading: () => <div className="w-full h-[240px] rounded-xl bg-neutral-900/30 animate-pulse" />,
+  }
+);
 
 const BiometricsSummary = dynamic(
   () => import("@/components/home/BiometricsSummary").then((m) => m.BiometricsSummary),
@@ -63,6 +70,7 @@ const SKELETON_MAP: Record<string, React.FC> = {
 };
 
 export default function Home() {
+  const { user, isLoaded } = useUser();
   const { setHeaderComponentLeft, setHeaderComponentRight, setMobileHeading } = useContext(MobileHeaderContext);
   const [data, setData] = useState<SummaryData>();
   const [todayCalories, setTodayCalories] = useState(0);
@@ -198,16 +206,53 @@ export default function Home() {
           );
         }
         return (
-          <HomeMacroRingCharts
-            todayCalories={todayCalories}
-            todayProtein={todayProtein}
-            todayCarbs={todayCarbs}
-            todayFat={todayFat}
-            calorieLimit={calorieLimit}
-            proteinGoal={proteinGoal}
-            carbGoal={carbGoal}
-            fatGoal={fatGoal}
-          />
+          <div className="grid grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 justify-around mb-0">
+            <UniversalRingChart
+              title="Today's Calorie Intake"
+              shortTitle="Calories"
+              subtext="Your maintenence calorie intake is"
+              subtextOrder="unit last"
+              description="Intake compared to maintenence"
+              unit="Calories"
+              value={Math.round(todayCalories)}
+              goal={calorieLimit}
+              shade="indigo"
+            />
+            <UniversalRingChart
+              title="Today's Protein Intake"
+              shortTitle="Protein"
+              subtext="Your daily protein goal is "
+              subtextOrder="unit last"
+              description="Intake compared to goal"
+              unit="grams"
+              value={Math.round(todayProtein)}
+              goal={proteinGoal}
+              shade="blue"
+              overOkay
+            />
+            <UniversalRingChart
+              title="Today's Carb Intake"
+              shortTitle="Carbs"
+              subtext="Your daily carb goal is "
+              subtextOrder="unit last"
+              description="Intake compared to goal"
+              unit="Grams"
+              value={Math.round(todayCarbs)}
+              goal={carbGoal}
+              shade="green"
+            />
+            <UniversalRingChart
+              title="Today's Fat Intake"
+              shortTitle="Fat"
+              subtext="Your daily fat goal is "
+              subtextOrder="unit last"
+              description="Intake compared to goal"
+              unit="Grams"
+              value={Math.round(todayFat)}
+              goal={fatGoal}
+              shade="indigo"
+            />
+          </div>
         );
       }
       case "hydrationSummary":
