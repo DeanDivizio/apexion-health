@@ -177,6 +177,8 @@ export function SessionCard({
               <WhoopWorkoutData
                 sessionId={session.id}
                 dateStr={session.date}
+                startTimeStr={session.startTime}
+                endTimeStr={session.endTime}
                 onLinkedProvider={handleLinkedProvider}
               />
             </div>

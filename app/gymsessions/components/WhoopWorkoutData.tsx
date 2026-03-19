@@ -11,6 +11,8 @@ import {
 interface WhoopWorkoutDataProps {
   sessionId: string;
   dateStr: string;
+  startTimeStr: string;
+  endTimeStr: string;
   onLinkedProvider?: (provider: string) => void;
 }
 
@@ -114,6 +116,8 @@ function WorkoutDisplay({ workout }: { workout: WorkoutCandidate }) {
 export function WhoopWorkoutData({
   sessionId,
   dateStr,
+  startTimeStr,
+  endTimeStr,
   onLinkedProvider,
 }: WhoopWorkoutDataProps) {
   const [associated, setAssociated] = useState<WorkoutCandidate | null>(null);
@@ -129,7 +133,9 @@ export function WhoopWorkoutData({
 
     async function load() {
       try {
-        const state = await getWorkoutLinkState(sessionId, dateStr);
+        const state = await getWorkoutLinkState(
+          sessionId, dateStr, startTimeStr, endTimeStr,
+        );
         if (cancelled) return;
 
         if (state.linked) {
@@ -157,7 +163,7 @@ export function WhoopWorkoutData({
 
     load();
     return () => { cancelled = true; };
-  }, [sessionId, dateStr]);
+  }, [sessionId, dateStr, startTimeStr, endTimeStr]);
 
   if (!loaded) return null;
 

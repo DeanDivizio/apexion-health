@@ -212,6 +212,24 @@ function shiftDateStr(dateStr: string, deltaDays: number): string {
   return `${yy}${mm}${dd}`;
 }
 
+function parseSessionTime(dateStr: string, timeStr: string): Date {
+  const y = parseInt(dateStr.slice(0, 4), 10);
+  const m = parseInt(dateStr.slice(4, 6), 10) - 1;
+  const d = parseInt(dateStr.slice(6, 8), 10);
+
+  const match = timeStr.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  if (!match) return new Date(y, m, d);
+
+  let hours = parseInt(match[1], 10);
+  const minutes = parseInt(match[2], 10);
+  const ampm = match[3].toUpperCase();
+
+  if (ampm === "PM" && hours !== 12) hours += 12;
+  if (ampm === "AM" && hours === 12) hours = 0;
+
+  return new Date(y, m, d, hours, minutes);
+}
+
 function toWorkoutCandidate(w: BiometricWorkout): WorkoutCandidate {
   return {
     id: w.id,
@@ -234,17 +252,26 @@ function toWorkoutCandidate(w: BiometricWorkout): WorkoutCandidate {
   };
 }
 
+const OVERLAP_BUFFER_MS = 15 * 60 * 1000;
+
 /**
  * Returns the biometric link state for a gym session in a single round trip.
  *
- * Matching uses dateStr (local calendar day) rather than absolute timestamp
- * overlap, which avoids timezone mismatches between the user-entered session
- * times and UTC-stored biometric timestamps. Same-day matches are ranked first;
- * ±1 day is included for midnight / timezone edge cases.
+ * Uses a tiered matching strategy so the candidate list stays tight:
+ *   1. Timestamp overlap (±15 min buffer) — only workouts whose time window
+ *      actually intersects the gym session. Catches the exact Whoop activity.
+ *   2. Same-day dateStr — fallback if no overlap (e.g. Whoop auto-detect
+ *      recorded slightly outside the session window).
+ *   3. ±1 day dateStr — last resort for midnight / timezone edge cases.
+ *
+ * The server origin is us-east-2, so `parseSessionTime` produces EST
+ * timestamps that align with Whoop's UTC-stored start/end values.
  */
 export async function getWorkoutLinkState(
   sessionId: string,
   dateStr: string,
+  startTimeStr: string,
+  endTimeStr: string,
 ): Promise<WorkoutLinkState> {
   const { userId } = await auth();
   if (!userId) throw new Error("Not authenticated");
@@ -257,7 +284,7 @@ export async function getWorkoutLinkState(
     return { linked: toWorkoutCandidate(linked), candidates: [] };
   }
 
-  const workouts = await prisma.biometricWorkout.findMany({
+  const allNearby = await prisma.biometricWorkout.findMany({
     where: {
       userId,
       gymSessionId: null,
@@ -268,15 +295,29 @@ export async function getWorkoutLinkState(
     orderBy: { start: "asc" },
   });
 
-  const candidates = [
-    ...workouts.filter((w) => w.dateStr === dateStr),
-    ...workouts.filter((w) => w.dateStr !== dateStr),
-  ];
+  if (allNearby.length === 0) {
+    return { linked: null, candidates: [] };
+  }
 
-  return {
-    linked: null,
-    candidates: candidates.map(toWorkoutCandidate),
-  };
+  const sessionStart = parseSessionTime(dateStr, startTimeStr);
+  const sessionEnd = parseSessionTime(dateStr, endTimeStr);
+
+  const overlapping = allNearby.filter(
+    (w) =>
+      w.start.getTime() < sessionEnd.getTime() + OVERLAP_BUFFER_MS &&
+      w.end.getTime() > sessionStart.getTime() - OVERLAP_BUFFER_MS,
+  );
+
+  if (overlapping.length > 0) {
+    return { linked: null, candidates: overlapping.map(toWorkoutCandidate) };
+  }
+
+  const sameDay = allNearby.filter((w) => w.dateStr === dateStr);
+  if (sameDay.length > 0) {
+    return { linked: null, candidates: sameDay.map(toWorkoutCandidate) };
+  }
+
+  return { linked: null, candidates: allNearby.map(toWorkoutCandidate) };
 }
 
 /**
