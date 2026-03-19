@@ -1,6 +1,10 @@
 import { prisma } from "@/lib/db/prisma";
 import { cacheTag, cacheLife } from "next/cache";
-import { NUTRIENT_KEYS, resolveNutrientMeta } from "@/lib/nutrition/nutrientKeys";
+import {
+  MICRONUTRIENT_KEY_SET,
+  NUTRIENT_KEYS,
+  resolveNutrientMeta,
+} from "@/lib/nutrition/nutrientKeys";
 import { normalizeDateInput } from "@/lib/dates/dateStr";
 import type {
   FoundationFoodView,
@@ -667,7 +671,7 @@ export async function getMicroNutrientSummary(
     }
 
     for (const ing of substanceIngredients) {
-      if (MACRO_KEYS.has(ing.ingredientKey)) continue;
+      if (!MICRONUTRIENT_KEY_SET.has(ing.ingredientKey)) continue;
       const existing = totals.get(ing.ingredientKey);
       if (existing) {
         existing.amount += ing.amountTotal;

@@ -57,6 +57,13 @@ export const NUTRIENT_KEYS: Record<string, NutrientMeta> = {
 
 export type NutrientKeyId = keyof typeof NUTRIENT_KEYS;
 
+/** Kebab-case keys rolled up from substance logs into the home micronutrient summary (food is unchanged). Excludes macros so meds/supps only contribute catalog micronutrients (e.g. vitamin-d), not drug ingredient keys. */
+export const MICRONUTRIENT_KEY_SET = new Set<string>(
+  Object.values(NUTRIENT_KEYS)
+    .filter((m) => m.category !== "macro")
+    .map((m) => m.key),
+);
+
 /**
  * Returns metadata for a nutrient by its camelCase profile key.
  * Known nutrients use the canonical NUTRIENT_KEYS entry. Unknown ones
