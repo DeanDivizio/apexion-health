@@ -17,6 +17,19 @@ interface WhoopWorkoutDataProps {
   onLinkedProvider?: (provider: string) => void;
 }
 
+function formatDurationLabel(startIso: string, endIso: string): string | null {
+  const start = new Date(startIso);
+  const end = new Date(endIso);
+  const durationMs = end.getTime() - start.getTime();
+  if (!Number.isFinite(durationMs) || durationMs <= 0) return null;
+
+  const totalMinutes = Math.round(durationMs / 60000);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  return `${minutes}m`;
+}
+
 function formatZoneBar(workout: WorkoutCandidate) {
   const zones = [
     { label: "Z0", milli: workout.zoneZeroMilli ?? 0, color: "bg-neutral-500" },
@@ -58,8 +71,18 @@ function formatZoneBar(workout: WorkoutCandidate) {
 }
 
 function WorkoutDisplay({ workout }: { workout: WorkoutCandidate }) {
+  const durationLabel = formatDurationLabel(workout.start, workout.end);
+
   return (
     <div>
+      <div className="mb-2 flex items-center justify-between gap-2 text-[11px]">
+        <span className="text-neutral-300 font-medium truncate">
+          {workout.sportName ?? "Workout"}
+        </span>
+        {durationLabel && (
+          <span className="text-neutral-500 shrink-0">{durationLabel}</span>
+        )}
+      </div>
       <div className="grid grid-cols-4 gap-2 text-xs">
         {workout.averageHeartRate != null && (
           <div>
@@ -187,7 +210,14 @@ export function WhoopWorkoutData({
               className="mt-2 flex items-center gap-1 rounded-md border border-blue-500/30 bg-blue-950/20 px-3 py-1.5 text-xs text-blue-300 transition-colors hover:bg-blue-950/40 disabled:opacity-50"
             >
               <Link2 className="h-3 w-3" />
-              {linking ? "Linking..." : "Associate with this session"}
+              {linking
+                ? "Linking..."
+                : `Link ${[
+                    c.sportName ? c.sportName.trim() : null,
+                    formatDurationLabel(c.start, c.end),
+                  ]
+                    .filter(Boolean)
+                    .join(" · ") || "workout"}`}
             </button>
           </div>
         ))}
