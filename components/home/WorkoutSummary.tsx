@@ -1,6 +1,5 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui_primitives/card";
 import { Dumbbell } from "lucide-react";
 
 interface WorkoutSession {
@@ -20,16 +19,14 @@ interface WorkoutSummaryProps {
 
 export function WorkoutSummary({ sessions }: WorkoutSummaryProps) {
   return (
-    <Card className="bg-neutral-800/50 backdrop-blur-xl border-neutral-700/50">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base flex items-center gap-2">
-          <Dumbbell className="w-4 h-4 text-blue-400" />
-          Today&apos;s Workout
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
+    <div className="rounded-xl border border-white/10 bg-neutral-900/40 p-4 transition-colors hover:bg-neutral-800/50">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-xs text-blue-400 opacity-80">Today&apos;s Workout</span>
+        <Dumbbell className="h-3.5 w-3.5 text-blue-200 opacity-50 shrink-0" aria-hidden />
+      </div>
+      <div>
         {sessions.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-neutral-500">
             No workouts logged today
           </p>
         ) : (
@@ -39,8 +36,8 @@ export function WorkoutSummary({ sessions }: WorkoutSummaryProps) {
             ))}
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 
@@ -50,19 +47,19 @@ function WorkoutSessionRow({ session }: { session: WorkoutSession }) {
 
   return (
     <div className="space-y-1">
-      <p className="text-xs text-muted-foreground">{timeStr}</p>
+      <p className="text-xs text-neutral-500">{timeStr}</p>
       {isCardioOnly ? (
-        <p className="text-sm">
+        <p className="text-sm text-neutral-100">
           Cardio · {session.cardioMinutes} min
         </p>
       ) : (
         <>
-          <p className="text-sm">
+          <p className="text-sm text-neutral-100">
             {session.exerciseCount} exercise{session.exerciseCount !== 1 ? "s" : ""} · {session.totalSets} set{session.totalSets !== 1 ? "s" : ""}
             {session.cardioMinutes > 0 && ` · ${session.cardioMinutes} min cardio`}
           </p>
           {session.totalVolume > 0 && (
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-neutral-500">
               Volume: {session.totalVolume.toLocaleString()} lbs
             </p>
           )}

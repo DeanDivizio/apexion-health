@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui_primitives/card";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -25,29 +24,36 @@ export function MicroNutrientSummary({ nutrients }: MicroNutrientSummaryProps) {
   const others = filtered.filter((n) => n.category === "other");
 
   return (
-    <Card className="bg-neutral-800/50 backdrop-blur-xl border-neutral-700/50">
-      <CardHeader
-        className="pb-2 cursor-pointer select-none"
+    <div className="rounded-xl border border-white/10 bg-neutral-900/40 p-4 transition-colors hover:bg-neutral-800/50">
+      <div
+        className="flex items-center justify-between mb-2 cursor-pointer select-none gap-2"
         onClick={() => setExpanded((v) => !v)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setExpanded((v) => !v);
+          }
+        }}
+        role="button"
+        tabIndex={0}
+        aria-expanded={expanded}
       >
-        <CardTitle className="text-base flex items-center justify-between">
-          <span>Micro Nutrients</span>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground font-normal">
-              {filtered.length} tracked today
-            </span>
-            <ChevronDown
-              className={cn(
-                "w-4 h-4 text-muted-foreground transition-transform duration-200",
-                expanded && "rotate-180",
-              )}
-            />
-          </div>
-        </CardTitle>
-      </CardHeader>
+        <span className="text-xs text-yellow-400 opacity-80">Micro Nutrients</span>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-xs text-neutral-500">
+            {filtered.length} tracked today
+          </span>
+          <ChevronDown
+            className={cn(
+              "h-3.5 w-3.5 text-yellow-200 opacity-40 transition-transform duration-200",
+              expanded && "rotate-180",
+            )}
+          />
+        </div>
+      </div>
 
       {expanded && (
-        <CardContent className="pt-0 space-y-3">
+        <div className="space-y-3">
           {vitamins.length > 0 && (
             <NutrientGroup label="Vitamins" items={vitamins} />
           )}
@@ -58,13 +64,13 @@ export function MicroNutrientSummary({ nutrients }: MicroNutrientSummaryProps) {
             <NutrientGroup label="Other" items={others} />
           )}
           {filtered.length === 0 && (
-            <p className="text-xs text-muted-foreground text-center py-2">
+            <p className="text-xs text-neutral-500 text-center py-2">
               No micronutrient data logged today.
             </p>
           )}
-        </CardContent>
+        </div>
       )}
-    </Card>
+    </div>
   );
 }
 
@@ -77,7 +83,7 @@ function NutrientGroup({
 }) {
   return (
     <div>
-      <p className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1">
+      <p className="text-[10px] uppercase tracking-wider text-neutral-500 mb-1">
         {label}
       </p>
       <div className="space-y-0.5">
@@ -86,8 +92,8 @@ function NutrientGroup({
             key={n.nutrientKey}
             className="flex items-center justify-between text-xs py-0.5"
           >
-            <span className="text-muted-foreground">{n.nutrientName}</span>
-            <span className="font-mono text-foreground tabular-nums">
+            <span className="text-neutral-500">{n.nutrientName}</span>
+            <span className="font-mono text-neutral-100 tabular-nums">
               {formatAmount(n.amount)} {n.unit}
             </span>
           </div>

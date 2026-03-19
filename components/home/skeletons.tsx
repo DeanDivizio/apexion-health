@@ -36,11 +36,12 @@ function RingSkeleton({ className }: { className?: string }) {
 
 export function MacroSummarySkeleton() {
   return (
-    <Card className="bg-neutral-800/50 backdrop-blur-xl border-neutral-700/50">
-      <CardHeader className="pb-2">
-        <Bone className="h-5 w-32" />
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <div className="rounded-xl border border-white/10 bg-neutral-900/40 p-4">
+      <div className="flex items-center justify-between mb-2">
+        <Bone className="h-3 w-28" />
+        <Bone className="h-3.5 w-3.5 rounded" />
+      </div>
+      <div className="space-y-4">
         {Array.from({ length: 4 }).map((_, i) => (
           <div key={i} className="space-y-1.5">
             <div className="flex justify-between">
@@ -50,8 +51,8 @@ export function MacroSummarySkeleton() {
             <Bone className="h-2.5 w-full rounded-full" />
           </div>
         ))}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 
@@ -67,11 +68,12 @@ export function MacroRingChartsSkeleton() {
 
 export function HydrationSummarySkeleton() {
   return (
-    <Card className="bg-neutral-800/50 backdrop-blur-xl border-neutral-700/50">
-      <CardHeader className="pb-2">
-        <Bone className="h-5 w-44" />
-      </CardHeader>
-      <CardContent className="space-y-3">
+    <div className="rounded-xl border border-white/10 bg-neutral-900/40 p-4">
+      <div className="flex items-center justify-between mb-2">
+        <Bone className="h-3 w-40" />
+        <Bone className="h-3.5 w-3.5 rounded" />
+      </div>
+      <div className="space-y-3">
         <div className="space-y-1.5">
           <div className="flex justify-between">
             <Bone className="h-3 w-12" />
@@ -87,59 +89,62 @@ export function HydrationSummarySkeleton() {
             </div>
           ))}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 
 export function MicroNutrientSummarySkeleton() {
   return (
-    <Card className="bg-neutral-800/50 backdrop-blur-xl border-neutral-700/50">
-      <CardHeader className="pb-2">
-        <div className="flex justify-between">
-          <Bone className="h-5 w-32" />
-          <Bone className="h-4 w-24" />
+    <div className="rounded-xl border border-white/10 bg-neutral-900/40 p-4">
+      <div className="flex items-center justify-between mb-2 gap-2">
+        <Bone className="h-3 w-28" />
+        <div className="flex items-center gap-2 shrink-0">
+          <Bone className="h-3 w-20" />
+          <Bone className="h-3.5 w-3.5 rounded" />
         </div>
-      </CardHeader>
-      <CardContent className="space-y-2">
+      </div>
+      <div className="space-y-2">
         {Array.from({ length: 3 }).map((_, i) => (
           <div key={i} className="flex justify-between items-center">
             <Bone className="h-3 w-24" />
             <Bone className="h-3 w-16" />
           </div>
         ))}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 
 export function WorkoutSummarySkeleton() {
   return (
-    <Card className="bg-neutral-800/50 backdrop-blur-xl border-neutral-700/50">
-      <CardHeader className="pb-2">
-        <Bone className="h-5 w-36" />
-      </CardHeader>
-      <CardContent className="space-y-3">
+    <div className="rounded-xl border border-white/10 bg-neutral-900/40 p-4">
+      <div className="flex items-center justify-between mb-2">
+        <Bone className="h-3 w-32" />
+        <Bone className="h-3.5 w-3.5 rounded" />
+      </div>
+      <div className="space-y-3">
         <Bone className="h-3 w-20" />
         <Bone className="h-4 w-44" />
         <Bone className="h-3 w-32" />
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 
 export function MedsSummarySkeleton() {
   return (
-    <Card className="bg-neutral-800/50 backdrop-blur-xl border-neutral-700/50">
-      <CardHeader className="pb-2">
-        <Bone className="h-5 w-40" />
-      </CardHeader>
-      <CardContent className="space-y-3">
+    <div className="rounded-xl border border-white/10 bg-neutral-900/40 p-4">
+      <div className="flex items-center justify-between mb-2">
+        <Bone className="h-3 w-36" />
+        <Bone className="h-3.5 w-3.5 rounded" />
+      </div>
+      <div className="space-y-3">
         <Bone className="h-3 w-16" />
         {Array.from({ length: 3 }).map((_, i) => (
           <Bone key={i} className="h-4 w-48" />
         ))}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

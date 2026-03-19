@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui_primitives/card";
+import { Utensils } from "lucide-react";
 
 interface MacroSummarySmallProps {
   calories: number;
@@ -45,10 +45,10 @@ function MacroBar({
   return (
     <div className="space-y-1">
       <div className="flex justify-between text-xs">
-        <span className="text-muted-foreground">{label}</span>
-        <span className="font-mono text-foreground tabular-nums">
+        <span className="text-neutral-500">{label}</span>
+        <span className="font-mono text-neutral-100 tabular-nums">
           {Math.round(current)} / {Math.round(goal)}
-          {unit} <span className="text-muted-foreground">{pct}%</span>
+          {unit} <span className="text-neutral-500">{pct}%</span>
         </span>
       </div>
       <div className="h-2 rounded-full bg-neutral-500/50 overflow-hidden">
@@ -75,16 +75,17 @@ export function MacroSummarySmall({
   fatGoal,
 }: MacroSummarySmallProps) {
   return (
-    <Card className="bg-neutral-800/50 backdrop-blur-xl border-neutral-700/50">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base">Today&apos;s Macros</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
+    <div className="rounded-xl border border-white/10 bg-neutral-900/40 p-4 transition-colors hover:bg-neutral-800/50">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-xs text-amber-400 opacity-80">Today&apos;s Macros</span>
+        <Utensils className="h-3.5 w-3.5 text-amber-200 opacity-50 shrink-0" aria-hidden />
+      </div>
+      <div className="space-y-3">
         <MacroBar label="Calories" current={calories} goal={calorieGoal} unit=" kcal" />
         <MacroBar label="Protein" current={protein} goal={proteinGoal} unit="g" overOkay />
         <MacroBar label="Carbs" current={carbs} goal={carbGoal} unit="g" />
         <MacroBar label="Fat" current={fat} goal={fatGoal} unit="g" />
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

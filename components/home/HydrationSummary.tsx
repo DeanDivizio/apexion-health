@@ -1,6 +1,5 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui_primitives/card";
 import { Droplets } from "lucide-react";
 
 interface HydrationSummaryProps {
@@ -21,18 +20,16 @@ export function HydrationSummary({
   const waterPct = waterGoalOz > 0 ? Math.min(Math.round((waterOz / waterGoalOz) * 100), 100) : 0;
 
   return (
-    <Card className="bg-neutral-800/50 backdrop-blur-xl border-neutral-700/50">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base flex items-center gap-2">
-          <Droplets className="w-4 h-4 text-teal-400" />
-          Hydration & Electrolytes
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
+    <div className="rounded-xl border border-white/10 bg-neutral-900/40 p-4 transition-colors hover:bg-neutral-800/50">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-xs text-green-400 opacity-75">Hydration &amp; Electrolytes</span>
+        <Droplets className="h-3.5 w-3.5 text-green-200 opacity-40 shrink-0" aria-hidden />
+      </div>
+      <div className="space-y-3">
         <div className="space-y-1">
           <div className="flex justify-between text-xs">
-            <span className="text-muted-foreground">Water</span>
-            <span className="font-mono text-foreground tabular-nums">
+            <span className="text-neutral-500">Water</span>
+            <span className="font-mono text-neutral-100 tabular-nums">
               {Math.round(waterOz)} / {waterGoalOz} oz
             </span>
           </div>
@@ -49,8 +46,8 @@ export function HydrationSummary({
           <ElectrolyteCell label="Potassium" amount={potassiumMg} adequate={3000} />
           <ElectrolyteCell label="Magnesium" amount={magnesiumMg} adequate={400} />
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 
@@ -65,11 +62,11 @@ function ElectrolyteCell({
 }) {
   const pct = adequate > 0 ? (amount / adequate) * 100 : 0;
   const color =
-    pct >= 80 ? "text-teal-400" : pct >= 40 ? "text-amber-400" : "text-muted-foreground";
+    pct >= 80 ? "text-teal-400" : pct >= 40 ? "text-amber-400" : "text-neutral-500";
 
   return (
     <div className="text-center space-y-0.5">
-      <p className="text-[11px] text-muted-foreground">{label}</p>
+      <p className="text-[10px] text-neutral-500">{label}</p>
       <p className={`text-sm font-semibold tabular-nums ${color}`}>
         {Math.round(amount)} <span className="text-[10px] font-normal">mg</span>
       </p>
