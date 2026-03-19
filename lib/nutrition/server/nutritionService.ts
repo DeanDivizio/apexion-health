@@ -526,7 +526,7 @@ async function persistMealItems(
 
 // ─── Macro summary for homepage ──────────────────────────────────────────────
 
-export async function getMacroSummaryByDateRange(
+async function getMacroSummaryByDateRangeImpl(
   userId: string,
   startDate: string,
   endDate: string,
@@ -567,6 +567,19 @@ export async function getMacroSummaryByDateRange(
   } catch {
     return [];
   }
+}
+
+/** Cached per user; invalidate with `updateTag(\`macroSummary:${userId}\`)` after meal changes. */
+export async function getMacroSummaryByDateRange(
+  userId: string,
+  startDate: string,
+  endDate: string,
+): Promise<MacroSummaryByDate[]> {
+  "use cache";
+  cacheTag(`macroSummary:${userId}`);
+  cacheLife("hours");
+
+  return getMacroSummaryByDateRangeImpl(userId, startDate, endDate);
 }
 
 // ─── Micro nutrient summary ──────────────────────────────────────────────────

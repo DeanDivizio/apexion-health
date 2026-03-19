@@ -74,6 +74,7 @@ export async function createMealSessionAction(input: unknown) {
   const result = await createMealSession(userId, parsed);
   updateTag("hydrationSummary");
   updateTag("microSummary");
+  updateTag(`macroSummary:${userId}`);
   return result;
 }
 
@@ -97,13 +98,21 @@ export async function updateMealSessionAction(
   const userId = await requireUserId();
   if (!sessionId) throw new Error("Session ID is required.");
   const parsed = createMealSessionSchema.parse(input);
-  return updateMealSession(userId, sessionId, parsed);
+  const result = await updateMealSession(userId, sessionId, parsed);
+  updateTag("hydrationSummary");
+  updateTag("microSummary");
+  updateTag(`macroSummary:${userId}`);
+  return result;
 }
 
 export async function deleteMealSessionAction(sessionId: string) {
   const userId = await requireUserId();
   if (!sessionId) throw new Error("Session ID is required.");
-  return deleteMealSession(userId, sessionId);
+  const result = await deleteMealSession(userId, sessionId);
+  updateTag("hydrationSummary");
+  updateTag("microSummary");
+  updateTag(`macroSummary:${userId}`);
+  return result;
 }
 
 export async function getMacroSummaryAction(
@@ -112,6 +121,28 @@ export async function getMacroSummaryAction(
 ) {
   const userId = await requireUserId();
   return getMacroSummaryByDateRange(userId, startDate, endDate);
+}
+
+export interface TodayMacroTotals {
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+}
+
+/** Today’s macros only — fast path for home hero; uses cached macro queries. */
+export async function getTodayMacroTotalsAction(
+  dateStr: string,
+): Promise<TodayMacroTotals> {
+  const userId = await requireUserId();
+  const rows = await getMacroSummaryByDateRange(userId, dateStr, dateStr);
+  const row = rows.find((r) => r.dateStr === dateStr);
+  return {
+    calories: row?.calories ?? 0,
+    protein: row?.protein ?? 0,
+    carbs: row?.carbs ?? 0,
+    fat: row?.fat ?? 0,
+  };
 }
 
 export async function getUserGoalsAction() {

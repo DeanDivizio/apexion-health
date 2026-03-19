@@ -2,13 +2,13 @@
 
 import React, { useState, useEffect, useContext, Suspense, useCallback } from "react";
 import { homeFetch } from "@/actions/InternalLogic";
-import { getUserGoalsAction } from "@/actions/nutrition";
+import { getUserGoalsAction, getTodayMacroTotalsAction } from "@/actions/nutrition";
 import { getUserHomePreferencesAction } from "@/actions/settings";
 import { getHydrationSummaryAction } from "@/actions/hydration";
 import { getMicroNutrientSummaryAction } from "@/actions/nutrition";
 import { getWorkoutDaySummaryAction } from "@/actions/gym";
 import { getMedsDaySummaryAction } from "@/actions/medication";
-import { SignedIn, SignedOut, SignInButton, UserButton, useUser } from "@clerk/nextjs";
+import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 import { WeeklyDataDisplayComponent } from "@/components/home/WeeklySummary";
 import Footer from "@/components/global/Footer";
 import Defocuser from "@/components/global/Defocuser";
@@ -35,18 +35,20 @@ import type { MedsDaySummarySession } from "@/lib/medication/server/medicationSe
 import type { MicroNutrientEntry } from "@/lib/nutrition/server/nutritionService";
 import dynamic from "next/dynamic";
 import { toCompactDateStr } from "@/lib/dates/dateStr";
+import { Skeleton } from "@/components/ui_primitives/skeleton";
 
-const UniversalRingChart = dynamic(
-  () => import("@/components/charts/radialcharts/UniversalRingChart").then((m) => m.UniversalRingChart),
+const MacroRingChartsGrid = dynamic(
+  () =>
+    import("@/components/home/MacroRingChartsGrid").then((m) => m.MacroRingChartsGrid),
   {
     ssr: false,
-    loading: () => <div className="w-full h-[240px] rounded-xl bg-neutral-900/30 animate-pulse" />,
-  }
+    loading: () => <MacroRingChartsSkeleton />,
+  },
 );
 
 const BiometricsSummary = dynamic(
   () => import("@/components/home/BiometricsSummary").then((m) => m.BiometricsSummary),
-  { ssr: false }
+  { ssr: false },
 );
 
 function getTodayDateStrCompact(): string {
@@ -70,14 +72,13 @@ const SKELETON_MAP: Record<string, React.FC> = {
 };
 
 export default function Home() {
-  const { user, isLoaded } = useUser();
   const { setHeaderComponentLeft, setHeaderComponentRight, setMobileHeading } = useContext(MobileHeaderContext);
   const [data, setData] = useState<SummaryData>();
   const [todayCalories, setTodayCalories] = useState(0);
   const [todayProtein, setTodayProtein] = useState(0);
   const [todayCarbs, setTodayCarbs] = useState(0);
   const [todayFat, setTodayFat] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
+  const [weeklyLoading, setWeeklyLoading] = useState(true);
   const [calorieLimit, setCalorieLimit] = useState(0);
   const [proteinGoal, setProteinGoal] = useState(0);
   const [carbGoal, setCarbGoal] = useState(0);
@@ -94,48 +95,71 @@ export default function Home() {
     const endDate = getTodayDateStrCompact();
     const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     const startDate = toCompactDateStr(oneWeekAgo);
-    const todayDateStr = getTodayDateStrCompact();
+    const todayDateStr = endDate;
 
     if (!silent) {
-      setIsLoading(true);
+      setWeeklyLoading(true);
       setMacrosReady(false);
     }
 
     try {
-      const [response, goals, prefs, hydration, workout, meds, micro] =
-        await Promise.allSettled([
-          homeFetch({ startDate, endDate }),
-          getUserGoalsAction(),
-          getUserHomePreferencesAction(),
-          getHydrationSummaryAction(todayDateStr),
-          getWorkoutDaySummaryAction(todayDateStr),
-          getMedsDaySummaryAction(todayDateStr),
-          getMicroNutrientSummaryAction(todayDateStr),
-        ]);
+      // 1) Critical path: today’s macros + goals first (bundle-dynamic-imports: one chart chunk after this resolves)
+      const [macroTodayResult, goalsResult] = await Promise.allSettled([
+        getTodayMacroTotalsAction(todayDateStr),
+        getUserGoalsAction(),
+      ]);
 
-      if (response.status === "fulfilled") {
-        // @ts-ignore
-        setData(response.value as SummaryData);
-        setMacrosReady(true);
+      if (macroTodayResult.status === "fulfilled") {
+        const m = macroTodayResult.value;
+        setTodayCalories(m.calories);
+        setTodayProtein(m.protein);
+        setTodayCarbs(m.carbs);
+        setTodayFat(m.fat);
+      } else {
+        console.error(macroTodayResult.reason);
       }
-      if (goals.status === "fulfilled" && goals.value) {
-        setCalorieLimit(goals.value.calories ?? 0);
-        setProteinGoal(goals.value.protein ?? 0);
-        setCarbGoal(goals.value.carbs ?? 0);
-        setFatGoal(goals.value.fat ?? 0);
+
+      if (goalsResult.status === "fulfilled" && goalsResult.value) {
+        const g = goalsResult.value;
+        setCalorieLimit(g.calories ?? 0);
+        setProteinGoal(g.protein ?? 0);
+        setCarbGoal(g.carbs ?? 0);
+        setFatGoal(g.fat ?? 0);
       }
+
+      setMacrosReady(true);
+
+      // 2) Secondary cards — parallel (async-parallel / defer-await pattern: macros are not blocked by these)
+      const [prefs, hydration, workout, meds, micro] = await Promise.allSettled([
+        getUserHomePreferencesAction(),
+        getHydrationSummaryAction(todayDateStr),
+        getWorkoutDaySummaryAction(todayDateStr),
+        getMedsDaySummaryAction(todayDateStr),
+        getMicroNutrientSummaryAction(todayDateStr),
+      ]);
+
       if (prefs.status === "fulfilled") setPreferences(prefs.value);
       if (hydration.status === "fulfilled") setHydrationData(hydration.value);
       if (workout.status === "fulfilled") setWorkoutData(workout.value);
       if (meds.status === "fulfilled") setMedsData(meds.value);
       if (micro.status === "fulfilled") setMicroData(micro.value);
+
+      // 3) Recent days (7d) — fires last; does not block macro hero or secondary cards above
+      void homeFetch({ startDate, endDate })
+        .then((summary) => {
+          // @ts-ignore
+          setData(summary as SummaryData);
+        })
+        .catch((err) => {
+          console.error(err);
+        })
+        .finally(() => {
+          if (!silent) {
+            setWeeklyLoading(false);
+          }
+        });
     } catch (err) {
       console.error(err);
-    } finally {
-      if (!silent) {
-        setIsLoading(false);
-        setMacrosReady(true);
-      }
     }
   }, []);
 
@@ -163,17 +187,6 @@ export default function Home() {
   }, [dataFetch]);
 
   useEffect(() => {
-    if (data && data.length > 0) {
-      if (data[0].macros) {
-        setTodayCalories(data[0].macros.calories);
-        setTodayProtein(data[0].macros.protein);
-        setTodayCarbs(data[0].macros.carbs);
-        setTodayFat(data[0].macros.fat);
-      }
-    }
-  }, [data]);
-
-  useEffect(() => {
     setHeaderComponentLeft(<SideNav />);
     setHeaderComponentRight(
       <div className="flex items-center justify-center">
@@ -183,7 +196,7 @@ export default function Home() {
         <SignedOut>
           <SignInButton />
         </SignedOut>
-      </div>
+      </div>,
     );
     setMobileHeading("generic");
   }, [setHeaderComponentLeft, setHeaderComponentRight, setMobileHeading]);
@@ -206,53 +219,16 @@ export default function Home() {
           );
         }
         return (
-          <div className="grid grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 justify-around mb-0">
-            <UniversalRingChart
-              title="Today's Calorie Intake"
-              shortTitle="Calories"
-              subtext="Your maintenence calorie intake is"
-              subtextOrder="unit last"
-              description="Intake compared to maintenence"
-              unit="Calories"
-              value={Math.round(todayCalories)}
-              goal={calorieLimit}
-              shade="indigo"
-            />
-            <UniversalRingChart
-              title="Today's Protein Intake"
-              shortTitle="Protein"
-              subtext="Your daily protein goal is "
-              subtextOrder="unit last"
-              description="Intake compared to goal"
-              unit="grams"
-              value={Math.round(todayProtein)}
-              goal={proteinGoal}
-              shade="blue"
-              overOkay
-            />
-            <UniversalRingChart
-              title="Today's Carb Intake"
-              shortTitle="Carbs"
-              subtext="Your daily carb goal is "
-              subtextOrder="unit last"
-              description="Intake compared to goal"
-              unit="Grams"
-              value={Math.round(todayCarbs)}
-              goal={carbGoal}
-              shade="green"
-            />
-            <UniversalRingChart
-              title="Today's Fat Intake"
-              shortTitle="Fat"
-              subtext="Your daily fat goal is "
-              subtextOrder="unit last"
-              description="Intake compared to goal"
-              unit="Grams"
-              value={Math.round(todayFat)}
-              goal={fatGoal}
-              shade="indigo"
-            />
-          </div>
+          <MacroRingChartsGrid
+            todayCalories={todayCalories}
+            todayProtein={todayProtein}
+            todayCarbs={todayCarbs}
+            todayFat={todayFat}
+            calorieGoal={calorieLimit}
+            proteinGoal={proteinGoal}
+            carbGoal={carbGoal}
+            fatGoal={fatGoal}
+          />
         );
       }
       case "hydrationSummary":
@@ -296,7 +272,9 @@ export default function Home() {
           <h3 className="text-5xl w-full font-regular tracking-normal mt-4 xl:mt-0 mb-8 text-center">Recent Days</h3>
           {data ? (
             // @ts-ignore
-            <WeeklyDataDisplayComponent isLoading={isLoading} data={data} />
+            <WeeklyDataDisplayComponent isLoading={weeklyLoading} data={data} />
+          ) : weeklyLoading ? (
+            <Skeleton className="w-full bg-neutral-800 h-32 mb-4" />
           ) : null}
         </div>
         <div className="col-span-1 xl:col-span-2 order-1 xl:order-2 xl:h-[95vh] overflow-y-scroll xl:p-4 rounded-xl backdrop-blur-xl">
