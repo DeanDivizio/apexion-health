@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Activity, Link2 } from "lucide-react";
 import {
-  getOverlappingWorkouts,
-  getAssociatedWorkout,
+  getWorkoutLinkState,
   associateWorkoutToSession,
   type WorkoutCandidate,
 } from "@/actions/biometrics";
@@ -12,8 +11,6 @@ import {
 interface WhoopWorkoutDataProps {
   sessionId: string;
   dateStr: string;
-  startTimeStr: string;
-  endTimeStr: string;
   onLinkedProvider?: (provider: string) => void;
 }
 
@@ -117,8 +114,6 @@ function WorkoutDisplay({ workout }: { workout: WorkoutCandidate }) {
 export function WhoopWorkoutData({
   sessionId,
   dateStr,
-  startTimeStr,
-  endTimeStr,
   onLinkedProvider,
 }: WhoopWorkoutDataProps) {
   const [associated, setAssociated] = useState<WorkoutCandidate | null>(null);
@@ -126,41 +121,43 @@ export function WhoopWorkoutData({
   const [loaded, setLoaded] = useState(false);
   const [linking, setLinking] = useState(false);
 
+  const onLinkedProviderRef = useRef(onLinkedProvider);
+  onLinkedProviderRef.current = onLinkedProvider;
+
   useEffect(() => {
+    let cancelled = false;
+
     async function load() {
       try {
-        const assoc = await getAssociatedWorkout(sessionId);
-        if (assoc) {
-          setAssociated(assoc);
-          onLinkedProvider?.("whoop");
+        const state = await getWorkoutLinkState(sessionId, dateStr);
+        if (cancelled) return;
+
+        if (state.linked) {
+          setAssociated(state.linked);
+          onLinkedProviderRef.current?.("whoop");
+        } else if (state.candidates.length === 1) {
+          setLinking(true);
+          await associateWorkoutToSession(state.candidates[0].id, sessionId);
+          if (cancelled) return;
+          setAssociated(state.candidates[0]);
+          setCandidates([]);
+          onLinkedProviderRef.current?.("whoop");
         } else {
-          const overlaps = await getOverlappingWorkouts(
-            sessionId,
-            dateStr,
-            startTimeStr,
-            endTimeStr,
-          );
-          const available = overlaps.filter((w) => !w.gymSessionId);
-          if (available.length === 1) {
-            // Auto-link when there is exactly one unambiguous candidate.
-            setLinking(true);
-            await associateWorkoutToSession(available[0].id, sessionId);
-            setAssociated(available[0]);
-            setCandidates([]);
-            onLinkedProvider?.("whoop");
-          } else {
-            setCandidates(available);
-          }
+          setCandidates(state.candidates);
         }
       } catch {
         // No biometric data available
       } finally {
-        setLinking(false);
-        setLoaded(true);
+        if (!cancelled) {
+          setLinking(false);
+          setLoaded(true);
+        }
       }
     }
+
     load();
-  }, [sessionId, dateStr, startTimeStr, endTimeStr, onLinkedProvider]);
+    return () => { cancelled = true; };
+  }, [sessionId, dateStr]);
 
   if (!loaded) return null;
 

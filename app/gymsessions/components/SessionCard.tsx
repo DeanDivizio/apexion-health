@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import { Activity, ChevronDown, Pencil, Settings, Trash2 } from "lucide-react"
 import {
   DropdownMenu,
@@ -55,6 +55,12 @@ export function SessionCard({
   const [linkedProviders, setLinkedProviders] = useState<string[]>(
     session.linkedBiometricProviders ?? [],
   )
+
+  const handleLinkedProvider = useCallback((provider: string) => {
+    setLinkedProviders((prev) =>
+      prev.includes(provider) ? prev : [...prev, provider],
+    );
+  }, []);
 
   const uniqueLinkedProviders = useMemo(
     () => [...new Set(linkedProviders.map((provider) => provider.toLowerCase()))],
@@ -171,11 +177,7 @@ export function SessionCard({
               <WhoopWorkoutData
                 sessionId={session.id}
                 dateStr={session.date}
-                startTimeStr={session.startTime}
-                endTimeStr={session.endTime}
-                onLinkedProvider={(provider) =>
-                  setLinkedProviders((prev) => [...prev, provider])
-                }
+                onLinkedProvider={handleLinkedProvider}
               />
             </div>
           </div>

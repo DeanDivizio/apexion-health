@@ -173,7 +173,7 @@ export async function getTodayBiometrics() {
   return null;
 }
 
-// ─── Gym Session <-> Whoop Workout Association ───────────────────────────────
+// ─── Gym Session <-> Biometric Workout Association ──────────────────────────
 
 export interface WorkoutCandidate {
   id: string;
@@ -195,6 +195,11 @@ export interface WorkoutCandidate {
   gymSessionId: string | null;
 }
 
+export interface WorkoutLinkState {
+  linked: WorkoutCandidate | null;
+  candidates: WorkoutCandidate[];
+}
+
 function shiftDateStr(dateStr: string, deltaDays: number): string {
   const y = parseInt(dateStr.slice(0, 4), 10);
   const m = parseInt(dateStr.slice(4, 6), 10) - 1;
@@ -207,69 +212,8 @@ function shiftDateStr(dateStr: string, deltaDays: number): string {
   return `${yy}${mm}${dd}`;
 }
 
-/**
- * Parse a dateStr (YYYYMMDD) + timeStr (like "9:30 AM") into a Date.
- */
-function parseSessionTime(dateStr: string, timeStr: string): Date {
-  const y = parseInt(dateStr.slice(0, 4), 10);
-  const m = parseInt(dateStr.slice(4, 6), 10) - 1;
-  const d = parseInt(dateStr.slice(6, 8), 10);
-
-  const match = timeStr.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
-  if (!match) return new Date(y, m, d);
-
-  let hours = parseInt(match[1], 10);
-  const minutes = parseInt(match[2], 10);
-  const ampm = match[3].toUpperCase();
-
-  if (ampm === "PM" && hours !== 12) hours += 12;
-  if (ampm === "AM" && hours === 12) hours = 0;
-
-  return new Date(y, m, d, hours, minutes);
-}
-
-/**
- * Find BiometricWorkout records that overlap a gym session's time window.
- */
-export async function getOverlappingWorkouts(
-  sessionId: string,
-  dateStr: string,
-  startTimeStr: string,
-  endTimeStr: string,
-): Promise<WorkoutCandidate[]> {
-  void sessionId;
-  const { userId } = await auth();
-  if (!userId) throw new Error("Not authenticated");
-
-  const sessionStart = parseSessionTime(dateStr, startTimeStr);
-  const sessionEnd = parseSessionTime(dateStr, endTimeStr);
-
-  // Look for Whoop workouts that overlap the session time window
-  // Overlap condition: workout.start < session.end AND workout.end > session.start
-  let workouts = await prisma.biometricWorkout.findMany({
-    where: {
-      userId,
-      start: { lt: sessionEnd },
-      end: { gt: sessionStart },
-    },
-    orderBy: { start: "asc" },
-  });
-
-  if (workouts.length === 0) {
-    // Fallback for timezone skew between session-local clock times and server-side parsing.
-    // Surface nearby-date workouts so users can still link manually.
-    workouts = await prisma.biometricWorkout.findMany({
-      where: {
-        userId,
-        dateStr: {
-          in: [shiftDateStr(dateStr, -1), dateStr, shiftDateStr(dateStr, 1)],
-        },
-      },
-      orderBy: { start: "asc" },
-    });
-  }
-
-  return workouts.map((w) => ({
+function toWorkoutCandidate(w: BiometricWorkout): WorkoutCandidate {
+  return {
     id: w.id,
     providerWorkoutId: w.providerWorkoutId,
     sportName: w.sportName,
@@ -287,11 +231,57 @@ export async function getOverlappingWorkouts(
     zoneFiveMilli: w.zoneFiveMilli,
     distanceMeter: w.distanceMeter,
     gymSessionId: w.gymSessionId,
-  }));
+  };
+}
+
+/**
+ * Returns the biometric link state for a gym session in a single round trip.
+ *
+ * Matching uses dateStr (local calendar day) rather than absolute timestamp
+ * overlap, which avoids timezone mismatches between the user-entered session
+ * times and UTC-stored biometric timestamps. Same-day matches are ranked first;
+ * ±1 day is included for midnight / timezone edge cases.
+ */
+export async function getWorkoutLinkState(
+  sessionId: string,
+  dateStr: string,
+): Promise<WorkoutLinkState> {
+  const { userId } = await auth();
+  if (!userId) throw new Error("Not authenticated");
+
+  const linked = await prisma.biometricWorkout.findFirst({
+    where: { userId, gymSessionId: sessionId },
+  });
+
+  if (linked) {
+    return { linked: toWorkoutCandidate(linked), candidates: [] };
+  }
+
+  const workouts = await prisma.biometricWorkout.findMany({
+    where: {
+      userId,
+      gymSessionId: null,
+      dateStr: {
+        in: [shiftDateStr(dateStr, -1), dateStr, shiftDateStr(dateStr, 1)],
+      },
+    },
+    orderBy: { start: "asc" },
+  });
+
+  const candidates = [
+    ...workouts.filter((w) => w.dateStr === dateStr),
+    ...workouts.filter((w) => w.dateStr !== dateStr),
+  ];
+
+  return {
+    linked: null,
+    candidates: candidates.map(toWorkoutCandidate),
+  };
 }
 
 /**
  * Associate a BiometricWorkout with a GymWorkoutSession.
+ * Fails if the workout is already linked to a different session.
  */
 export async function associateWorkoutToSession(
   biometricWorkoutId: string,
@@ -300,14 +290,22 @@ export async function associateWorkoutToSession(
   const { userId } = await auth();
   if (!userId) throw new Error("Not authenticated");
 
-  await prisma.biometricWorkout.update({
-    where: { id: biometricWorkoutId, userId },
+  const result = await prisma.biometricWorkout.updateMany({
+    where: {
+      id: biometricWorkoutId,
+      userId,
+      OR: [{ gymSessionId: null }, { gymSessionId }],
+    },
     data: { gymSessionId },
   });
+
+  if (result.count === 0) {
+    throw new Error("Workout not found or already linked to another session");
+  }
 }
 
 /**
- * Get the associated Whoop workout for a gym session (if any).
+ * Get the associated biometric workout for a gym session (if any).
  */
 export async function getAssociatedWorkout(
   gymSessionId: string,
@@ -319,25 +317,5 @@ export async function getAssociatedWorkout(
     where: { userId, gymSessionId },
   });
 
-  if (!workout) return null;
-
-  return {
-    id: workout.id,
-    providerWorkoutId: workout.providerWorkoutId,
-    sportName: workout.sportName,
-    start: workout.start.toISOString(),
-    end: workout.end.toISOString(),
-    strain: workout.strain,
-    averageHeartRate: workout.averageHeartRate,
-    maxHeartRate: workout.maxHeartRate,
-    kilojoule: workout.kilojoule,
-    zoneZeroMilli: workout.zoneZeroMilli,
-    zoneOneMilli: workout.zoneOneMilli,
-    zoneTwoMilli: workout.zoneTwoMilli,
-    zoneThreeMilli: workout.zoneThreeMilli,
-    zoneFourMilli: workout.zoneFourMilli,
-    zoneFiveMilli: workout.zoneFiveMilli,
-    distanceMeter: workout.distanceMeter,
-    gymSessionId: workout.gymSessionId,
-  };
+  return workout ? toWorkoutCandidate(workout) : null;
 }
