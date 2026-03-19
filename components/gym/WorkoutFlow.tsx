@@ -143,6 +143,21 @@ export function WorkoutFlow({ userMeta, customExerciseGroups }: WorkoutFlowProps
 
   // ---- Persist to localStorage on every change ----
   useEffect(() => {
+    const hasStagedExercises = exercises.length > 0;
+    const hasValidActiveSets =
+      activeExerciseKey !== null &&
+      activeSets.some(
+        (s) =>
+          s.weight > 0 &&
+          ((s.reps.bilateral !== undefined && s.reps.bilateral > 0) ||
+            ((s.reps.left ?? 0) > 0 && (s.reps.right ?? 0) > 0)),
+      );
+
+    if (!hasStagedExercises && !hasValidActiveSets) {
+      clearPersistedState();
+      return;
+    }
+
     const state: PersistedState = {
       view,
       exercises,
@@ -360,6 +375,9 @@ export function WorkoutFlow({ userMeta, customExerciseGroups }: WorkoutFlowProps
     setActiveExerciseKey(null);
     setActiveSets([{ weight: 0, reps: { bilateral: 0 } }]);
     setActiveVariations({});
+    setSessionDate(new Date());
+    setStartTime(formatTimeNow());
+    setEndTime(null);
     setView("addExercise");
 
     toast({

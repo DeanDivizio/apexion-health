@@ -465,10 +465,13 @@ export async function createWorkoutSession(userId: string, session: WorkoutSessi
 export async function getWorkoutSession(
   userId: string,
   sessionId: string,
-): Promise<(WorkoutSession & { id: string }) | null> {
+): Promise<(WorkoutSession & { id: string; linkedBiometricProviders: string[] }) | null> {
   const session = await prisma.gymWorkoutSession.findFirst({
     where: { id: sessionId, userId },
     include: {
+      biometricWorkouts: {
+        select: { provider: true },
+      },
       exercises: {
         orderBy: { order: "asc" },
         include: {
@@ -486,6 +489,7 @@ export async function getWorkoutSession(
     date: session.dateStr,
     startTime: session.startTimeStr,
     endTime: session.endTimeStr,
+    linkedBiometricProviders: [...new Set(session.biometricWorkouts.map((workout) => workout.provider))],
     exercises: session.exercises.map(transformExercise),
   };
 }
@@ -497,7 +501,7 @@ export async function getWorkoutSession(
 export async function listWorkoutSessions(
   userId: string,
   options?: { startDate?: string; endDate?: string },
-): Promise<Array<WorkoutSession & { id: string }>> {
+): Promise<Array<WorkoutSession & { id: string; linkedBiometricProviders: string[] }>> {
   const sessions = await prisma.gymWorkoutSession.findMany({
     where: {
       userId,
@@ -512,6 +516,9 @@ export async function listWorkoutSessions(
     },
     orderBy: [{ dateStr: "desc" }, { startTimeStr: "desc" }],
     include: {
+      biometricWorkouts: {
+        select: { provider: true },
+      },
       exercises: {
         orderBy: { order: "asc" },
         include: {
@@ -527,6 +534,7 @@ export async function listWorkoutSessions(
     date: session.dateStr,
     startTime: session.startTimeStr,
     endTime: session.endTimeStr,
+    linkedBiometricProviders: [...new Set(session.biometricWorkouts.map((workout) => workout.provider))],
     exercises: session.exercises.map(transformExercise),
   }));
 }

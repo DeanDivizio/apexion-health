@@ -1,6 +1,6 @@
 "use client"
 
-import { ChevronDown, Pencil, Settings, Trash2 } from "lucide-react"
+import { Activity, ChevronDown, Pencil, Settings, Trash2 } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,6 +20,29 @@ interface SessionCardProps {
   onRequestDelete: () => void
 }
 
+const BIOMETRIC_PROVIDER_BADGE_CONFIG: Record<
+  string,
+  { label: string; className: string }
+> = {
+  whoop: {
+    label: "WHOOP",
+    className: "border-cyan-400/40 bg-cyan-500/10 text-cyan-300",
+  },
+}
+
+function getProviderBadge(provider: string): {
+  label: string
+  className: string
+} {
+  const normalized = provider.toLowerCase()
+  return (
+    BIOMETRIC_PROVIDER_BADGE_CONFIG[normalized] ?? {
+      label: provider.toUpperCase(),
+      className: "border-emerald-400/30 bg-emerald-500/10 text-emerald-300",
+    }
+  )
+}
+
 export function SessionCard({
   session,
   isOpen,
@@ -28,6 +51,7 @@ export function SessionCard({
   onRequestDelete,
 }: SessionCardProps) {
   const sessionVolume = calcSessionVolume(session)
+  const linkedProviders = session.linkedBiometricProviders ?? []
 
   return (
     <div
@@ -57,6 +81,25 @@ export function SessionCard({
             <p className="text-xs text-muted-foreground mt-0.5">
               {session.startTime} – {session.endTime}
             </p>
+            {linkedProviders.length > 0 && (
+              <div className="mt-1.5 flex items-center gap-1.5">
+                <span className="inline-flex items-center rounded-full border border-emerald-400/30 bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-emerald-300">
+                  <Activity className="mr-1 h-2.5 w-2.5" />
+                  Linked
+                </span>
+                {linkedProviders.map((provider) => {
+                  const badge = getProviderBadge(provider)
+                  return (
+                    <span
+                      key={provider}
+                      className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide ${badge.className}`}
+                    >
+                      {badge.label}
+                    </span>
+                  )
+                })}
+              </div>
+            )}
           </button>
 
           <div className="flex items-center gap-1 shrink-0">
