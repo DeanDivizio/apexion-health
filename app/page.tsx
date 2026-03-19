@@ -84,6 +84,7 @@ export default function Home() {
   const [fatGoal, setFatGoal] = useState(0);
 
   const [preferences, setPreferences] = useState<UserHomePreferencesView | null>(null);
+  const [macrosReady, setMacrosReady] = useState(false);
   const [hydrationData, setHydrationData] = useState<HydrationSummaryView | null>(null);
   const [workoutData, setWorkoutData] = useState<WorkoutDaySummarySession[] | null>(null);
   const [medsData, setMedsData] = useState<MedsDaySummarySession[] | null>(null);
@@ -97,59 +98,43 @@ export default function Home() {
 
     if (!silent) {
       setIsLoading(true);
+      setMacrosReady(false);
     }
 
     try {
-      const [response, goals, prefs] = await Promise.all([
-        homeFetch({ startDate, endDate }),
-        getUserGoalsAction(),
-        getUserHomePreferencesAction(),
-      ]);
-      // @ts-ignore
-      setData(response as SummaryData);
-      if (goals) {
-        setCalorieLimit(goals.calories ?? 0);
-        setProteinGoal(goals.protein ?? 0);
-        setCarbGoal(goals.carbs ?? 0);
-        setFatGoal(goals.fat ?? 0);
-      }
-      setPreferences(prefs);
+      const [response, goals, prefs, hydration, workout, meds, micro] =
+        await Promise.allSettled([
+          homeFetch({ startDate, endDate }),
+          getUserGoalsAction(),
+          getUserHomePreferencesAction(),
+          getHydrationSummaryAction(todayDateStr),
+          getWorkoutDaySummaryAction(todayDateStr),
+          getMedsDaySummaryAction(todayDateStr),
+          getMicroNutrientSummaryAction(todayDateStr),
+        ]);
 
-      const supplementaryPromises: Promise<void>[] = [];
-      const resolvedPrefs = prefs ?? {
-        showHydrationSummary: true,
-        showWorkoutSummary: true,
-        showMedsSummary: true,
-        showMicroNutrientSummary: true,
-      };
-
-      if (resolvedPrefs.showHydrationSummary) {
-        supplementaryPromises.push(
-          getHydrationSummaryAction(todayDateStr).then(setHydrationData),
-        );
+      if (response.status === "fulfilled") {
+        // @ts-ignore
+        setData(response.value as SummaryData);
+        setMacrosReady(true);
       }
-      if (resolvedPrefs.showWorkoutSummary) {
-        supplementaryPromises.push(
-          getWorkoutDaySummaryAction(todayDateStr).then(setWorkoutData),
-        );
+      if (goals.status === "fulfilled" && goals.value) {
+        setCalorieLimit(goals.value.calories ?? 0);
+        setProteinGoal(goals.value.protein ?? 0);
+        setCarbGoal(goals.value.carbs ?? 0);
+        setFatGoal(goals.value.fat ?? 0);
       }
-      if (resolvedPrefs.showMedsSummary) {
-        supplementaryPromises.push(
-          getMedsDaySummaryAction(todayDateStr).then(setMedsData),
-        );
-      }
-      if (resolvedPrefs.showMicroNutrientSummary) {
-        supplementaryPromises.push(
-          getMicroNutrientSummaryAction(todayDateStr).then(setMicroData),
-        );
-      }
-
-      await Promise.all(supplementaryPromises);
+      if (prefs.status === "fulfilled") setPreferences(prefs.value);
+      if (hydration.status === "fulfilled") setHydrationData(hydration.value);
+      if (workout.status === "fulfilled") setWorkoutData(workout.value);
+      if (meds.status === "fulfilled") setMedsData(meds.value);
+      if (micro.status === "fulfilled") setMicroData(micro.value);
     } catch (err) {
       console.error(err);
     } finally {
       if (!silent) {
         setIsLoading(false);
+        setMacrosReady(true);
       }
     }
   }, []);
@@ -325,7 +310,7 @@ export default function Home() {
 
               const isDataLoaded =
                 key === "macroSummary"
-                  ? !isLoading
+                  ? macrosReady
                   : key === "hydrationSummary"
                     ? hydrationData !== null
                     : key === "workoutSummary"
