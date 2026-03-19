@@ -1,6 +1,7 @@
 "use server";
 
 import { auth } from "@clerk/nextjs/server";
+import { updateTag } from "next/cache";
 import {
   createMedicationLogSessionInputSchema,
   createMedicationPresetInputSchema,
@@ -11,6 +12,7 @@ import {
   createMedicationPreset,
   createSubstance,
   deleteMedicationLogSession,
+  getMedsDaySummary,
   getMedicationBootstrap,
   listMedicationLogSessions,
   updateMedicationLogSession,
@@ -42,7 +44,11 @@ export async function createMedicationPresetAction(input: unknown) {
 export async function createMedicationLogSessionAction(input: unknown) {
   const userId = await requireUserId();
   const parsed = createMedicationLogSessionInputSchema.parse(input);
-  return createMedicationLogSession(userId, parsed);
+  const result = await createMedicationLogSession(userId, parsed);
+  updateTag("medsSummary");
+  updateTag("microSummary");
+  updateTag("hydrationSummary");
+  return result;
 }
 
 export async function listMedicationLogSessionsAction() {
@@ -63,5 +69,14 @@ export async function updateMedicationLogSessionAction(
 export async function deleteMedicationLogSessionAction(sessionId: string) {
   const userId = await requireUserId();
   if (!sessionId) throw new Error("Session ID is required.");
-  return deleteMedicationLogSession(userId, sessionId);
+  const result = await deleteMedicationLogSession(userId, sessionId);
+  updateTag("medsSummary");
+  updateTag("microSummary");
+  updateTag("hydrationSummary");
+  return result;
+}
+
+export async function getMedsDaySummaryAction(dateStr: string) {
+  const userId = await requireUserId();
+  return getMedsDaySummary(userId, dateStr);
 }

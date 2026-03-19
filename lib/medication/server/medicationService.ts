@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db/prisma";
+import { cacheTag, cacheLife } from "next/cache";
 import type {
   MedicationBootstrap,
   MedicationDraftItem,
@@ -309,6 +310,72 @@ async function persistLogItemsForSession(
     await tx.substanceLogItemIngredient.createMany({
       data: ingredientRows,
     });
+  }
+}
+
+// ─── Meds Day Summary (for home screen) ──────────────────────────────────────
+
+export interface MedsDaySummarySession {
+  sessionId: string;
+  loggedAt: string;
+  items: Array<{
+    substanceName: string;
+    doseValue: number | null;
+    doseUnit: string | null;
+    compoundServings: number | null;
+    deliveryMethod: string | null;
+  }>;
+}
+
+export async function getMedsDaySummary(
+  userId: string,
+  dateStr: string,
+): Promise<MedsDaySummarySession[]> {
+  "use cache";
+  cacheTag("medsSummary");
+  cacheLife("hours");
+
+  if (!hasCatalogModels()) return [];
+
+  try {
+    const sessions = await db.substanceLogSession.findMany({
+      where: {
+        userId,
+        loggedAt: {
+          gte: new Date(`${dateStr}T00:00:00.000Z`),
+          lt: new Date(`${dateStr}T23:59:59.999Z`),
+        },
+      },
+      orderBy: { loggedAt: "asc" },
+      include: {
+        items: {
+          orderBy: { sortOrder: "asc" },
+          select: {
+            snapshotName: true,
+            doseValue: true,
+            doseUnit: true,
+            compoundServings: true,
+            deliveryMethod: {
+              select: { label: true },
+            },
+          },
+        },
+      },
+    });
+
+    return sessions.map((session: any) => ({
+      sessionId: session.id,
+      loggedAt: session.loggedAt.toISOString(),
+      items: session.items.map((item: any) => ({
+        substanceName: item.snapshotName,
+        doseValue: item.doseValue,
+        doseUnit: item.doseUnit,
+        compoundServings: item.compoundServings,
+        deliveryMethod: item.deliveryMethod?.label ?? null,
+      })),
+    }));
+  } catch {
+    return [];
   }
 }
 

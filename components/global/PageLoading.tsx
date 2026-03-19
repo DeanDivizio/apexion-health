@@ -1,7 +1,10 @@
 export default function PageLoading() {
     return (
-        <div className="flex flex-col items-center justify-start pt-20 h-screen">
-            <div className="pt-48 bg-gradient-to-r from-blue-400 to-green-400 text-4xl font-bold animate-pulse bg-clip-text text-transparent">A</div>
+        <div className="fixed inset-0 grid place-items-center bg-black text-white">
+            <div className="flex flex-col items-center gap-4">
+                <div className="h-14 w-14 rounded-2xl border-4 border-white/70 border-t-transparent animate-spin" />
+                <p className="text-sm font-semibold tracking-wide text-white/90">Apexion Health</p>
+            </div>
         </div>
     )
 }

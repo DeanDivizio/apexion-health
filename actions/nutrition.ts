@@ -9,6 +9,7 @@ import {
   createUserFoodSchema,
   upsertUserGoalsSchema,
 } from "@/lib/nutrition";
+import { updateTag } from "next/cache";
 import {
   bulkCreateRetailItems,
   createMealSession,
@@ -18,6 +19,7 @@ import {
   deleteMealSession,
   getMacroSummaryByDateRange,
   getMealSession,
+  getMicroNutrientSummary,
   getNutritionBootstrap,
   getUserGoals,
   listMealSessions,
@@ -69,7 +71,10 @@ export async function createRetailUserItemAction(input: unknown) {
 export async function createMealSessionAction(input: unknown) {
   const userId = await requireUserId();
   const parsed = createMealSessionSchema.parse(input);
-  return createMealSession(userId, parsed);
+  const result = await createMealSession(userId, parsed);
+  updateTag("hydrationSummary");
+  updateTag("microSummary");
+  return result;
 }
 
 export async function listMealSessionsAction(options?: {
@@ -117,7 +122,14 @@ export async function getUserGoalsAction() {
 export async function upsertUserGoalsAction(input: unknown) {
   const userId = await requireUserId();
   const parsed = upsertUserGoalsSchema.parse(input);
-  return upsertUserGoals(userId, parsed);
+  const result = await upsertUserGoals(userId, parsed);
+  updateTag("nutritionGoals");
+  return result;
+}
+
+export async function getMicroNutrientSummaryAction(dateStr: string) {
+  const userId = await requireUserId();
+  return getMicroNutrientSummary(userId, dateStr);
 }
 
 export async function createRetailChainAction(input: unknown) {

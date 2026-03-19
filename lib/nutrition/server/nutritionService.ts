@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db/prisma";
+import { cacheTag, cacheLife } from "next/cache";
 import { NUTRIENT_KEYS, resolveNutrientMeta } from "@/lib/nutrition/nutrientKeys";
 import type {
   FoundationFoodView,
@@ -567,11 +568,143 @@ export async function getMacroSummaryByDateRange(
   }
 }
 
+// ─── Micro nutrient summary ──────────────────────────────────────────────────
+
+export interface MicroNutrientEntry {
+  nutrientKey: string;
+  nutrientName: string;
+  amount: number;
+  unit: string;
+  category: "vitamin" | "mineral" | "other";
+}
+
+const MACRO_KEYS = new Set([
+  "calories", "protein", "carbs", "fat",
+  "saturated-fat", "trans-fat", "fiber", "sugars", "added-sugars",
+]);
+
+export async function getMicroNutrientSummary(
+  userId: string,
+  dateStr: string,
+): Promise<MicroNutrientEntry[]> {
+  "use cache";
+  cacheTag("microSummary");
+  cacheLife("hours");
+
+  if (!hasNutritionModels()) return [];
+
+  try {
+    const [mealNutrients, substanceIngredients] = await Promise.all([
+      db.nutritionMealItemNutrient.findMany({
+        where: {
+          mealItem: {
+            session: { userId, dateStr },
+          },
+        },
+        select: {
+          nutrientKey: true,
+          nutrientName: true,
+          amount: true,
+          unit: true,
+        },
+      }),
+      db.substanceLogItemIngredient.findMany({
+        where: {
+          logItem: {
+            session: {
+              userId,
+              loggedAt: {
+                gte: new Date(`${dateStr}T00:00:00.000Z`),
+                lt: new Date(`${dateStr}T23:59:59.999Z`),
+              },
+            },
+          },
+        },
+        select: {
+          ingredientKey: true,
+          ingredientName: true,
+          amountTotal: true,
+          unit: true,
+        },
+      }),
+    ]);
+
+    const totals = new Map<
+      string,
+      { name: string; amount: number; unit: string }
+    >();
+
+    for (const n of mealNutrients) {
+      if (MACRO_KEYS.has(n.nutrientKey)) continue;
+      const existing = totals.get(n.nutrientKey);
+      if (existing) {
+        existing.amount += n.amount;
+      } else {
+        totals.set(n.nutrientKey, {
+          name: n.nutrientName,
+          amount: n.amount,
+          unit: n.unit,
+        });
+      }
+    }
+
+    for (const ing of substanceIngredients) {
+      if (MACRO_KEYS.has(ing.ingredientKey)) continue;
+      const existing = totals.get(ing.ingredientKey);
+      if (existing) {
+        existing.amount += ing.amountTotal;
+      } else {
+        totals.set(ing.ingredientKey, {
+          name: ing.ingredientName,
+          amount: ing.amountTotal,
+          unit: ing.unit,
+        });
+      }
+    }
+
+    const result: MicroNutrientEntry[] = [];
+    for (const [key, data] of totals) {
+      const meta = NUTRIENT_KEYS[
+        Object.keys(NUTRIENT_KEYS).find(
+          (k) => NUTRIENT_KEYS[k].key === key,
+        ) ?? ""
+      ];
+      const category: "vitamin" | "mineral" | "other" =
+        meta?.category === "vitamin"
+          ? "vitamin"
+          : meta?.category === "mineral"
+            ? "mineral"
+            : "other";
+
+      result.push({
+        nutrientKey: key,
+        nutrientName: meta?.name ?? data.name,
+        amount: data.amount,
+        unit: meta?.unit ?? data.unit,
+        category,
+      });
+    }
+
+    return result.sort((a, b) => {
+      const catOrder = { vitamin: 0, mineral: 1, other: 2 };
+      const catDiff = catOrder[a.category] - catOrder[b.category];
+      if (catDiff !== 0) return catDiff;
+      return a.nutrientName.localeCompare(b.nutrientName);
+    });
+  } catch {
+    return [];
+  }
+}
+
 // ─── User goals ──────────────────────────────────────────────────────────────
 
 export async function getUserGoals(
   userId: string,
 ): Promise<NutritionUserGoalsView | null> {
+  "use cache";
+  cacheTag("nutritionGoals");
+  cacheLife("hours");
+
   if (!hasNutritionModels()) return null;
 
   try {

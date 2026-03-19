@@ -7,7 +7,7 @@ export default function manifest(): MetadataRoute.Manifest {
     "description": "Comprehensive Health Tracking for Data Enthusiasts",
     "start_url": "/",
     "display": "standalone",
-    "background_color": "#ffffff",
+    "background_color": "#000000",
     "theme_color": "#000000",
     "orientation": "portrait",
     "scope": "/",

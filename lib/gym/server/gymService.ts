@@ -21,6 +21,7 @@
  */
 
 import { prisma } from "@/lib/db/prisma";
+import { cacheTag, cacheLife } from "next/cache";
 import {
   EXERCISE_MAP,
   VARIATION_TEMPLATES,
@@ -875,6 +876,99 @@ export async function getGymMeta(userId: string): Promise<GymUserMeta> {
     customExerciseDefinitions,
     exerciseData,
   };
+}
+
+// =============================================================================
+// WORKOUT DAY SUMMARY (for home screen)
+// =============================================================================
+
+const MUSCLE_GROUP_LABELS: Record<string, string> = {
+  chestUpper: "Chest", chestMid: "Chest", chestLower: "Chest",
+  lats: "Back", trapsUpper: "Traps", trapsMid: "Back", trapsLower: "Back",
+  rhomboids: "Back", lowerBack: "Lower Back",
+  deltsFront: "Shoulders", deltsSide: "Shoulders", deltsRear: "Shoulders",
+  biceps: "Biceps", triceps: "Triceps", forearms: "Forearms",
+  absUpper: "Core", absLower: "Core", obliques: "Core", transverseAbs: "Core",
+  quads: "Quads", hamstrings: "Hamstrings", glutes: "Glutes",
+  hipFlexors: "Hip Flexors", adductors: "Adductors",
+  abductors: "Abductors", calves: "Calves",
+};
+
+export interface WorkoutDaySummarySession {
+  sessionId: string;
+  startTime: string;
+  endTime: string;
+  exerciseCount: number;
+  totalSets: number;
+  totalVolume: number;
+  muscleGroups: string[];
+  cardioMinutes: number;
+}
+
+export async function getWorkoutDaySummary(
+  userId: string,
+  dateStr: string,
+): Promise<WorkoutDaySummarySession[]> {
+  "use cache";
+  cacheTag("workoutSummary");
+  cacheLife("hours");
+
+  const sessions = await prisma.gymWorkoutSession.findMany({
+    where: { userId, dateStr },
+    orderBy: { startTimeStr: "asc" },
+    include: {
+      exercises: {
+        orderBy: { order: "asc" },
+        include: {
+          strengthSets: true,
+        },
+      },
+    },
+  });
+
+  return sessions.map((session) => {
+    let totalSets = 0;
+    let totalVolume = 0;
+    let cardioMinutes = 0;
+    let strengthExerciseCount = 0;
+    const muscleGroupSet = new Set<string>();
+
+    for (const exercise of session.exercises) {
+      if (exercise.type === "cardio") {
+        cardioMinutes += exercise.durationMinutes ?? 0;
+      } else {
+        strengthExerciseCount++;
+        totalSets += exercise.strengthSets.length;
+
+        for (const set of exercise.strengthSets) {
+          totalVolume += calculateVolumeFromColumns(set.weight, {
+            repsBilateral: set.repsBilateral,
+            repsLeft: set.repsLeft,
+            repsRight: set.repsRight,
+          });
+        }
+
+        const def = EXERCISE_MAP.get(exercise.exerciseKey);
+        if (def) {
+          for (const target of def.baseTargets) {
+            const label = MUSCLE_GROUP_LABELS[target.muscle] ?? target.muscle;
+            muscleGroupSet.add(label);
+          }
+        }
+      }
+    }
+
+    return {
+      sessionId: session.id,
+      startTime: session.startTimeStr,
+      endTime: session.endTimeStr,
+      exerciseCount: strengthExerciseCount,
+      totalSets,
+      totalVolume: Math.round(totalVolume),
+      muscleGroups: [...muscleGroupSet],
+      cardioMinutes: Math.round(cardioMinutes),
+    };
+  });
 }
 
 // =============================================================================

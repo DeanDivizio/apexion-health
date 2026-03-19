@@ -9,11 +9,13 @@ import {
   updateGymPreferencesSchema,
   EXERCISE_MAP,
 } from "@/lib/gym";
+import { updateTag } from "next/cache";
 import {
   createWorkoutSession,
   deleteWorkoutSession,
   getExerciseDefaults,
   getGymMeta,
+  getWorkoutDaySummary,
   getWorkoutSession,
   getUserPreferences,
   listWorkoutSessions,
@@ -42,7 +44,9 @@ export async function createWorkoutSessionAction(session: unknown) {
   const userId = await requireUserId();
   try {
     const parsed = workoutSessionSchema.parse(session);
-    return await createWorkoutSession(userId, parsed);
+    const result = await createWorkoutSession(userId, parsed);
+    updateTag("workoutSummary");
+    return result;
   } catch (error) {
     const label = "[createWorkoutSessionAction]";
     if (error instanceof z.ZodError) {
@@ -77,7 +81,9 @@ export async function updateWorkoutSessionAction(sessionId: string, session: unk
 export async function deleteWorkoutSessionAction(sessionId: string) {
   const userId = await requireUserId();
   if (!sessionId) throw new Error("Session ID is required.");
-  return deleteWorkoutSession(userId, sessionId);
+  const result = await deleteWorkoutSession(userId, sessionId);
+  updateTag("workoutSummary");
+  return result;
 }
 
 // =============================================================================
@@ -201,4 +207,13 @@ export async function updateGymUserPreferencesAction(input: unknown) {
   const userId = await requireUserId();
   const parsed = updateGymPreferencesSchema.parse(input);
   return updateUserPreferences(userId, parsed);
+}
+
+// =============================================================================
+// WORKOUT DAY SUMMARY (for home screen)
+// =============================================================================
+
+export async function getWorkoutDaySummaryAction(dateStr: string) {
+  const userId = await requireUserId();
+  return getWorkoutDaySummary(userId, dateStr);
 }

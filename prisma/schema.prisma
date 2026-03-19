@@ -661,6 +661,20 @@ model HydrationLog {
   @@index([userId, dateStr])
 }
 
+model UserHomePreferences {
+  id                       String   @id @default(uuid())
+  userId                   String   @unique
+  showMacroSummary         Boolean  @default(true)
+  macroSummarySize         String   @default("large")
+  showHydrationSummary     Boolean  @default(true)
+  showMicroNutrientSummary Boolean  @default(false)
+  showWorkoutSummary       Boolean  @default(true)
+  showMedsSummary          Boolean  @default(true)
+  componentOrder           Json     @default("[\"macroSummary\",\"hydrationSummary\",\"workoutSummary\",\"medsSummary\",\"microNutrientSummary\"]")
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+}
+
 // ─── Nutrition ──────────────────────────────────────────────────────────────
 
 enum NutritionFoodSource {

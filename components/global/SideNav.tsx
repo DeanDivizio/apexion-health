@@ -28,20 +28,17 @@ export function SideNav() {
                         <SheetClose asChild><Link href="/gymsessions" className="flex items-center gap-2 mb-4 "><Dumbbell className="w-4 h-4" />Gym Sessions</Link></SheetClose>
                         <SheetClose asChild><Link href="/nutrientrecords" className="flex items-center gap-2 mb-4"><Apple className="w-4 h-4" />Nutrient Records</Link></SheetClose>
                         <SheetClose asChild><Link href="/meds" className="flex items-center gap-2 mb-4"><ClipboardPlus className="w-4 h-4" />Medication & Supplement Logs</Link></SheetClose>
-                        <SheetClose asChild><Link href="/hrtrecords" className="flex items-center gap-2 mb-4"><Syringe className="w-4 h-4" />HRT Records</Link></SheetClose>
-                        <SheetClose asChild><Link href="/bodymeasurements" className="flex items-center gap-2 mb-4"><Scale className="w-4 h-4" />Body Measurements</Link></SheetClose>
-                        <SheetClose asChild><Link href="/biometrics" className="flex items-center gap-2 mb-4"><Activity className="w-4 h-4" />Biometrics</Link></SheetClose>
+                        <SheetClose asChild><Link href="/bodymeasurements" className="flex items-center gap-2 mb-4"><Scale className="w-4 h-4" />Body Measurements (placeholder)</Link></SheetClose>
+                        <SheetClose asChild><Link href="/biometrics" className="flex items-center gap-2 mb-4"><Activity className="w-4 h-4" />Biometrics (placeholder)</Link></SheetClose>
                     </div>
                     <div id="side-nav-graphs" className="flex flex-col text-sm font-light">
                         <h3 className="text-lg font-bold mb-0">Dashboards</h3>
                         <p className="text-xs font-thin italic mb-4">Your data - visualized. Actionable graphs to help you track your wellness.</p>
                         <SheetClose asChild><Link href="/gymgraphs" className="flex items-center gap-2 mb-4"><Dumbbell className="w-4 h-4" />Fitness</Link></SheetClose>
                         <SheetClose asChild><Link href="/nutrientgraphs" className="flex items-center gap-2 mb-4"><Apple className="w-4 h-4" />Nutrient Intake</Link></SheetClose>
-                        <SheetClose asChild><Link href="/supplementgraphs" className="flex items-center gap-2 mb-4"><Pill className="w-4 h-4" />Supplement Use</Link></SheetClose>
-                        <SheetClose asChild><Link href="/medicationgraphs" className="flex items-center gap-2 mb-4"><ClipboardPlus className="w-4 h-4" />Medications Taken</Link></SheetClose>
-                        <SheetClose asChild><Link href="/hrtgraphs" className="flex items-center gap-2 mb-4"><Syringe className="w-4 h-4" />HRT Treatments</Link></SheetClose>
-                        <SheetClose asChild><Link href="/bodygraphs" className="flex items-center gap-2 mb-4"><Scale className="w-4 h-4" />Body Measurements</Link></SheetClose>
-                        <SheetClose asChild><Link href="/labs" className="flex items-center gap-2 mb-4"><TestTube className="w-4 h-4" />Lab Results</Link></SheetClose>
+                        <SheetClose asChild><Link href="/supplementgraphs" className="flex items-center gap-2 mb-4"><Pill className="w-4 h-4" />Medications & Supplements</Link></SheetClose>
+                        <SheetClose asChild><Link href="/bodygraphs" className="flex items-center gap-2 mb-4"><Scale className="w-4 h-4" />Body Measurements (placeholder)</Link></SheetClose>
+                        <SheetClose asChild><Link href="/labs" className="flex items-center gap-2 mb-4"><TestTube className="w-4 h-4" />Lab Results (placeholder)</Link></SheetClose>
                     </div>
                     <div id="side-nav-admin" className="absolute left-0 bottom-8 flex flex-col text-sm font-light w-full">
                         {/* <h3 className="text-base font-regular mb-2">Admin</h3> */}
