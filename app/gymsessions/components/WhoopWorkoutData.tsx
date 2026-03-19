@@ -70,6 +70,25 @@ function formatZoneBar(workout: WorkoutCandidate) {
   );
 }
 
+function formatTimeRange(startIso: string, endIso: string): string {
+  const start = new Date(startIso);
+  const end = new Date(endIso);
+  const dateLabel = start.toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  });
+  const startTime = start.toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+  const endTime = end.toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+  return `${dateLabel} \u00b7 ${startTime} \u2013 ${endTime}`;
+}
+
 function WorkoutDisplay({
   workout,
   action,
@@ -81,15 +100,18 @@ function WorkoutDisplay({
 
   return (
     <div>
-      <div className="mb-2 flex items-center gap-2 text-[11px]">
+      <div className="mb-1 flex items-center gap-2 text-[11px]">
         <span className="text-neutral-300 font-medium truncate flex-1 min-w-0">
           {workout.sportName ?? "Workout"}
           {durationLabel && (
-            <span className="text-neutral-500 ml-1.5">· {durationLabel}</span>
+            <span className="text-neutral-500 ml-1.5">&middot; {durationLabel}</span>
           )}
         </span>
         {action}
       </div>
+      <p className="text-[10px] text-neutral-500 mb-2">
+        {formatTimeRange(workout.start, workout.end)}
+      </p>
       <div className="grid grid-cols-4 gap-2 text-xs">
         {workout.averageHeartRate != null && (
           <div>

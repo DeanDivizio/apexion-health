@@ -256,6 +256,25 @@ function toWorkoutCandidate(w: BiometricWorkout): WorkoutCandidate {
 
 const OVERLAP_BUFFER_MS = 15 * 60 * 1000;
 
+const GYM_RELEVANT_SPORTS = new Set([
+  "assault bike",
+  "bodybuilding",
+  "cycling",
+  "elliptical",
+  "functional fitness",
+  "hiit",
+  "jumping rope",
+  "powerlifting",
+  "rowing",
+  "running",
+  "spin",
+  "stairmaster",
+  "strength trainer",
+  "vertical climber",
+  "walking",
+  "weightlifting",
+]);
+
 /**
  * Returns the biometric link state for a gym session in a single round trip.
  *
@@ -298,13 +317,17 @@ export async function getWorkoutLinkState(
     }),
   ]);
 
-  let candidates: typeof allNearby = [];
+  const gymRelevant = allNearby.filter(
+    (w) => w.sportName && GYM_RELEVANT_SPORTS.has(w.sportName.toLowerCase()),
+  );
 
-  if (allNearby.length > 0) {
+  let candidates: typeof gymRelevant = [];
+
+  if (gymRelevant.length > 0) {
     const sessionStart = parseSessionTime(dateStr, startTimeStr);
     const sessionEnd = parseSessionTime(dateStr, endTimeStr);
 
-    const overlapping = allNearby.filter(
+    const overlapping = gymRelevant.filter(
       (w) =>
         w.start.getTime() < sessionEnd.getTime() + OVERLAP_BUFFER_MS &&
         w.end.getTime() > sessionStart.getTime() - OVERLAP_BUFFER_MS,
@@ -313,8 +336,8 @@ export async function getWorkoutLinkState(
     if (overlapping.length > 0) {
       candidates = overlapping;
     } else {
-      const sameDay = allNearby.filter((w) => w.dateStr === dateStr);
-      candidates = sameDay.length > 0 ? sameDay : allNearby;
+      const sameDay = gymRelevant.filter((w) => w.dateStr === dateStr);
+      candidates = sameDay.length > 0 ? sameDay : gymRelevant;
     }
   }
 
