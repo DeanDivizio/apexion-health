@@ -4,6 +4,7 @@ import { auth } from "@clerk/nextjs/server";
 import { updateTag } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/db/prisma";
+import { normalizeDateInput, toCompactDateStr } from "@/lib/dates/dateStr";
 
 const logHydrationSchema = z.object({
   amount: z.number().positive(),
@@ -23,32 +24,6 @@ async function requireUserId(): Promise<string> {
 
 const ELECTROLYTE_KEYS = ["sodium", "potassium", "magnesium"] as const;
 type ElectrolyteKey = (typeof ELECTROLYTE_KEYS)[number];
-
-function normalizeDateInputs(dateStr: string): {
-  isoDate: string;
-  sessionDateCandidates: string[];
-} {
-  const compactPattern = /^\d{8}$/;
-  const isoPattern = /^\d{4}-\d{2}-\d{2}$/;
-
-  if (compactPattern.test(dateStr)) {
-    const isoDate = `${dateStr.slice(0, 4)}-${dateStr.slice(4, 6)}-${dateStr.slice(6, 8)}`;
-    return { isoDate, sessionDateCandidates: [dateStr, isoDate] };
-  }
-
-  if (isoPattern.test(dateStr)) {
-    const compact = dateStr.replace(/-/g, "");
-    return { isoDate: dateStr, sessionDateCandidates: [dateStr, compact] };
-  }
-
-  const digitsOnly = dateStr.replace(/\D/g, "");
-  if (digitsOnly.length === 8) {
-    const isoDate = `${digitsOnly.slice(0, 4)}-${digitsOnly.slice(4, 6)}-${digitsOnly.slice(6, 8)}`;
-    return { isoDate, sessionDateCandidates: [digitsOnly, isoDate] };
-  }
-
-  return { isoDate: dateStr, sessionDateCandidates: [dateStr] };
-}
 
 function toMilligrams(amount: number, unit: string | null | undefined): number {
   if (!Number.isFinite(amount)) return 0;
@@ -91,7 +66,7 @@ export async function logHydrationAction(input: unknown) {
   const amountOz = unit === "ml" ? amount / ML_PER_OZ : amount;
 
   const now = new Date();
-  const dateStr = now.toISOString().slice(0, 10);
+  const dateStr = toCompactDateStr(now);
 
   const result = await prisma.hydrationLog.create({
     data: {
@@ -116,12 +91,15 @@ export async function getHydrationSummaryAction(
   dateStr: string,
 ): Promise<HydrationSummaryView> {
   const userId = await requireUserId();
-  const { isoDate, sessionDateCandidates } = normalizeDateInputs(dateStr);
+  const { isoDate, sessionDateCandidates } = normalizeDateInput(dateStr);
 
   const [hydrationLogs, mealNutrients, substanceIngredients] =
     await Promise.all([
       prisma.hydrationLog.findMany({
-        where: { userId, dateStr },
+        where: {
+          userId,
+          dateStr: { in: sessionDateCandidates },
+        },
         select: { amountOz: true },
       }),
       db.nutritionMealItemNutrient
@@ -145,8 +123,8 @@ export async function getHydrationSummaryAction(
               session: {
                 userId,
                 loggedAt: {
-                gte: new Date(`${isoDate}T00:00:00.000Z`),
-                lt: new Date(`${isoDate}T23:59:59.999Z`),
+                  gte: new Date(`${isoDate}T00:00:00.000Z`),
+                  lt: new Date(`${isoDate}T23:59:59.999Z`),
                 },
               },
             },

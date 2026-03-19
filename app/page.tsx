@@ -34,6 +34,7 @@ import type { WorkoutDaySummarySession } from "@/lib/gym/server/gymService";
 import type { MedsDaySummarySession } from "@/lib/medication/server/medicationService";
 import type { MicroNutrientEntry } from "@/lib/nutrition/server/nutritionService";
 import dynamic from "next/dynamic";
+import { toCompactDateStr } from "@/lib/dates/dateStr";
 
 const UniversalRingChart = dynamic(
   () => import("@/components/charts/radialcharts/UniversalRingChart").then((m) => m.UniversalRingChart),
@@ -48,14 +49,8 @@ const BiometricsSummary = dynamic(
   { ssr: false }
 );
 
-function getTodayDateStr(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
-
 function getTodayDateStrCompact(): string {
-  const d = new Date();
-  return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
+  return toCompactDateStr(new Date());
 }
 
 const VISIBILITY_KEYS: Record<string, keyof UserHomePreferencesView> = {
@@ -97,8 +92,8 @@ export default function Home() {
   useEffect(() => {
     const endDate = getTodayDateStrCompact();
     const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    const startDate = `${oneWeekAgo.getFullYear()}${String(oneWeekAgo.getMonth() + 1).padStart(2, "0")}${String(oneWeekAgo.getDate()).padStart(2, "0")}`;
-    const todayIso = getTodayDateStr();
+    const startDate = toCompactDateStr(oneWeekAgo);
+    const todayDateStr = getTodayDateStrCompact();
 
     async function dataFetch() {
       try {
@@ -121,22 +116,22 @@ export default function Home() {
 
         if (prefs.showHydrationSummary) {
           supplementaryPromises.push(
-            getHydrationSummaryAction(todayIso).then(setHydrationData),
+            getHydrationSummaryAction(todayDateStr).then(setHydrationData),
           );
         }
         if (prefs.showWorkoutSummary) {
           supplementaryPromises.push(
-            getWorkoutDaySummaryAction(todayIso).then(setWorkoutData),
+            getWorkoutDaySummaryAction(todayDateStr).then(setWorkoutData),
           );
         }
         if (prefs.showMedsSummary) {
           supplementaryPromises.push(
-            getMedsDaySummaryAction(todayIso).then(setMedsData),
+            getMedsDaySummaryAction(todayDateStr).then(setMedsData),
           );
         }
         if (prefs.showMicroNutrientSummary) {
           supplementaryPromises.push(
-            getMicroNutrientSummaryAction(todayIso).then(setMicroData),
+            getMicroNutrientSummaryAction(todayDateStr).then(setMicroData),
           );
         }
 

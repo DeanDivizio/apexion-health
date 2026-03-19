@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db/prisma";
 import { cacheTag, cacheLife } from "next/cache";
+import { normalizeDateInput } from "@/lib/dates/dateStr";
 import type {
   MedicationBootstrap,
   MedicationDraftItem,
@@ -336,14 +337,15 @@ export async function getMedsDaySummary(
   cacheLife("hours");
 
   if (!hasCatalogModels()) return [];
+  const { isoDate } = normalizeDateInput(dateStr);
 
   try {
     const sessions = await db.substanceLogSession.findMany({
       where: {
         userId,
         loggedAt: {
-          gte: new Date(`${dateStr}T00:00:00.000Z`),
-          lt: new Date(`${dateStr}T23:59:59.999Z`),
+          gte: new Date(`${isoDate}T00:00:00.000Z`),
+          lt: new Date(`${isoDate}T23:59:59.999Z`),
         },
       },
       orderBy: { loggedAt: "asc" },

@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db/prisma";
 import { cacheTag, cacheLife } from "next/cache";
 import { NUTRIENT_KEYS, resolveNutrientMeta } from "@/lib/nutrition/nutrientKeys";
+import { normalizeDateInput } from "@/lib/dates/dateStr";
 import type {
   FoundationFoodView,
   MacroSummaryByDate,
@@ -583,32 +584,6 @@ const MACRO_KEYS = new Set([
   "saturated-fat", "trans-fat", "fiber", "sugars", "added-sugars",
 ]);
 
-function normalizeDateInputs(dateStr: string): {
-  isoDate: string;
-  sessionDateCandidates: string[];
-} {
-  const compactPattern = /^\d{8}$/;
-  const isoPattern = /^\d{4}-\d{2}-\d{2}$/;
-
-  if (compactPattern.test(dateStr)) {
-    const isoDate = `${dateStr.slice(0, 4)}-${dateStr.slice(4, 6)}-${dateStr.slice(6, 8)}`;
-    return { isoDate, sessionDateCandidates: [dateStr, isoDate] };
-  }
-
-  if (isoPattern.test(dateStr)) {
-    const compact = dateStr.replace(/-/g, "");
-    return { isoDate: dateStr, sessionDateCandidates: [dateStr, compact] };
-  }
-
-  const digitsOnly = dateStr.replace(/\D/g, "");
-  if (digitsOnly.length === 8) {
-    const isoDate = `${digitsOnly.slice(0, 4)}-${digitsOnly.slice(4, 6)}-${digitsOnly.slice(6, 8)}`;
-    return { isoDate, sessionDateCandidates: [digitsOnly, isoDate] };
-  }
-
-  return { isoDate: dateStr, sessionDateCandidates: [dateStr] };
-}
-
 export async function getMicroNutrientSummary(
   userId: string,
   dateStr: string,
@@ -620,7 +595,7 @@ export async function getMicroNutrientSummary(
   if (!hasNutritionModels()) return [];
 
   try {
-    const { isoDate, sessionDateCandidates } = normalizeDateInputs(dateStr);
+    const { isoDate, sessionDateCandidates } = normalizeDateInput(dateStr);
     const [mealNutrients, substanceIngredients] = await Promise.all([
       db.nutritionMealItemNutrient.findMany({
         where: {

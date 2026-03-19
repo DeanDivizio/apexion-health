@@ -39,6 +39,7 @@ import {
   updateMealSessionAction,
 } from "@/actions/nutrition";
 import type { NutritionMealSessionView, MealItemViewEntry } from "@/lib/nutrition";
+import { isoDateToCompactDateStr } from "@/lib/dates/dateStr";
 
 const MEAL_LABELS = ["Breakfast", "Lunch", "Dinner", "Snack"];
 
@@ -120,7 +121,7 @@ export function MealsList({ initialSessions }: MealsListProps) {
       const [h, m] = editTime.split(":").map(Number);
       const d = new Date(editDate + "T12:00:00");
       d.setHours(Number.isFinite(h) ? h : 0, Number.isFinite(m) ? m : 0, 0, 0);
-      const dateStr = editDate.replace(/-/g, "");
+      const dateStr = isoDateToCompactDateStr(editDate);
 
       await updateMealSessionAction(editSession.id, {
         loggedAtIso: d.toISOString(),

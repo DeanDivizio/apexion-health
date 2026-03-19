@@ -22,6 +22,7 @@
 
 import { prisma } from "@/lib/db/prisma";
 import { cacheTag, cacheLife } from "next/cache";
+import { normalizeDateInput } from "@/lib/dates/dateStr";
 import {
   EXERCISE_MAP,
   VARIATION_TEMPLATES,
@@ -912,9 +913,13 @@ export async function getWorkoutDaySummary(
   "use cache";
   cacheTag("workoutSummary");
   cacheLife("hours");
+  const { sessionDateCandidates } = normalizeDateInput(dateStr);
 
   const sessions = await prisma.gymWorkoutSession.findMany({
-    where: { userId, dateStr },
+    where: {
+      userId,
+      dateStr: { in: sessionDateCandidates },
+    },
     orderBy: { startTimeStr: "asc" },
     include: {
       exercises: {

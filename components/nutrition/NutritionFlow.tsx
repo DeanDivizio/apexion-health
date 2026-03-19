@@ -21,10 +21,10 @@ import type {
   NutritionBootstrap,
   NutritionUserFoodView,
 } from "@/lib/nutrition";
+import { isoDateToCompactDateStr, toCompactDateStr } from "@/lib/dates/dateStr";
 
 function todayDateStr(): string {
-  const d = new Date();
-  return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
+  return toCompactDateStr(new Date());
 }
 
 function todayIso(): string {
@@ -158,7 +158,7 @@ export function NutritionFlow({ bootstrap }: NutritionFlowProps) {
         ? combineDateAndTime(sessionDate, sessionTime)
         : new Date().toISOString();
       const dateStr = useManualTimestamp
-        ? sessionDate.replace(/-/g, "")
+        ? isoDateToCompactDateStr(sessionDate)
         : todayDateStr();
 
       await createMealSessionAction({
