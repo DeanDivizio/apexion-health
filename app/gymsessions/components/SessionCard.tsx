@@ -1,5 +1,6 @@
 "use client"
 
+import { useMemo, useState } from "react"
 import { Activity, ChevronDown, Pencil, Settings, Trash2 } from "lucide-react"
 import {
   DropdownMenu,
@@ -51,7 +52,14 @@ export function SessionCard({
   onRequestDelete,
 }: SessionCardProps) {
   const sessionVolume = calcSessionVolume(session)
-  const linkedProviders = session.linkedBiometricProviders ?? []
+  const [linkedProviders, setLinkedProviders] = useState<string[]>(
+    session.linkedBiometricProviders ?? [],
+  )
+
+  const uniqueLinkedProviders = useMemo(
+    () => [...new Set(linkedProviders.map((provider) => provider.toLowerCase()))],
+    [linkedProviders],
+  )
 
   return (
     <div
@@ -81,13 +89,13 @@ export function SessionCard({
             <p className="text-xs text-muted-foreground mt-0.5">
               {session.startTime} – {session.endTime}
             </p>
-            {linkedProviders.length > 0 && (
+            {uniqueLinkedProviders.length > 0 && (
               <div className="mt-1.5 flex items-center gap-1.5">
                 <span className="inline-flex items-center rounded-full border border-emerald-400/30 bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-emerald-300">
                   <Activity className="mr-1 h-2.5 w-2.5" />
                   Linked
                 </span>
-                {linkedProviders.map((provider) => {
+                {uniqueLinkedProviders.map((provider) => {
                   const badge = getProviderBadge(provider)
                   return (
                     <span
@@ -165,6 +173,9 @@ export function SessionCard({
                 dateStr={session.date}
                 startTimeStr={session.startTime}
                 endTimeStr={session.endTime}
+                onLinkedProvider={(provider) =>
+                  setLinkedProviders((prev) => [...prev, provider])
+                }
               />
             </div>
           </div>

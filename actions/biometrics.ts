@@ -195,6 +195,18 @@ export interface WorkoutCandidate {
   gymSessionId: string | null;
 }
 
+function shiftDateStr(dateStr: string, deltaDays: number): string {
+  const y = parseInt(dateStr.slice(0, 4), 10);
+  const m = parseInt(dateStr.slice(4, 6), 10) - 1;
+  const d = parseInt(dateStr.slice(6, 8), 10);
+  const utc = new Date(Date.UTC(y, m, d, 12, 0, 0));
+  utc.setUTCDate(utc.getUTCDate() + deltaDays);
+  const yy = utc.getUTCFullYear();
+  const mm = String(utc.getUTCMonth() + 1).padStart(2, "0");
+  const dd = String(utc.getUTCDate()).padStart(2, "0");
+  return `${yy}${mm}${dd}`;
+}
+
 /**
  * Parse a dateStr (YYYYMMDD) + timeStr (like "9:30 AM") into a Date.
  */
@@ -225,6 +237,7 @@ export async function getOverlappingWorkouts(
   startTimeStr: string,
   endTimeStr: string,
 ): Promise<WorkoutCandidate[]> {
+  void sessionId;
   const { userId } = await auth();
   if (!userId) throw new Error("Not authenticated");
 
@@ -233,7 +246,7 @@ export async function getOverlappingWorkouts(
 
   // Look for Whoop workouts that overlap the session time window
   // Overlap condition: workout.start < session.end AND workout.end > session.start
-  const workouts = await prisma.biometricWorkout.findMany({
+  let workouts = await prisma.biometricWorkout.findMany({
     where: {
       userId,
       start: { lt: sessionEnd },
@@ -241,6 +254,20 @@ export async function getOverlappingWorkouts(
     },
     orderBy: { start: "asc" },
   });
+
+  if (workouts.length === 0) {
+    // Fallback for timezone skew between session-local clock times and server-side parsing.
+    // Surface nearby-date workouts so users can still link manually.
+    workouts = await prisma.biometricWorkout.findMany({
+      where: {
+        userId,
+        dateStr: {
+          in: [shiftDateStr(dateStr, -1), dateStr, shiftDateStr(dateStr, 1)],
+        },
+      },
+      orderBy: { start: "asc" },
+    });
+  }
 
   return workouts.map((w) => ({
     id: w.id,

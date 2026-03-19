@@ -14,6 +14,7 @@ interface WhoopWorkoutDataProps {
   dateStr: string;
   startTimeStr: string;
   endTimeStr: string;
+  onLinkedProvider?: (provider: string) => void;
 }
 
 function formatZoneBar(workout: WorkoutCandidate) {
@@ -95,6 +96,7 @@ export function WhoopWorkoutData({
   dateStr,
   startTimeStr,
   endTimeStr,
+  onLinkedProvider,
 }: WhoopWorkoutDataProps) {
   const [associated, setAssociated] = useState<WorkoutCandidate | null>(null);
   const [candidates, setCandidates] = useState<WorkoutCandidate[]>([]);
@@ -107,6 +109,7 @@ export function WhoopWorkoutData({
         const assoc = await getAssociatedWorkout(sessionId);
         if (assoc) {
           setAssociated(assoc);
+          onLinkedProvider?.("whoop");
         } else {
           const overlaps = await getOverlappingWorkouts(
             sessionId,
@@ -114,16 +117,27 @@ export function WhoopWorkoutData({
             startTimeStr,
             endTimeStr,
           );
-          setCandidates(overlaps.filter((w) => !w.gymSessionId));
+          const available = overlaps.filter((w) => !w.gymSessionId);
+          if (available.length === 1) {
+            // Auto-link when there is exactly one unambiguous candidate.
+            setLinking(true);
+            await associateWorkoutToSession(available[0].id, sessionId);
+            setAssociated(available[0]);
+            setCandidates([]);
+            onLinkedProvider?.("whoop");
+          } else {
+            setCandidates(available);
+          }
         }
       } catch {
         // No biometric data available
       } finally {
+        setLinking(false);
         setLoaded(true);
       }
     }
     load();
-  }, [sessionId, dateStr, startTimeStr, endTimeStr]);
+  }, [sessionId, dateStr, startTimeStr, endTimeStr, onLinkedProvider]);
 
   if (!loaded) return null;
 
@@ -148,6 +162,7 @@ export function WhoopWorkoutData({
         await associateWorkoutToSession(candidate.id, sessionId);
         setAssociated(candidate);
         setCandidates([]);
+        onLinkedProvider?.("whoop");
       } catch (err) {
         console.error(err);
       } finally {
