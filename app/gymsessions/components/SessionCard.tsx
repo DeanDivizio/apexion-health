@@ -56,10 +56,8 @@ export function SessionCard({
     session.linkedBiometricProviders ?? [],
   )
 
-  const handleLinkedProvider = useCallback((provider: string) => {
-    setLinkedProviders((prev) =>
-      prev.includes(provider) ? prev : [...prev, provider],
-    );
+  const handleLinkChange = useCallback((providers: string[]) => {
+    setLinkedProviders(providers);
   }, []);
 
   const uniqueLinkedProviders = useMemo(
@@ -179,7 +177,7 @@ export function SessionCard({
                 dateStr={session.date}
                 startTimeStr={session.startTime}
                 endTimeStr={session.endTime}
-                onLinkedProvider={handleLinkedProvider}
+                onLinkChange={handleLinkChange}
               />
             </div>
           </div>
