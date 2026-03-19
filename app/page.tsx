@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useContext, Suspense } from "react";
+import React, { useState, useEffect, useContext, Suspense, useCallback } from "react";
 import { homeFetch } from "@/actions/InternalLogic";
 import { getUserGoalsAction } from "@/actions/nutrition";
 import { getUserHomePreferencesAction } from "@/actions/settings";
@@ -89,62 +89,93 @@ export default function Home() {
   const [medsData, setMedsData] = useState<MedsDaySummarySession[] | null>(null);
   const [microData, setMicroData] = useState<MicroNutrientEntry[] | null>(null);
 
-  useEffect(() => {
+  const dataFetch = useCallback(async (silent = false) => {
     const endDate = getTodayDateStrCompact();
     const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     const startDate = toCompactDateStr(oneWeekAgo);
     const todayDateStr = getTodayDateStrCompact();
 
-    async function dataFetch() {
-      try {
-        const [response, goals, prefs] = await Promise.all([
-          homeFetch({ startDate, endDate }),
-          getUserGoalsAction(),
-          getUserHomePreferencesAction(),
-        ]);
-        // @ts-ignore
-        setData(response as SummaryData);
-        if (goals) {
-          setCalorieLimit(goals.calories ?? 0);
-          setProteinGoal(goals.protein ?? 0);
-          setCarbGoal(goals.carbs ?? 0);
-          setFatGoal(goals.fat ?? 0);
-        }
-        setPreferences(prefs);
+    if (!silent) {
+      setIsLoading(true);
+    }
 
-        const supplementaryPromises: Promise<void>[] = [];
+    try {
+      const [response, goals, prefs] = await Promise.all([
+        homeFetch({ startDate, endDate }),
+        getUserGoalsAction(),
+        getUserHomePreferencesAction(),
+      ]);
+      // @ts-ignore
+      setData(response as SummaryData);
+      if (goals) {
+        setCalorieLimit(goals.calories ?? 0);
+        setProteinGoal(goals.protein ?? 0);
+        setCarbGoal(goals.carbs ?? 0);
+        setFatGoal(goals.fat ?? 0);
+      }
+      setPreferences(prefs);
 
-        if (prefs.showHydrationSummary) {
-          supplementaryPromises.push(
-            getHydrationSummaryAction(todayDateStr).then(setHydrationData),
-          );
-        }
-        if (prefs.showWorkoutSummary) {
-          supplementaryPromises.push(
-            getWorkoutDaySummaryAction(todayDateStr).then(setWorkoutData),
-          );
-        }
-        if (prefs.showMedsSummary) {
-          supplementaryPromises.push(
-            getMedsDaySummaryAction(todayDateStr).then(setMedsData),
-          );
-        }
-        if (prefs.showMicroNutrientSummary) {
-          supplementaryPromises.push(
-            getMicroNutrientSummaryAction(todayDateStr).then(setMicroData),
-          );
-        }
+      const supplementaryPromises: Promise<void>[] = [];
+      const resolvedPrefs = prefs ?? {
+        showHydrationSummary: true,
+        showWorkoutSummary: true,
+        showMedsSummary: true,
+        showMicroNutrientSummary: true,
+      };
 
-        await Promise.all(supplementaryPromises);
-      } catch (err) {
-        console.error(err);
-      } finally {
+      if (resolvedPrefs.showHydrationSummary) {
+        supplementaryPromises.push(
+          getHydrationSummaryAction(todayDateStr).then(setHydrationData),
+        );
+      }
+      if (resolvedPrefs.showWorkoutSummary) {
+        supplementaryPromises.push(
+          getWorkoutDaySummaryAction(todayDateStr).then(setWorkoutData),
+        );
+      }
+      if (resolvedPrefs.showMedsSummary) {
+        supplementaryPromises.push(
+          getMedsDaySummaryAction(todayDateStr).then(setMedsData),
+        );
+      }
+      if (resolvedPrefs.showMicroNutrientSummary) {
+        supplementaryPromises.push(
+          getMicroNutrientSummaryAction(todayDateStr).then(setMicroData),
+        );
+      }
+
+      await Promise.all(supplementaryPromises);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      if (!silent) {
         setIsLoading(false);
       }
     }
-
-    dataFetch();
   }, []);
+
+  useEffect(() => {
+    dataFetch();
+  }, [dataFetch]);
+
+  useEffect(() => {
+    function refreshOnReturn() {
+      void dataFetch(true);
+    }
+
+    function onVisibilityChange() {
+      if (document.visibilityState === "visible") {
+        refreshOnReturn();
+      }
+    }
+
+    window.addEventListener("focus", refreshOnReturn);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => {
+      window.removeEventListener("focus", refreshOnReturn);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, [dataFetch]);
 
   useEffect(() => {
     if (data && data.length > 0) {

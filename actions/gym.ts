@@ -75,7 +75,9 @@ export async function updateWorkoutSessionAction(sessionId: string, session: unk
   const userId = await requireUserId();
   if (!sessionId) throw new Error("Session ID is required.");
   const parsed = workoutSessionSchema.parse(session);
-  return updateWorkoutSession(userId, sessionId, parsed);
+  const result = await updateWorkoutSession(userId, sessionId, parsed);
+  updateTag("workoutSummary");
+  return result;
 }
 
 export async function deleteWorkoutSessionAction(sessionId: string) {
