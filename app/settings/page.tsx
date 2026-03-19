@@ -13,7 +13,7 @@ const SECTIONS = [
     href: "/settings/nutrition",
     icon: Apple,
     title: "Nutrition",
-    description: "Macro goals & targets",
+    description: "Macros, hydration & electrolyte targets",
   },
 ] as const;
 

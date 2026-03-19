@@ -114,6 +114,10 @@ export interface NutritionUserGoalsView {
   carbs: number | null;
   fat: number | null;
   microGoals: Record<string, { target: number; unit: string }> | null;
+  waterGoalOz: number | null;
+  sodiumGoalMg: number | null;
+  potassiumGoalMg: number | null;
+  magnesiumGoalMg: number | null;
 }
 
 export interface MacroSummaryByDate {

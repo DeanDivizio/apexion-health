@@ -83,7 +83,7 @@ function NutrientGroup({
 }) {
   return (
     <div>
-      <p className="text-[10px] uppercase tracking-wider text-neutral-500 mb-1">
+      <p className="text-[10px] uppercase tracking-wider text-yellow-400 opacity-50 mb-1">
         {label}
       </p>
       <div className="space-y-0.5">

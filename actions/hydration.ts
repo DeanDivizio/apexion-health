@@ -80,11 +80,21 @@ export async function logHydrationAction(input: unknown) {
   return result;
 }
 
+const DEFAULT_WATER_GOAL_OZ = 80;
+const DEFAULT_SODIUM_GOAL_MG = 2300;
+const DEFAULT_POTASSIUM_GOAL_MG = 3000;
+const DEFAULT_MAGNESIUM_GOAL_MG = 400;
+
 export interface HydrationSummaryView {
   waterOz: number;
   sodiumMg: number;
   potassiumMg: number;
   magnesiumMg: number;
+  /** Resolved targets (DB or app defaults) for progress UI */
+  waterGoalOz: number;
+  sodiumGoalMg: number;
+  potassiumGoalMg: number;
+  magnesiumGoalMg: number;
 }
 
 export async function getHydrationSummaryAction(
@@ -93,7 +103,7 @@ export async function getHydrationSummaryAction(
   const userId = await requireUserId();
   const { isoDate, sessionDateCandidates } = normalizeDateInput(dateStr);
 
-  const [hydrationLogs, mealNutrients, substanceIngredients] =
+  const [hydrationLogs, mealNutrients, substanceIngredients, goalsRow] =
     await Promise.all([
       prisma.hydrationLog.findMany({
         where: {
@@ -137,6 +147,17 @@ export async function getHydrationSummaryAction(
           },
         })
         .catch(() => []),
+      prisma.nutritionUserGoals
+        .findUnique({
+          where: { userId },
+          select: {
+            waterGoalOz: true,
+            sodiumGoalMg: true,
+            potassiumGoalMg: true,
+            magnesiumGoalMg: true,
+          },
+        })
+        .catch(() => null),
     ]);
 
   const waterOz = hydrationLogs.reduce(
@@ -166,10 +187,29 @@ export async function getHydrationSummaryAction(
     }
   }
 
+  const waterGoalOz =
+    goalsRow?.waterGoalOz != null ? goalsRow.waterGoalOz : DEFAULT_WATER_GOAL_OZ;
+  const sodiumGoalMg =
+    goalsRow?.sodiumGoalMg != null
+      ? goalsRow.sodiumGoalMg
+      : DEFAULT_SODIUM_GOAL_MG;
+  const potassiumGoalMg =
+    goalsRow?.potassiumGoalMg != null
+      ? goalsRow.potassiumGoalMg
+      : DEFAULT_POTASSIUM_GOAL_MG;
+  const magnesiumGoalMg =
+    goalsRow?.magnesiumGoalMg != null
+      ? goalsRow.magnesiumGoalMg
+      : DEFAULT_MAGNESIUM_GOAL_MG;
+
   return {
     waterOz,
     sodiumMg: electrolytes.sodium,
     potassiumMg: electrolytes.potassium,
     magnesiumMg: electrolytes.magnesium,
+    waterGoalOz,
+    sodiumGoalMg,
+    potassiumGoalMg,
+    magnesiumGoalMg,
   };
 }

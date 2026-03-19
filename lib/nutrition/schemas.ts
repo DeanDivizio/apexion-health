@@ -72,14 +72,18 @@ export const createRetailUserItemSchema = z.object({
 });
 
 export const upsertUserGoalsSchema = z.object({
-  calories: z.number().nullable().default(null),
-  protein: z.number().nullable().default(null),
-  carbs: z.number().nullable().default(null),
-  fat: z.number().nullable().default(null),
+  calories: z.number().nullable().optional(),
+  protein: z.number().nullable().optional(),
+  carbs: z.number().nullable().optional(),
+  fat: z.number().nullable().optional(),
   microGoals: z.record(z.object({
     target: z.number(),
     unit: z.string(),
-  })).nullable().default(null),
+  })).nullable().optional(),
+  waterGoalOz: z.number().nullable().optional(),
+  sodiumGoalMg: z.number().nullable().optional(),
+  potassiumGoalMg: z.number().nullable().optional(),
+  magnesiumGoalMg: z.number().nullable().optional(),
 });
 
 export type CreateUserFoodInput = z.infer<typeof createUserFoodSchema>;

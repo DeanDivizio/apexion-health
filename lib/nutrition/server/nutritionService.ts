@@ -136,6 +136,10 @@ function toGoalsView(row: any): NutritionUserGoalsView {
     carbs: row.carbs ?? null,
     fat: row.fat ?? null,
     microGoals: row.microGoals as Record<string, { target: number; unit: string }> | null,
+    waterGoalOz: row.waterGoalOz ?? null,
+    sodiumGoalMg: row.sodiumGoalMg ?? null,
+    potassiumGoalMg: row.potassiumGoalMg ?? null,
+    magnesiumGoalMg: row.magnesiumGoalMg ?? null,
   };
 }
 
@@ -743,23 +747,47 @@ export async function upsertUserGoals(
 ): Promise<NutritionUserGoalsView> {
   assertModelsAvailable();
 
+  const existing = await db.nutritionUserGoals.findUnique({
+    where: { userId },
+  });
+
+  const next = {
+    calories:
+      input.calories !== undefined ? input.calories : existing?.calories ?? null,
+    protein:
+      input.protein !== undefined ? input.protein : existing?.protein ?? null,
+    carbs: input.carbs !== undefined ? input.carbs : existing?.carbs ?? null,
+    fat: input.fat !== undefined ? input.fat : existing?.fat ?? null,
+    microGoals:
+      input.microGoals !== undefined
+        ? input.microGoals
+        : (existing?.microGoals as Record<string, { target: number; unit: string }> | null) ??
+          null,
+    waterGoalOz:
+      input.waterGoalOz !== undefined
+        ? input.waterGoalOz
+        : existing?.waterGoalOz ?? null,
+    sodiumGoalMg:
+      input.sodiumGoalMg !== undefined
+        ? input.sodiumGoalMg
+        : existing?.sodiumGoalMg ?? null,
+    potassiumGoalMg:
+      input.potassiumGoalMg !== undefined
+        ? input.potassiumGoalMg
+        : existing?.potassiumGoalMg ?? null,
+    magnesiumGoalMg:
+      input.magnesiumGoalMg !== undefined
+        ? input.magnesiumGoalMg
+        : existing?.magnesiumGoalMg ?? null,
+  };
+
   const row = await db.nutritionUserGoals.upsert({
     where: { userId },
     create: {
       userId,
-      calories: input.calories,
-      protein: input.protein,
-      carbs: input.carbs,
-      fat: input.fat,
-      microGoals: input.microGoals,
+      ...next,
     },
-    update: {
-      calories: input.calories,
-      protein: input.protein,
-      carbs: input.carbs,
-      fat: input.fat,
-      microGoals: input.microGoals,
-    },
+    update: next,
   });
 
   return toGoalsView(row);

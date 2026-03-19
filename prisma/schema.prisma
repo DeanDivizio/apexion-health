@@ -818,13 +818,17 @@ model NutritionMealItemNutrient {
 }
 
 model NutritionUserGoals {
-  id         String   @id @default(uuid())
-  userId     String   @unique
-  calories   Float?
-  protein    Float?
-  carbs      Float?
-  fat        Float?
-  microGoals Json?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  calories        Float?
+  protein         Float?
+  carbs           Float?
+  fat             Float?
+  microGoals      Json?
+  waterGoalOz     Float?
+  sodiumGoalMg    Float?
+  potassiumGoalMg Float?
+  magnesiumGoalMg Float?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }

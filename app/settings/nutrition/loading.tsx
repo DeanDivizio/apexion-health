@@ -6,6 +6,7 @@ export default function NutritionSettingsLoading() {
       <Skeleton className="h-28 rounded-xl" />
       <Skeleton className="h-20 rounded-xl" />
       <Skeleton className="h-52 rounded-xl" />
+      <Skeleton className="h-72 rounded-xl" />
       <Skeleton className="h-11 w-full rounded-md" />
     </div>
   );

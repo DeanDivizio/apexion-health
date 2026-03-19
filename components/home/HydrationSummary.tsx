@@ -4,18 +4,24 @@ import { Droplets } from "lucide-react";
 
 interface HydrationSummaryProps {
   waterOz: number;
-  waterGoalOz?: number;
+  waterGoalOz: number;
   sodiumMg: number;
   potassiumMg: number;
   magnesiumMg: number;
+  sodiumGoalMg: number;
+  potassiumGoalMg: number;
+  magnesiumGoalMg: number;
 }
 
 export function HydrationSummary({
   waterOz,
-  waterGoalOz = 80,
+  waterGoalOz,
   sodiumMg,
   potassiumMg,
   magnesiumMg,
+  sodiumGoalMg,
+  potassiumGoalMg,
+  magnesiumGoalMg,
 }: HydrationSummaryProps) {
   const waterPct = waterGoalOz > 0 ? Math.min(Math.round((waterOz / waterGoalOz) * 100), 100) : 0;
 
@@ -42,9 +48,9 @@ export function HydrationSummary({
         </div>
 
         <div className="grid grid-cols-3 gap-3 pt-1">
-          <ElectrolyteCell label="Sodium" amount={sodiumMg} adequate={2300} />
-          <ElectrolyteCell label="Potassium" amount={potassiumMg} adequate={3000} />
-          <ElectrolyteCell label="Magnesium" amount={magnesiumMg} adequate={400} />
+          <ElectrolyteCell label="Sodium" amount={sodiumMg} adequate={sodiumGoalMg} />
+          <ElectrolyteCell label="Potassium" amount={potassiumMg} adequate={potassiumGoalMg} />
+          <ElectrolyteCell label="Magnesium" amount={magnesiumMg} adequate={magnesiumGoalMg} />
         </div>
       </div>
     </div>
