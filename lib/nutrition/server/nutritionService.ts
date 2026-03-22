@@ -15,6 +15,7 @@ import type {
   NutritionMealSessionView,
   NutritionUserFoodView,
   NutritionUserGoalsView,
+  RecentFoodEntry,
   RetailChainView,
   RetailItemView,
 } from "@/lib/nutrition/types";
@@ -188,17 +189,102 @@ function computeSnapshotMacros(
   };
 }
 
+// ─── Recently logged foods ───────────────────────────────────────────────────
+
+export async function getRecentlyLoggedFoods(
+  userId: string,
+  limit = 20,
+): Promise<RecentFoodEntry[]> {
+  if (!hasNutritionModels()) return [];
+
+  try {
+    const recentItems = await db.nutritionMealItem.findMany({
+      where: {
+        session: { userId },
+        foodSource: { in: ["foundation", "complex"] },
+      },
+      orderBy: { createdAt: "desc" },
+      select: {
+        foodSource: true,
+        sourceFoodId: true,
+        foundationFoodId: true,
+      },
+      take: limit * 3,
+    });
+
+    const seenFoundation = new Set<string>();
+    const seenUserFood = new Set<string>();
+    const orderedFoundationIds: string[] = [];
+    const orderedUserFoodIds: string[] = [];
+    const insertionOrder: Array<{ type: "foundation" | "complex"; id: string }> = [];
+
+    for (const item of recentItems) {
+      if (
+        item.foodSource === "foundation" &&
+        item.foundationFoodId &&
+        !seenFoundation.has(item.foundationFoodId)
+      ) {
+        seenFoundation.add(item.foundationFoodId);
+        orderedFoundationIds.push(item.foundationFoodId);
+        insertionOrder.push({ type: "foundation", id: item.foundationFoodId });
+      } else if (
+        item.foodSource === "complex" &&
+        item.sourceFoodId &&
+        !seenUserFood.has(item.sourceFoodId)
+      ) {
+        seenUserFood.add(item.sourceFoodId);
+        orderedUserFoodIds.push(item.sourceFoodId);
+        insertionOrder.push({ type: "complex", id: item.sourceFoodId });
+      }
+      if (insertionOrder.length >= limit) break;
+    }
+
+    if (!insertionOrder.length) return [];
+
+    const [foundationRows, userFoodRows] = await Promise.all([
+      orderedFoundationIds.length > 0
+        ? db.nutritionFoundationFood.findMany({
+            where: { id: { in: orderedFoundationIds } },
+          })
+        : [],
+      orderedUserFoodIds.length > 0
+        ? db.nutritionUserFood.findMany({
+            where: { id: { in: orderedUserFoodIds }, active: true },
+          })
+        : [],
+    ]);
+
+    const foundationMap = new Map(foundationRows.map((r: any) => [r.id, r]));
+    const userFoodMap = new Map(userFoodRows.map((r: any) => [r.id, r]));
+
+    const results: RecentFoodEntry[] = [];
+    for (const entry of insertionOrder) {
+      if (entry.type === "foundation") {
+        const row = foundationMap.get(entry.id);
+        if (row) results.push({ type: "foundation", data: toFoundationFoodView(row) });
+      } else {
+        const row = userFoodMap.get(entry.id);
+        if (row) results.push({ type: "complex", data: toUserFoodView(row) });
+      }
+    }
+
+    return results;
+  } catch {
+    return [];
+  }
+}
+
 // ─── Bootstrap ───────────────────────────────────────────────────────────────
 
 export async function getNutritionBootstrap(
   userId: string,
 ): Promise<NutritionBootstrap> {
   if (!hasNutritionModels()) {
-    return { userFoods: [], retailChains: [], goals: null };
+    return { userFoods: [], retailChains: [], goals: null, recentFoods: [] };
   }
 
   try {
-    const [userFoods, retailChains, goals] = await Promise.all([
+    const [userFoods, retailChains, goals, recentFoods] = await Promise.all([
       db.nutritionUserFood.findMany({
         where: { userId, active: true },
         orderBy: { name: "asc" },
@@ -208,15 +294,17 @@ export async function getNutritionBootstrap(
         orderBy: { name: "asc" },
       }),
       db.nutritionUserGoals.findUnique({ where: { userId } }),
+      getRecentlyLoggedFoods(userId),
     ]);
 
     return {
       userFoods: userFoods.map(toUserFoodView),
       retailChains: retailChains.map(toRetailChainView),
       goals: goals ? toGoalsView(goals) : null,
+      recentFoods,
     };
   } catch {
-    return { userFoods: [], retailChains: [], goals: null };
+    return { userFoods: [], retailChains: [], goals: null, recentFoods: [] };
   }
 }
 

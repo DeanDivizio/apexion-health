@@ -20,6 +20,7 @@ import type {
   MealItemDraft,
   NutritionBootstrap,
   NutritionUserFoodView,
+  RecentFoodEntry,
 } from "@/lib/nutrition";
 import { isoDateToCompactDateStr, toCompactDateStr } from "@/lib/dates/dateStr";
 
@@ -114,12 +115,8 @@ export function NutritionFlow({ bootstrap }: NutritionFlowProps) {
   );
 
   React.useEffect(() => {
-    setMobileHeading("generic");
-    setHeaderComponentLeft(<div />);
     setHeaderComponentRight(overviewButton);
     return () => {
-      setMobileHeading("");
-      setHeaderComponentLeft(<div />);
       setHeaderComponentRight(<div />);
     };
   }, [overviewButton, setHeaderComponentLeft, setHeaderComponentRight, setMobileHeading]);
@@ -209,6 +206,7 @@ export function NutritionFlow({ bootstrap }: NutritionFlowProps) {
 
   return (
     <div className="relative px-2 pt-16 flex flex-col items-center w-full">
+    <h1 className="text-2xl mb-8 mt-4">Log Meal</h1>
       <Tabs
         value={activeTab}
         onValueChange={(v) => setActiveTab(v as "food" | "restaurant")}
@@ -222,6 +220,7 @@ export function NutritionFlow({ bootstrap }: NutritionFlowProps) {
         <TabsContent value="food" className="mt-4">
           <FoodSearch
             userFoods={userFoods}
+            recentFoods={bootstrap.recentFoods}
             onAddItem={handleAddItem}
             onUserFoodCreated={handleUserFoodCreated}
           />

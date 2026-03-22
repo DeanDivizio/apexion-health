@@ -106,6 +106,7 @@ export interface NutritionBootstrap {
   userFoods: NutritionUserFoodView[];
   retailChains: RetailChainView[];
   goals: NutritionUserGoalsView | null;
+  recentFoods: RecentFoodEntry[];
 }
 
 export interface NutritionUserGoalsView {
@@ -132,3 +133,7 @@ export interface UnifiedFoodSearchResults {
   foundation: FoundationFoodView[];
   userFoods: NutritionUserFoodView[];
 }
+
+export type RecentFoodEntry =
+  | { type: "foundation"; data: FoundationFoodView }
+  | { type: "complex"; data: NutritionUserFoodView };

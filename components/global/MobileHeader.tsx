@@ -40,8 +40,7 @@ export default function MobileHeader() {
                 </span>
             </div>
 
-            <div className="liquid-glass backdrop-blur-md flex items-center justify-center rounded-full p-2.5">
-                <span className="relative z-[1]">
+            <div className="liquid-glass backdrop-blur-md flex items-center justify-center rounded-full p-1">
                     {headerComponentRight ?? (
                         <>
                             <SignedIn>
@@ -52,7 +51,6 @@ export default function MobileHeader() {
                             </SignedOut>
                         </>
                     )}
-                </span>
             </div>
         </header>
     );
