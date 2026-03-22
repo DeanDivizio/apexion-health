@@ -1,6 +1,13 @@
 "use client";
 
-import React, { useState, useEffect, useContext, Suspense, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  useContext,
+  Suspense,
+  useCallback,
+  useRef,
+} from "react";
 import { homeFetch } from "@/actions/InternalLogic";
 import { getUserGoalsAction, getTodayMacroTotalsAction } from "@/actions/nutrition";
 import { getUserHomePreferencesAction } from "@/actions/settings";
@@ -90,12 +97,29 @@ export default function Home() {
   const [workoutData, setWorkoutData] = useState<WorkoutDaySummarySession[] | null>(null);
   const [medsData, setMedsData] = useState<MedsDaySummarySession[] | null>(null);
   const [microData, setMicroData] = useState<MicroNutrientEntry[] | null>(null);
+  const isFetchingRef = useRef(false);
+  const lastFetchAtRef = useRef(0);
+
+  const BACKGROUND_REFRESH_DEBOUNCE_MS = 30_000;
 
   const dataFetch = useCallback(async (silent = false) => {
+    const now = Date.now();
+    if (isFetchingRef.current) return;
+    if (
+      silent &&
+      lastFetchAtRef.current > 0 &&
+      now - lastFetchAtRef.current < BACKGROUND_REFRESH_DEBOUNCE_MS
+    ) {
+      return;
+    }
+
+    isFetchingRef.current = true;
+    lastFetchAtRef.current = now;
     const endDate = getTodayDateStrCompact();
     const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     const startDate = toCompactDateStr(oneWeekAgo);
     const todayDateStr = endDate;
+    const timezoneOffsetMinutes = new Date().getTimezoneOffset();
 
     if (!silent) {
       setWeeklyLoading(true);
@@ -132,9 +156,9 @@ export default function Home() {
       // 2) Secondary cards — parallel (async-parallel / defer-await pattern: macros are not blocked by these)
       const [prefs, hydration, workout, meds, micro] = await Promise.allSettled([
         getUserHomePreferencesAction(),
-        getHydrationSummaryAction(todayDateStr),
+        getHydrationSummaryAction(todayDateStr, timezoneOffsetMinutes),
         getWorkoutDaySummaryAction(todayDateStr),
-        getMedsDaySummaryAction(todayDateStr),
+        getMedsDaySummaryAction(todayDateStr, timezoneOffsetMinutes),
         getMicroNutrientSummaryAction(todayDateStr),
       ]);
 
@@ -160,28 +184,24 @@ export default function Home() {
         });
     } catch (err) {
       console.error(err);
+    } finally {
+      isFetchingRef.current = false;
     }
-  }, []);
+  }, [BACKGROUND_REFRESH_DEBOUNCE_MS]);
 
   useEffect(() => {
     dataFetch();
   }, [dataFetch]);
 
   useEffect(() => {
-    function refreshOnReturn() {
-      void dataFetch(true);
-    }
-
     function onVisibilityChange() {
       if (document.visibilityState === "visible") {
-        refreshOnReturn();
+        void dataFetch(true);
       }
     }
 
-    window.addEventListener("focus", refreshOnReturn);
     document.addEventListener("visibilitychange", onVisibilityChange);
     return () => {
-      window.removeEventListener("focus", refreshOnReturn);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
   }, [dataFetch]);

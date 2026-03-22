@@ -4,7 +4,11 @@ import { auth } from "@clerk/nextjs/server";
 import { updateTag } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/db/prisma";
-import { normalizeDateInput, toCompactDateStr } from "@/lib/dates/dateStr";
+import {
+  getUtcBoundsForLocalDate,
+  normalizeDateInput,
+  toCompactDateStr,
+} from "@/lib/dates/dateStr";
 
 const logHydrationSchema = z.object({
   amount: z.number().positive(),
@@ -99,16 +103,24 @@ export interface HydrationSummaryView {
 
 export async function getHydrationSummaryAction(
   dateStr: string,
+  timezoneOffsetMinutes = 0,
 ): Promise<HydrationSummaryView> {
   const userId = await requireUserId();
-  const { isoDate, sessionDateCandidates } = normalizeDateInput(dateStr);
+  const { sessionDateCandidates } = normalizeDateInput(dateStr);
+  const { startUtc, endUtcExclusive } = getUtcBoundsForLocalDate(
+    dateStr,
+    timezoneOffsetMinutes,
+  );
 
   const [hydrationLogs, mealNutrients, substanceIngredients, goalsRow] =
     await Promise.all([
       prisma.hydrationLog.findMany({
         where: {
           userId,
-          dateStr: { in: sessionDateCandidates },
+          createdAt: {
+            gte: startUtc,
+            lt: endUtcExclusive,
+          },
         },
         select: { amountOz: true },
       }),
@@ -133,8 +145,8 @@ export async function getHydrationSummaryAction(
               session: {
                 userId,
                 loggedAt: {
-                  gte: new Date(`${isoDate}T00:00:00.000Z`),
-                  lt: new Date(`${isoDate}T23:59:59.999Z`),
+                  gte: startUtc,
+                  lt: endUtcExclusive,
                 },
               },
             },

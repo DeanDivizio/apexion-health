@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db/prisma";
 import { cacheTag, cacheLife } from "next/cache";
-import { normalizeDateInput } from "@/lib/dates/dateStr";
+import { getUtcBoundsForLocalDate } from "@/lib/dates/dateStr";
 import type {
   MedicationBootstrap,
   MedicationDraftItem,
@@ -331,21 +331,25 @@ export interface MedsDaySummarySession {
 export async function getMedsDaySummary(
   userId: string,
   dateStr: string,
+  timezoneOffsetMinutes = 0,
 ): Promise<MedsDaySummarySession[]> {
   "use cache";
   cacheTag("medsSummary");
   cacheLife("hours");
 
   if (!hasCatalogModels()) return [];
-  const { isoDate } = normalizeDateInput(dateStr);
+  const { startUtc, endUtcExclusive } = getUtcBoundsForLocalDate(
+    dateStr,
+    timezoneOffsetMinutes,
+  );
 
   try {
     const sessions = await db.substanceLogSession.findMany({
       where: {
         userId,
         loggedAt: {
-          gte: new Date(`${isoDate}T00:00:00.000Z`),
-          lt: new Date(`${isoDate}T23:59:59.999Z`),
+          gte: startUtc,
+          lt: endUtcExclusive,
         },
       },
       orderBy: { loggedAt: "asc" },

@@ -76,7 +76,10 @@ export async function deleteMedicationLogSessionAction(sessionId: string) {
   return result;
 }
 
-export async function getMedsDaySummaryAction(dateStr: string) {
+export async function getMedsDaySummaryAction(
+  dateStr: string,
+  timezoneOffsetMinutes = 0,
+) {
   const userId = await requireUserId();
-  return getMedsDaySummary(userId, dateStr);
+  return getMedsDaySummary(userId, dateStr, timezoneOffsetMinutes);
 }

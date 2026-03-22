@@ -1,69 +1,166 @@
 "use client";
 
 import Link from "next/link";
-import { House, Plus, Dumbbell, Pill, Apple  } from "lucide-react";
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuTrigger,
-  } from "@/components/ui_primitives/dropdown-menu"
+  House,
+  Plus,
+  Dumbbell,
+  Pill,
+  Apple,
+  Droplets,
+} from "lucide-react";
+import { usePathname } from "next/navigation";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui_primitives/dropdown-menu-raw";
 import { useState } from "react";
 import LogHydrationDialog from "@/components/hydration/LogHydrationDialog";
 
+const navItems = [
+  { href: "/", icon: House, label: "Home" },
+  { href: "/meals", icon: Apple, label: "Meals" },
+  { href: "/gymsessions", icon: Dumbbell, label: "Gym" },
+  { href: "/meds", icon: Pill, label: "Meds" },
+];
 
+const logItems = [
+  { href: "/logmeal", icon: Apple, label: "Meal" },
+  { href: "/logmedication", icon: Pill, label: "Meds / Supplements" },
+  { href: "/logworkout", icon: Dumbbell, label: "Workout" },
+];
 
-function LogButton({open, setOpen, onHydrationClick }:{open:any, setOpen:any, onHydrationClick: () => void}){
- 
-    function handleNavClick(state:boolean){
-        setTimeout(()=>{setOpen(state)},60)
-    }
+function AddButton({
+  open,
+  setOpen,
+  onHydrationClick,
+}: {
+  open: boolean;
+  setOpen: (v: boolean) => void;
+  onHydrationClick: () => void;
+}) {
+  function handleNavClick(state: boolean) {
+    setTimeout(() => setOpen(state), 60);
+  }
 
-    return (
-        <DropdownMenu open={open} onOpenChange={setOpen}>
-            <DropdownMenuTrigger asChild >
-                <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-full bg-green-500 shadow-lg shadow-black transition duration-300 data-[state=open]:translate-y-3 data-[state=open]:rotate-45 data-[state=open]:bg-neutral-900">
-                    <Plus className="h-8 w-8" color={open ? "rgb(163 163 163)" : "white"} />
-                </div>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-[calc(100vw-2rem)] max-w-[400px] rounded-xl border border-white/10 bg-gradient-to-b from-blue-950/20 to-blue-950/5 px-8 py-8 shadow-lg backdrop-blur-xl data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0">
-                <DropdownMenuLabel className="text-2xl font-light w-full text-center mb-4">Log...</DropdownMenuLabel>
-                <DropdownMenuItem className="mb-8 flex flex-col items-center justify-center rounded bg-gradient-to-r from-green-500 to-blue-600 p-px" onClick={()=>handleNavClick(false)}>
-                    <Link className="w-full rounded bg-black px-12 py-2 text-center text-xl font-thin text-neutral-300 sm:px-16" href={"/logmeal"}>Meal</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem className="mb-8 flex flex-col items-center justify-center rounded bg-gradient-to-r from-green-500 to-blue-600 p-px" onClick={()=>handleNavClick(false)}>
-                    <Link className="w-full rounded bg-black px-12 py-2 text-center text-xl font-thin text-neutral-300 sm:px-16" href={"/logmedication"}>Meds/Supplements</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem className="mb-8 flex flex-col items-center justify-center rounded bg-gradient-to-r from-green-500 to-blue-600 p-px" onClick={()=>handleNavClick(false)}>
-                    <Link className="w-full rounded bg-black px-12 py-2 text-center text-xl font-thin text-neutral-300 sm:px-16" href={"/logworkout"}>Workout</Link>
-                </DropdownMenuItem>
-                <p className="text-sm font-thin italic mb-2">Quick Log</p>
-                <hr className="border-white/10 mb-4" />
-                <DropdownMenuItem className="mb-0 flex flex-col items-center justify-center rounded bg-gradient-to-r from-green-500 to-blue-600 p-px" onClick={() => { handleNavClick(false); onHydrationClick(); }}>
-                    <span className="w-full rounded bg-black px-12 py-2 text-center text-xl font-thin text-neutral-300 sm:px-16">Water</span>
-                </DropdownMenuItem>
-            </DropdownMenuContent>
-        </DropdownMenu>
-    )
+  return (
+    <DropdownMenu open={open} onOpenChange={setOpen}>
+      <DropdownMenuTrigger asChild>
+        <button className="liquid-glass-green backdrop-blur-md flex h-[58px] w-[58px] shrink-0 items-center justify-center rounded-full transition-all duration-300 active:scale-95 data-[state=open]:rotate-45">
+          <Plus className="relative z-[1] h-7 w-7 text-green-400" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        className="add-menu-pop liquid-glass backdrop-blur-md w-56 !rounded-2xl !border-white/[0.08] !bg-transparent p-2 !shadow-none"
+        align="end"
+        sideOffset={12}
+      >
+        <p className="px-3 pb-2 pt-1 text-xs font-medium tracking-wide text-white/40">
+          LOG
+        </p>
+
+        {logItems.map(({ href, icon: Icon, label }) => (
+          <DropdownMenuItem
+            key={href}
+            className="!rounded-xl px-3 py-3 focus:!bg-white/[0.08]"
+            onClick={() => handleNavClick(false)}
+          >
+            <Link href={href} className="flex w-full items-center gap-3">
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/[0.06]">
+                <Icon className="h-4 w-4 text-green-400" />
+              </span>
+              <span className="text-[15px] font-light text-white/90">
+                {label}
+              </span>
+            </Link>
+          </DropdownMenuItem>
+        ))}
+
+        <DropdownMenuSeparator className="mx-2 my-2 !bg-white/[0.06]" />
+
+        <p className="px-3 pb-2 text-xs font-medium tracking-wide text-white/40">
+          QUICK LOG
+        </p>
+
+        <DropdownMenuItem
+          className="!rounded-xl px-3 py-3 focus:!bg-white/[0.08]"
+          onClick={() => {
+            handleNavClick(false);
+            onHydrationClick();
+          }}
+        >
+          <span className="flex w-full items-center gap-3">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/[0.06]">
+              <Droplets className="h-4 w-4 text-blue-400" />
+            </span>
+            <span className="text-[15px] font-light text-white/90">Water</span>
+          </span>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 }
 
 export default function MobileNav() {
+  const pathname = usePathname();
+  const [open, setOpen] = useState(false);
+  const [hydrationOpen, setHydrationOpen] = useState(false);
 
-    const [open, setOpen] = useState(false);
-    const [hydrationOpen, setHydrationOpen] = useState(false);
+  return (
+    <>
+      <div
+        className={`pointer-events-none fixed inset-0 z-[9] transition duration-500 ${
+          open ? "bg-black/20 backdrop-blur-sm" : "bg-transparent"
+        }`}
+      />
 
-    return(
-        <>
-        <nav className="fixed bottom-0 z-10 flex h-20 w-full items-center justify-around border-t border-white/10 bg-gradient-to-b from-blue-950/20 to-blue-950/5 pb-2 backdrop-blur-xl md:hidden">
-            <Link href="/" className="flex justify-center"><House /></Link>
-            <Link href="/meals" className="flex justify-center"><Apple /></Link>
-            <LogButton open={open} setOpen={setOpen} onHydrationClick={() => setHydrationOpen(true)} />
-            <Link href="/gymsessions" className="flex justify-center"><Dumbbell /></Link>
-            <Link href="/meds" className="flex justify-center"><Pill /></Link>
-            <div className={`${open ? "bg-black/80 backdrop-blur-sm":"bg-transparent backdrop-blur-none"} pointer-events-none fixed left-0 top-0 z-10 h-[100vh] w-[100vw] -translate-y-full transition duration-500`}></div>
-        </nav>
-        <LogHydrationDialog open={hydrationOpen} onOpenChange={setHydrationOpen} />
-        </>
-    )
+      <nav className="fixed backdrop-blur-lg bottom-0 z-10 flex w-full items-center justify-center gap-3 px-4 pb-2 md:hidden">
+        <div className="liquid-glass flex flex-1 items-center justify-around rounded-[28px] py-2">
+          {navItems.map(({ href, icon: Icon, label }) => {
+            const isActive =
+              href === "/" ? pathname === "/" : pathname.startsWith(href);
+
+            return (
+              <Link
+                key={href}
+                href={href}
+                className="relative z-[1] flex flex-col items-center gap-0.5"
+              >
+                <span
+                  className={`flex h-9 w-9 items-center justify-center rounded-full transition-colors duration-300 ${
+                    isActive ? "bg-white/[0.12]" : ""
+                  }`}
+                >
+                  <Icon
+                    className={`h-[22px] w-[22px] transition-colors duration-300 ${
+                      isActive ? "text-white" : "text-white/45"
+                    }`}
+                    strokeWidth={isActive ? 2 : 1.5}
+                  />
+                </span>
+                <span
+                  className={`text-[10px] font-medium transition-colors duration-300 ${
+                    isActive ? "text-green-400" : "text-white/45"
+                  }`}
+                >
+                  {label}
+                </span>
+              </Link>
+            );
+          })}
+        </div>
+
+        <AddButton
+          open={open}
+          setOpen={setOpen}
+          onHydrationClick={() => setHydrationOpen(true)}
+        />
+      </nav>
+
+      <LogHydrationDialog open={hydrationOpen} onOpenChange={setHydrationOpen} />
+    </>
+  );
 }
