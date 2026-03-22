@@ -117,8 +117,8 @@ export default function MobileNav() {
         }`}
       />
 
-      <nav className="fixed backdrop-blur-lg bottom-0 z-10 flex w-full items-center justify-center gap-3 px-4 pb-2 md:hidden">
-        <div className="liquid-glass flex flex-1 items-center justify-around rounded-[28px] py-2">
+      <nav className="fixed bottom-0 z-10 flex w-full items-center justify-center gap-3 px-4 pb-2 md:hidden">
+        <div className="liquid-glass backdrop-blur-md flex flex-1 items-center justify-around rounded-[28px] py-2">
           {navItems.map(({ href, icon: Icon, label }) => {
             const isActive =
               href === "/" ? pathname === "/" : pathname.startsWith(href);

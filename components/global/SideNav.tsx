@@ -1,57 +1,140 @@
 "use client";
-import { Sheet, SheetClose, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui_primitives/sheet";
-import { Activity, Apple, ClipboardPlus, Dumbbell, MenuIcon, MessageSquareWarning, Pill, Scale, Settings, Syringe, TestTube, UserPen } from "lucide-react";
+
+import {
+    Sheet,
+    SheetClose,
+    SheetContent,
+    SheetDescription,
+    SheetHeader,
+    SheetTitle,
+    SheetTrigger,
+} from "@/components/ui_primitives/sheet";
+import {
+    Activity,
+    Apple,
+    ClipboardPlus,
+    Dumbbell,
+    MenuIcon,
+    MessageSquareWarning,
+    Pill,
+    Scale,
+    Settings,
+    TestTube,
+    UserPen,
+} from "lucide-react";
 import Link from "next/link";
-import { SignIn, useUser } from "@clerk/nextjs";
+import { useUser } from "@clerk/nextjs";
 import { SignInButton, SignedIn, SignedOut } from "@clerk/nextjs";
+
+const collections = [
+    { href: "/gymsessions", icon: Dumbbell, label: "Gym Sessions" },
+    { href: "/nutrientrecords", icon: Apple, label: "Nutrient Records" },
+    { href: "/meds", icon: ClipboardPlus, label: "Medication & Supplements" },
+    { href: "/bodymeasurements", icon: Scale, label: "Body Measurements", placeholder: true },
+    { href: "/biometrics", icon: Activity, label: "Biometrics", placeholder: true },
+];
+
+const dashboards = [
+    { href: "/gymgraphs", icon: Dumbbell, label: "Fitness" },
+    { href: "/nutrientgraphs", icon: Apple, label: "Nutrient Intake" },
+    { href: "/supplementgraphs", icon: Pill, label: "Medications & Supplements" },
+    { href: "/bodygraphs", icon: Scale, label: "Body Measurements", placeholder: true },
+    { href: "/labs", icon: TestTube, label: "Lab Results", placeholder: true },
+];
+
+const admin = [
+    { href: "/settings", icon: Settings, label: "Settings" },
+    { href: "/support", icon: MessageSquareWarning, label: "Support" },
+    { href: "/feedback", icon: UserPen, label: "Feedback" },
+];
+
+function NavItem({ href, icon: Icon, label, placeholder }: {
+    href: string;
+    icon: React.ElementType;
+    label: string;
+    placeholder?: boolean;
+}) {
+    return (
+        <SheetClose asChild>
+            <Link
+                href={href}
+                className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors active:bg-white/[0.08]"
+            >
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/[0.06]">
+                    <Icon className="h-4 w-4 text-green-400" />
+                </span>
+                <span className={`text-sm font-light ${placeholder ? "text-white/30" : "text-white/80"}`}>
+                    {label}
+                </span>
+            </Link>
+        </SheetClose>
+    );
+}
+
 export function SideNav() {
     const { user } = useUser();
+
     return (
-        <Sheet >
+        <Sheet>
             <SheetTrigger>
-                <MenuIcon />
+                <MenuIcon className="h-5 w-5 text-white/80" />
             </SheetTrigger>
-            <SheetContent side="left" className="w-full bg-neutral-900/30 backdrop-blur-lg">
+            <SheetContent
+                side="left"
+                className="w-full border-none bg-black/40 p-6 backdrop-blur-[60px] backdrop-saturate-[180%]"
+            >
                 <SheetHeader>
                     <SignedIn>
-                        <SheetTitle className="text-base font-regular">{`Hi, ${user?.firstName}`}</SheetTitle>
-                        <SheetDescription className="text-xs font-thin italic">{`Where would you like to go?`}</SheetDescription>
+                        <SheetTitle className="text-left text-base font-normal text-white/90">
+                            {`Hi, ${user?.firstName}`}
+                        </SheetTitle>
+                        <SheetDescription className="text-left text-xs font-light italic text-white/40">
+                            Where would you like to go?
+                        </SheetDescription>
                     </SignedIn>
                     <SignedOut>
-                        <SheetTitle className="text-base font-regular"><SignInButton /></SheetTitle>
+                        <SheetTitle className="text-base font-normal">
+                            <SignInButton />
+                        </SheetTitle>
                     </SignedOut>
                 </SheetHeader>
-                <nav className="flex flex-col gap-4 pt-6 h-full overflow-y-scroll">
-                    <div id="side-nav-collections" className="flex flex-col text-sm font-light">
-                        <h3 className="text-lg font-bold mb-0">Collections</h3>
-                        <p className="text-xs font-thin italic mb-4">Your personal databases, orgnaized by day. Clear, accurate, editable.</p>
-                        <SheetClose asChild><Link href="/gymsessions" className="flex items-center gap-2 mb-4 "><Dumbbell className="w-4 h-4" />Gym Sessions</Link></SheetClose>
-                        <SheetClose asChild><Link href="/nutrientrecords" className="flex items-center gap-2 mb-4"><Apple className="w-4 h-4" />Nutrient Records</Link></SheetClose>
-                        <SheetClose asChild><Link href="/meds" className="flex items-center gap-2 mb-4"><ClipboardPlus className="w-4 h-4" />Medication & Supplement Logs</Link></SheetClose>
-                        <SheetClose asChild><Link href="/bodymeasurements" className="flex items-center gap-2 mb-4"><Scale className="w-4 h-4" />Body Measurements (placeholder)</Link></SheetClose>
-                        <SheetClose asChild><Link href="/biometrics" className="flex items-center gap-2 mb-4"><Activity className="w-4 h-4" />Biometrics (placeholder)</Link></SheetClose>
+
+                <nav className="flex h-full flex-col gap-6 overflow-y-auto pt-6">
+                    <div>
+                        <p className="mb-2 px-3 text-xs font-medium uppercase tracking-wide text-white/40">
+                            Collections
+                        </p>
+                        {collections.map((item) => (
+                            <NavItem key={item.href} {...item} />
+                        ))}
                     </div>
-                    <div id="side-nav-graphs" className="flex flex-col text-sm font-light">
-                        <h3 className="text-lg font-bold mb-0">Dashboards</h3>
-                        <p className="text-xs font-thin italic mb-4">Your data - visualized. Actionable graphs to help you track your wellness.</p>
-                        <SheetClose asChild><Link href="/gymgraphs" className="flex items-center gap-2 mb-4"><Dumbbell className="w-4 h-4" />Fitness</Link></SheetClose>
-                        <SheetClose asChild><Link href="/nutrientgraphs" className="flex items-center gap-2 mb-4"><Apple className="w-4 h-4" />Nutrient Intake</Link></SheetClose>
-                        <SheetClose asChild><Link href="/supplementgraphs" className="flex items-center gap-2 mb-4"><Pill className="w-4 h-4" />Medications & Supplements</Link></SheetClose>
-                        <SheetClose asChild><Link href="/bodygraphs" className="flex items-center gap-2 mb-4"><Scale className="w-4 h-4" />Body Measurements (placeholder)</Link></SheetClose>
-                        <SheetClose asChild><Link href="/labs" className="flex items-center gap-2 mb-4"><TestTube className="w-4 h-4" />Lab Results (placeholder)</Link></SheetClose>
+
+                    <div>
+                        <p className="mb-2 px-3 text-xs font-medium uppercase tracking-wide text-white/40">
+                            Dashboards
+                        </p>
+                        {dashboards.map((item) => (
+                            <NavItem key={item.href} {...item} />
+                        ))}
                     </div>
-                    <div id="side-nav-admin" className="absolute left-0 bottom-8 flex flex-col text-sm font-light w-full">
-                        {/* <h3 className="text-base font-regular mb-2">Admin</h3> */}
-                        <div className="flex gap-6 justify-center w-full">
-                            <SheetClose asChild><Link href="/settings" className="flex items-center gap-2 mb-2"><Settings className="w-4 h-4" />Settings</Link></SheetClose>
-                            <p>|</p>
-                            <SheetClose asChild><Link href="/support" className="flex items-center gap-2 mb-2"><MessageSquareWarning className="w-4 h-4" />Support</Link></SheetClose>
-                            <p>|</p>
-                            <SheetClose asChild><Link href="/feedback" className="flex items-center gap-2 mb-2"><UserPen className="w-4 h-4" />Feedback</Link></SheetClose>
+
+                    <div className="absolute bottom-8 left-0 w-full px-6">
+                        <div className="flex items-center justify-center gap-2 rounded-[22px] bg-white/[0.04] px-4 py-3">
+                            {admin.map(({ href, icon: Icon, label }, i) => (
+                                <SheetClose asChild key={href}>
+                                    <Link
+                                        href={href}
+                                        className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-light text-white/50 transition-colors active:bg-white/[0.08]"
+                                    >
+                                        <Icon className="h-3.5 w-3.5" />
+                                        {label}
+                                    </Link>
+                                </SheetClose>
+                            ))}
                         </div>
                     </div>
                 </nav>
             </SheetContent>
         </Sheet>
-    )
+    );
 }
