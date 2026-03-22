@@ -9,6 +9,7 @@ const iconSource = path.join(publicDir, "icon-source.png");
 const splashSource = path.join(publicDir, "splash-source.png");
 
 const iconVariants = [
+  { file: "favicon-32x32.png", width: 32, height: 32 },
   { file: "icon-192x192.png", width: 192, height: 192 },
   { file: "icon-512x512.png", width: 512, height: 512 },
   { file: "apple-touch-icon.png", width: 180, height: 180 },
