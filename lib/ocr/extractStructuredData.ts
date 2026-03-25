@@ -1,4 +1,5 @@
 import { OpenAI } from "@posthog/ai";
+import type { ChatCompletionContentPart } from "openai/resources/chat/completions";
 import { type ZodType, type ZodTypeDef } from "zod";
 import { getPostHogClient } from "@/lib/posthog-server";
 
@@ -14,13 +15,14 @@ export async function extractStructuredData<TOut, TDef extends ZodTypeDef, TIn>(
   req: ExtractionRequest<TOut, TDef, TIn>,
 ): Promise<TOut> {
   const client = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
+    apiKey: process.env.OPENAI_API_KEY || "",
     posthog: getPostHogClient(),
   });
 
-  const imageContent: OpenAI.Chat.Completions.ChatCompletionContentPart = req.image.startsWith("data:")
-    ? { type: "image_url", image_url: { url: req.image, detail: "high" } }
-    : { type: "image_url", image_url: { url: req.image, detail: "high" } };
+  const imageContent: ChatCompletionContentPart = {
+    type: "image_url",
+    image_url: { url: req.image, detail: "high" },
+  };
 
   const response = await client.chat.completions.create({
     model: req.model ?? "gpt-5.2",
