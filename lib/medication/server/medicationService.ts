@@ -487,6 +487,9 @@ export async function createSubstance(
   const base = generateKey(input.displayName) || "custom-substance";
   const key = `${base}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 
+  const selfIngredientKey =
+    !input.isCompound ? generateKey(input.displayName) || null : null;
+
   const ingredientCreates =
     input.isCompound && input.ingredients.length
       ? input.ingredients.map((ing, idx) => ({
@@ -504,6 +507,7 @@ export async function createSubstance(
       key,
       displayName: input.displayName.trim(),
       isCompound: input.isCompound,
+      selfIngredientKey,
       defaultDoseUnit: input.isCompound
         ? null
         : (input.defaultDoseUnit ?? "mg"),
