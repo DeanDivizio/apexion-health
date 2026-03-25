@@ -41,3 +41,5 @@ next-env.d.ts
 
 .VSCodeCounter
 SETTINGS_IMPLEMENTATION_PLAN.md
+.env.local
+.claude*

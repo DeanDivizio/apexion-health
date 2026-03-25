@@ -16,6 +16,7 @@ import { Label } from "@/components/ui_primitives/label";
 import { useToast } from "@/hooks/use-toast";
 import { extractNutritionLabelAction } from "@/actions/ocr";
 import { createRetailUserItemAction } from "@/actions/nutrition";
+import { captureClientEvent } from "@/lib/posthog-client";
 import { compressImage } from "@/lib/compressImage";
 import type { MealItemDraft, NutrientProfile } from "@/lib/nutrition";
 
@@ -129,6 +130,10 @@ export function RetailItemCreator({
         nutrients,
         servingSize: null,
         servingUnit: null,
+      });
+      captureClientEvent("nutrition_retail_item_created", {
+        chain_id: chainId,
+        chain_name: chainName,
       });
 
       const draft: MealItemDraft = {

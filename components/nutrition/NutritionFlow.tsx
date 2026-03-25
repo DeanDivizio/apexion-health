@@ -23,6 +23,7 @@ import type {
   RecentFoodEntry,
 } from "@/lib/nutrition";
 import { isoDateToCompactDateStr, toCompactDateStr } from "@/lib/dates/dateStr";
+import { captureClientEvent } from "@/lib/posthog-client";
 
 function todayDateStr(): string {
   return toCompactDateStr(new Date());
@@ -124,6 +125,10 @@ export function NutritionFlow({ bootstrap }: NutritionFlowProps) {
   const handleAddItem = useCallback(
     (item: MealItemDraft) => {
       setStagedItems((prev) => [...prev, item]);
+      captureClientEvent("food_item_added", {
+        food_name: item.snapshotName,
+        food_source: item.foodSource,
+      });
       toast({ title: `${item.snapshotName} added to meal` });
     },
     [toast],
@@ -182,6 +187,10 @@ export function NutritionFlow({ bootstrap }: NutritionFlowProps) {
       setSessionDate(todayIso());
       setSessionTime(nowTime());
       clearPersistedMealState();
+      captureClientEvent("meal_logged", {
+        item_count: stagedItems.length,
+        meal_label: mealLabel,
+      });
       toast({ title: "Meal logged", description: `${stagedItems.length} item${stagedItems.length === 1 ? "" : "s"} recorded.` });
       router.push("/");
     } catch {

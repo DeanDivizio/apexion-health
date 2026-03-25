@@ -9,6 +9,7 @@ import { Toaster } from "@/components/ui_primitives/toaster";
 import { MobileHeaderProvider } from "@/context/MobileHeaderContext";
 import { SyncStatusProvider } from "@/context/SyncStatusContext";
 import { Suspense } from "react";
+import PostHogIdentifier from "@/components/global/PostHogIdentifier";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -67,6 +68,7 @@ export default function RootLayout({
       <body className="w-full h-auto overflow-clip bg-black">
         <Suspense>
           <ClerkProvider>
+            <PostHogIdentifier />
             <MobileHeaderProvider>
               <SyncStatusProvider>
                   <MobileHeader />

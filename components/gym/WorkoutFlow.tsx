@@ -7,6 +7,7 @@ import { Settings2, ClipboardList } from "lucide-react";
 import { MobileHeaderContext } from "@/context/MobileHeaderContext";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui_primitives/button";
+import { captureClientEvent } from "@/lib/posthog-client";
 import { AddExercise } from "./AddExercise";
 import { ExerciseLogger } from "./ExerciseLogger";
 import { ExerciseSettingsSheet } from "./ExerciseSettingsSheet";
@@ -339,6 +340,10 @@ export function WorkoutFlow({ userMeta, customExerciseGroups }: WorkoutFlowProps
     }
 
     setExercises((prev) => [...prev, entry]);
+    captureClientEvent("workout_exercise_staged", {
+      exercise_key: activeExerciseKey,
+      set_count: entry.sets.length,
+    });
     setActiveExerciseKey(null);
     setActiveSets([{ weight: 0, reps: { bilateral: 0 } }]);
     setActiveVariations({});
@@ -397,6 +402,10 @@ export function WorkoutFlow({ userMeta, customExerciseGroups }: WorkoutFlowProps
         startTime,
         endTime: endTimeStr,
         exercises,
+      });
+      captureClientEvent("workout_session_logged", {
+        exercise_count: exercises.length,
+        used_manual_end_time: endTime !== null,
       });
 
       clearPersistedState();

@@ -19,6 +19,7 @@ import {
 import { Input } from "@/components/ui_primitives/input";
 import { Button } from "@/components/ui_primitives/button";
 import { logHydrationAction } from "@/actions/hydration";
+import { captureClientEvent } from "@/lib/posthog-client";
 
 interface LogHydrationDialogProps {
   open: boolean;
@@ -44,6 +45,10 @@ export default function LogHydrationDialog({
 
     startTransition(async () => {
       await logHydrationAction({ amount: parsed, unit });
+      captureClientEvent("hydration_logged", {
+        amount: parsed,
+        unit,
+      });
       reset();
       onOpenChange(false);
     });

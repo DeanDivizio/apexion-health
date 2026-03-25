@@ -46,11 +46,13 @@ Return ONLY valid JSON:
 export async function extractRetailMenuData(
   image: string,
   chainName: string,
+  posthogDistinctId?: string,
 ): Promise<RetailMenuItemData[]> {
   const result = await extractStructuredData({
     image,
     systemPrompt: buildSystemPrompt(chainName),
     responseSchema: retailMenuResponseSchema,
+    posthogDistinctId,
   });
   return result.items;
 }

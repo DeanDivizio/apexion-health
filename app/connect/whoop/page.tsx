@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { PROVIDER_CONFIGS } from "@/lib/providers/types";
+import { captureClientEvent } from "@/lib/posthog-client";
 
 interface ScopeOption {
   scope: string;
@@ -91,6 +92,10 @@ export default function ConnectWhoopPage() {
 
   const handleConnect = () => {
     if (selected.size === 0) return;
+
+    captureClientEvent("whoop_connect_initiated", {
+      scope_count: selected.size,
+    });
 
     const state = generateState();
     const scopes = [...selected, "offline"].join(" ");

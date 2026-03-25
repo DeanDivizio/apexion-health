@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/db/prisma";
+import { getPostHogClient } from "@/lib/posthog-server";
 import {
   syncWhoopData,
   purgeAllBiometricData,
@@ -42,6 +43,24 @@ export async function POST(request: NextRequest) {
       fullBackfill: fullBackfill || purge,
       maxPagesPerType: fullBackfill || purge ? 10 : 2,
     });
+
+    after(() => {
+      try {
+        const phClient = getPostHogClient();
+        phClient.capture({
+          distinctId: userId,
+          event: "whoop_sync_triggered",
+          properties: {
+            full_backfill: fullBackfill,
+            purge,
+            pages_processed: result.pagesProcessed,
+          },
+        });
+      } catch (error) {
+        console.error("PostHog capture error (whoop_sync_triggered):", error);
+      }
+    });
+
     return NextResponse.json({
       success: true,
       pagesProcessed: result.pagesProcessed,

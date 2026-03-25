@@ -7,6 +7,7 @@ import {
   listWorkoutSessionsAction,
   updateWorkoutSessionAction,
 } from "@/actions/gym"
+import { captureClientEvent } from "@/lib/posthog-client"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -87,6 +88,7 @@ export default function GymSessions() {
       await updateWorkoutSessionAction(id, sessionData)
       setSessions((prev) => prev.map((s) => (s.id === id ? updated : s)))
       closeEditor()
+      captureClientEvent("workout_session_updated", { session_id: id })
       toast({ title: "Session updated", description: "Your changes have been saved." })
     } catch {
       toast({
@@ -104,6 +106,7 @@ export default function GymSessions() {
     setDeleting(true)
     try {
       await deleteWorkoutSessionAction(deleteConfirmId)
+      captureClientEvent("workout_session_deleted", { session_id: deleteConfirmId })
       setSessions((prev) => prev.filter((s) => s.id !== deleteConfirmId))
       if (editingId === deleteConfirmId) {
         if (closeEditTimeoutRef.current !== null) {

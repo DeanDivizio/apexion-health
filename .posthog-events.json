@@ -1,0 +1,97 @@
+[
+  {
+    "event": "meal_logged",
+    "description": "User successfully saves a meal session with food items",
+    "file": "components/nutrition/NutritionFlow.tsx"
+  },
+  {
+    "event": "food_item_added",
+    "description": "User adds a food item to the current meal session",
+    "file": "components/nutrition/NutritionFlow.tsx"
+  },
+  {
+    "event": "medication_logged",
+    "description": "User successfully saves a medication log session",
+    "file": "components/meds/MedicationFlow.tsx"
+  },
+  {
+    "event": "medication_preset_saved",
+    "description": "User saves a new medication preset for quick reuse",
+    "file": "components/meds/MedicationFlow.tsx"
+  },
+  {
+    "event": "medication_preset_logged",
+    "description": "User logs a medication session directly from a saved preset",
+    "file": "components/meds/MedicationFlow.tsx"
+  },
+  {
+    "event": "substance_created",
+    "description": "User creates a new substance in their personal catalog",
+    "file": "components/meds/MedicationFlow.tsx"
+  },
+  {
+    "event": "workout_session_updated",
+    "description": "User saves edits to an existing gym session",
+    "file": "app/gymsessions/page.tsx"
+  },
+  {
+    "event": "workout_session_deleted",
+    "description": "User permanently deletes a gym session",
+    "file": "app/gymsessions/page.tsx"
+  },
+  {
+    "event": "whoop_connect_initiated",
+    "description": "User clicks Connect to Whoop and is redirected to OAuth",
+    "file": "app/connect/whoop/page.tsx"
+  },
+  {
+    "event": "whoop_connected",
+    "description": "Whoop OAuth callback succeeds and the connection is stored (server-side)",
+    "file": "app/api/auth/whoop/callback/route.ts"
+  },
+  {
+    "event": "whoop_sync_triggered",
+    "description": "User manually triggers a Whoop data sync (server-side)",
+    "file": "app/api/sync/whoop/route.ts"
+  },
+  {
+    "event": "home_settings_saved",
+    "description": "User saves their home screen section preferences",
+    "file": "app/settings/home/page.tsx"
+  },
+  {
+    "event": "workout_exercise_staged",
+    "description": "User stages an exercise while building a workout session",
+    "file": "components/gym/WorkoutFlow.tsx"
+  },
+  {
+    "event": "workout_session_logged",
+    "description": "User logs a completed workout session",
+    "file": "components/gym/WorkoutFlow.tsx"
+  },
+  {
+    "event": "medication_item_staged",
+    "description": "User stages a medication/substance entry before saving a session",
+    "file": "components/meds/MedicationFlow.tsx"
+  },
+  {
+    "event": "medication_preset_applied",
+    "description": "User applies a saved medication preset to staged items",
+    "file": "components/meds/MedicationFlow.tsx"
+  },
+  {
+    "event": "nutrition_user_food_created",
+    "description": "User creates a new custom food and adds it to a meal",
+    "file": "components/nutrition/ManualFoodForm.tsx"
+  },
+  {
+    "event": "nutrition_retail_item_created",
+    "description": "User creates a missing retail menu item and adds it to a meal",
+    "file": "components/nutrition/RetailItemCreator.tsx"
+  },
+  {
+    "event": "hydration_logged",
+    "description": "User logs a hydration entry",
+    "file": "components/hydration/LogHydrationDialog.tsx"
+  }
+]

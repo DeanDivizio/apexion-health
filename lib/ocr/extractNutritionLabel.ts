@@ -59,10 +59,12 @@ Return ONLY valid JSON matching this shape:
 
 export async function extractNutritionLabel(
   image: string,
+  posthogDistinctId?: string,
 ): Promise<NutritionLabelData> {
   return extractStructuredData({
     image,
     systemPrompt: SYSTEM_PROMPT,
     responseSchema: nutritionLabelSchema,
+    posthogDistinctId,
   });
 }

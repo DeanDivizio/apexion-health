@@ -5,6 +5,7 @@ import {
   getUserHomePreferencesAction,
   upsertUserHomePreferencesAction,
 } from "@/actions/settings";
+import { captureClientEvent } from "@/lib/posthog-client";
 import type { UserHomePreferencesView } from "@/lib/settings/server/settingsService";
 import { Switch } from "@/components/ui_primitives/switch";
 import { Button } from "@/components/ui_primitives/button";
@@ -72,6 +73,7 @@ export default function HomeSettingsPage() {
     startTransition(async () => {
       try {
         await upsertUserHomePreferencesAction(prefs);
+        captureClientEvent("home_settings_saved");
         toast({ title: "Home screen settings saved" });
       } catch {
         toast({ title: "Failed to save settings", variant: "destructive" });

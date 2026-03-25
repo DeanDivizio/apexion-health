@@ -16,6 +16,7 @@ import { Label } from "@/components/ui_primitives/label";
 import { Textarea } from "@/components/ui_primitives/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { createUserFoodAction } from "@/actions/nutrition";
+import { captureClientEvent } from "@/lib/posthog-client";
 import type { MealItemDraft, NutritionUserFoodView, NutrientProfile } from "@/lib/nutrition";
 
 interface ManualFoodFormProps {
@@ -152,6 +153,10 @@ export function ManualFoodForm({
         servingSize: num(servingSize) || 1,
         servingUnit: servingUnit.trim() || "serving",
         ingredients: ingredients.trim() || null,
+      });
+      captureClientEvent("nutrition_user_food_created", {
+        has_brand: !!created.brand,
+        has_ingredients: !!created.ingredients,
       });
 
       onUserFoodCreated(created);

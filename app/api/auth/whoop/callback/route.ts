@@ -1,8 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/db/prisma";
 import { exchangeCodeForTokens } from "@/lib/providers/token-service";
 import { getUserProfile } from "@/lib/providers/whoop/api-client";
+import { getPostHogClient } from "@/lib/posthog-server";
 import { cookies } from "next/headers";
 
 export async function GET(request: NextRequest) {
@@ -69,6 +70,21 @@ export async function GET(request: NextRequest) {
         status: "ACTIVE",
         errorMessage: null,
       },
+    });
+
+    after(() => {
+      try {
+        const phClient = getPostHogClient();
+        phClient.capture({
+          distinctId: userId,
+          event: "whoop_connected",
+          properties: {
+            scopes: storedScopes,
+          },
+        });
+      } catch (error) {
+        console.error("PostHog capture error (whoop_connected):", error);
+      }
     });
 
     // Clear OAuth cookies

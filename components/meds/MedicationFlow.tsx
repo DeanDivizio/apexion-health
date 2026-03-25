@@ -42,6 +42,7 @@ import type {
   SubstanceCatalogItemView,
   SubstanceLogValues,
 } from "@/lib/medication";
+import { captureClientEvent } from "@/lib/posthog-client";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -302,6 +303,10 @@ export function MedicationFlow({ bootstrap }: MedicationFlowProps) {
     const item = validateAndBuildDraftItem();
     if (!item) return;
     setStagedItems((prev) => [...prev, item]);
+    captureClientEvent("medication_item_staged", {
+      substance_name: item.snapshotName,
+      has_delivery_method: !!item.deliveryMethodId,
+    });
     resetActiveEntry();
     toast({
       title: "Item staged",
@@ -344,6 +349,10 @@ export function MedicationFlow({ bootstrap }: MedicationFlowProps) {
         setSessionDate(new Date());
         setSessionTime(nowTimeInputValue());
         clearPersistedState();
+        captureClientEvent("medication_logged", {
+          item_count: items.length,
+          used_preset: !!presetId,
+        });
         toast({
           title: "Medication log saved",
           description: `${items.length} item${items.length === 1 ? "" : "s"} recorded.`,
@@ -390,6 +399,10 @@ export function MedicationFlow({ bootstrap }: MedicationFlowProps) {
       ]);
       setPresetNameDialogOpen(false);
       setPresetNameValue("");
+      captureClientEvent("medication_preset_saved", {
+        preset_name: name,
+        item_count: stagedItems.length,
+      });
       toast({
         title: "Preset saved",
         description: `${name} is now available in presets.`,
@@ -408,6 +421,10 @@ export function MedicationFlow({ bootstrap }: MedicationFlowProps) {
   const applyPresetItems = React.useCallback(
     (preset: MedicationPresetView) => {
       setStagedItems(preset.items);
+      captureClientEvent("medication_preset_applied", {
+        preset_name: preset.name,
+        item_count: preset.items.length,
+      });
       setConfirmPresetApplyOpen(false);
       toast({
         title: "Preset applied",
@@ -432,6 +449,10 @@ export function MedicationFlow({ bootstrap }: MedicationFlowProps) {
     if (!selectedPresetId) return;
     const preset = presets.find((p) => p.id === selectedPresetId);
     if (!preset) return;
+    captureClientEvent("medication_preset_logged", {
+      preset_name: preset.name,
+      item_count: preset.items.length,
+    });
     await handleSaveSession(preset.items, preset.id, new Date().toISOString());
   }, [handleSaveSession, presets, selectedPresetId]);
 
@@ -501,6 +522,10 @@ export function MedicationFlow({ bootstrap }: MedicationFlowProps) {
       setNewIngredients([]);
       setSelectedSubstanceId(created.id);
       setLogValues(emptyLogValues(created));
+      captureClientEvent("substance_created", {
+        substance_name: created.displayName,
+        is_compound: created.isCompound,
+      });
       toast({
         title: "Substance created",
         description: `${created.displayName} was added to your catalog.`,

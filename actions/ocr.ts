@@ -7,7 +7,7 @@ import { extractRetailMenuData } from "@/lib/ocr/extractRetailMenuData";
 export async function extractNutritionLabelAction(imageBase64: string) {
   const { userId } = await auth();
   if (!userId) throw new Error("User is not signed in.");
-  return extractNutritionLabel(imageBase64);
+  return extractNutritionLabel(imageBase64, userId);
 }
 
 export async function extractRetailMenuAction(
@@ -16,5 +16,5 @@ export async function extractRetailMenuAction(
 ) {
   const { userId } = await auth();
   if (!userId) throw new Error("User is not signed in.");
-  return extractRetailMenuData(imageBase64, chainName);
+  return extractRetailMenuData(imageBase64, chainName, userId);
 }

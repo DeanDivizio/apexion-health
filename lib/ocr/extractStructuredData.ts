@@ -1,17 +1,22 @@
-import OpenAI from "openai";
+import { OpenAI } from "@posthog/ai";
 import { type ZodType, type ZodTypeDef } from "zod";
+import { getPostHogClient } from "@/lib/posthog-server";
 
 interface ExtractionRequest<TOut, TDef extends ZodTypeDef, TIn> {
   image: string;
   systemPrompt: string;
   responseSchema: ZodType<TOut, TDef, TIn>;
   model?: string;
+  posthogDistinctId?: string;
 }
 
 export async function extractStructuredData<TOut, TDef extends ZodTypeDef, TIn>(
   req: ExtractionRequest<TOut, TDef, TIn>,
 ): Promise<TOut> {
-  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  const client = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+    posthog: getPostHogClient(),
+  });
 
   const imageContent: OpenAI.Chat.Completions.ChatCompletionContentPart = req.image.startsWith("data:")
     ? { type: "image_url", image_url: { url: req.image, detail: "high" } }
@@ -31,6 +36,7 @@ export async function extractStructuredData<TOut, TDef extends ZodTypeDef, TIn>(
       },
     ],
     max_completion_tokens: 4096,
+    posthogDistinctId: req.posthogDistinctId,
   });
 
   const rawText = response.choices[0]?.message?.content;
