@@ -127,8 +127,7 @@ interface MedicationFlowProps {
 export function MedicationFlow({ bootstrap }: MedicationFlowProps) {
   const router = useRouter();
   const { toast } = useToast();
-  const { setMobileHeading, setHeaderComponentLeft, setHeaderComponentRight } =
-    useContext(MobileHeaderContext);
+  const { setHeaderInnerRight } = useContext(MobileHeaderContext);
 
   // ── State ────────────────────────────────────────────────────────────
   const [substances, setSubstances] = React.useState(bootstrap.substances);
@@ -232,20 +231,11 @@ export function MedicationFlow({ bootstrap }: MedicationFlowProps) {
   );
 
   React.useEffect(() => {
-    setMobileHeading("generic");
-    setHeaderComponentLeft(<div />);
-    setHeaderComponentRight(overviewButton);
+    setHeaderInnerRight(overviewButton);
     return () => {
-      setMobileHeading("");
-      setHeaderComponentLeft(<div />);
-      setHeaderComponentRight(<div />);
+      setHeaderInnerRight(null);
     };
-  }, [
-    overviewButton,
-    setHeaderComponentLeft,
-    setHeaderComponentRight,
-    setMobileHeading,
-  ]);
+  }, [overviewButton, setHeaderInnerRight]);
 
   // ── Handlers ─────────────────────────────────────────────────────────
   const resetActiveEntry = React.useCallback(() => {

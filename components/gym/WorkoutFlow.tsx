@@ -100,9 +100,8 @@ export function WorkoutFlow({ userMeta, customExerciseGroups }: WorkoutFlowProps
   const router = useRouter();
   const { toast } = useToast();
   const {
-    setMobileHeading,
-    setHeaderComponentLeft,
-    setHeaderComponentRight,
+    setHeaderInnerLeft,
+    setHeaderInnerRight,
   } = useContext(MobileHeaderContext);
 
   // ---- State ----
@@ -260,27 +259,24 @@ export function WorkoutFlow({ userMeta, customExerciseGroups }: WorkoutFlowProps
   }, [view, activeExerciseKey, activeExercise, toast]);
 
   useEffect(() => {
-    setMobileHeading("generic");
     if (view === "logExercise" && activeExercise) {
-      setHeaderComponentLeft(settingsButton);
+      setHeaderInnerLeft(settingsButton);
     } else {
-      setHeaderComponentLeft(<div />);
+      setHeaderInnerLeft(null);
     }
-    setHeaderComponentRight(overviewButton);
+    setHeaderInnerRight(overviewButton);
 
     return () => {
-      setMobileHeading("");
-      setHeaderComponentLeft(<div />);
-      setHeaderComponentRight(<div />);
+      setHeaderInnerLeft(null);
+      setHeaderInnerRight(null);
     };
   }, [
     view,
     activeExercise,
     settingsButton,
     overviewButton,
-    setMobileHeading,
-    setHeaderComponentLeft,
-    setHeaderComponentRight,
+    setHeaderInnerLeft,
+    setHeaderInnerRight,
   ]);
 
   // ---- Handlers ----

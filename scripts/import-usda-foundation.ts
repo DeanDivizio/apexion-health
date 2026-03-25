@@ -2,16 +2,22 @@
  * Import USDA FoodData Central foundation foods into NutritionFoundationFood.
  *
  * Usage:
- *   npx tsx scripts/import-usda-foundation.ts <path-to-foundation-foods.json>
+ *   npm run seed:usda-foundation
+ *   npx tsx scripts/import-usda-foundation.ts [path-to-foundation-foods.json]
  *
- * The JSON file should be the "foundationDownload" file from
- * https://fdc.nal.usda.gov/download-datasets
+ * Defaults to docs/provenance/nutrition/USDA Data/foundationFoodsDec25.json
+ * if no path is provided. The JSON file should be the "foundationDownload"
+ * file from https://fdc.nal.usda.gov/download-datasets
  */
 
-import { PrismaClient } from "@prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
-import { Pool } from "pg";
+import { prisma } from "../lib/db/prisma";
 import { readFileSync } from "fs";
+import { resolve } from "path";
+
+const DEFAULT_DATA_PATH = resolve(
+  __dirname,
+  "../docs/provenance/nutrition/USDA Data/foundationFoodsDec25.json",
+);
 
 const USDA_NUTRIENT_MAP: Record<number, string> = {
   1008: "calories",
@@ -80,33 +86,18 @@ function buildPortions(rawPortions?: RawPortion[]) {
       amount: p.amount,
       unit: p.measureUnit?.name ?? "serving",
       gramWeight: p.gramWeight,
-      modifier: p.modifier ?? undefined,
+      modifier: p.modifier || undefined,
     }));
 }
 
 async function main() {
-  const filePath = process.argv[2];
-  if (!filePath) {
-    console.error("Usage: npx tsx scripts/import-usda-foundation.ts <path-to-json>");
-    process.exit(1);
-  }
+  const filePath = process.argv[2] || DEFAULT_DATA_PATH;
 
   console.log(`Reading ${filePath}...`);
   const raw = JSON.parse(readFileSync(filePath, "utf-8"));
   const foods: RawFoundationFood[] = raw.FoundationFoods ?? raw;
 
   console.log(`Found ${foods.length} foundation foods.`);
-
-  const connectionString = process.env.DATABASE_URL;
-  if (!connectionString) {
-    console.error("DATABASE_URL is not set.");
-    process.exit(1);
-  }
-
-  const pool = new Pool({ connectionString });
-  const prisma = new PrismaClient({
-    adapter: new PrismaPg(pool),
-  });
 
   const db = prisma as any;
   const BATCH_SIZE = 100;
@@ -152,7 +143,6 @@ async function main() {
   console.log(`Done. Imported: ${imported}, Skipped: ${skipped}`);
 
   await prisma.$disconnect();
-  await pool.end();
 }
 
 main().catch((err) => {

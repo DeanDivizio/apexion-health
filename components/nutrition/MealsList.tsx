@@ -81,8 +81,7 @@ function sessionTotals(items: MealItemViewEntry[]) {
 
 export function MealsList({ initialSessions }: MealsListProps) {
   const { toast } = useToast();
-  const { setMobileHeading, setHeaderComponentLeft, setHeaderComponentRight } =
-    useContext(MobileHeaderContext);
+  const { setMobileHeading } = useContext(MobileHeaderContext);
   const [sessions, setSessions] = React.useState(initialSessions);
   const [editSession, setEditSession] = React.useState<NutritionMealSessionView | null>(null);
   const [deleteSessionId, setDeleteSessionId] = React.useState<string | null>(null);
@@ -96,14 +95,10 @@ export function MealsList({ initialSessions }: MealsListProps) {
 
   React.useEffect(() => {
     setMobileHeading("generic");
-    setHeaderComponentLeft(<div />);
-    setHeaderComponentRight(<div />);
     return () => {
-      setMobileHeading("");
-      setHeaderComponentLeft(<div />);
-      setHeaderComponentRight(<div />);
+      setMobileHeading("generic");
     };
-  }, [setMobileHeading, setHeaderComponentLeft, setHeaderComponentRight]);
+  }, [setMobileHeading]);
 
   function openEdit(session: NutritionMealSessionView) {
     setEditSession(session);

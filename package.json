@@ -11,7 +11,7 @@
     "validate:gym-defaults": "tsx scripts/validate-gym-defaults.ts",
     "seed:substances": "tsx scripts/seed-substance-catalog.ts",
     "seed:gym-variations": "tsx scripts/seed-gym-variations.ts",
-    "seed:usda-foundation": "tsx scripts/import-usda-foundation.ts"
+    "seed:usda-foundation": "set -a && . ./.env && set +a && tsx scripts/import-usda-foundation.ts"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.637.0",

@@ -9,13 +9,17 @@ export default function SettingsLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { setHeaderComponentLeft, setMobileHeading } =
+  const { setHeaderInnerLeft, setMobileHeading } =
     useContext(MobileHeaderContext);
 
   useEffect(() => {
-    setHeaderComponentLeft(<BackButton />);
+    setHeaderInnerLeft(<BackButton />);
     setMobileHeading("Settings");
-  }, [setHeaderComponentLeft, setMobileHeading]);
+    return () => {
+      setHeaderInnerLeft(null);
+      setMobileHeading("generic");
+    };
+  }, [setHeaderInnerLeft, setMobileHeading]);
 
   return (
     <main className="flex flex-col items-center w-full min-h-screen pt-24 md:pt-4 pb-24 px-4 bg-gradient-to-br from-blue-950/20 to-neutral-950">

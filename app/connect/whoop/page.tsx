@@ -3,7 +3,6 @@
 import { useContext, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { MobileHeaderContext } from "@/context/MobileHeaderContext";
-import { SideNav } from "@/components/global/SideNav";
 import { PROVIDER_CONFIGS } from "@/lib/providers/types";
 
 interface ScopeOption {
@@ -61,23 +60,18 @@ function generateState(): string {
 export default function ConnectWhoopPage() {
   const searchParams = useSearchParams();
   const error = searchParams.get("error");
-  const { setHeaderComponentLeft, setHeaderComponentRight, setMobileHeading } =
-    useContext(MobileHeaderContext);
+  const { setMobileHeading } = useContext(MobileHeaderContext);
 
   const [selected, setSelected] = useState<Set<string>>(
     new Set(WHOOP_SCOPES.map((s) => s.scope)),
   );
 
   useEffect(() => {
-    setHeaderComponentLeft(<SideNav />);
-    setHeaderComponentRight(<div />);
     setMobileHeading("Connect Whoop");
     return () => {
-      setMobileHeading("");
-      setHeaderComponentLeft(<div />);
-      setHeaderComponentRight(<div />);
+      setMobileHeading("generic");
     };
-  }, [setHeaderComponentLeft, setHeaderComponentRight, setMobileHeading]);
+  }, [setMobileHeading]);
 
   const toggleScope = (scope: string) => {
     setSelected((prev) => {

@@ -4,6 +4,7 @@ import * as React from "react";
 import { Camera, PlusCircle, Search, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui_primitives/input";
 import { Button } from "@/components/ui_primitives/button";
+import { ScrollArea } from "@/components/ui_primitives/scroll-area";
 import { FoodResultCard } from "./FoodResultCard";
 import { FoodDetailDialog } from "./FoodDetailDialog";
 import { ManualFoodForm } from "./ManualFoodForm";
@@ -108,78 +109,82 @@ export function FoodSearch({ userFoods, recentFoods, onAddItem, onUserFoodCreate
         </Button>
       </div>
 
-      {/* Recents (shown when not actively searching) */}
-      {!isSearching && recentFoods.length > 0 && (
-        <div className="space-y-2">
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-            Recently Logged
-          </p>
-          {recentFoods.map((entry) => {
-            const key = entry.type === "foundation" ? `f-${entry.data.id}` : `u-${entry.data.id}`;
-            const name = entry.data.name;
-            const subtitle =
-              entry.type === "foundation"
-                ? (entry.data.category ?? "per 100g")
-                : (entry.data.brand ?? `${entry.data.servingSize}${entry.data.servingUnit}`);
-            return (
-              <FoodResultCard
-                key={key}
-                name={name}
-                subtitle={subtitle}
-                calories={entry.data.nutrients.calories}
-                onClick={() => handleSelectRecent(entry)}
-              />
-            );
-          })}
+      <ScrollArea className="max-h-[calc(100dvh-16rem)]">
+        <div className="space-y-4 pr-2 pb-24">
+          {/* Recents (shown when not actively searching) */}
+          {!isSearching && recentFoods.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                Recently Logged
+              </p>
+              {recentFoods.map((entry) => {
+                const key = entry.type === "foundation" ? `f-${entry.data.id}` : `u-${entry.data.id}`;
+                const name = entry.data.name;
+                const subtitle =
+                  entry.type === "foundation"
+                    ? (entry.data.category ?? "per 100g")
+                    : (entry.data.brand ?? `${entry.data.servingSize}${entry.data.servingUnit}`);
+                return (
+                  <FoodResultCard
+                    key={key}
+                    name={name}
+                    subtitle={subtitle}
+                    calories={entry.data.nutrients.calories}
+                    onClick={() => handleSelectRecent(entry)}
+                  />
+                );
+              })}
+            </div>
+          )}
+
+          {!isSearching && recentFoods.length === 0 && (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              Search for a food or add one manually to get started.
+            </p>
+          )}
+
+          {/* Search results */}
+          {isSearching && !searching && !hasSearchResults && (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              No results for &quot;{query}&quot;
+            </p>
+          )}
+
+          {isSearching && userFoodResults.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                My Foods ({userFoodResults.length})
+              </p>
+              {userFoodResults.map((food) => (
+                <FoodResultCard
+                  key={food.id}
+                  name={food.name}
+                  subtitle={food.brand ?? `${food.servingSize}${food.servingUnit}`}
+                  calories={food.nutrients.calories}
+                  onClick={() => handleSelectUserFood(food)}
+                />
+              ))}
+            </div>
+          )}
+
+          {isSearching && foundationResults.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                Foundation Foods ({foundationResults.length})
+              </p>
+              {foundationResults.map((food) => (
+                <FoodResultCard
+                  key={food.id}
+                  name={food.name}
+                  subtitle={food.category ?? "per 100g"}
+                  calories={food.nutrients.calories}
+                  onClick={() => handleSelectFoundation(food)}
+                />
+              ))}
+            </div>
+          )}
         </div>
-      )}
-
-      {!isSearching && recentFoods.length === 0 && (
-        <p className="text-sm text-muted-foreground text-center py-4">
-          Search for a food or add one manually to get started.
-        </p>
-      )}
-
-      {/* Search results */}
-      {isSearching && !searching && !hasSearchResults && (
-        <p className="text-sm text-muted-foreground text-center py-4">
-          No results for &quot;{query}&quot;
-        </p>
-      )}
-
-      {isSearching && userFoodResults.length > 0 && (
-        <div className="space-y-2">
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-            My Foods ({userFoodResults.length})
-          </p>
-          {userFoodResults.map((food) => (
-            <FoodResultCard
-              key={food.id}
-              name={food.name}
-              subtitle={food.brand ?? `${food.servingSize}${food.servingUnit}`}
-              calories={food.nutrients.calories}
-              onClick={() => handleSelectUserFood(food)}
-            />
-          ))}
-        </div>
-      )}
-
-      {isSearching && foundationResults.length > 0 && (
-        <div className="space-y-2">
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-            Foundation Foods ({foundationResults.length})
-          </p>
-          {foundationResults.map((food) => (
-            <FoodResultCard
-              key={food.id}
-              name={food.name}
-              subtitle={food.category ?? "per 100g"}
-              calories={food.nutrients.calories}
-              onClick={() => handleSelectFoundation(food)}
-            />
-          ))}
-        </div>
-      )}
+      </ScrollArea>
 
       <FoodDetailDialog
         food={selectedFood}

@@ -51,8 +51,7 @@ interface NutritionFlowProps {
 export function NutritionFlow({ bootstrap }: NutritionFlowProps) {
   const router = useRouter();
   const { toast } = useToast();
-  const { setMobileHeading, setHeaderComponentLeft, setHeaderComponentRight } =
-    useContext(MobileHeaderContext);
+  const { setHeaderInnerRight } = useContext(MobileHeaderContext);
 
   const [activeTab, setActiveTab] = React.useState<"food" | "restaurant">("food");
   const [stagedItems, setStagedItems] = React.useState<MealItemDraft[]>([]);
@@ -115,11 +114,11 @@ export function NutritionFlow({ bootstrap }: NutritionFlowProps) {
   );
 
   React.useEffect(() => {
-    setHeaderComponentRight(overviewButton);
+    setHeaderInnerRight(overviewButton);
     return () => {
-      setHeaderComponentRight(<div />);
+      setHeaderInnerRight(null);
     };
-  }, [overviewButton, setHeaderComponentLeft, setHeaderComponentRight, setMobileHeading]);
+  }, [overviewButton, setHeaderInnerRight]);
 
   // ── Handlers ─────────────────────────────────────────────────────────
   const handleAddItem = useCallback(

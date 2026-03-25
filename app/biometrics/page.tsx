@@ -4,7 +4,6 @@ import { useCallback, useContext, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Activity, RefreshCw, RotateCcw } from "lucide-react";
 import { MobileHeaderContext } from "@/context/MobileHeaderContext";
-import { SideNav } from "@/components/global/SideNav";
 import { Skeleton } from "@/components/ui_primitives/skeleton";
 import { getProviderConnection } from "@/actions/providers";
 import {
@@ -19,8 +18,7 @@ export default function BiometricsPage() {
   const searchParams = useSearchParams();
   const justConnected = searchParams.get("connected") === "true";
 
-  const { setMobileHeading, setHeaderComponentLeft, setHeaderComponentRight } =
-    useContext(MobileHeaderContext);
+  const { setMobileHeading } = useContext(MobileHeaderContext);
   const { isSyncing: syncing, startSync } = useSyncStatus();
 
   const [days, setDays] = useState<BiometricDaySummary[]>([]);
@@ -32,14 +30,10 @@ export default function BiometricsPage() {
 
   useEffect(() => {
     setMobileHeading("Biometrics");
-    setHeaderComponentLeft(<SideNav />);
-    setHeaderComponentRight(<div />);
     return () => {
-      setMobileHeading("");
-      setHeaderComponentLeft(<div />);
-      setHeaderComponentRight(<div />);
+      setMobileHeading("generic");
     };
-  }, [setMobileHeading, setHeaderComponentLeft, setHeaderComponentRight]);
+  }, [setMobileHeading]);
 
   useEffect(() => {
     async function load() {

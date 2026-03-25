@@ -15,13 +15,11 @@ import { getHydrationSummaryAction } from "@/actions/hydration";
 import { getMicroNutrientSummaryAction } from "@/actions/nutrition";
 import { getWorkoutDaySummaryAction } from "@/actions/gym";
 import { getMedsDaySummaryAction } from "@/actions/medication";
-import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 import { WeeklyDataDisplayComponent } from "@/components/home/WeeklySummary";
 import Footer from "@/components/global/Footer";
 import Defocuser from "@/components/global/Defocuser";
 import type { SummaryData } from "@/utils/types";
 import { MobileHeaderContext } from "@/context/MobileHeaderContext";
-import { SideNav } from "@/components/global/SideNav";
 import { MacroSummarySmall } from "@/components/home/MacroSummarySmall";
 import { HydrationSummary } from "@/components/home/HydrationSummary";
 import { MicroNutrientSummary } from "@/components/home/MicroNutrientSummary";
@@ -79,7 +77,7 @@ const SKELETON_MAP: Record<string, React.FC> = {
 };
 
 export default function Home() {
-  const { setHeaderComponentLeft, setHeaderComponentRight, setMobileHeading } = useContext(MobileHeaderContext);
+  const { setHeaderInnerLeft, setHeaderInnerRight, setMobileHeading } = useContext(MobileHeaderContext);
   const [data, setData] = useState<SummaryData>();
   const [todayCalories, setTodayCalories] = useState(0);
   const [todayProtein, setTodayProtein] = useState(0);
@@ -207,19 +205,10 @@ export default function Home() {
   }, [dataFetch]);
 
   useEffect(() => {
-    setHeaderComponentLeft(<SideNav />);
-    setHeaderComponentRight(
-      <div className="flex items-center justify-center">
-        <SignedIn>
-          <UserButton />
-        </SignedIn>
-        <SignedOut>
-          <SignInButton />
-        </SignedOut>
-      </div>,
-    );
+    setHeaderInnerLeft(null);
+    setHeaderInnerRight(null);
     setMobileHeading("generic");
-  }, [setHeaderComponentLeft, setHeaderComponentRight, setMobileHeading]);
+  }, [setHeaderInnerLeft, setHeaderInnerRight, setMobileHeading]);
 
   function renderComponent(key: string) {
     switch (key) {

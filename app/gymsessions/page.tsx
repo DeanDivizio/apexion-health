@@ -17,7 +17,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui_primitives/alert-dialog"
-import { SideNav } from "@/components/global/SideNav"
 import { Skeleton } from "@/components/ui_primitives/skeleton"
 import { MobileHeaderContext } from "@/context/MobileHeaderContext"
 import { useToast } from "@/hooks/use-toast"
@@ -39,18 +38,14 @@ export default function GymSessions() {
   const closeEditTimeoutRef = useRef<number | null>(null)
 
   const { toast } = useToast()
-  const { setMobileHeading, setHeaderComponentLeft, setHeaderComponentRight } = useContext(MobileHeaderContext)
+  const { setMobileHeading } = useContext(MobileHeaderContext)
 
   useEffect(() => {
     setMobileHeading("Gym Sessions")
-    setHeaderComponentLeft(<SideNav />)
-    setHeaderComponentRight(<div />)
     return () => {
-      setMobileHeading("")
-      setHeaderComponentLeft(<div />)
-      setHeaderComponentRight(<div />)
+      setMobileHeading("generic")
     }
-  }, [setMobileHeading, setHeaderComponentLeft, setHeaderComponentRight])
+  }, [setMobileHeading])
 
   useEffect(() => {
     const load = async () => {
