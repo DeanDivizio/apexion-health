@@ -1,10 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { useContext } from "react";
 import { format, parseISO } from "date-fns";
 import { Minus, Pencil, Plus, Trash2, X } from "lucide-react";
-import { MobileHeaderContext } from "@/context/MobileHeaderContext";
 import { Button } from "@/components/ui_primitives/button";
 import {
   Dialog,
@@ -81,7 +79,6 @@ function sessionTotals(items: MealItemViewEntry[]) {
 
 export function MealsList({ initialSessions }: MealsListProps) {
   const { toast } = useToast();
-  const { setMobileHeading } = useContext(MobileHeaderContext);
   const [sessions, setSessions] = React.useState(initialSessions);
   const [editSession, setEditSession] = React.useState<NutritionMealSessionView | null>(null);
   const [deleteSessionId, setDeleteSessionId] = React.useState<string | null>(null);
@@ -92,13 +89,6 @@ export function MealsList({ initialSessions }: MealsListProps) {
   const [editDate, setEditDate] = React.useState("");
   const [editTime, setEditTime] = React.useState("");
   const [editItems, setEditItems] = React.useState<MealItemViewEntry[]>([]);
-
-  React.useEffect(() => {
-    setMobileHeading("generic");
-    return () => {
-      setMobileHeading("generic");
-    };
-  }, [setMobileHeading]);
 
   function openEdit(session: NutritionMealSessionView) {
     setEditSession(session);

@@ -1,8 +1,7 @@
 "use client";
 
-import { useContext, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { MobileHeaderContext } from "@/context/MobileHeaderContext";
 import { PROVIDER_CONFIGS } from "@/lib/providers/types";
 
 interface ScopeOption {
@@ -60,18 +59,10 @@ function generateState(): string {
 export default function ConnectWhoopPage() {
   const searchParams = useSearchParams();
   const error = searchParams.get("error");
-  const { setMobileHeading } = useContext(MobileHeaderContext);
 
   const [selected, setSelected] = useState<Set<string>>(
     new Set(WHOOP_SCOPES.map((s) => s.scope)),
   );
-
-  useEffect(() => {
-    setMobileHeading("Connect Whoop");
-    return () => {
-      setMobileHeading("generic");
-    };
-  }, [setMobileHeading]);
 
   const toggleScope = (scope: string) => {
     setSelected((prev) => {

@@ -1,9 +1,8 @@
 "use client";
 
-import { useCallback, useContext, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Activity, RefreshCw, RotateCcw } from "lucide-react";
-import { MobileHeaderContext } from "@/context/MobileHeaderContext";
 import { Skeleton } from "@/components/ui_primitives/skeleton";
 import { getProviderConnection } from "@/actions/providers";
 import {
@@ -18,7 +17,6 @@ export default function BiometricsPage() {
   const searchParams = useSearchParams();
   const justConnected = searchParams.get("connected") === "true";
 
-  const { setMobileHeading } = useContext(MobileHeaderContext);
   const { isSyncing: syncing, startSync } = useSyncStatus();
 
   const [days, setDays] = useState<BiometricDaySummary[]>([]);
@@ -27,13 +25,6 @@ export default function BiometricsPage() {
   const [hasMore, setHasMore] = useState(true);
   const [connected, setConnected] = useState<boolean | null>(null);
   const [connectionError, setConnectionError] = useState<string | null>(null);
-
-  useEffect(() => {
-    setMobileHeading("Biometrics");
-    return () => {
-      setMobileHeading("generic");
-    };
-  }, [setMobileHeading]);
 
   useEffect(() => {
     async function load() {
@@ -140,6 +131,7 @@ export default function BiometricsPage() {
   return (
     <main className="w-full min-h-screen pt-20 pb-24 bg-gradient-to-b from-background to-background">
       <div className="max-w-lg mx-auto px-2">
+        <h1 className="mb-4 text-2xl font-medium tracking-wide text-neutral-100 md:hidden">Biometrics</h1>
         {connectionError && (
           <div className="mb-4 rounded-lg border border-yellow-500/30 bg-yellow-950/20 px-4 py-3 text-sm text-yellow-300">
             {connectionError}{" "}

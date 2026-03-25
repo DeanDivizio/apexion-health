@@ -77,7 +77,7 @@ const SKELETON_MAP: Record<string, React.FC> = {
 };
 
 export default function Home() {
-  const { setHeaderInnerLeft, setHeaderInnerRight, setMobileHeading } = useContext(MobileHeaderContext);
+  const { setHeaderInnerLeft, setHeaderInnerRight } = useContext(MobileHeaderContext);
   const [data, setData] = useState<SummaryData>();
   const [todayCalories, setTodayCalories] = useState(0);
   const [todayProtein, setTodayProtein] = useState(0);
@@ -207,8 +207,7 @@ export default function Home() {
   useEffect(() => {
     setHeaderInnerLeft(null);
     setHeaderInnerRight(null);
-    setMobileHeading("generic");
-  }, [setHeaderInnerLeft, setHeaderInnerRight, setMobileHeading]);
+  }, [setHeaderInnerLeft, setHeaderInnerRight]);
 
   function renderComponent(key: string) {
     switch (key) {

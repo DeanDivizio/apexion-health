@@ -1,6 +1,6 @@
 "use client"
 
-import { useContext, useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { Dumbbell } from "lucide-react"
 import {
   deleteWorkoutSessionAction,
@@ -18,7 +18,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui_primitives/alert-dialog"
 import { Skeleton } from "@/components/ui_primitives/skeleton"
-import { MobileHeaderContext } from "@/context/MobileHeaderContext"
 import { useToast } from "@/hooks/use-toast"
 import { EditableSessionContent } from "./components/EditableSessionContent"
 import { parseSessionDateTime, spellOutDateShortYear } from "./components/helpers"
@@ -38,15 +37,6 @@ export default function GymSessions() {
   const closeEditTimeoutRef = useRef<number | null>(null)
 
   const { toast } = useToast()
-  const { setMobileHeading } = useContext(MobileHeaderContext)
-
-  useEffect(() => {
-    setMobileHeading("Gym Sessions")
-    return () => {
-      setMobileHeading("generic")
-    }
-  }, [setMobileHeading])
-
   useEffect(() => {
     const load = async () => {
       const data = await listWorkoutSessionsAction()
@@ -163,6 +153,7 @@ export default function GymSessions() {
     <>
       <main className="w-full min-h-screen pt-20 pb-16 bg-gradient-to-b from-background to-background">
         <div className="flex flex-col gap-3 max-w-lg mx-auto px-2">
+          <h1 className="text-2xl font-medium tracking-wide text-neutral-100 md:hidden">Gym Sessions</h1>
           {sortedSessions.map((session, i) =>
             editingId === session.id ? (
               <EditableSessionContent

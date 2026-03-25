@@ -1,6 +1,6 @@
 "use client";
 
-import { useContext, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ClipboardList, Pill, Plus, Trash2 } from "lucide-react";
 import {
   deleteMedicationLogSessionAction,
@@ -31,7 +31,6 @@ import {
 } from "@/components/ui_primitives/select";
 import { Skeleton } from "@/components/ui_primitives/skeleton";
 import { Textarea } from "@/components/ui_primitives/textarea";
-import { MobileHeaderContext } from "@/context/MobileHeaderContext";
 import { useToast } from "@/hooks/use-toast";
 import { INJECTION_DEPTHS } from "@/lib/medication/catalog";
 import type {
@@ -233,14 +232,6 @@ export default function MedicationSessionsPage() {
   const closeEditTimeoutRef = useRef<number | null>(null);
 
   const { toast } = useToast();
-  const { setMobileHeading } = useContext(MobileHeaderContext);
-
-  useEffect(() => {
-    setMobileHeading("Meds");
-    return () => {
-      setMobileHeading("generic");
-    };
-  }, [setMobileHeading]);
 
   useEffect(() => {
     const load = async () => {
@@ -490,6 +481,7 @@ export default function MedicationSessionsPage() {
     <>
       <main className="w-full min-h-screen pt-20 pb-16">
         <div className="flex flex-col gap-3 max-w-lg mx-auto px-2">
+          <h1 className="text-2xl font-medium tracking-wide text-neutral-100 md:hidden">Meds</h1>
           {sortedSessions.map((session, index) =>
             editingId === session.id && editable ? (
               <section
