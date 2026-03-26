@@ -2,13 +2,23 @@ import { z } from "zod";
 import { extractStructuredData } from "./extractStructuredData";
 import { nutrientProfileSchema } from "@/lib/nutrition/schemas";
 
+const ocrNutrientSchema = z.preprocess(
+  (val) => {
+    if (typeof val !== "object" || val === null) return val;
+    return Object.fromEntries(
+      Object.entries(val).filter(([, v]) => v !== null),
+    );
+  },
+  nutrientProfileSchema,
+);
+
 const nutritionLabelSchema = z.object({
   foodName: z.string().nullable(),
   brand: z.string().nullable(),
   servingSize: z.number(),
   servingUnit: z.string(),
   servingsPerContainer: z.number().nullable(),
-  nutrients: nutrientProfileSchema,
+  nutrients: ocrNutrientSchema,
   ingredients: z.string().nullable(),
 });
 
@@ -28,7 +38,7 @@ Rules:
   - Choline: 550mg, Phosphorus: 1250mg, Iodine: 150mcg, Magnesium: 420mg
   - Zinc: 11mg, Selenium: 55mcg, Copper: 0.9mg, Manganese: 2.3mg
   - Chromium: 35mcg, Molybdenum: 45mcg, Chloride: 2300mg
-- Return null for values not visible on the label.
+- Omit nutrient keys that are not visible on the label. For top-level fields (foodName, brand, etc.), return null if not visible.
 - If the food name or brand is visible on the image, include those.
 - servingSize and servingUnit should reflect the label's "Serving Size" line.
 - All nutrient values should be per ONE serving.
@@ -53,7 +63,7 @@ Return ONLY valid JSON matching this shape:
   "servingSize": number,
   "servingUnit": string,
   "servingsPerContainer": number | null,
-  "nutrients": { "calories": 200, "protein": 10, ... }, // This is an example. The actual keys and valueswill be the ones defined above, and any others you find.
+  "nutrients": { "calories": 200, "protein": 10, ... }, // This is an example. The actual keys and values will be the ones defined above, and any others you find.
   "ingredients": string | null
 }`;
 
