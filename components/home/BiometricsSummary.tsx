@@ -43,20 +43,7 @@ export function BiometricsSummary() {
   // No connection or no data
   if (bio === null) {
     return (
-      <Link
-        href="/connect/whoop"
-        className="mt-4 flex items-center gap-3 rounded-xl border border-white/10 bg-neutral-900/40 px-4 py-3 transition-colors hover:bg-neutral-800/50"
-      >
-        <Activity className="h-5 w-5 text-neutral-500" />
-        <div>
-          <p className="text-sm font-medium text-neutral-300">
-            Connect Whoop
-          </p>
-          <p className="text-xs text-neutral-500">
-            Track sleep, recovery, and heart rate passively
-          </p>
-        </div>
-      </Link>
+      <div className="hidden" />
     );
   }
 
