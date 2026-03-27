@@ -5,7 +5,7 @@ import {
   NUTRIENT_KEYS,
   resolveNutrientMeta,
 } from "@/lib/nutrition/nutrientKeys";
-import { normalizeDateInput } from "@/lib/dates/dateStr";
+import { normalizeDateInput, toCompactDateStr } from "@/lib/dates/dateStr";
 import type {
   FoundationFoodView,
   MacroSummaryByDate,
