@@ -57,14 +57,14 @@ function NavItem({ href, icon: Icon, label, placeholder }: {
     return (
         <SheetClose asChild>
             <Link
-                href={href}
+                href={placeholder ? "" : href}
                 className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors active:bg-white/[0.08]"
             >
                 <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/[0.06]">
                     <Icon className="h-4 w-4 text-green-400" />
                 </span>
                 <span className={`text-sm font-light ${placeholder ? "text-white/30" : "text-white/80"}`}>
-                    {label}
+                    {placeholder ? label + " - Coming Soon" : label}
                 </span>
             </Link>
         </SheetClose>
@@ -113,9 +113,10 @@ export function SideNav() {
                         <p className="mb-2 px-3 text-xs font-medium uppercase tracking-wide text-white/40">
                             Dashboards
                         </p>
-                        {dashboards.map((item) => (
-                            <NavItem key={item.href} {...item} />
-                        ))}
+                        <p className="text-xs px-3 italic font-light text-white/40">Coming Soon</p>
+                        {/* {dashboards.map((item) => ( */}
+                            {/* <NavItem key={item.href} {...item} /> */}
+                        {/* ))} */}
                     </div>
 
                     <div className="absolute bottom-8 left-0 w-full px-6">

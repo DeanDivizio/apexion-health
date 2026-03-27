@@ -15,12 +15,13 @@ import { Button } from "@/components/ui_primitives/button";
 import { submitFeedback } from "@/actions/feedback";
 import { captureClientEvent } from "@/lib/posthog-client";
 import { Send, Check } from "lucide-react";
+import { useUser } from "@clerk/nextjs";
 
 export default function MobileHeader() {
   const { headerInnerLeft, headerInnerRight } =
     useContext(MobileHeaderContext);
   const { isSyncing } = useSyncStatus();
-
+  const { user } = useUser();
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState("");
   const [submitted, setSubmitted] = useState(false);
@@ -59,7 +60,7 @@ export default function MobileHeader() {
   }, [message]);
 
   return (
-    <header className="fixed z-10 w-full px-4 pt-2 md:hidden">
+    <header className="fixed z-10 w-full px-4 pt-2 md:hidden bg-gradient-to-b from-slate-950/85 via-slate-950/40 via-60% to-black/0">
       <div className="relative flex w-full items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="liquid-glass flex items-center justify-center rounded-full p-2.5 backdrop-blur-md">
@@ -103,7 +104,7 @@ export default function MobileHeader() {
                 <div className="flex flex-col items-center gap-2 py-2">
                   <Check className="h-6 w-6 text-green-400" />
                   <p className="text-sm text-neutral-300">
-                    Thanks for your feedback!
+                    Thanks for your feedback, {user?.firstName || ""}!
                   </p>
                 </div>
               ) : (
@@ -114,7 +115,7 @@ export default function MobileHeader() {
                   <textarea
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
-                    placeholder="What's on your mind?"
+                    placeholder="What would you like to see added/improved?"
                     rows={3}
                     maxLength={2000}
                     className="w-full resize-none rounded-lg border border-neutral-800 bg-neutral-900/80 px-3 py-2 text-sm text-neutral-100 placeholder:text-neutral-500 focus:border-neutral-600 focus:outline-none"

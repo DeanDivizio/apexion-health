@@ -41,6 +41,15 @@ import type { MicroNutrientEntry } from "@/lib/nutrition/server/nutritionService
 import dynamic from "next/dynamic";
 import { toCompactDateStr } from "@/lib/dates/dateStr";
 import { Skeleton } from "@/components/ui_primitives/skeleton";
+import { useUser } from "@clerk/nextjs";
+import { Button } from "@/components/ui_primitives/button";
+import { Calendar } from "@/components/ui_primitives/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui_primitives/popover";
+import { CalendarDays } from "lucide-react";
 
 const MacroRingChartsGrid = dynamic(
   () =>
@@ -58,6 +67,28 @@ const BiometricsSummary = dynamic(
 
 function getTodayDateStrCompact(): string {
   return toCompactDateStr(new Date());
+}
+
+function compactDateStrToIsoDate(compactDateStr: string): string {
+  if (compactDateStr.length !== 8) return "";
+  return `${compactDateStr.slice(0, 4)}-${compactDateStr.slice(4, 6)}-${compactDateStr.slice(6, 8)}`;
+}
+
+function compactDateStrToDate(compactDateStr: string): Date | null {
+  if (compactDateStr.length !== 8) return null;
+  const year = Number(compactDateStr.slice(0, 4));
+  const month = Number(compactDateStr.slice(4, 6)) - 1;
+  const day = Number(compactDateStr.slice(6, 8));
+  const date = new Date(year, month, day);
+  if (Number.isNaN(date.getTime())) return null;
+  return date;
+}
+
+function getGreetingForHour(date: Date): string {
+  const hour = date.getHours();
+  if (hour < 12) return "Good morning";
+  if (hour < 18) return "Good afternoon";
+  return "Good evening";
 }
 
 const VISIBILITY_KEYS: Record<string, keyof UserHomePreferencesView> = {
@@ -78,7 +109,9 @@ const SKELETON_MAP: Record<string, React.FC> = {
 
 export default function Home() {
   const { setHeaderInnerLeft, setHeaderInnerRight } = useContext(MobileHeaderContext);
+  const { user } = useUser();
   const [data, setData] = useState<SummaryData>();
+  const [selectedDateStr, setSelectedDateStr] = useState<string>(getTodayDateStrCompact());
   const [todayCalories, setTodayCalories] = useState(0);
   const [todayProtein, setTodayProtein] = useState(0);
   const [todayCarbs, setTodayCarbs] = useState(0);
@@ -113,8 +146,13 @@ export default function Home() {
 
     isFetchingRef.current = true;
     lastFetchAtRef.current = now;
-    const endDate = getTodayDateStrCompact();
-    const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const endDate = selectedDateStr;
+    const selectedDate = new Date(
+      Number(selectedDateStr.slice(0, 4)),
+      Number(selectedDateStr.slice(4, 6)) - 1,
+      Number(selectedDateStr.slice(6, 8)),
+    );
+    const oneWeekAgo = new Date(selectedDate.getTime() - 7 * 24 * 60 * 60 * 1000);
     const startDate = toCompactDateStr(oneWeekAgo);
     const todayDateStr = endDate;
     const timezoneOffsetMinutes = new Date().getTimezoneOffset();
@@ -122,6 +160,10 @@ export default function Home() {
     if (!silent) {
       setWeeklyLoading(true);
       setMacrosReady(false);
+      setHydrationData(null);
+      setWorkoutData(null);
+      setMedsData(null);
+      setMicroData(null);
     }
 
     try {
@@ -185,7 +227,7 @@ export default function Home() {
     } finally {
       isFetchingRef.current = false;
     }
-  }, [BACKGROUND_REFRESH_DEBOUNCE_MS]);
+  }, [BACKGROUND_REFRESH_DEBOUNCE_MS, selectedDateStr]);
 
   useEffect(() => {
     dataFetch();
@@ -271,6 +313,12 @@ export default function Home() {
     "medsSummary",
     "microNutrientSummary",
   ];
+  const greeting = getGreetingForHour(new Date());
+  const userFirstName = user?.firstName ?? "there";
+  const selectedDate = compactDateStrToDate(selectedDateStr);
+  const selectedDateLabel = selectedDate
+    ? selectedDate.toLocaleDateString(undefined, { month: "short", day: "numeric" })
+    : compactDateStrToIsoDate(selectedDateStr);
 
   return (
     <main className="flex pb-12 md:pb-0 px-4 pt-24 md:pt-4 h-auto 3xl:h-[100vh] overflow-clip w-full flex-col items-center justify-start bg-gradient-to-br from-blue-950/20 to-neutral-950">
@@ -287,6 +335,38 @@ export default function Home() {
         </div>
         <div className="col-span-1 xl:col-span-2 order-1 xl:order-2 xl:h-[95vh] overflow-y-scroll xl:p-4 rounded-xl backdrop-blur-xl">
           <div className="space-y-4">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-thin italic tracking-tight text-neutral-100">
+                {greeting}, {userFirstName}
+              </h2>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 gap-1.5 px-2 text-xs font-thin italic text-neutral-300 hover:text-neutral-100"
+                  >
+                    <CalendarDays className="h-3.5 w-3.5" />
+                    {selectedDateLabel}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                  align="end"
+                  className="w-auto border-neutral-800 bg-neutral-950/95 p-0"
+                >
+                  <Calendar
+                    mode="single"
+                    selected={selectedDate ?? undefined}
+                    onSelect={(date) => {
+                      if (!date) return;
+                      setSelectedDateStr(toCompactDateStr(date));
+                    }}
+                    disabled={{ after: new Date() }}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
             {componentOrder.map((key) => {
               const visKey = VISIBILITY_KEYS[key];
               const isVisible = visKey
