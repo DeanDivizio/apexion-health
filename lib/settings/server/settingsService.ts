@@ -54,7 +54,7 @@ export async function getUserHomePreferences(
   userId: string,
 ): Promise<UserHomePreferencesView> {
   "use cache";
-  cacheTag("homePreferences");
+  cacheTag(`homePreferences:${userId}`);
   cacheLife("hours");
 
   if (!hasModel()) return getDefaults();

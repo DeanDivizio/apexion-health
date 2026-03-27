@@ -51,7 +51,7 @@ function WorkoutSkeleton() {
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500" />
-      <p className="text-sm text-muted-foreground">Loading workout data...</p>
+      <p className="text-sm text-muted-foreground">Loading gym data...</p>
     </div>
   );
 }

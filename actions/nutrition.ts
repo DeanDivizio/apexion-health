@@ -9,6 +9,7 @@ import {
   createUserFoodSchema,
   upsertUserGoalsSchema,
 } from "@/lib/nutrition";
+import { normalizeDateInput } from "@/lib/dates/dateStr";
 import { updateTag } from "next/cache";
 import {
   bulkCreateRetailItems,
@@ -72,8 +73,8 @@ export async function createMealSessionAction(input: unknown) {
   const userId = await requireUserId();
   const parsed = createMealSessionSchema.parse(input);
   const result = await createMealSession(userId, parsed);
-  updateTag("hydrationSummary");
-  updateTag("microSummary");
+  updateTag(`hydrationSummary:${userId}`);
+  updateTag(`microSummary:${userId}`);
   updateTag(`macroSummary:${userId}`);
   return result;
 }
@@ -99,8 +100,8 @@ export async function updateMealSessionAction(
   if (!sessionId) throw new Error("Session ID is required.");
   const parsed = createMealSessionSchema.parse(input);
   const result = await updateMealSession(userId, sessionId, parsed);
-  updateTag("hydrationSummary");
-  updateTag("microSummary");
+  updateTag(`hydrationSummary:${userId}`);
+  updateTag(`microSummary:${userId}`);
   updateTag(`macroSummary:${userId}`);
   return result;
 }
@@ -109,8 +110,8 @@ export async function deleteMealSessionAction(sessionId: string) {
   const userId = await requireUserId();
   if (!sessionId) throw new Error("Session ID is required.");
   const result = await deleteMealSession(userId, sessionId);
-  updateTag("hydrationSummary");
-  updateTag("microSummary");
+  updateTag(`hydrationSummary:${userId}`);
+  updateTag(`microSummary:${userId}`);
   updateTag(`macroSummary:${userId}`);
   return result;
 }
@@ -136,12 +137,25 @@ export async function getTodayMacroTotalsAction(
 ): Promise<TodayMacroTotals> {
   const userId = await requireUserId();
   const rows = await getMacroSummaryByDateRange(userId, dateStr, dateStr);
-  const row = rows.find((r) => r.dateStr === dateStr);
+  const dateCandidates = new Set(normalizeDateInput(dateStr).sessionDateCandidates);
+  let calories = 0;
+  let protein = 0;
+  let carbs = 0;
+  let fat = 0;
+
+  for (const row of rows) {
+    if (!dateCandidates.has(row.dateStr)) continue;
+    calories += row.calories;
+    protein += row.protein;
+    carbs += row.carbs;
+    fat += row.fat;
+  }
+
   return {
-    calories: row?.calories ?? 0,
-    protein: row?.protein ?? 0,
-    carbs: row?.carbs ?? 0,
-    fat: row?.fat ?? 0,
+    calories,
+    protein,
+    carbs,
+    fat,
   };
 }
 
@@ -154,7 +168,7 @@ export async function upsertUserGoalsAction(input: unknown) {
   const userId = await requireUserId();
   const parsed = upsertUserGoalsSchema.parse(input);
   const result = await upsertUserGoals(userId, parsed);
-  updateTag("nutritionGoals");
+  updateTag(`nutritionGoals:${userId}`);
   return result;
 }
 

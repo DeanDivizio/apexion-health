@@ -45,9 +45,9 @@ export async function createMedicationLogSessionAction(input: unknown) {
   const userId = await requireUserId();
   const parsed = createMedicationLogSessionInputSchema.parse(input);
   const result = await createMedicationLogSession(userId, parsed);
-  updateTag("medsSummary");
-  updateTag("microSummary");
-  updateTag("hydrationSummary");
+  updateTag(`medsSummary:${userId}`);
+  updateTag(`microSummary:${userId}`);
+  updateTag(`hydrationSummary:${userId}`);
   return result;
 }
 
@@ -63,16 +63,20 @@ export async function updateMedicationLogSessionAction(
   const userId = await requireUserId();
   if (!sessionId) throw new Error("Session ID is required.");
   const parsed = createMedicationLogSessionInputSchema.parse(input);
-  return updateMedicationLogSession(userId, sessionId, parsed);
+  const result = await updateMedicationLogSession(userId, sessionId, parsed);
+  updateTag(`medsSummary:${userId}`);
+  updateTag(`microSummary:${userId}`);
+  updateTag(`hydrationSummary:${userId}`);
+  return result;
 }
 
 export async function deleteMedicationLogSessionAction(sessionId: string) {
   const userId = await requireUserId();
   if (!sessionId) throw new Error("Session ID is required.");
   const result = await deleteMedicationLogSession(userId, sessionId);
-  updateTag("medsSummary");
-  updateTag("microSummary");
-  updateTag("hydrationSummary");
+  updateTag(`medsSummary:${userId}`);
+  updateTag(`microSummary:${userId}`);
+  updateTag(`hydrationSummary:${userId}`);
   return result;
 }
 

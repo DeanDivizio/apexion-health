@@ -45,7 +45,7 @@ export async function createWorkoutSessionAction(session: unknown) {
   try {
     const parsed = workoutSessionSchema.parse(session);
     const result = await createWorkoutSession(userId, parsed);
-    updateTag("workoutSummary");
+    updateTag(`workoutSummary:${userId}`);
     return result;
   } catch (error) {
     const label = "[createWorkoutSessionAction]";
@@ -76,7 +76,7 @@ export async function updateWorkoutSessionAction(sessionId: string, session: unk
   if (!sessionId) throw new Error("Session ID is required.");
   const parsed = workoutSessionSchema.parse(session);
   const result = await updateWorkoutSession(userId, sessionId, parsed);
-  updateTag("workoutSummary");
+  updateTag(`workoutSummary:${userId}`);
   return result;
 }
 
@@ -84,7 +84,7 @@ export async function deleteWorkoutSessionAction(sessionId: string) {
   const userId = await requireUserId();
   if (!sessionId) throw new Error("Session ID is required.");
   const result = await deleteWorkoutSession(userId, sessionId);
-  updateTag("workoutSummary");
+  updateTag(`workoutSummary:${userId}`);
   return result;
 }
 

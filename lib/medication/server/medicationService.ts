@@ -334,7 +334,7 @@ export async function getMedsDaySummary(
   timezoneOffsetMinutes = 0,
 ): Promise<MedsDaySummarySession[]> {
   "use cache";
-  cacheTag("medsSummary");
+  cacheTag(`medsSummary:${userId}`);
   cacheLife("hours");
 
   if (!hasCatalogModels()) return [];

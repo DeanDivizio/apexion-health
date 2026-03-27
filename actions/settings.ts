@@ -24,6 +24,6 @@ export async function upsertUserHomePreferencesAction(
 ) {
   const userId = await requireUserId();
   const result = await upsertUserHomePreferences(userId, input);
-  updateTag("homePreferences");
+  updateTag(`homePreferences:${userId}`);
   return result;
 }

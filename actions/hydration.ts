@@ -2,6 +2,7 @@
 
 import { auth } from "@clerk/nextjs/server";
 import { updateTag } from "next/cache";
+import { cacheLife, cacheTag } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/db/prisma";
 import {
@@ -80,7 +81,7 @@ export async function logHydrationAction(input: unknown) {
     },
   });
 
-  updateTag("hydrationSummary");
+  updateTag(`hydrationSummary:${userId}`);
   return result;
 }
 
@@ -101,11 +102,15 @@ export interface HydrationSummaryView {
   magnesiumGoalMg: number;
 }
 
-export async function getHydrationSummaryAction(
+async function getHydrationSummaryCached(
+  userId: string,
   dateStr: string,
   timezoneOffsetMinutes = 0,
 ): Promise<HydrationSummaryView> {
-  const userId = await requireUserId();
+  "use cache";
+  cacheTag(`hydrationSummary:${userId}`);
+  cacheLife("hours");
+
   const { sessionDateCandidates } = normalizeDateInput(dateStr);
   const { startUtc, endUtcExclusive } = getUtcBoundsForLocalDate(
     dateStr,
@@ -224,4 +229,12 @@ export async function getHydrationSummaryAction(
     potassiumGoalMg,
     magnesiumGoalMg,
   };
+}
+
+export async function getHydrationSummaryAction(
+  dateStr: string,
+  timezoneOffsetMinutes = 0,
+): Promise<HydrationSummaryView> {
+  const userId = await requireUserId();
+  return getHydrationSummaryCached(userId, dateStr, timezoneOffsetMinutes);
 }

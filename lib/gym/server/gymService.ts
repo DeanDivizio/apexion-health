@@ -919,7 +919,7 @@ export async function getWorkoutDaySummary(
   dateStr: string,
 ): Promise<WorkoutDaySummarySession[]> {
   "use cache";
-  cacheTag("workoutSummary");
+  cacheTag(`workoutSummary:${userId}`);
   cacheLife("hours");
   const { sessionDateCandidates } = normalizeDateInput(dateStr);
 

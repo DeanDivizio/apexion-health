@@ -630,8 +630,32 @@ async function getMacroSummaryByDateRangeImpl(
   if (!hasNutritionModels()) return [];
 
   try {
+    const start = normalizeDateInput(startDate);
+    const end = normalizeDateInput(endDate);
+    const dayCandidates = new Set<string>();
+    const startUtc = new Date(`${start.isoDate}T00:00:00.000Z`);
+    const endUtc = new Date(`${end.isoDate}T00:00:00.000Z`);
+    const MS_PER_DAY = 24 * 60 * 60 * 1000;
+    const totalDays = Math.floor((endUtc.getTime() - startUtc.getTime()) / MS_PER_DAY) + 1;
+
+    if (Number.isFinite(totalDays) && totalDays > 0 && totalDays <= 366) {
+      for (let i = 0; i < totalDays; i++) {
+        const d = new Date(startUtc.getTime() + i * MS_PER_DAY);
+        const compact = toCompactDateStr(d);
+        const iso = `${compact.slice(0, 4)}-${compact.slice(4, 6)}-${compact.slice(6, 8)}`;
+        dayCandidates.add(compact);
+        dayCandidates.add(iso);
+      }
+    } else {
+      for (const candidate of start.sessionDateCandidates) dayCandidates.add(candidate);
+      for (const candidate of end.sessionDateCandidates) dayCandidates.add(candidate);
+    }
+
     const sessions = await db.nutritionMealSession.findMany({
-      where: { userId, dateStr: { gte: startDate, lte: endDate } },
+      where: {
+        userId,
+        dateStr: { in: Array.from(dayCandidates) },
+      },
       include: {
         items: {
           select: {
@@ -646,10 +670,11 @@ async function getMacroSummaryByDateRangeImpl(
 
     const map = new Map<string, MacroSummaryByDate>();
     for (const session of sessions) {
-      let entry = map.get(session.dateStr);
+      const normalizedDate = normalizeDateInput(session.dateStr).compactDateStr;
+      let entry = map.get(normalizedDate);
       if (!entry) {
-        entry = { dateStr: session.dateStr, calories: 0, protein: 0, carbs: 0, fat: 0 };
-        map.set(session.dateStr, entry);
+        entry = { dateStr: normalizedDate, calories: 0, protein: 0, carbs: 0, fat: 0 };
+        map.set(normalizedDate, entry);
       }
       for (const item of session.items) {
         entry.calories += item.snapshotCalories;
@@ -673,7 +698,7 @@ export async function getMacroSummaryByDateRange(
 ): Promise<MacroSummaryByDate[]> {
   "use cache";
   cacheTag(`macroSummary:${userId}`);
-  cacheLife("hours");
+  cacheLife("minutes");
 
   return getMacroSummaryByDateRangeImpl(userId, startDate, endDate);
 }
@@ -698,7 +723,7 @@ export async function getMicroNutrientSummary(
   dateStr: string,
 ): Promise<MicroNutrientEntry[]> {
   "use cache";
-  cacheTag("microSummary");
+  cacheTag(`microSummary:${userId}`);
   cacheLife("hours");
 
   if (!hasNutritionModels()) return [];
@@ -816,7 +841,7 @@ export async function getUserGoals(
   userId: string,
 ): Promise<NutritionUserGoalsView | null> {
   "use cache";
-  cacheTag("nutritionGoals");
+  cacheTag(`nutritionGoals:${userId}`);
   cacheLife("hours");
 
   if (!hasNutritionModels()) return null;
