@@ -17,9 +17,9 @@ import {
   createRetailChainSourceAction,
   deactivateRetailChainSourceAction,
   listRetailChainSourcesAction,
-  listRetailChainsAction,
   runRetailChainIngestionAction,
-} from "@/actions/nutrition";
+} from "@/actions/nutritionAdmin";
+import { listRetailChainsAction } from "@/actions/nutrition";
 
 interface ChainOption {
   id: string;

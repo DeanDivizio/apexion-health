@@ -9,7 +9,7 @@ import {
   getMonthlyRetailQueueAction,
   listRetailIngestionRunsAction,
   runMonthlyRetailRefreshAction,
-} from "@/actions/nutrition";
+} from "@/actions/nutritionAdmin";
 
 interface QueueEntry {
   chainId: string;

@@ -12,7 +12,7 @@ import {
   publishRetailIngestionRunAction,
   setRetailStagingItemApprovalAction,
   updateRetailStagingItemAction,
-} from "@/actions/nutrition";
+} from "@/actions/nutritionAdmin";
 
 interface RunDetail {
   runId: string;
