@@ -38,7 +38,7 @@ function buildUserContent(input: string): ChatCompletionContentPart[] {
       {
         type: "file",
         file: {
-          file_data: parsedDataUrl.base64Data,
+          file_data: input,
           filename: "document.pdf",
         },
       },
