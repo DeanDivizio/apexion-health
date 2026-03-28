@@ -33,7 +33,7 @@ export async function parseRetailArtifact(
   if (input.sourceType === "csv") {
     deterministic = parseCsvArtifact(input.body);
   } else if (input.sourceType === "xlsx") {
-    deterministic = parseXlsxArtifact(input.body);
+    deterministic = await parseXlsxArtifact(input.body);
   } else if (input.sourceType === "pdf") {
     return parseWithOcrFallback({
       body: input.body,

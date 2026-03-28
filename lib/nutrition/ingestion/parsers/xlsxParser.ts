@@ -1,22 +1,37 @@
-import * as XLSX from "xlsx";
+import * as ExcelJS from "exceljs";
 import type { ParsedArtifactResult } from "@/lib/nutrition/ingestion/types";
 import { mapTabularRecordToCandidate } from "@/lib/nutrition/ingestion/parsers/common";
 
-export function parseXlsxArtifact(body: Uint8Array): ParsedArtifactResult {
-  const workbook = XLSX.read(Buffer.from(body), { type: "buffer" });
+export async function parseXlsxArtifact(body: Uint8Array): Promise<ParsedArtifactResult> {
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(body.buffer as ArrayBuffer);
+
   const items: ParsedArtifactResult["items"] = [];
   const warnings: ParsedArtifactResult["warnings"] = [];
 
-  for (const sheetName of workbook.SheetNames) {
-    const sheet = workbook.Sheets[sheetName];
-    if (!sheet) continue;
-    const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, {
-      defval: "",
-      raw: true,
+  for (const worksheet of workbook.worksheets) {
+    const headerRow = worksheet.getRow(1);
+    const headers: string[] = [];
+    headerRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+      headers[colNumber] = cell.text?.trim() ?? "";
     });
 
-    for (const row of rows) {
-      const mapped = mapTabularRecordToCandidate(row, "xlsx_parser");
+    for (let rowIdx = 2; rowIdx <= worksheet.rowCount; rowIdx++) {
+      const row = worksheet.getRow(rowIdx);
+      const record: Record<string, unknown> = {};
+      let hasValue = false;
+
+      row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+        const header = headers[colNumber];
+        if (!header) return;
+        const value = cell.value;
+        record[header] = value ?? "";
+        if (value != null && value !== "") hasValue = true;
+      });
+
+      if (!hasValue) continue;
+
+      const mapped = mapTabularRecordToCandidate(record, "xlsx_parser");
       if (mapped) items.push(mapped);
     }
   }
