@@ -683,6 +683,51 @@ enum NutritionFoodSource {
   retail
 }
 
+enum NutritionSourceType {
+  csv
+  xlsx
+  pdf
+  html_link
+  manual_upload
+}
+
+enum NutritionFetchMethod {
+  direct_download
+  manual_upload_only
+}
+
+enum NutritionParserPreference {
+  deterministic_first
+  ocr_allowed
+}
+
+enum NutritionIngestionRunStatus {
+  queued
+  fetching
+  fetched
+  parsing
+  staged
+  needs_source
+  fetch_failed
+  review_required
+  publish_ready
+  published
+  rejected
+}
+
+enum NutritionExtractionMethod {
+  csv_parser
+  xlsx_parser
+  pdf_table_parser
+  ocr_llm
+}
+
+enum NutritionValidationSeverity {
+  hard
+  soft
+  info
+}
+
 model NutritionFoundationFood {
   id                 String   @id @default(uuid())
   fdcId              Int      @unique
@@ -722,8 +767,13 @@ model NutritionRetailChain {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  globalItems NutritionRetailItem[]
-  userItems   NutritionRetailUserItem[]
+  globalItems    NutritionRetailItem[]
+  userItems      NutritionRetailUserItem[]
+  sources        NutritionRetailChainSource[]
+  ingestionRuns  NutritionRetailIngestionRun[]
+  stagingItems   NutritionRetailStagingItem[]
+  itemVersions   NutritionRetailItemVersion[]
+  itemAliases    NutritionRetailItemAlias[]
 }
 
 model NutritionRetailItem {
@@ -731,15 +781,28 @@ model NutritionRetailItem {
   chainId     String
   chain       NutritionRetailChain @relation(fields: [chainId], references: [id], onDelete: Cascade)
   name        String
+  normalizedName String?
   category    String?
   nutrients   Json
   servingSize Float?
   servingUnit String?
+  sourceType  NutritionSourceType?
+  sourceUrl   String?
+  lastIngestionRunId String?
+  lastIngestionRun NutritionRetailIngestionRun? @relation(fields: [lastIngestionRunId], references: [id], onDelete: SetNull)
+  lastArtifactId String?
+  lastArtifact NutritionRetailIngestionArtifact? @relation(fields: [lastArtifactId], references: [id], onDelete: SetNull)
   active      Boolean              @default(true)
   createdAt   DateTime             @default(now())
   updatedAt   DateTime             @updatedAt
 
+  aliases     NutritionRetailItemAlias[]
+  versions    NutritionRetailItemVersion[]
+
   @@index([chainId, name])
+  @@index([chainId, normalizedName])
+  @@index([lastIngestionRunId])
+  @@index([lastArtifactId])
 }
 
 model NutritionRetailUserItem {
@@ -758,6 +821,172 @@ model NutritionRetailUserItem {
 
   @@index([chainId, userId])
   @@index([userId])
+}
+
+model NutritionRetailChainSource {
+  id               String                     @id @default(uuid())
+  chainId          String
+  chain            NutritionRetailChain       @relation(fields: [chainId], references: [id], onDelete: Cascade)
+  sourceName       String
+  sourceUrl        String?
+  sourceType       NutritionSourceType
+  fetchMethod      NutritionFetchMethod       @default(direct_download)
+  parserPreference NutritionParserPreference  @default(deterministic_first)
+  active           Boolean                    @default(true)
+  priority         Int                        @default(0)
+  lastVerifiedAt   DateTime?
+  notes            String?
+  createdAt        DateTime                   @default(now())
+  updatedAt        DateTime                   @updatedAt
+
+  runs NutritionRetailIngestionRun[]
+
+  @@index([chainId, active, priority])
+  @@unique([chainId, sourceName])
+}
+
+model NutritionRetailIngestionRun {
+  id                      String                     @id @default(uuid())
+  chainId                 String
+  chain                   NutritionRetailChain       @relation(fields: [chainId], references: [id], onDelete: Cascade)
+  sourceId                String?
+  source                  NutritionRetailChainSource? @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+  status                  NutritionIngestionRunStatus @default(queued)
+  triggeredByUserId       String?
+  sourceUrlSnapshot       String?
+  sourceTypeSnapshot      NutritionSourceType?
+  fetchMethodSnapshot     NutritionFetchMethod?
+  parserPreferenceSnapshot NutritionParserPreference?
+  errorMessage            String?
+  startedAt               DateTime                   @default(now())
+  finishedAt              DateTime?
+  createdAt               DateTime                   @default(now())
+  updatedAt               DateTime                   @updatedAt
+
+  artifacts      NutritionRetailIngestionArtifact[]
+  stagingItems   NutritionRetailStagingItem[]
+  itemVersions   NutritionRetailItemVersion[]
+  producedItems  NutritionRetailItem[]
+
+  @@index([chainId, status])
+  @@index([sourceId])
+  @@index([startedAt])
+}
+
+model NutritionRetailIngestionArtifact {
+  id             String                    @id @default(uuid())
+  runId          String
+  run            NutritionRetailIngestionRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  sourceUrl      String?
+  sourceType     NutritionSourceType
+  fileName       String?
+  mimeType       String?
+  storagePath    String?
+  fileSizeBytes  Int?
+  checksumSha256 String?
+  httpStatus     Int?
+  fetchedAt      DateTime                  @default(now())
+  createdAt      DateTime                  @default(now())
+  updatedAt      DateTime                  @updatedAt
+
+  stagingItems   NutritionRetailStagingItem[]
+  producedItems  NutritionRetailItem[]
+  itemVersions   NutritionRetailItemVersion[]
+
+  @@index([runId, fetchedAt])
+  @@index([checksumSha256])
+}
+
+model NutritionRetailStagingItem {
+  id              String                    @id @default(uuid())
+  runId           String
+  run             NutritionRetailIngestionRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  artifactId      String?
+  artifact        NutritionRetailIngestionArtifact? @relation(fields: [artifactId], references: [id], onDelete: SetNull)
+  chainId         String
+  chain           NutritionRetailChain      @relation(fields: [chainId], references: [id], onDelete: Cascade)
+  name            String
+  normalizedName  String
+  category        String?
+  nutrients       Json
+  servingSize     Float?
+  servingUnit     String?
+  extractionMethod NutritionExtractionMethod
+  confidence      Float?
+  hardIssueCount  Int                       @default(0)
+  softIssueCount  Int                       @default(0)
+  reviewed        Boolean                   @default(false)
+  approved        Boolean                   @default(false)
+  reviewedByUserId String?
+  reviewedAt      DateTime?
+  createdAt       DateTime                  @default(now())
+  updatedAt       DateTime                  @updatedAt
+
+  issues NutritionRetailStagingIssue[]
+
+  @@index([runId, approved])
+  @@index([artifactId])
+  @@index([chainId, normalizedName])
+}
+
+model NutritionRetailStagingIssue {
+  id            String                    @id @default(uuid())
+  stagingItemId String
+  stagingItem   NutritionRetailStagingItem @relation(fields: [stagingItemId], references: [id], onDelete: Cascade)
+  severity      NutritionValidationSeverity
+  code          String
+  message       String
+  meta          Json?
+  createdAt     DateTime                  @default(now())
+
+  @@index([stagingItemId, severity])
+  @@index([code])
+}
+
+model NutritionRetailItemVersion {
+  id            String                     @id @default(uuid())
+  retailItemId  String?
+  retailItem    NutritionRetailItem?       @relation(fields: [retailItemId], references: [id], onDelete: SetNull)
+  runId         String
+  run           NutritionRetailIngestionRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  artifactId    String?
+  artifact      NutritionRetailIngestionArtifact? @relation(fields: [artifactId], references: [id], onDelete: SetNull)
+  chainId       String
+  chain         NutritionRetailChain       @relation(fields: [chainId], references: [id], onDelete: Cascade)
+  itemName      String
+  normalizedName String
+  category      String?
+  nutrients     Json
+  servingSize   Float?
+  servingUnit   String?
+  sourceType    NutritionSourceType?
+  sourceUrl     String?
+  versionNumber Int
+  isPublished   Boolean                    @default(true)
+  publishedAt   DateTime                   @default(now())
+  createdAt     DateTime                   @default(now())
+
+  @@index([runId, publishedAt])
+  @@index([retailItemId, versionNumber])
+  @@index([chainId, normalizedName])
+  @@unique([retailItemId, versionNumber])
+}
+
+model NutritionRetailItemAlias {
+  id              String                @id @default(uuid())
+  chainId         String
+  chain           NutritionRetailChain  @relation(fields: [chainId], references: [id], onDelete: Cascade)
+  retailItemId    String
+  retailItem      NutritionRetailItem   @relation(fields: [retailItemId], references: [id], onDelete: Cascade)
+  alias           String
+  normalizedAlias String
+  active          Boolean               @default(true)
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  @@unique([chainId, normalizedAlias])
+  @@index([retailItemId])
+  @@index([chainId, active])
 }
 
 model NutritionMealSession {
