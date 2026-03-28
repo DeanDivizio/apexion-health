@@ -32,6 +32,12 @@ function toSourceConfig(row: any): RetailChainSourceConfig {
     chainId: row.chainId,
     sourceName: row.sourceName,
     sourceUrl: row.sourceUrl ?? null,
+    manualStoragePath: row.manualStoragePath ?? null,
+    manualFileName: row.manualFileName ?? null,
+    manualMimeType: row.manualMimeType ?? null,
+    manualFileSizeBytes: row.manualFileSizeBytes ?? null,
+    manualChecksumSha256: row.manualChecksumSha256 ?? null,
+    manualUploadedAt: row.manualUploadedAt ? row.manualUploadedAt.toISOString() : null,
     sourceType: row.sourceType,
     fetchMethod: row.fetchMethod,
     parserPreference: row.parserPreference,
@@ -78,6 +84,12 @@ export async function createRetailChainSource(
       chainId: input.chainId,
       sourceName: input.sourceName,
       sourceUrl: input.sourceUrl,
+      manualStoragePath: null,
+      manualFileName: null,
+      manualMimeType: null,
+      manualFileSizeBytes: null,
+      manualChecksumSha256: null,
+      manualUploadedAt: null,
       sourceType: input.sourceType,
       fetchMethod: input.fetchMethod,
       parserPreference: input.parserPreference,
@@ -124,6 +136,36 @@ export async function deactivateRetailChainSource(
   sourceId: string,
 ): Promise<RetailChainSourceConfig> {
   return updateRetailChainSource(sourceId, { active: false });
+}
+
+export async function setRetailChainSourceManualArtifact(
+  sourceId: string,
+  input: {
+    storagePath: string;
+    fileName: string;
+    mimeType: string | null;
+    fileSizeBytes: number;
+    checksumSha256: string;
+    sourceType?: RetailChainSourceConfig["sourceType"];
+  },
+): Promise<RetailChainSourceConfig> {
+  assertRetailIngestionModels();
+
+  const updated = await db.nutritionRetailChainSource.update({
+    where: { id: sourceId },
+    data: {
+      manualStoragePath: input.storagePath,
+      manualFileName: input.fileName,
+      manualMimeType: input.mimeType,
+      manualFileSizeBytes: input.fileSizeBytes,
+      manualChecksumSha256: input.checksumSha256,
+      manualUploadedAt: new Date(),
+      fetchMethod: "manual_upload_only",
+      ...(input.sourceType ? { sourceType: input.sourceType } : {}),
+    },
+  });
+
+  return toSourceConfig(updated);
 }
 
 export async function getPrioritizedChainSources(

@@ -2,13 +2,14 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Loader2, PlayCircle, RefreshCcw, XCircle } from "lucide-react";
+import { Loader2, PlayCircle, RefreshCcw, RotateCcw, XCircle } from "lucide-react";
 import { Button } from "@/components/ui_primitives/button";
 import { useToast } from "@/hooks/use-toast";
 import {
   cancelIngestionRunAction,
   getMonthlyRetailQueueAction,
   listRetailIngestionRunsAction,
+  restageFromArtifactAction,
   runMonthlyRetailRefreshAction,
 } from "@/actions/nutritionAdmin";
 
@@ -31,6 +32,7 @@ interface RunRow {
   sourceType: string | null;
   startedAtIso: string | null;
   finishedAtIso: string | null;
+  artifactId: string | null;
   stagingItemCount: number;
   approvedItemCount: number;
   hardIssueRowCount: number;
@@ -75,6 +77,7 @@ export function IngestionRunsPanel() {
   const [refreshing, setRefreshing] = React.useState(false);
   const [runningMonthly, setRunningMonthly] = React.useState(false);
   const [cancellingRuns, setCancellingRuns] = React.useState<Set<string>>(new Set());
+  const [restagingRuns, setRestagingRuns] = React.useState<Set<string>>(new Set());
 
   const refresh = React.useCallback(async () => {
     setRefreshing(true);
@@ -114,6 +117,30 @@ export function IngestionRunsPanel() {
       });
     } finally {
       setCancellingRuns((prev) => {
+        const next = new Set(prev);
+        next.delete(runId);
+        return next;
+      });
+    }
+  }
+
+  async function handleRestage(runId: string) {
+    setRestagingRuns((prev) => new Set(prev).add(runId));
+    try {
+      const result = await restageFromArtifactAction(runId);
+      toast({
+        title: "Restaged from cached extraction",
+        description: `${result.stagingItemCount} items staged`,
+      });
+      await refresh();
+    } catch (error) {
+      toast({
+        title: "Restage failed",
+        description: error instanceof Error ? error.message : undefined,
+        variant: "destructive",
+      });
+    } finally {
+      setRestagingRuns((prev) => {
         const next = new Set(prev);
         next.delete(runId);
         return next;
@@ -275,6 +302,21 @@ export function IngestionRunsPanel() {
                           </button>
                         )}
                       </div>
+                      {run.artifactId && ["fetch_failed", "review_required", "staged"].includes(run.status) && (
+                          <button
+                            onClick={() => handleRestage(run.runId)}
+                            disabled={restagingRuns.has(run.runId)}
+                            className="ml-1 inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-xs font-medium text-sky-400 hover:bg-sky-400/10 disabled:opacity-50"
+                            title="Retry staging from cached extraction (no re-extraction)"
+                          >
+                            {restagingRuns.has(run.runId) ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <RotateCcw className="h-3 w-3" />
+                            )}
+                            Retry staging
+                          </button>
+                      )}
                       {run.errorMessage && (
                         <p className="mt-0.5 text-xs text-red-400/70 truncate max-w-[260px]" title={run.errorMessage}>
                           {run.errorMessage}

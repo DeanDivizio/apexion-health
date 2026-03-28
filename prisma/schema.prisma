@@ -829,6 +829,12 @@ model NutritionRetailChainSource {
   chain            NutritionRetailChain       @relation(fields: [chainId], references: [id], onDelete: Cascade)
   sourceName       String
   sourceUrl        String?
+  manualStoragePath String?
+  manualFileName   String?
+  manualMimeType   String?
+  manualFileSizeBytes Int?
+  manualChecksumSha256 String?
+  manualUploadedAt DateTime?
   sourceType       NutritionSourceType
   fetchMethod      NutritionFetchMethod       @default(direct_download)
   parserPreference NutritionParserPreference  @default(deterministic_first)
@@ -874,24 +880,25 @@ model NutritionRetailIngestionRun {
 }
 
 model NutritionRetailIngestionArtifact {
-  id             String                    @id @default(uuid())
-  runId          String
-  run            NutritionRetailIngestionRun @relation(fields: [runId], references: [id], onDelete: Cascade)
-  sourceUrl      String?
-  sourceType     NutritionSourceType
-  fileName       String?
-  mimeType       String?
-  storagePath    String?
-  fileSizeBytes  Int?
-  checksumSha256 String?
-  httpStatus     Int?
-  fetchedAt      DateTime                  @default(now())
-  createdAt      DateTime                  @default(now())
-  updatedAt      DateTime                  @updatedAt
+  id               String                    @id @default(uuid())
+  runId            String
+  run              NutritionRetailIngestionRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  sourceUrl        String?
+  sourceType       NutritionSourceType
+  fileName         String?
+  mimeType         String?
+  storagePath      String?
+  fileSizeBytes    Int?
+  checksumSha256   String?
+  httpStatus       Int?
+  parsedResultJson Json?
+  fetchedAt        DateTime                  @default(now())
+  createdAt        DateTime                  @default(now())
+  updatedAt        DateTime                  @updatedAt
 
-  stagingItems   NutritionRetailStagingItem[]
-  producedItems  NutritionRetailItem[]
-  itemVersions   NutritionRetailItemVersion[]
+  stagingItems     NutritionRetailStagingItem[]
+  producedItems    NutritionRetailItem[]
+  itemVersions     NutritionRetailItemVersion[]
 
   @@index([runId, fetchedAt])
   @@index([checksumSha256])

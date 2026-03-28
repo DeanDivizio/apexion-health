@@ -1,5 +1,8 @@
 import { prisma } from "@/lib/db/prisma";
-import { ingestionArtifactInputSchema } from "@/lib/nutrition/ingestion/schemas";
+import {
+  ingestionArtifactInputSchema,
+  parsedArtifactResultSchema,
+} from "@/lib/nutrition/ingestion/schemas";
 import type {
   NutritionIngestionRunStatus,
   RetailChainSourceConfig,
@@ -7,6 +10,8 @@ import type {
 import {
   createIngestionArtifactRecord,
   fetchRetailSourceArtifact,
+  loadCachedParsedResult,
+  saveParsedResultOnArtifact,
   toArtifactInput,
 } from "@/lib/nutrition/server/sourceFetchService";
 import {
@@ -516,6 +521,12 @@ export async function runChainIngestion(
       continue;
     }
 
+    await saveParsedResultOnArtifact(selectedArtifactId, parsed);
+    logIngestion(runId, "parsed_result_cached", {
+      artifactId: selectedArtifactId,
+      itemCount: parsed.items.length,
+    });
+
     logIngestion(runId, "stage_start", { itemCount: parsed.items.length });
     const tStage = Date.now();
 
@@ -617,5 +628,109 @@ export async function runChainIngestion(
     hardIssueRowCount: 0,
     softIssueRowCount: 0,
     errorMessage: lastErrorMessage ?? "Unable to fetch any official source.",
+  };
+}
+
+export async function restageFromArtifact(
+  runId: string,
+  triggeredByUserId?: string,
+): Promise<IngestionRunSummary> {
+  assertRetailIngestionModels();
+
+  const run = await db.nutritionRetailIngestionRun.findUnique({
+    where: { id: runId },
+    include: {
+      artifacts: {
+        orderBy: { fetchedAt: "desc" },
+        take: 1,
+        select: { id: true, parsedResultJson: true },
+      },
+      chain: { select: { name: true } },
+      source: { select: { id: true, sourceName: true } },
+    },
+  });
+
+  if (!run) throw new Error("Ingestion run not found.");
+
+  const artifact = run.artifacts[0];
+  if (!artifact?.parsedResultJson) {
+    throw new Error(
+      "No cached extraction result on this run's artifact. The extraction must be re-run.",
+    );
+  }
+
+  const parseResult = parsedArtifactResultSchema.safeParse(artifact.parsedResultJson);
+  if (!parseResult.success) {
+    throw new Error(
+      `Cached extraction result failed validation: ${parseResult.error.message}`,
+    );
+  }
+
+  const parsed = parseResult.data;
+
+  if (!parsed.items.length) {
+    throw new Error("Cached extraction result contains no items.");
+  }
+
+  logIngestion(runId, "restage_start", {
+    artifactId: artifact.id,
+    cachedItemCount: parsed.items.length,
+  });
+
+  await db.nutritionRetailStagingItem.deleteMany({ where: { runId } });
+
+  await setIngestionRunStatus(runId, "parsing", { errorMessage: null });
+
+  const staged = await stageRetailItemsForRun(
+    runId,
+    parsed.items.map((item) => ({
+      name: item.name,
+      category: item.category,
+      nutrients: item.nutrients,
+      servingSize: item.servingSize,
+      servingUnit: item.servingUnit,
+      extractionMethod: item.extractionMethod,
+      confidence: item.confidence,
+    })),
+    triggeredByUserId,
+    artifact.id,
+  );
+
+  const stagedRows = await listRetailStagingItems(runId);
+  const approvedItemCount = stagedRows.filter((row) => row.approved).length;
+  const hardIssueRowCount = stagedRows.filter((row) => row.hardIssueCount > 0).length;
+  const softIssueRowCount = stagedRows.filter((row) => row.softIssueCount > 0).length;
+
+  const finalStatus: NutritionIngestionRunStatus =
+    hardIssueRowCount === 0 ? "publish_ready" : "review_required";
+
+  await setIngestionRunStatus(runId, finalStatus, {
+    finishedAt: new Date(),
+    errorMessage: null,
+  });
+
+  logIngestion(runId, "restage_complete", {
+    stagedCount: staged.stagedCount,
+    hardIssues: staged.hardIssues,
+    softIssues: staged.softIssues,
+  });
+
+  return {
+    runId,
+    chainId: run.chainId,
+    status: finalStatus,
+    chainName: run.chain?.name ?? null,
+    sourceId: run.source?.id ?? run.sourceId ?? null,
+    sourceName: run.source?.sourceName ?? null,
+    sourceType: run.sourceTypeSnapshot ?? null,
+    startedAtIso: run.startedAt ? run.startedAt.toISOString() : null,
+    finishedAtIso: new Date().toISOString(),
+    artifactId: artifact.id,
+    attemptedSourceIds: run.sourceId ? [run.sourceId] : [],
+    stagingItemCount: staged.stagedCount,
+    approvedItemCount,
+    hardIssueRowCount,
+    softIssueRowCount,
+    errorMessage: null,
   };
 }

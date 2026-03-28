@@ -216,6 +216,11 @@ async function recomputeRunStatus(runId: string): Promise<NutritionIngestionRunS
   return "publish_ready";
 }
 
+interface PreparedStagingItem {
+  data: Record<string, unknown>;
+  issues: ValidationIssuePayload[];
+}
+
 export async function stageRetailItemsForRun(
   runId: string,
   candidates: StageRetailItemsInput,
@@ -244,133 +249,137 @@ export async function stageRetailItemsForRun(
   const batchSeen = new Set<string>();
   let hardIssues = 0;
   let softIssues = 0;
+  const prepared: PreparedStagingItem[] = [];
 
-  await db.$transaction(async (tx: any) => {
-    for (const rawCandidate of candidates) {
-      const normalizedName = normalizeRetailItemName(rawCandidate.name);
-      const parseResult = normalizedRetailItemCandidateSchema.safeParse({
-        ...rawCandidate,
-        normalizedName,
-      });
-      if (!parseResult.success) {
-        const parseErrors = parseResult.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`);
-        console.warn(
-          JSON.stringify({
-            tag: "ingestion",
-            step: "staging_item_parse_failed",
-            runId,
-            itemName: rawCandidate.name,
-            errors: parseErrors,
-          }),
-        );
-
-        const fallbackName = (typeof rawCandidate.name === "string" && rawCandidate.name.trim()) || "Unknown item";
-        const fallbackNutrients: NutrientProfile = {
-          calories: 0,
-          protein: 0,
-          carbs: 0,
-          fat: 0,
-        };
-        hardIssues += 1;
-
-        const staged = await tx.nutritionRetailStagingItem.create({
-          data: {
-            runId,
-            artifactId: artifactId ?? null,
-            chainId: run.chainId,
-            name: fallbackName,
-            normalizedName: normalizedName || normalizeRetailItemName(fallbackName),
-            category: (typeof rawCandidate.category === "string" ? rawCandidate.category : null),
-            nutrients: fallbackNutrients,
-            servingSize: null,
-            servingUnit: null,
-            extractionMethod: rawCandidate.extractionMethod ?? "ocr_llm",
-            confidence: null,
-            hardIssueCount: 1,
-            softIssueCount: 0,
-            reviewed: false,
-            approved: false,
-            reviewedByUserId: null,
-            reviewedAt: null,
-          },
-          select: { id: true },
-        });
-
-        await tx.nutritionRetailStagingIssue.create({
-          data: {
-            stagingItemId: staged.id,
-            severity: "hard",
-            code: "parse_validation_failed",
-            message: `Item failed schema validation: ${parseErrors.join("; ")}`,
-            meta: { rawCandidate },
-          },
-        });
-
-        batchSeen.add(normalizedName);
-        continue;
-      }
-      const parsedCandidate = parseResult.data;
-      const candidateNutrients = parsedCandidate.nutrients as NutrientProfile;
-      const duplicateNames = new Set<string>();
-      if (existingNames.has(parsedCandidate.normalizedName)) {
-        duplicateNames.add(parsedCandidate.normalizedName);
-      }
-      if (batchSeen.has(parsedCandidate.normalizedName)) {
-        duplicateNames.add(parsedCandidate.normalizedName);
-      }
-
-      const issues = validateCandidate(
-        {
-          name: parsedCandidate.name,
-          normalizedName: parsedCandidate.normalizedName,
-          category: parsedCandidate.category,
-          nutrients: candidateNutrients,
-          servingSize: parsedCandidate.servingSize,
-          servingUnit: parsedCandidate.servingUnit,
-        },
-        duplicateNames,
+  for (const rawCandidate of candidates) {
+    const normalizedName = normalizeRetailItemName(rawCandidate.name);
+    const parseResult = normalizedRetailItemCandidateSchema.safeParse({
+      ...rawCandidate,
+      normalizedName,
+    });
+    if (!parseResult.success) {
+      const parseErrors = parseResult.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`);
+      console.warn(
+        JSON.stringify({
+          tag: "ingestion",
+          step: "staging_item_parse_failed",
+          runId,
+          itemName: rawCandidate.name,
+          errors: parseErrors,
+        }),
       );
-      const itemHardIssueCount = issues.filter((issue) => issue.severity === "hard").length;
-      const itemSoftIssueCount = issues.filter((issue) => issue.severity === "soft").length;
-      hardIssues += itemHardIssueCount;
-      softIssues += itemSoftIssueCount;
 
-      const staged = await tx.nutritionRetailStagingItem.create({
+      const fallbackName = (typeof rawCandidate.name === "string" && rawCandidate.name.trim()) || "Unknown item";
+      const fallbackNutrients: NutrientProfile = {
+        calories: 0,
+        protein: 0,
+        carbs: 0,
+        fat: 0,
+      };
+      hardIssues += 1;
+
+      prepared.push({
         data: {
           runId,
           artifactId: artifactId ?? null,
           chainId: run.chainId,
-          name: parsedCandidate.name,
-          normalizedName: parsedCandidate.normalizedName,
-          category: parsedCandidate.category,
-          nutrients: candidateNutrients,
-          servingSize: parsedCandidate.servingSize,
-          servingUnit: parsedCandidate.servingUnit,
-          extractionMethod: parsedCandidate.extractionMethod,
-          confidence: parsedCandidate.confidence,
-          hardIssueCount: itemHardIssueCount,
-          softIssueCount: itemSoftIssueCount,
+          name: fallbackName,
+          normalizedName: normalizedName || normalizeRetailItemName(fallbackName),
+          category: (typeof rawCandidate.category === "string" ? rawCandidate.category : null),
+          nutrients: fallbackNutrients,
+          servingSize: null,
+          servingUnit: null,
+          extractionMethod: rawCandidate.extractionMethod ?? "ocr_llm",
+          confidence: null,
+          hardIssueCount: 1,
+          softIssueCount: 0,
           reviewed: false,
-          approved: itemHardIssueCount === 0,
-          reviewedByUserId: itemHardIssueCount === 0 ? reviewedByUserId ?? null : null,
-          reviewedAt: itemHardIssueCount === 0 ? new Date() : null,
+          approved: false,
+          reviewedByUserId: null,
+          reviewedAt: null,
         },
-        select: { id: true },
+        issues: [{
+          severity: "hard" as const,
+          code: "parse_validation_failed",
+          message: `Item failed schema validation: ${parseErrors.join("; ")}`,
+          meta: { rawCandidate },
+        }],
       });
 
-      if (issues.length) {
-        await tx.nutritionRetailStagingIssue.createMany({
-          data: issues.map((issue) => ({
-            stagingItemId: staged.id,
-            severity: issue.severity,
-            code: issue.code,
-            message: issue.message,
-            meta: issue.meta ?? null,
-          })),
-        });
-      }
+      batchSeen.add(normalizedName);
+      continue;
+    }
 
-      batchSeen.add(parsedCandidate.normalizedName);
+    const parsedCandidate = parseResult.data;
+    const candidateNutrients = parsedCandidate.nutrients as NutrientProfile;
+    const duplicateNames = new Set<string>();
+    if (existingNames.has(parsedCandidate.normalizedName)) {
+      duplicateNames.add(parsedCandidate.normalizedName);
+    }
+    if (batchSeen.has(parsedCandidate.normalizedName)) {
+      duplicateNames.add(parsedCandidate.normalizedName);
+    }
+
+    const issues = validateCandidate(
+      {
+        name: parsedCandidate.name,
+        normalizedName: parsedCandidate.normalizedName,
+        category: parsedCandidate.category,
+        nutrients: candidateNutrients,
+        servingSize: parsedCandidate.servingSize,
+        servingUnit: parsedCandidate.servingUnit,
+      },
+      duplicateNames,
+    );
+    const itemHardIssueCount = issues.filter((issue) => issue.severity === "hard").length;
+    const itemSoftIssueCount = issues.filter((issue) => issue.severity === "soft").length;
+    hardIssues += itemHardIssueCount;
+    softIssues += itemSoftIssueCount;
+
+    prepared.push({
+      data: {
+        runId,
+        artifactId: artifactId ?? null,
+        chainId: run.chainId,
+        name: parsedCandidate.name,
+        normalizedName: parsedCandidate.normalizedName,
+        category: parsedCandidate.category,
+        nutrients: candidateNutrients,
+        servingSize: parsedCandidate.servingSize,
+        servingUnit: parsedCandidate.servingUnit,
+        extractionMethod: parsedCandidate.extractionMethod,
+        confidence: parsedCandidate.confidence,
+        hardIssueCount: itemHardIssueCount,
+        softIssueCount: itemSoftIssueCount,
+        reviewed: false,
+        approved: itemHardIssueCount === 0,
+        reviewedByUserId: itemHardIssueCount === 0 ? reviewedByUserId ?? null : null,
+        reviewedAt: itemHardIssueCount === 0 ? new Date() : null,
+      },
+      issues,
+    });
+
+    batchSeen.add(parsedCandidate.normalizedName);
+  }
+
+  await db.$transaction(async (tx: any) => {
+    const created = await tx.nutritionRetailStagingItem.createManyAndReturn({
+      data: prepared.map((p) => p.data),
+      select: { id: true },
+    });
+
+    const allIssues = created.flatMap((row: { id: string }, idx: number) =>
+      prepared[idx].issues.map((issue) => ({
+        stagingItemId: row.id,
+        severity: issue.severity,
+        code: issue.code,
+        message: issue.message,
+        meta: issue.meta ?? null,
+      })),
+    );
+
+    if (allIssues.length) {
+      await tx.nutritionRetailStagingIssue.createMany({ data: allIssues });
     }
 
     await tx.nutritionRetailIngestionRun.update({
@@ -380,7 +389,7 @@ export async function stageRetailItemsForRun(
         errorMessage: null,
       },
     });
-  }, { timeout: 30000 });
+  });
 
   return {
     stagedCount: candidates.length,

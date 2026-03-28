@@ -23,6 +23,7 @@ import {
   getIngestionRunDetail,
   getIngestionRunSummary,
   listIngestionRuns,
+  restageFromArtifact,
   runChainIngestion,
   setIngestionRunStatus,
 } from "@/lib/nutrition/server/ingestionRunService";
@@ -167,6 +168,12 @@ export async function cancelIngestionRunAction(runId: string) {
   await requireAdminUserId();
   if (!runId) throw new Error("Run ID is required.");
   await cancelIngestionRun(runId);
+}
+
+export async function restageFromArtifactAction(runId: string) {
+  const adminUserId = await requireAdminUserId();
+  if (!runId) throw new Error("Run ID is required.");
+  return restageFromArtifact(runId, adminUserId);
 }
 
 export async function publishRetailIngestionRunAction(runId: string) {

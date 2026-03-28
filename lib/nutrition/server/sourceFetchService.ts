@@ -8,6 +8,7 @@ import type {
   RetailChainSourceConfig,
 } from "@/lib/nutrition/ingestion/types";
 import { assertRetailIngestionModels } from "@/lib/nutrition/server/sourceRegistryService";
+import { downloadRetailSourceFile } from "@/lib/nutrition/server/sourceStorageService";
 
 const db = prisma as any;
 
@@ -66,19 +67,57 @@ export async function fetchRetailSourceArtifact(
   source: RetailChainSourceConfig,
 ): Promise<FetchedRetailSourceArtifact> {
   if (source.fetchMethod === "manual_upload_only") {
-    return {
-      status: "needs_source",
-      body: null,
-      errorMessage: "Source is marked manual_upload_only.",
-      sourceUrl: source.sourceUrl,
-      sourceType: source.sourceType,
-      fileName: null,
-      mimeType: null,
-      storagePath: null,
-      fileSizeBytes: null,
-      checksumSha256: null,
-      httpStatus: null,
-    };
+    if (!source.manualStoragePath) {
+      return {
+        status: "needs_source",
+        body: null,
+        errorMessage: "No manual source file uploaded yet.",
+        sourceUrl: source.sourceUrl,
+        sourceType: source.sourceType,
+        fileName: source.manualFileName,
+        mimeType: source.manualMimeType,
+        storagePath: source.manualStoragePath,
+        fileSizeBytes: source.manualFileSizeBytes,
+        checksumSha256: source.manualChecksumSha256,
+        httpStatus: null,
+      };
+    }
+
+    try {
+      const downloaded = await downloadRetailSourceFile({
+        storagePath: source.manualStoragePath,
+      });
+      return {
+        status: "fetched",
+        body: downloaded.body,
+        errorMessage: null,
+        sourceUrl: source.sourceUrl,
+        sourceType: source.sourceType,
+        fileName: source.manualFileName,
+        mimeType: source.manualMimeType ?? downloaded.mimeType,
+        storagePath: source.manualStoragePath,
+        fileSizeBytes: downloaded.fileSizeBytes,
+        checksumSha256: downloaded.checksumSha256,
+        httpStatus: null,
+      };
+    } catch (error) {
+      return {
+        status: "fetch_failed",
+        body: null,
+        errorMessage:
+          error instanceof Error
+            ? error.message
+            : "Failed to download manual source file.",
+        sourceUrl: source.sourceUrl,
+        sourceType: source.sourceType,
+        fileName: source.manualFileName,
+        mimeType: source.manualMimeType,
+        storagePath: source.manualStoragePath,
+        fileSizeBytes: source.manualFileSizeBytes,
+        checksumSha256: source.manualChecksumSha256,
+        httpStatus: null,
+      };
+    }
   }
 
   if (!source.sourceUrl) {
@@ -210,4 +249,26 @@ export function toArtifactInput(
     checksumSha256: artifact.checksumSha256,
     httpStatus: artifact.httpStatus,
   };
+}
+
+export async function saveParsedResultOnArtifact(
+  artifactId: string,
+  parsedResult: unknown,
+): Promise<void> {
+  assertRetailIngestionModels();
+  await db.nutritionRetailIngestionArtifact.update({
+    where: { id: artifactId },
+    data: { parsedResultJson: parsedResult },
+  });
+}
+
+export async function loadCachedParsedResult(
+  artifactId: string,
+): Promise<unknown | null> {
+  assertRetailIngestionModels();
+  const row = await db.nutritionRetailIngestionArtifact.findUnique({
+    where: { id: artifactId },
+    select: { parsedResultJson: true },
+  });
+  return row?.parsedResultJson ?? null;
 }

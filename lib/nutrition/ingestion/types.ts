@@ -37,6 +37,12 @@ export interface RetailChainSourceConfig {
   chainId: string;
   sourceName: string;
   sourceUrl: string | null;
+  manualStoragePath: string | null;
+  manualFileName: string | null;
+  manualMimeType: string | null;
+  manualFileSizeBytes: number | null;
+  manualChecksumSha256: string | null;
+  manualUploadedAt: string | null;
   sourceType: NutritionSourceType;
   fetchMethod: NutritionFetchMethod;
   parserPreference: NutritionParserPreference;

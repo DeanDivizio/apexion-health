@@ -1,5 +1,8 @@
 import { z } from "zod";
 import { extractStructuredData } from "./extractStructuredData";
+import { splitPdfDataUrl } from "./pdfUtils";
+
+const MAX_PARALLEL_CHUNKS = 5;
 
 function coerceNumeric(val: unknown): number | undefined {
   if (val == null) return undefined;
@@ -81,16 +84,62 @@ Return ONLY valid JSON:
 }`;
 }
 
-export async function extractRetailMenuData(
-  image: string,
+function isPdfDataUrl(input: string): boolean {
+  return /^data:application\/pdf;base64,/i.test(input);
+}
+
+async function extractChunk(
+  chunkDataUrl: string,
   chainName: string,
   posthogDistinctId?: string,
 ): Promise<RetailMenuItemData[]> {
   const result = await extractStructuredData({
-    image,
+    image: chunkDataUrl,
     systemPrompt: buildSystemPrompt(chainName),
     responseSchema: retailMenuResponseSchema,
     posthogDistinctId,
   });
   return result.items;
+}
+
+async function processInBatches<T, R>(
+  items: T[],
+  concurrency: number,
+  fn: (item: T) => Promise<R>,
+): Promise<R[]> {
+  const results: R[] = [];
+  for (let i = 0; i < items.length; i += concurrency) {
+    const batch = items.slice(i, i + concurrency);
+    const batchResults = await Promise.all(batch.map(fn));
+    results.push(...batchResults);
+  }
+  return results;
+}
+
+export async function extractRetailMenuData(
+  image: string,
+  chainName: string,
+  posthogDistinctId?: string,
+): Promise<RetailMenuItemData[]> {
+  if (!isPdfDataUrl(image)) {
+    return extractChunk(image, chainName, posthogDistinctId);
+  }
+
+  const chunks = await splitPdfDataUrl(image);
+
+  if (chunks.length <= 1) {
+    return extractChunk(chunks[0] ?? image, chainName, posthogDistinctId);
+  }
+
+  console.log(
+    `[extractRetailMenuData] PDF split into ${chunks.length} chunks for "${chainName}"`,
+  );
+
+  const chunkResults = await processInBatches(
+    chunks,
+    MAX_PARALLEL_CHUNKS,
+    (chunk) => extractChunk(chunk, chainName, posthogDistinctId),
+  );
+
+  return chunkResults.flat();
 }
