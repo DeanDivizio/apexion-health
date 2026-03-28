@@ -35,10 +35,13 @@ export async function parseRetailArtifact(
   } else if (input.sourceType === "xlsx") {
     deterministic = parseXlsxArtifact(input.body);
   } else if (input.sourceType === "pdf") {
-    const { parsePdfArtifact } = await import(
-      "@/lib/nutrition/ingestion/parsers/pdfTableParser"
-    );
-    deterministic = await parsePdfArtifact(input.body);
+    return parseWithOcrFallback({
+      body: input.body,
+      chainName: input.chainName,
+      sourceType: input.sourceType,
+      mimeType: input.mimeType,
+      posthogDistinctId: input.posthogDistinctId,
+    });
   }
 
   if (
