@@ -19,7 +19,7 @@ import {
   listRetailChainSourcesAction,
   runRetailChainIngestionAction,
 } from "@/actions/nutritionAdmin";
-import { listRetailChainsAction } from "@/actions/nutrition";
+import { createRetailChainAction, listRetailChainsAction } from "@/actions/nutrition";
 
 interface ChainOption {
   id: string;
@@ -56,9 +56,11 @@ export function SourceRegistryPanel() {
   const { toast } = useToast();
   const [chains, setChains] = React.useState<ChainOption[]>([]);
   const [selectedChainId, setSelectedChainId] = React.useState<string>("");
+  const [newChainName, setNewChainName] = React.useState("");
   const [sources, setSources] = React.useState<SourceRow[]>([]);
   const [loadingChains, setLoadingChains] = React.useState(true);
   const [loadingSources, setLoadingSources] = React.useState(false);
+  const [creatingChain, setCreatingChain] = React.useState(false);
   const [creating, setCreating] = React.useState(false);
   const [running, setRunning] = React.useState(false);
   const [form, setForm] = React.useState({
@@ -111,6 +113,30 @@ export function SourceRegistryPanel() {
     if (!selectedChainId) return;
     loadSources(selectedChainId);
   }, [selectedChainId, loadSources]);
+
+  async function handleCreateChain() {
+    const name = newChainName.trim();
+    if (!name) return;
+    setCreatingChain(true);
+    try {
+      const created = await createRetailChainAction({ name });
+      const chain = created as ChainOption;
+      setChains((prev) =>
+        [...prev, chain].sort((a, b) => a.name.localeCompare(b.name)),
+      );
+      setSelectedChainId(chain.id);
+      setNewChainName("");
+      toast({ title: `Chain added: ${chain.name}` });
+    } catch (error) {
+      toast({
+        title: "Failed to add chain",
+        description: error instanceof Error ? error.message : undefined,
+        variant: "destructive",
+      });
+    } finally {
+      setCreatingChain(false);
+    }
+  }
 
   async function handleCreateSource() {
     if (!selectedChainId) return;
@@ -197,6 +223,42 @@ export function SourceRegistryPanel() {
             ))}
           </SelectContent>
         </Select>
+        {!loadingChains && chains.length === 0 ? (
+          <p className="text-xs text-neutral-500">
+            No chains exist yet. Add one below to configure sources.
+          </p>
+        ) : null}
+      </div>
+
+      <div className="rounded-xl border border-neutral-800 bg-neutral-900/50 p-4 space-y-3">
+        <h2 className="text-sm font-medium text-neutral-200">Add Chain</h2>
+        <div className="flex flex-col gap-2 md:flex-row md:items-end">
+          <div className="w-full space-y-1 md:max-w-md">
+            <Label className="text-xs">Chain name</Label>
+            <Input
+              value={newChainName}
+              onChange={(event) => setNewChainName(event.target.value)}
+              placeholder="e.g. Chipotle"
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  void handleCreateChain();
+                }
+              }}
+            />
+          </div>
+          <Button
+            onClick={handleCreateChain}
+            disabled={creatingChain || !newChainName.trim()}
+          >
+            {creatingChain ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Plus className="mr-2 h-4 w-4" />
+            )}
+            Add chain
+          </Button>
+        </div>
       </div>
 
       <div className="rounded-xl border border-neutral-800 bg-neutral-900/50 p-4 space-y-4">
