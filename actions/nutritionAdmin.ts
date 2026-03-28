@@ -1,7 +1,5 @@
 "use server";
 
-import { after } from "next/server";
-import { auth, clerkClient } from "@clerk/nextjs/server";
 import {
   createRetailChainSchema,
   createRetailChainSourceSchema,
@@ -10,6 +8,7 @@ import {
   updateRetailChainSourceSchema,
   updateRetailStagingItemInputSchema,
 } from "@/lib/nutrition";
+import { requireAdminUserId } from "@/lib/auth/admin";
 import { createRetailChain } from "@/lib/nutrition/server/nutritionService";
 import {
   createRetailChainSource,
@@ -22,8 +21,6 @@ import {
   getIngestionRunDetail,
   getIngestionRunSummary,
   listIngestionRuns,
-  runChainIngestion,
-  setIngestionRunStatus,
 } from "@/lib/nutrition/server/ingestionRunService";
 import {
   listRetailStagingItems,
@@ -36,29 +33,6 @@ import {
   getMonthlyRetailQueue,
   runMonthlyRetailRefresh,
 } from "@/lib/nutrition/server/monthlyQueueService";
-
-const ADMIN_EMAIL = "dean@deandivizio.com";
-
-async function requireUserId(): Promise<string> {
-  const { userId } = await auth();
-  if (!userId) throw new Error("User is not signed in.");
-  return userId;
-}
-
-async function requireAdminUserId(): Promise<string> {
-  const userId = await requireUserId();
-  const client = await clerkClient();
-  const user = await client.users.getUser(userId);
-  const email = user.emailAddresses.find(
-    (entry) => entry.id === user.primaryEmailAddressId,
-  )?.emailAddress;
-
-  if (email !== ADMIN_EMAIL) {
-    throw new Error("Admin access required.");
-  }
-
-  return userId;
-}
 
 export async function listRetailChainSourcesAction(
   chainId: string,
@@ -108,42 +82,7 @@ export async function runRetailChainIngestionAction(chainId: string) {
     sourceId: null,
   });
 
-  after(async () => {
-    try {
-      await runChainIngestion(chainId, adminUserId, { runId });
-    } catch (error) {
-      console.error("Background retail ingestion failed:", error);
-      await setIngestionRunStatus(runId, "fetch_failed", {
-        errorMessage:
-          error instanceof Error
-            ? error.message
-            : "Unexpected ingestion failure.",
-        finishedAt: new Date(),
-      });
-    }
-  });
-
-  const summary = await getIngestionRunSummary(runId);
-  if (summary) return summary;
-
-  return {
-    runId,
-    chainId,
-    status: "queued" as const,
-    chainName: null,
-    sourceId: null,
-    sourceName: null,
-    sourceType: null,
-    startedAtIso: null,
-    finishedAtIso: null,
-    artifactId: null,
-    attemptedSourceIds: [],
-    stagingItemCount: 0,
-    approvedItemCount: 0,
-    hardIssueRowCount: 0,
-    softIssueRowCount: 0,
-    errorMessage: null,
-  };
+  return getIngestionRunSummary(runId);
 }
 
 export async function getRetailIngestionRunSummaryAction(runId: string) {

@@ -1,7 +1,10 @@
 import { prisma } from "@/lib/db/prisma";
 import type { ChainPriorityEntry } from "@/lib/nutrition/ingestion/types";
 import type { IngestionRunSummary } from "@/lib/nutrition/server/ingestionRunService";
-import { runChainIngestion } from "@/lib/nutrition/server/ingestionRunService";
+import {
+  createIngestionRun,
+  getIngestionRunSummary,
+} from "@/lib/nutrition/server/ingestionRunService";
 import { assertRetailIngestionModels } from "@/lib/nutrition/server/sourceRegistryService";
 
 const db = prisma as any;
@@ -65,19 +68,35 @@ export async function getMonthlyRetailQueue(
     .slice(0, Math.max(1, limit));
 }
 
-export async function runMonthlyRetailRefresh(
-  options?: { limit?: number; triggeredByUserId?: string },
-): Promise<{
+export interface QueuedRefreshResult {
   queue: ChainPriorityEntry[];
   runs: IngestionRunSummary[];
-}> {
+  runIds: string[];
+}
+
+/**
+ * Creates queued ingestion runs for each chain in the priority queue.
+ * Returns immediately — actual execution should be triggered separately
+ * (e.g. via the /api/admin/ingestion/run route handler for each runId).
+ */
+export async function runMonthlyRetailRefresh(
+  options?: { limit?: number; triggeredByUserId?: string },
+): Promise<QueuedRefreshResult> {
   const queue = await getMonthlyRetailQueue(options?.limit ?? 25);
   const runs: IngestionRunSummary[] = [];
+  const runIds: string[] = [];
 
   for (const entry of queue) {
-    const run = await runChainIngestion(entry.chainId, options?.triggeredByUserId);
-    runs.push(run);
+    const runId = await createIngestionRun({
+      chainId: entry.chainId,
+      triggeredByUserId: options?.triggeredByUserId ?? null,
+      sourceSnapshot: null,
+      sourceId: null,
+    });
+    runIds.push(runId);
+    const summary = await getIngestionRunSummary(runId);
+    if (summary) runs.push(summary);
   }
 
-  return { queue, runs };
+  return { queue, runs, runIds };
 }

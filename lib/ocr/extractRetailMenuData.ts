@@ -20,7 +20,7 @@ function buildSystemPrompt(chainName: string) {
   return `You are a restaurant nutrition data extractor. You are reading a nutrition chart or table from ${chainName}.
 
 Rules:
-- Extract EVERY menu item visible in the image.
+- Extract EVERY menu item visible in the document or image.
 - Recognize common table formats with columns for calories, fat, protein, carbs, sodium, etc.
 - Map nutrients to these keys: calories, protein, carbs, fat, saturatedFat, transFat, fiber, sugars, addedSugars, cholesterol, sodium, calcium, iron, potassium, vitaminA, vitaminC, vitaminD.
 - Use standardized units: g, mg, mcg, kcal.

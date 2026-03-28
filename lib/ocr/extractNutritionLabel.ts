@@ -24,7 +24,7 @@ const nutritionLabelSchema = z.object({
 
 export type NutritionLabelData = z.infer<typeof nutritionLabelSchema>;
 
-const SYSTEM_PROMPT = `You are a nutrition label data extractor. Given an image of a nutrition facts label or supplement facts panel, extract ALL visible information into structured JSON.
+const SYSTEM_PROMPT = `You are a nutrition label data extractor. Given an image or PDF of a nutrition facts label or supplement facts panel, extract ALL visible information into structured JSON.
 
 Rules:
 - Extract EVERY nutrient visible on the label — do not skip any.

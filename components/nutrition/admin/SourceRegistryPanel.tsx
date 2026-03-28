@@ -18,7 +18,6 @@ import {
   createRetailChainSourceAction,
   deactivateRetailChainSourceAction,
   listRetailChainSourcesAction,
-  runRetailChainIngestionAction,
 } from "@/actions/nutritionAdmin";
 import { listRetailChainsAction } from "@/actions/nutrition";
 
@@ -192,7 +191,15 @@ export function SourceRegistryPanel() {
     if (!selectedChainId) return;
     setRunning(true);
     try {
-      const result = await runRetailChainIngestionAction(selectedChainId);
+      const response = await fetch("/api/admin/ingestion/run", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chainId: selectedChainId }),
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.error ?? "Ingestion request failed");
+      }
       toast({
         title: `Run created (${result.status})`,
         description: result.errorMessage ?? undefined,

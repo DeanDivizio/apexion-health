@@ -11,18 +11,17 @@ interface ExtractionRequest<TOut, TDef extends ZodTypeDef, TIn> {
   posthogDistinctId?: string;
 }
 
-interface ParsedDataUrl {
-  mimeType: string;
-  base64Data: string;
+function detectDataUrlMime(value: string): string | null {
+  const match = value.match(/^data:([^;,]+);base64,/i);
+  return match ? match[1].toLowerCase() : null;
 }
 
-function parseDataUrl(value: string): ParsedDataUrl | null {
-  const match = value.match(/^data:([^;,]+);base64,([\s\S]+)$/i);
-  if (!match) return null;
-  return {
-    mimeType: match[1].toLowerCase(),
-    base64Data: match[2],
-  };
+function detectBase64ImageMime(data: string): string {
+  if (data.startsWith("/9j/")) return "image/jpeg";
+  if (data.startsWith("iVBOR")) return "image/png";
+  if (data.startsWith("R0lGOD")) return "image/gif";
+  if (data.startsWith("UklGR")) return "image/webp";
+  return "image/png";
 }
 
 function looksLikeRawBase64(value: string): boolean {
@@ -32,29 +31,24 @@ function looksLikeRawBase64(value: string): boolean {
 }
 
 function buildUserContent(input: string): ChatCompletionContentPart[] {
-  const parsedDataUrl = parseDataUrl(input);
-  if (parsedDataUrl?.mimeType === "application/pdf") {
+  const mime = detectDataUrlMime(input);
+
+  if (mime === "application/pdf") {
     return [
       {
         type: "file",
-        file: {
-          file_data: input,
-          filename: "document.pdf",
-        },
+        file: { file_data: input, filename: "document.pdf" },
       },
       {
         type: "text",
-        text: "Extract the data from this PDF and return valid JSON matching the described shape.",
+        text: "Extract the data from this document and return valid JSON matching the described shape.",
       },
     ];
   }
 
-  if (parsedDataUrl?.mimeType.startsWith("image/")) {
+  if (mime?.startsWith("image/")) {
     return [
-      {
-        type: "image_url",
-        image_url: { url: input, detail: "high" },
-      },
+      { type: "image_url", image_url: { url: input, detail: "high" } },
       {
         type: "text",
         text: "Extract the data from this image and return valid JSON matching the described shape.",
@@ -64,10 +58,7 @@ function buildUserContent(input: string): ChatCompletionContentPart[] {
 
   if (input.startsWith("https://") || input.startsWith("http://")) {
     return [
-      {
-        type: "image_url",
-        image_url: { url: input, detail: "high" },
-      },
+      { type: "image_url", image_url: { url: input, detail: "high" } },
       {
         type: "text",
         text: "Extract the data from this image and return valid JSON matching the described shape.",
@@ -76,10 +67,14 @@ function buildUserContent(input: string): ChatCompletionContentPart[] {
   }
 
   if (looksLikeRawBase64(input)) {
+    const detectedMime = detectBase64ImageMime(input.trim());
     return [
       {
         type: "image_url",
-        image_url: { url: `data:image/png;base64,${input.trim()}`, detail: "high" },
+        image_url: {
+          url: `data:${detectedMime};base64,${input.trim()}`,
+          detail: "high",
+        },
       },
       {
         type: "text",
