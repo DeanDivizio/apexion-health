@@ -51,6 +51,10 @@ export interface CreateIngestionRunParams {
   sourceSnapshot?: RetailChainSourceConfig | null;
 }
 
+export interface RunChainIngestionOptions {
+  runId?: string;
+}
+
 function getSourceSnapshotUpdate(source?: RetailChainSourceConfig | null) {
   if (!source) {
     return {
@@ -256,17 +260,28 @@ export async function getIngestionRunDetail(
 export async function runChainIngestion(
   chainId: string,
   triggeredByUserId?: string,
+  options?: RunChainIngestionOptions,
 ): Promise<IngestionRunSummary> {
   assertRetailIngestionModels();
 
   const sources = await getPrioritizedChainSources(chainId);
   const initialSource = sources[0] ?? null;
-  const runId = await createIngestionRun({
-    chainId,
-    sourceId: initialSource?.id ?? null,
-    triggeredByUserId: triggeredByUserId ?? null,
-    sourceSnapshot: initialSource,
-  });
+  const runId =
+    options?.runId ??
+    (await createIngestionRun({
+      chainId,
+      sourceId: initialSource?.id ?? null,
+      triggeredByUserId: triggeredByUserId ?? null,
+      sourceSnapshot: initialSource,
+    }));
+
+  if (options?.runId) {
+    await setIngestionRunStatus(runId, "queued", {
+      source: initialSource,
+      sourceId: initialSource?.id ?? null,
+      errorMessage: null,
+    });
+  }
 
   if (!sources.length) {
     await setIngestionRunStatus(runId, "needs_source", {

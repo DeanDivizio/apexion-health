@@ -1,5 +1,6 @@
 "use server";
 
+import { after } from "next/server";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import {
   createRetailChainSchema,
@@ -22,6 +23,7 @@ import {
   getIngestionRunSummary,
   listIngestionRuns,
   runChainIngestion,
+  setIngestionRunStatus,
 } from "@/lib/nutrition/server/ingestionRunService";
 import {
   listRetailStagingItems,
@@ -98,7 +100,50 @@ export async function createRetailChainAdminAction(input: unknown) {
 export async function runRetailChainIngestionAction(chainId: string) {
   const adminUserId = await requireAdminUserId();
   if (!chainId) throw new Error("Chain ID is required.");
-  return runChainIngestion(chainId, adminUserId);
+
+  const runId = await createIngestionRun({
+    chainId,
+    triggeredByUserId: adminUserId,
+    sourceSnapshot: null,
+    sourceId: null,
+  });
+
+  after(async () => {
+    try {
+      await runChainIngestion(chainId, adminUserId, { runId });
+    } catch (error) {
+      console.error("Background retail ingestion failed:", error);
+      await setIngestionRunStatus(runId, "fetch_failed", {
+        errorMessage:
+          error instanceof Error
+            ? error.message
+            : "Unexpected ingestion failure.",
+        finishedAt: new Date(),
+      });
+    }
+  });
+
+  const summary = await getIngestionRunSummary(runId);
+  if (summary) return summary;
+
+  return {
+    runId,
+    chainId,
+    status: "queued" as const,
+    chainName: null,
+    sourceId: null,
+    sourceName: null,
+    sourceType: null,
+    startedAtIso: null,
+    finishedAtIso: null,
+    artifactId: null,
+    attemptedSourceIds: [],
+    stagingItemCount: 0,
+    approvedItemCount: 0,
+    hardIssueRowCount: 0,
+    softIssueRowCount: 0,
+    errorMessage: null,
+  };
 }
 
 export async function getRetailIngestionRunSummaryAction(runId: string) {
