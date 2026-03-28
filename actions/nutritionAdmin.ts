@@ -2,12 +2,14 @@
 
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import {
+  createRetailChainSchema,
   createRetailChainSourceSchema,
   setRetailStagingItemApprovalInputSchema,
   stageRetailItemsInputSchema,
   updateRetailChainSourceSchema,
   updateRetailStagingItemInputSchema,
 } from "@/lib/nutrition";
+import { createRetailChain } from "@/lib/nutrition/server/nutritionService";
 import {
   createRetailChainSource,
   deactivateRetailChainSource,
@@ -85,6 +87,12 @@ export async function deactivateRetailChainSourceAction(sourceId: string) {
   await requireAdminUserId();
   if (!sourceId) throw new Error("Source ID is required.");
   return deactivateRetailChainSource(sourceId);
+}
+
+export async function createRetailChainAdminAction(input: unknown) {
+  await requireAdminUserId();
+  const parsed = createRetailChainSchema.parse(input);
+  return createRetailChain(parsed);
 }
 
 export async function runRetailChainIngestionAction(chainId: string) {

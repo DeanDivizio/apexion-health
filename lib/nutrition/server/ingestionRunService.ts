@@ -1,5 +1,4 @@
 import { prisma } from "@/lib/db/prisma";
-import { parseRetailArtifact } from "@/lib/nutrition/ingestion/parserRouter";
 import { ingestionArtifactInputSchema } from "@/lib/nutrition/ingestion/schemas";
 import type {
   NutritionIngestionRunStatus,
@@ -334,6 +333,9 @@ export async function runChainIngestion(
       where: { id: chainId },
       select: { name: true },
     });
+    const { parseRetailArtifact } = await import(
+      "@/lib/nutrition/ingestion/parserRouter"
+    );
     const parsed = await parseRetailArtifact({
       body: fetchedArtifact.body ?? new Uint8Array(),
       sourceType: artifactInput.sourceType,

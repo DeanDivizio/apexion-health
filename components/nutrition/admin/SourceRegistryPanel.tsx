@@ -14,12 +14,13 @@ import {
 } from "@/components/ui_primitives/select";
 import { useToast } from "@/hooks/use-toast";
 import {
+  createRetailChainAdminAction,
   createRetailChainSourceAction,
   deactivateRetailChainSourceAction,
   listRetailChainSourcesAction,
   runRetailChainIngestionAction,
 } from "@/actions/nutritionAdmin";
-import { createRetailChainAction, listRetailChainsAction } from "@/actions/nutrition";
+import { listRetailChainsAction } from "@/actions/nutrition";
 
 interface ChainOption {
   id: string;
@@ -119,7 +120,7 @@ export function SourceRegistryPanel() {
     if (!name) return;
     setCreatingChain(true);
     try {
-      const created = await createRetailChainAction({ name });
+      const created = await createRetailChainAdminAction({ name });
       const chain = created as ChainOption;
       setChains((prev) =>
         [...prev, chain].sort((a, b) => a.name.localeCompare(b.name)),
