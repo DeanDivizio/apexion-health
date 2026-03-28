@@ -88,6 +88,9 @@ function buildUserContent(input: string): ChatCompletionContentPart[] {
   );
 }
 
+const MAX_RETRIES = 2;
+const RETRY_DELAY_MS = 2000;
+
 export async function extractStructuredData<TOut, TDef extends ZodTypeDef, TIn>(
   req: ExtractionRequest<TOut, TDef, TIn>,
 ): Promise<TOut> {
@@ -98,38 +101,91 @@ export async function extractStructuredData<TOut, TDef extends ZodTypeDef, TIn>(
 
   const userContent = buildUserContent(req.image);
 
-  const response = await client.chat.completions.create({
-    model: req.model ?? "gpt-5.2",
-    response_format: { type: "json_object" },
-    messages: [
-      { role: "system", content: req.systemPrompt },
-      {
-        role: "user",
-        content: userContent,
-      },
-    ],
-    max_completion_tokens: 4096,
-    posthogDistinctId: req.posthogDistinctId,
-  });
+  let lastError: Error | null = null;
 
-  const rawText = response.choices[0]?.message?.content;
-  if (!rawText) {
-    throw new Error("OCR extraction returned empty response from model.");
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    if (attempt > 0) {
+      await new Promise((r) => setTimeout(r, RETRY_DELAY_MS * attempt));
+    }
+
+    try {
+      const response = await client.chat.completions.create({
+        model: req.model ?? "gpt-5.2",
+        response_format: { type: "json_object" },
+        messages: [
+          { role: "system", content: req.systemPrompt },
+          { role: "user", content: userContent },
+        ],
+        max_completion_tokens: 32768,
+        posthogDistinctId: req.posthogDistinctId,
+      });
+
+      const choice = response.choices[0];
+      const finishReason = choice?.finish_reason;
+      const refusal = (choice?.message as any)?.refusal;
+      const rawText = choice?.message?.content;
+
+      if (refusal) {
+        throw new OCRExtractionError(
+          `Model refused the request: ${refusal}`,
+          { finishReason, refusal, attempt },
+        );
+      }
+
+      if (finishReason === "length") {
+        throw new OCRExtractionError(
+          "Model output was truncated (token limit reached). The document may be too large for a single extraction.",
+          { finishReason, attempt },
+        );
+      }
+
+      if (!rawText) {
+        lastError = new OCRExtractionError(
+          `Empty response from model (finish_reason: ${finishReason ?? "unknown"}).`,
+          { finishReason, attempt },
+        );
+        continue;
+      }
+
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(rawText);
+      } catch {
+        throw new OCRExtractionError(
+          `Invalid JSON returned. Raw: ${rawText.slice(0, 500)}`,
+          { finishReason, attempt },
+        );
+      }
+
+      const result = req.responseSchema.safeParse(parsed);
+      if (!result.success) {
+        throw new OCRExtractionError(
+          `Validation failed: ${result.error.message}. Raw: ${rawText.slice(0, 500)}`,
+          { finishReason, attempt },
+        );
+      }
+
+      return result.data;
+    } catch (error) {
+      if (error instanceof OCRExtractionError && !error.retryable) {
+        throw error;
+      }
+      lastError = error instanceof Error ? error : new Error(String(error));
+    }
   }
 
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(rawText);
-  } catch {
-    throw new Error(`OCR extraction returned invalid JSON. Raw: ${rawText.slice(0, 500)}`);
-  }
+  throw lastError ?? new Error("OCR extraction failed after retries.");
+}
 
-  const result = req.responseSchema.safeParse(parsed);
-  if (!result.success) {
-    throw new Error(
-      `OCR extraction produced data that failed validation: ${result.error.message}. Raw: ${rawText.slice(0, 500)}`,
-    );
-  }
+class OCRExtractionError extends Error {
+  readonly retryable: boolean;
 
-  return result.data;
+  constructor(
+    message: string,
+    public readonly context: Record<string, unknown> = {},
+  ) {
+    super(`OCR extraction: ${message}`);
+    this.name = "OCRExtractionError";
+    this.retryable = !message.includes("refused") && !message.includes("truncated") && !message.includes("Validation failed");
+  }
 }

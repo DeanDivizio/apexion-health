@@ -280,13 +280,14 @@ export default function AddChainDataPage() {
   async function handleSaveStagingRow(item: StagingItem) {
     setSavingRowId(item.id);
     try {
+      const nutrientPayload: Record<string, number> = {};
+      for (const [key, val] of Object.entries(item.nutrients)) {
+        if (val !== undefined) nutrientPayload[key] = val;
+      }
       const updated = await updateRetailStagingItemAction(item.id, {
         name: item.name,
         category: item.category,
-        calories: item.nutrients.calories,
-        protein: item.nutrients.protein,
-        carbs: item.nutrients.carbs,
-        fat: item.nutrients.fat,
+        nutrients: nutrientPayload,
         servingSize: item.servingSize,
         servingUnit: item.servingUnit,
       });

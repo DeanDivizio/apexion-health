@@ -2,10 +2,11 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Loader2, PlayCircle, RefreshCcw } from "lucide-react";
+import { Loader2, PlayCircle, RefreshCcw, XCircle } from "lucide-react";
 import { Button } from "@/components/ui_primitives/button";
 import { useToast } from "@/hooks/use-toast";
 import {
+  cancelIngestionRunAction,
   getMonthlyRetailQueueAction,
   listRetailIngestionRunsAction,
   runMonthlyRetailRefreshAction,
@@ -42,7 +43,28 @@ function statusTone(status: string): string {
   if (status === "publish_ready") return "text-emerald-300";
   if (status === "review_required") return "text-amber-300";
   if (status === "fetch_failed" || status === "needs_source") return "text-red-400";
+  if (status === "parsing" || status === "fetching" || status === "queued")
+    return "text-sky-400";
   return "text-neutral-400";
+}
+
+function isStuck(run: RunRow): boolean {
+  if (!["queued", "fetching", "fetched", "parsing"].includes(run.status))
+    return false;
+  if (!run.startedAtIso) return false;
+  const elapsed = Date.now() - new Date(run.startedAtIso).getTime();
+  return elapsed > 10 * 60 * 1000;
+}
+
+function formatElapsed(startIso: string | null, endIso: string | null): string | null {
+  if (!startIso) return null;
+  const start = new Date(startIso).getTime();
+  const end = endIso ? new Date(endIso).getTime() : Date.now();
+  const seconds = Math.round((end - start) / 1000);
+  if (seconds < 60) return `${seconds}s`;
+  const minutes = Math.floor(seconds / 60);
+  const remaining = seconds % 60;
+  return `${minutes}m ${remaining}s`;
 }
 
 export function IngestionRunsPanel() {
@@ -52,6 +74,7 @@ export function IngestionRunsPanel() {
   const [loading, setLoading] = React.useState(true);
   const [refreshing, setRefreshing] = React.useState(false);
   const [runningMonthly, setRunningMonthly] = React.useState(false);
+  const [cancellingRuns, setCancellingRuns] = React.useState<Set<string>>(new Set());
 
   const refresh = React.useCallback(async () => {
     setRefreshing(true);
@@ -76,6 +99,27 @@ export function IngestionRunsPanel() {
   React.useEffect(() => {
     refresh();
   }, [refresh]);
+
+  async function handleCancelRun(runId: string) {
+    setCancellingRuns((prev) => new Set(prev).add(runId));
+    try {
+      await cancelIngestionRunAction(runId);
+      toast({ title: "Run cancelled" });
+      await refresh();
+    } catch (error) {
+      toast({
+        title: "Failed to cancel run",
+        description: error instanceof Error ? error.message : undefined,
+        variant: "destructive",
+      });
+    } finally {
+      setCancellingRuns((prev) => {
+        const next = new Set(prev);
+        next.delete(runId);
+        return next;
+      });
+    }
+  }
 
   async function handleRunMonthly() {
     setRunningMonthly(true);
@@ -176,48 +220,84 @@ export function IngestionRunsPanel() {
               <th className="px-4 py-2 font-medium">Status</th>
               <th className="px-4 py-2 font-medium">Rows</th>
               <th className="px-4 py-2 font-medium">Issues</th>
+              <th className="px-4 py-2 font-medium">Duration</th>
               <th className="px-4 py-2 font-medium">Started</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={6} className="px-4 py-6 text-neutral-500">
+                <td colSpan={7} className="px-4 py-6 text-neutral-500">
                   Loading runs...
                 </td>
               </tr>
             ) : runs.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-6 text-neutral-500">
+                <td colSpan={7} className="px-4 py-6 text-neutral-500">
                   No runs yet.
                 </td>
               </tr>
             ) : (
-              runs.map((run) => (
-                <tr key={run.runId} className="border-b border-neutral-800/50 last:border-0">
-                  <td className="px-4 py-3">
-                    <Link
-                      href={`/admin/nutrition/runs/${run.runId}`}
-                      className="text-sky-300 hover:text-sky-200"
-                    >
-                      {run.runId.slice(0, 8)}...
-                    </Link>
-                  </td>
-                  <td className="px-4 py-3 text-neutral-200">{run.chainName ?? run.chainId}</td>
-                  <td className={`px-4 py-3 ${statusTone(run.status)}`}>{run.status}</td>
-                  <td className="px-4 py-3 text-neutral-400">
-                    {run.approvedItemCount}/{run.stagingItemCount}
-                  </td>
-                  <td className="px-4 py-3 text-neutral-400">
-                    hard {run.hardIssueRowCount} • soft {run.softIssueRowCount}
-                  </td>
-                  <td className="px-4 py-3 text-neutral-400">
-                    {run.startedAtIso
-                      ? new Date(run.startedAtIso).toLocaleString()
-                      : "—"}
-                  </td>
-                </tr>
-              ))
+              runs.map((run) => {
+                const stuck = isStuck(run);
+                return (
+                  <tr key={run.runId} className="border-b border-neutral-800/50 last:border-0">
+                    <td className="px-4 py-3">
+                      <Link
+                        href={`/admin/nutrition/runs/${run.runId}`}
+                        className="text-sky-300 hover:text-sky-200"
+                      >
+                        {run.runId.slice(0, 8)}...
+                      </Link>
+                    </td>
+                    <td className="px-4 py-3 text-neutral-200">{run.chainName ?? run.chainId}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-1.5">
+                        <span className={stuck ? "text-red-400" : statusTone(run.status)}>
+                          {run.status}
+                        </span>
+                        {stuck && (
+                          <span className="text-xs text-red-400/80">(stuck)</span>
+                        )}
+                        {stuck && (
+                          <button
+                            onClick={() => handleCancelRun(run.runId)}
+                            disabled={cancellingRuns.has(run.runId)}
+                            className="ml-1 inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-xs font-medium text-red-400 hover:bg-red-400/10 disabled:opacity-50"
+                            title="Cancel this stuck run"
+                          >
+                            {cancellingRuns.has(run.runId) ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <XCircle className="h-3 w-3" />
+                            )}
+                            Kill
+                          </button>
+                        )}
+                      </div>
+                      {run.errorMessage && (
+                        <p className="mt-0.5 text-xs text-red-400/70 truncate max-w-[260px]" title={run.errorMessage}>
+                          {run.errorMessage}
+                        </p>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-neutral-400">
+                      {run.approvedItemCount}/{run.stagingItemCount}
+                    </td>
+                    <td className="px-4 py-3 text-neutral-400">
+                      hard {run.hardIssueRowCount} • soft {run.softIssueRowCount}
+                    </td>
+                    <td className="px-4 py-3 text-neutral-400 tabular-nums">
+                      {formatElapsed(run.startedAtIso, run.finishedAtIso) ?? "—"}
+                    </td>
+                    <td className="px-4 py-3 text-neutral-400">
+                      {run.startedAtIso
+                        ? new Date(run.startedAtIso).toLocaleString()
+                        : "—"}
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>

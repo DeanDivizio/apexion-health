@@ -5,7 +5,7 @@ import {
   setIngestionRunStatus,
 } from "@/lib/nutrition/server/ingestionRunService";
 
-export const maxDuration = 30;
+export const maxDuration = 300;
 
 function isAuthorized(request: Request): boolean {
   const secret = process.env.CRON_SECRET;
@@ -30,25 +30,27 @@ export async function POST(request: Request) {
     const result = await runMonthlyRetailRefresh({ limit });
 
     after(async () => {
-      for (const run of result.runs) {
-        try {
-          await runChainIngestion(run.chainId, undefined, {
-            runId: run.runId,
-          });
-        } catch (error) {
-          console.error(
-            `Background ingestion failed for chain ${run.chainId}:`,
-            error,
-          );
-          await setIngestionRunStatus(run.runId, "fetch_failed", {
-            errorMessage:
-              error instanceof Error
-                ? error.message
-                : "Unexpected ingestion failure.",
-            finishedAt: new Date(),
-          }).catch(() => {});
-        }
-      }
+      await Promise.allSettled(
+        result.runs.map(async (run) => {
+          try {
+            await runChainIngestion(run.chainId, undefined, {
+              runId: run.runId,
+            });
+          } catch (error) {
+            console.error(
+              `Background ingestion failed for chain ${run.chainId}:`,
+              error,
+            );
+            await setIngestionRunStatus(run.runId, "fetch_failed", {
+              errorMessage:
+                error instanceof Error
+                  ? error.message
+                  : "Unexpected ingestion failure.",
+              finishedAt: new Date(),
+            }).catch(() => {});
+          }
+        }),
+      );
     });
 
     return NextResponse.json({

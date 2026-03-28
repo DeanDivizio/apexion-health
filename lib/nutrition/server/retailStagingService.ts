@@ -248,10 +248,68 @@ export async function stageRetailItemsForRun(
   await db.$transaction(async (tx: any) => {
     for (const rawCandidate of candidates) {
       const normalizedName = normalizeRetailItemName(rawCandidate.name);
-      const parsedCandidate = normalizedRetailItemCandidateSchema.parse({
+      const parseResult = normalizedRetailItemCandidateSchema.safeParse({
         ...rawCandidate,
         normalizedName,
       });
+      if (!parseResult.success) {
+        const parseErrors = parseResult.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`);
+        console.warn(
+          JSON.stringify({
+            tag: "ingestion",
+            step: "staging_item_parse_failed",
+            runId,
+            itemName: rawCandidate.name,
+            errors: parseErrors,
+          }),
+        );
+
+        const fallbackName = (typeof rawCandidate.name === "string" && rawCandidate.name.trim()) || "Unknown item";
+        const fallbackNutrients: NutrientProfile = {
+          calories: 0,
+          protein: 0,
+          carbs: 0,
+          fat: 0,
+        };
+        hardIssues += 1;
+
+        const staged = await tx.nutritionRetailStagingItem.create({
+          data: {
+            runId,
+            artifactId: artifactId ?? null,
+            chainId: run.chainId,
+            name: fallbackName,
+            normalizedName: normalizedName || normalizeRetailItemName(fallbackName),
+            category: (typeof rawCandidate.category === "string" ? rawCandidate.category : null),
+            nutrients: fallbackNutrients,
+            servingSize: null,
+            servingUnit: null,
+            extractionMethod: rawCandidate.extractionMethod ?? "ocr_llm",
+            confidence: null,
+            hardIssueCount: 1,
+            softIssueCount: 0,
+            reviewed: false,
+            approved: false,
+            reviewedByUserId: null,
+            reviewedAt: null,
+          },
+          select: { id: true },
+        });
+
+        await tx.nutritionRetailStagingIssue.create({
+          data: {
+            stagingItemId: staged.id,
+            severity: "hard",
+            code: "parse_validation_failed",
+            message: `Item failed schema validation: ${parseErrors.join("; ")}`,
+            meta: { rawCandidate },
+          },
+        });
+
+        batchSeen.add(normalizedName);
+        continue;
+      }
+      const parsedCandidate = parseResult.data;
       const candidateNutrients = parsedCandidate.nutrients as NutrientProfile;
       const duplicateNames = new Set<string>();
       if (existingNames.has(parsedCandidate.normalizedName)) {
@@ -322,7 +380,7 @@ export async function stageRetailItemsForRun(
         errorMessage: null,
       },
     });
-  });
+  }, { timeout: 30000 });
 
   return {
     stagedCount: candidates.length,
@@ -354,10 +412,7 @@ export async function updateRetailStagingItem(
   input: {
     name?: string;
     category?: string | null;
-    calories?: number;
-    protein?: number;
-    carbs?: number;
-    fat?: number;
+    nutrients?: Record<string, number>;
     servingSize?: number | null;
     servingUnit?: string | null;
   },
@@ -373,10 +428,7 @@ export async function updateRetailStagingItem(
 
   const nutrients = {
     ...(existing.nutrients ?? {}),
-    ...(input.calories !== undefined ? { calories: input.calories } : {}),
-    ...(input.protein !== undefined ? { protein: input.protein } : {}),
-    ...(input.carbs !== undefined ? { carbs: input.carbs } : {}),
-    ...(input.fat !== undefined ? { fat: input.fat } : {}),
+    ...(input.nutrients ?? {}),
   };
   const name = input.name !== undefined ? input.name : existing.name;
   const candidate = {
@@ -460,6 +512,28 @@ export async function updateRetailStagingItem(
   });
 
   return toStagingView(updated);
+}
+
+export async function deleteRetailStagingItem(
+  stagingItemId: string,
+): Promise<void> {
+  assertRetailIngestionModels();
+
+  const row = await db.nutritionRetailStagingItem.findUnique({
+    where: { id: stagingItemId },
+    select: { id: true, runId: true },
+  });
+  if (!row) throw new Error("Staging item not found.");
+
+  await db.nutritionRetailStagingItem.delete({
+    where: { id: stagingItemId },
+  });
+
+  const status = await recomputeRunStatus(row.runId);
+  await db.nutritionRetailIngestionRun.update({
+    where: { id: row.runId },
+    data: { status, errorMessage: null },
+  });
 }
 
 export async function setRetailStagingItemApproval(

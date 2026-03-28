@@ -21,6 +21,30 @@ import {
 
 const db = prisma as any;
 
+const STALE_RUN_THRESHOLD_MS = 10 * 60 * 1000;
+const TRANSIENT_STATUSES: NutritionIngestionRunStatus[] = [
+  "queued",
+  "fetching",
+  "fetched",
+  "parsing",
+];
+
+function logIngestion(
+  runId: string,
+  step: string,
+  data?: Record<string, unknown>,
+) {
+  console.log(
+    JSON.stringify({
+      tag: "ingestion",
+      runId,
+      step,
+      ts: new Date().toISOString(),
+      ...data,
+    }),
+  );
+}
+
 export interface IngestionRunSummary {
   runId: string;
   chainId: string;
@@ -117,6 +141,73 @@ export async function setIngestionRunStatus(
       ...(options?.finishedAt !== undefined
         ? { finishedAt: options.finishedAt }
         : {}),
+    },
+  });
+}
+
+export async function recoverStaleRuns(): Promise<number> {
+  assertRetailIngestionModels();
+
+  const cutoff = new Date(Date.now() - STALE_RUN_THRESHOLD_MS);
+
+  const staleRuns = await db.nutritionRetailIngestionRun.findMany({
+    where: {
+      status: { in: TRANSIENT_STATUSES },
+      startedAt: { lt: cutoff },
+      finishedAt: null,
+    },
+    select: { id: true, status: true, chainId: true },
+  });
+
+  if (!staleRuns.length) return 0;
+
+  for (const run of staleRuns) {
+    logIngestion(run.id, "stale_recovery", {
+      previousStatus: run.status,
+      chainId: run.chainId,
+    });
+  }
+
+  const result = await db.nutritionRetailIngestionRun.updateMany({
+    where: {
+      id: { in: staleRuns.map((r: any) => r.id) },
+    },
+    data: {
+      status: "fetch_failed",
+      errorMessage:
+        "Run timed out — stuck in a transient state for over 10 minutes.",
+      finishedAt: new Date(),
+    },
+  });
+
+  return result.count;
+}
+
+export async function cancelIngestionRun(runId: string): Promise<void> {
+  assertRetailIngestionModels();
+
+  const run = await db.nutritionRetailIngestionRun.findUnique({
+    where: { id: runId },
+    select: { status: true },
+  });
+
+  if (!run) throw new Error("Ingestion run not found.");
+
+  const cancellable = TRANSIENT_STATUSES.includes(run.status);
+  if (!cancellable) {
+    throw new Error(
+      `Cannot cancel a run in "${run.status}" status — only transient runs can be cancelled.`,
+    );
+  }
+
+  logIngestion(runId, "cancelled", { previousStatus: run.status });
+
+  await db.nutritionRetailIngestionRun.update({
+    where: { id: runId },
+    data: {
+      status: "fetch_failed",
+      errorMessage: "Manually cancelled by admin.",
+      finishedAt: new Date(),
     },
   });
 }
@@ -263,6 +354,19 @@ export async function runChainIngestion(
   options?: RunChainIngestionOptions,
 ): Promise<IngestionRunSummary> {
   assertRetailIngestionModels();
+  const t0 = Date.now();
+
+  const recoveredCount = await recoverStaleRuns();
+  if (recoveredCount > 0) {
+    console.log(
+      JSON.stringify({
+        tag: "ingestion",
+        step: "stale_recovery_summary",
+        recoveredCount,
+        ts: new Date().toISOString(),
+      }),
+    );
+  }
 
   const sources = await getPrioritizedChainSources(chainId);
   const initialSource = sources[0] ?? null;
@@ -275,6 +379,12 @@ export async function runChainIngestion(
       sourceSnapshot: initialSource,
     }));
 
+  logIngestion(runId, "start", {
+    chainId,
+    sourceCount: sources.length,
+    sourceIds: sources.map((s) => s.id),
+  });
+
   if (options?.runId) {
     await setIngestionRunStatus(runId, "queued", {
       source: initialSource,
@@ -284,6 +394,7 @@ export async function runChainIngestion(
   }
 
   if (!sources.length) {
+    logIngestion(runId, "no_sources", { chainId });
     await setIngestionRunStatus(runId, "needs_source", {
       errorMessage: "No active official sources configured for this chain.",
       finishedAt: new Date(),
@@ -314,13 +425,32 @@ export async function runChainIngestion(
 
   for (const source of sources) {
     attemptedSourceIds.push(source.id);
+
+    logIngestion(runId, "fetch_start", {
+      sourceId: source.id,
+      sourceName: source.sourceName,
+      sourceUrl: source.sourceUrl,
+      sourceType: source.sourceType,
+    });
+
     await setIngestionRunStatus(runId, "fetching", {
       source,
       sourceId: source.id,
       errorMessage: null,
     });
 
+    const tFetch = Date.now();
     const fetchedArtifact = await fetchRetailSourceArtifact(source);
+
+    logIngestion(runId, "fetch_end", {
+      sourceId: source.id,
+      fetchStatus: fetchedArtifact.status,
+      durationMs: Date.now() - tFetch,
+      httpStatus: fetchedArtifact.httpStatus,
+      fileSizeBytes: fetchedArtifact.fileSizeBytes,
+      errorMessage: fetchedArtifact.errorMessage,
+    });
+
     if (fetchedArtifact.status === "needs_source") {
       lastErrorMessage = fetchedArtifact.errorMessage;
       continue;
@@ -348,6 +478,15 @@ export async function runChainIngestion(
       where: { id: chainId },
       select: { name: true },
     });
+
+    logIngestion(runId, "parse_start", {
+      sourceId: source.id,
+      sourceType: artifactInput.sourceType,
+      mimeType: artifactInput.mimeType,
+      parserPreference: source.parserPreference,
+    });
+
+    const tParse = Date.now();
     const { parseRetailArtifact } = await import(
       "@/lib/nutrition/ingestion/parserRouter"
     );
@@ -360,6 +499,15 @@ export async function runChainIngestion(
       posthogDistinctId: triggeredByUserId,
     });
 
+    logIngestion(runId, "parse_end", {
+      sourceId: source.id,
+      durationMs: Date.now() - tParse,
+      itemCount: parsed.items.length,
+      warningCount: parsed.warnings.length,
+      warnings: parsed.warnings.map((w) => w.message),
+      extractionMethod: parsed.extractionMethod,
+    });
+
     if (!parsed.items.length) {
       sawFetchFailure = true;
       lastErrorMessage =
@@ -367,6 +515,9 @@ export async function runChainIngestion(
         "Parser did not extract any items.";
       continue;
     }
+
+    logIngestion(runId, "stage_start", { itemCount: parsed.items.length });
+    const tStage = Date.now();
 
     const staged = await stageRetailItemsForRun(
       runId,
@@ -388,22 +539,34 @@ export async function runChainIngestion(
     const hardIssueRowCount = stagedRows.filter((row) => row.hardIssueCount > 0).length;
     const softIssueRowCount = stagedRows.filter((row) => row.softIssueCount > 0).length;
 
-    await setIngestionRunStatus(
-      runId,
-      hardIssueRowCount === 0 ? "publish_ready" : "review_required",
-      {
-        finishedAt: new Date(),
-        errorMessage:
-          parsed.warnings.length > 0
-            ? parsed.warnings.map((warning) => warning.message).join(" | ")
-            : null,
-      },
-    );
+    const finalStatus: NutritionIngestionRunStatus =
+      hardIssueRowCount === 0 ? "publish_ready" : "review_required";
+
+    logIngestion(runId, "stage_end", {
+      durationMs: Date.now() - tStage,
+      stagedCount: staged.stagedCount,
+      approvedItemCount,
+      hardIssueRowCount,
+      softIssueRowCount,
+    });
+
+    await setIngestionRunStatus(runId, finalStatus, {
+      finishedAt: new Date(),
+      errorMessage:
+        parsed.warnings.length > 0
+          ? parsed.warnings.map((warning) => warning.message).join(" | ")
+          : null,
+    });
+
+    logIngestion(runId, "complete", {
+      status: finalStatus,
+      totalDurationMs: Date.now() - t0,
+    });
 
     return {
       runId,
       chainId,
-      status: hardIssueRowCount === 0 ? "publish_ready" : "review_required",
+      status: finalStatus,
       chainName: chain?.name ?? null,
       sourceId: source.id,
       sourceName: source.sourceName,
@@ -429,6 +592,12 @@ export async function runChainIngestion(
   await setIngestionRunStatus(runId, terminalStatus, {
     errorMessage: lastErrorMessage ?? "Unable to fetch any official source.",
     finishedAt: new Date(),
+  });
+
+  logIngestion(runId, "complete", {
+    status: terminalStatus,
+    totalDurationMs: Date.now() - t0,
+    errorMessage: lastErrorMessage,
   });
 
   return {

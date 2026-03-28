@@ -121,10 +121,7 @@ export const stageRetailItemsInputSchema = z.array(
 export const updateRetailStagingItemInputSchema = z.object({
   name: z.string().trim().min(1).optional(),
   category: z.string().trim().nullable().optional(),
-  calories: z.number().optional(),
-  protein: z.number().optional(),
-  carbs: z.number().optional(),
-  fat: z.number().optional(),
+  nutrients: z.record(z.string(), z.number()).optional(),
   servingSize: z.number().positive().nullable().optional(),
   servingUnit: z.string().trim().nullable().optional(),
 });

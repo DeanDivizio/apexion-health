@@ -9,18 +9,6 @@ export interface RetailPublishResult {
   skippedCount: number;
 }
 
-async function getNextVersionNumber(
-  tx: any,
-  retailItemId: string,
-): Promise<number> {
-  const latest = await tx.nutritionRetailItemVersion.findFirst({
-    where: { retailItemId },
-    orderBy: { versionNumber: "desc" },
-    select: { versionNumber: true },
-  });
-  return (latest?.versionNumber ?? 0) + 1;
-}
-
 export async function publishRetailIngestionRun(
   runId: string,
 ): Promise<RetailPublishResult> {
@@ -57,21 +45,48 @@ export async function publishRetailIngestionRun(
   }
 
   const artifact = run.artifacts[0] ?? null;
+  const sourceType = artifact?.sourceType ?? run.sourceTypeSnapshot ?? null;
+  const sourceUrl = artifact?.sourceUrl ?? run.sourceUrlSnapshot ?? null;
+  const artifactId = artifact?.id ?? null;
+
+  // Bulk-fetch existing retail items for this chain so we avoid per-item lookups
+  // inside each transaction.
+  const normalizedNames = approvedRows.map((r: any) => r.normalizedName);
+  const existingItems = await db.nutritionRetailItem.findMany({
+    where: {
+      chainId: run.chainId,
+      normalizedName: { in: normalizedNames },
+    },
+    select: { id: true, normalizedName: true },
+  });
+  const existingByName = new Map<string, string>(
+    existingItems.map((item: any) => [item.normalizedName, item.id]),
+  );
+
+  // Bulk-fetch latest version numbers so we don't query per-item inside transactions.
+  const allRetailItemIds = existingItems.map((item: any) => item.id);
+  const latestVersions: { retailItemId: string; _max: { versionNumber: number | null } }[] =
+    allRetailItemIds.length > 0
+      ? await db.nutritionRetailItemVersion.groupBy({
+          by: ["retailItemId"],
+          where: { retailItemId: { in: allRetailItemIds } },
+          _max: { versionNumber: true },
+        })
+      : [];
+  const versionByItemId = new Map<string, number>(
+    latestVersions.map((v: any) => [v.retailItemId, v._max.versionNumber ?? 0]),
+  );
+
   let publishedCount = 0;
 
-  await db.$transaction(async (tx: any) => {
-    for (const staged of approvedRows) {
-      const existing = await tx.nutritionRetailItem.findFirst({
-        where: {
-          chainId: run.chainId,
-          normalizedName: staged.normalizedName,
-        },
-        select: { id: true },
-      });
+  // Process each item in its own short transaction to avoid timeout.
+  for (const staged of approvedRows) {
+    const existingId = existingByName.get(staged.normalizedName) ?? null;
 
-      const retailItem = existing
+    await db.$transaction(async (tx: any) => {
+      const retailItem = existingId
         ? await tx.nutritionRetailItem.update({
-            where: { id: existing.id },
+            where: { id: existingId },
             data: {
               name: staged.name,
               normalizedName: staged.normalizedName,
@@ -79,10 +94,10 @@ export async function publishRetailIngestionRun(
               nutrients: staged.nutrients,
               servingSize: staged.servingSize,
               servingUnit: staged.servingUnit,
-              sourceType: artifact?.sourceType ?? run.sourceTypeSnapshot ?? null,
-              sourceUrl: artifact?.sourceUrl ?? run.sourceUrlSnapshot ?? null,
+              sourceType,
+              sourceUrl,
               lastIngestionRunId: run.id,
-              lastArtifactId: artifact?.id ?? null,
+              lastArtifactId: artifactId,
               active: true,
             },
             select: { id: true },
@@ -96,21 +111,23 @@ export async function publishRetailIngestionRun(
               nutrients: staged.nutrients,
               servingSize: staged.servingSize,
               servingUnit: staged.servingUnit,
-              sourceType: artifact?.sourceType ?? run.sourceTypeSnapshot ?? null,
-              sourceUrl: artifact?.sourceUrl ?? run.sourceUrlSnapshot ?? null,
+              sourceType,
+              sourceUrl,
               lastIngestionRunId: run.id,
-              lastArtifactId: artifact?.id ?? null,
+              lastArtifactId: artifactId,
               active: true,
             },
             select: { id: true },
           });
 
-      const versionNumber = await getNextVersionNumber(tx, retailItem.id);
+      const prevVersion = versionByItemId.get(retailItem.id) ?? 0;
+      const versionNumber = prevVersion + 1;
+
       await tx.nutritionRetailItemVersion.create({
         data: {
           retailItemId: retailItem.id,
           runId: run.id,
-          artifactId: artifact?.id ?? null,
+          artifactId,
           chainId: run.chainId,
           itemName: staged.name,
           normalizedName: staged.normalizedName,
@@ -118,8 +135,8 @@ export async function publishRetailIngestionRun(
           nutrients: staged.nutrients,
           servingSize: staged.servingSize,
           servingUnit: staged.servingUnit,
-          sourceType: artifact?.sourceType ?? run.sourceTypeSnapshot ?? null,
-          sourceUrl: artifact?.sourceUrl ?? run.sourceUrlSnapshot ?? null,
+          sourceType,
+          sourceUrl,
           versionNumber,
           isPublished: true,
         },
@@ -146,17 +163,28 @@ export async function publishRetailIngestionRun(
         },
       });
 
-      publishedCount += 1;
-    }
+      // Track the new version number for subsequent items that might create
+      // a new retail item and then appear again (shouldn't happen in practice
+      // since normalizedNames are unique per batch, but safe to track).
+      versionByItemId.set(retailItem.id, versionNumber);
 
-    await tx.nutritionRetailIngestionRun.update({
-      where: { id: run.id },
-      data: {
-        status: "published",
-        errorMessage: null,
-        finishedAt: new Date(),
-      },
+      // If this was a new item, record its id so duplicates in the same batch
+      // (if any got through) would hit the update path.
+      if (!existingId) {
+        existingByName.set(staged.normalizedName, retailItem.id);
+      }
     });
+
+    publishedCount += 1;
+  }
+
+  await db.nutritionRetailIngestionRun.update({
+    where: { id: run.id },
+    data: {
+      status: "published",
+      errorMessage: null,
+      finishedAt: new Date(),
+    },
   });
 
   return {

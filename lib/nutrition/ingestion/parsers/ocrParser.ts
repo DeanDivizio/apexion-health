@@ -91,7 +91,7 @@ export async function parseWithOcrFallback(params: {
           vitaminC: item.nutrients.vitaminC,
           vitaminD: item.nutrients.vitaminD,
         },
-        servingSize: item.servingSize ?? null,
+        servingSize: item.servingSize || null,
         servingUnit: item.servingUnit ?? null,
         extractionMethod: "ocr_llm" as const,
         confidence: 0.65,

@@ -1,5 +1,6 @@
 "use server";
 
+import { after } from "next/server";
 import {
   createRetailChainSchema,
   createRetailChainSourceSchema,
@@ -17,12 +18,16 @@ import {
   updateRetailChainSource,
 } from "@/lib/nutrition/server/sourceRegistryService";
 import {
+  cancelIngestionRun,
   createIngestionRun,
   getIngestionRunDetail,
   getIngestionRunSummary,
   listIngestionRuns,
+  runChainIngestion,
+  setIngestionRunStatus,
 } from "@/lib/nutrition/server/ingestionRunService";
 import {
+  deleteRetailStagingItem,
   listRetailStagingItems,
   setRetailStagingItemApproval,
   stageRetailItemsForRun,
@@ -152,6 +157,18 @@ export async function setRetailStagingItemApprovalAction(
   return setRetailStagingItemApproval(stagingItemId, parsed.approved, adminUserId);
 }
 
+export async function deleteRetailStagingItemAction(stagingItemId: string) {
+  await requireAdminUserId();
+  if (!stagingItemId) throw new Error("Staging item ID is required.");
+  await deleteRetailStagingItem(stagingItemId);
+}
+
+export async function cancelIngestionRunAction(runId: string) {
+  await requireAdminUserId();
+  if (!runId) throw new Error("Run ID is required.");
+  await cancelIngestionRun(runId);
+}
+
 export async function publishRetailIngestionRunAction(runId: string) {
   await requireAdminUserId();
   if (!runId) throw new Error("Run ID is required.");
@@ -165,8 +182,34 @@ export async function getMonthlyRetailQueueAction(limit = 25) {
 
 export async function runMonthlyRetailRefreshAction(limit = 25) {
   const adminUserId = await requireAdminUserId();
-  return runMonthlyRetailRefresh({
+  const result = await runMonthlyRetailRefresh({
     limit,
     triggeredByUserId: adminUserId,
   });
+
+  after(async () => {
+    await Promise.allSettled(
+      result.runs.map(async (run) => {
+        try {
+          await runChainIngestion(run.chainId, adminUserId, {
+            runId: run.runId,
+          });
+        } catch (error) {
+          console.error(
+            `Background ingestion failed for chain ${run.chainId}:`,
+            error,
+          );
+          await setIngestionRunStatus(run.runId, "fetch_failed", {
+            errorMessage:
+              error instanceof Error
+                ? error.message
+                : "Unexpected ingestion failure.",
+            finishedAt: new Date(),
+          }).catch(() => {});
+        }
+      }),
+    );
+  });
+
+  return result;
 }

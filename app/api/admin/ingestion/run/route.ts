@@ -7,7 +7,7 @@ import {
   setIngestionRunStatus,
 } from "@/lib/nutrition/server/ingestionRunService";
 
-export const maxDuration = 30;
+export const maxDuration = 300;
 
 export async function POST(request: NextRequest) {
   let adminUserId: string;
@@ -37,12 +37,20 @@ export async function POST(request: NextRequest) {
     try {
       await runChainIngestion(chainId, adminUserId, { runId });
     } catch (error) {
-      console.error("Background retail ingestion failed:", error);
+      const message =
+        error instanceof Error ? error.message : "Unexpected ingestion failure.";
+      console.error(
+        JSON.stringify({
+          tag: "ingestion",
+          runId,
+          step: "unhandled_error",
+          chainId,
+          error: message,
+          ts: new Date().toISOString(),
+        }),
+      );
       await setIngestionRunStatus(runId, "fetch_failed", {
-        errorMessage:
-          error instanceof Error
-            ? error.message
-            : "Unexpected ingestion failure.",
+        errorMessage: message,
         finishedAt: new Date(),
       }).catch(() => {});
     }
