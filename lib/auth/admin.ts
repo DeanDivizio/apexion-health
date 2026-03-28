@@ -1,6 +1,9 @@
 import { auth, clerkClient } from "@clerk/nextjs/server";
 
-const ADMIN_EMAIL = "dean@deandivizio.com";
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? "";
+if (!ADMIN_EMAIL) {
+  throw new Error("ADMIN_EMAIL is not set.");
+}
 
 export async function requireUserId(): Promise<string> {
   const { userId } = await auth();
