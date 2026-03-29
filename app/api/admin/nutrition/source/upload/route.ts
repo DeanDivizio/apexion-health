@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdminUserId } from "@/lib/auth/admin";
 import { uploadManualSourceFileForSource } from "@/lib/nutrition/server/manualSourceUploadService";
 
-export const maxDuration = 300;
+export const maxDuration = 60;
 
 export async function POST(request: NextRequest) {
   try {
