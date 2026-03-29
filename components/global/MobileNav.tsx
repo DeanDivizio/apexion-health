@@ -109,6 +109,10 @@ export default function MobileNav() {
   const [open, setOpen] = useState(false);
   const [hydrationOpen, setHydrationOpen] = useState(false);
 
+  if (pathname.startsWith("/sign-in") || pathname.startsWith("/sign-up")) {
+    return null;
+  }
+
   return (
     <>
       <div

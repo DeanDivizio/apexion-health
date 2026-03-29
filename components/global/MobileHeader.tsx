@@ -1,6 +1,7 @@
 "use client";
 
 import { useContext, useState, useTransition, useCallback, useRef } from "react";
+import { usePathname } from "next/navigation";
 import { MobileHeaderContext } from "@/context/MobileHeaderContext";
 import { useSyncStatus } from "@/context/SyncStatusContext";
 import { SideNav } from "@/components/global/SideNav";
@@ -18,10 +19,15 @@ import { Send, Check } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 
 export default function MobileHeader() {
+  const pathname = usePathname();
   const { headerInnerLeft, headerInnerRight } =
     useContext(MobileHeaderContext);
   const { isSyncing } = useSyncStatus();
   const { user } = useUser();
+
+  if (pathname.startsWith("/sign-in") || pathname.startsWith("/sign-up")) {
+    return null;
+  }
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState("");
   const [submitted, setSubmitted] = useState(false);
