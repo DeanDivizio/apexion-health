@@ -6,6 +6,7 @@ interface VolumeProgressBarProps {
   label: string;
   current: number;
   record: number;
+  beatLabel?: string;
   className?: string;
 }
 
@@ -13,6 +14,7 @@ export function VolumeProgressBar({
   label,
   current,
   record,
+  beatLabel = "NEW PR!",
   className,
 }: VolumeProgressBarProps) {
   const pct = record > 0 ? Math.min((current / record) * 100, 100) : 0;
@@ -24,7 +26,7 @@ export function VolumeProgressBar({
         <span className="text-muted-foreground">{label}</span>
         <span className={cn("font-mono", isNewRecord ? "text-green-400" : "text-foreground")}>
           {current.toLocaleString()} / {record.toLocaleString()}
-          {isNewRecord && " (NEW PR!)"}
+          {isNewRecord && beatLabel && ` (${beatLabel})`}
         </span>
       </div>
       <div className="h-2 rounded-full bg-neutral-500/50 overflow-hidden">

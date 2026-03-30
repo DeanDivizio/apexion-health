@@ -90,6 +90,7 @@ function CollapsedStatsPreview({
             label="Session Volume vs Previous Session"
             current={Math.round(currentVolume)}
             record={Math.round(prevSessionVolume)}
+            beatLabel="Beat Previous!"
           />
         )}
       </div>
@@ -227,6 +228,7 @@ function ExerciseStatsContent({
               label="Session Volume vs Previous"
               current={Math.round(currentVolume)}
               record={Math.round(prevSessionVolume)}
+              beatLabel="Beat Previous!"
             />
           )}
           <VolumeProgressBar
