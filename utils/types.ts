@@ -144,13 +144,26 @@ export interface Estrogen_Form { //This will be updated later
 
 /**********************************FOR SUMMARY ON HOMEPAGE ********************************* */
 
+export interface SubstanceSessionItem {
+  substanceName: string;
+  doseValue: number | null;
+  doseUnit: string | null;
+  compoundServings: number | null;
+  deliveryMethod: string | null;
+}
+
+export interface SubstanceSession {
+  sessionId: string;
+  loggedAt: string;
+  items: SubstanceSessionItem[];
+}
+
 export type SummaryData = [{
   date: string,
   gym?: GymDataPoints[],
   hormoneData?: HormoneDataObject[],
   macros?: MacrosObject,
-  meds?: MedicationObject[],
-  supps?: SupplementObject[]
+  substances?: SubstanceSession[],
 }]
 
 export type GymDataPoints = {

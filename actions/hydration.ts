@@ -85,10 +85,12 @@ export async function logHydrationAction(input: unknown) {
   return result;
 }
 
-const DEFAULT_WATER_GOAL_OZ = 80;
-const DEFAULT_SODIUM_GOAL_MG = 2300;
-const DEFAULT_POTASSIUM_GOAL_MG = 3000;
-const DEFAULT_MAGNESIUM_GOAL_MG = 400;
+import {
+  DEFAULT_WATER_GOAL_OZ,
+  DEFAULT_SODIUM_GOAL_MG,
+  DEFAULT_POTASSIUM_GOAL_MG,
+  DEFAULT_MAGNESIUM_GOAL_MG,
+} from "@/lib/nutrition/defaults";
 
 export interface HydrationSummaryView {
   waterOz: number;

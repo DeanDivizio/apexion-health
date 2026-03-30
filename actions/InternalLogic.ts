@@ -2,12 +2,13 @@
 import { addItemToTable, genericAddItemToTable, getDataFromTable, getGymMeta_CACHED, updateCustomExercises, updateExerciseData, getAllDataFromTableByUser, updateCustomSupplements } from "@/actions/AWS";
 import { listWorkoutSessions } from "@/lib/gym/server/gymService";
 import { getMacroSummaryByDateRange } from "@/lib/nutrition/server/nutritionService";
+import { getMedsDateRangeSummary } from "@/lib/medication/server/medicationService";
 import { ExerciseGroup } from "@/utils/types";
 import { auth } from '@clerk/nextjs/server';
 import { unstable_cacheTag as cacheTag, revalidateTag } from 'next/cache'
 
 // Runs through needed functions to populate data on homepage.
-export async function homeFetch({startDate, endDate}:{startDate:string, endDate:string}) {
+export async function homeFetch({startDate, endDate, timezoneOffsetMinutes = 0}:{startDate:string, endDate:string, timezoneOffsetMinutes?: number}) {
   const { userId } = await auth();
   if (userId) {
     let userID;
@@ -17,12 +18,11 @@ export async function homeFetch({startDate, endDate}:{startDate:string, endDate:
       userID = userId;
     }
     try {
-        const [hormoneData, gymSessions, macroData, medData, suppData] = await Promise.all([
+        const [hormoneData, gymSessions, macroData, substanceData] = await Promise.all([
           getDataFromTable(userID, "Apexion-Hormone", startDate, endDate),
           listWorkoutSessions(userId, { startDate, endDate }),
           getMacroSummaryByDateRange(userId, startDate, endDate),
-          getDataFromTable(userID, "Apexion-Medication", startDate, endDate),
-          getDataFromTable(userID, "Apexion-Supplements", startDate, endDate),
+          getMedsDateRangeSummary(userId, startDate, endDate, timezoneOffsetMinutes),
         ]);
         let summaryData = new Map()
         //@ts-ignore
@@ -58,21 +58,12 @@ export async function homeFetch({startDate, endDate}:{startDate:string, endDate:
           }
         });
 
-        //@ts-ignore
-        medData.forEach((item: { date: string; data: []}) => {
-          const existingItem = summaryData.get(item.date)
+        substanceData.forEach(({ date, sessions }) => {
+          const existingItem = summaryData.get(date);
           if (existingItem) {
-            existingItem.meds = item.data;
+            existingItem.substances = sessions;
           } else {
-            summaryData.set(item.date, {date: item.date, meds: item.data})
-          }
-        });//@ts-ignore
-        suppData.forEach((item: { date: string; data: []}) => {
-          const existingItem = summaryData.get(item.date)
-          if (existingItem) {
-            existingItem.supps = item.data;
-          } else {
-            summaryData.set(item.date, {date: item.date, supps: item.data})
+            summaryData.set(date, { date, substances: sessions });
           }
         });
         let summary = Array.from(summaryData.values())

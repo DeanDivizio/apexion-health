@@ -28,7 +28,7 @@ import { SignInButton, SignedIn, SignedOut } from "@clerk/nextjs";
 
 const collections = [
     { href: "/gymsessions", icon: Dumbbell, label: "Gym Sessions" },
-    { href: "/nutrientrecords", icon: Apple, label: "Nutrient Records" },
+    { href: "/meals", icon: Apple, label: "Meals Logged" },
     { href: "/meds", icon: ClipboardPlus, label: "Medication & Supplements" },
     { href: "/bodymeasurements", icon: Scale, label: "Body Measurements", placeholder: true },
     { href: "/biometrics", icon: Activity, label: "Biometrics", placeholder: true },
@@ -44,8 +44,8 @@ const dashboards = [
 
 const admin = [
     { href: "/settings", icon: Settings, label: "Settings" },
-    { href: "/support", icon: MessageSquareWarning, label: "Support" },
-    { href: "/feedback", icon: UserPen, label: "Feedback" },
+    // { href: "/support", icon: MessageSquareWarning, label: "Support" },
+    // { href: "/feedback", icon: UserPen, label: "Feedback" },
 ];
 
 function NavItem({ href, icon: Icon, label, placeholder }: {

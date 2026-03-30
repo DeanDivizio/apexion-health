@@ -328,6 +328,82 @@ export interface MedsDaySummarySession {
   }>;
 }
 
+const substanceLogSessionInclude = {
+  items: {
+    orderBy: { sortOrder: "asc" as const },
+    select: {
+      snapshotName: true,
+      doseValue: true,
+      doseUnit: true,
+      compoundServings: true,
+      deliveryMethod: {
+        select: { label: true },
+      },
+    },
+  },
+} as const;
+
+function mapSessionRow(session: any): MedsDaySummarySession {
+  return {
+    sessionId: session.id,
+    loggedAt: session.loggedAt.toISOString(),
+    items: session.items.map((item: any) => ({
+      substanceName: item.snapshotName,
+      doseValue: item.doseValue,
+      doseUnit: item.doseUnit,
+      compoundServings: item.compoundServings,
+      deliveryMethod: item.deliveryMethod?.label ?? null,
+    })),
+  };
+}
+
+export async function getMedsDateRangeSummary(
+  userId: string,
+  startDateStr: string,
+  endDateStr: string,
+  timezoneOffsetMinutes = 0,
+): Promise<Array<{ date: string; sessions: MedsDaySummarySession[] }>> {
+  if (!hasCatalogModels()) return [];
+
+  const { startUtc } = getUtcBoundsForLocalDate(startDateStr, timezoneOffsetMinutes);
+  const { endUtcExclusive } = getUtcBoundsForLocalDate(endDateStr, timezoneOffsetMinutes);
+
+  try {
+    const sessions = await db.substanceLogSession.findMany({
+      where: {
+        userId,
+        loggedAt: { gte: startUtc, lt: endUtcExclusive },
+      },
+      orderBy: { loggedAt: "asc" },
+      include: substanceLogSessionInclude,
+    });
+
+    const byDate = new Map<string, MedsDaySummarySession[]>();
+    for (const session of sessions) {
+      // Convert UTC loggedAt to local calendar date using the client timezone offset.
+      // getTimezoneOffset() returns minutes *behind* UTC (positive = west), so we
+      // subtract to get the local equivalent time.
+      const localMs = session.loggedAt.getTime() - timezoneOffsetMinutes * 60 * 1000;
+      const localDate = new Date(localMs);
+      const year = localDate.getUTCFullYear();
+      const month = String(localDate.getUTCMonth() + 1).padStart(2, "0");
+      const day = String(localDate.getUTCDate()).padStart(2, "0");
+      const compactDate = `${year}${month}${day}`;
+
+      const list = byDate.get(compactDate) ?? [];
+      list.push(mapSessionRow(session));
+      byDate.set(compactDate, list);
+    }
+
+    return Array.from(byDate.entries()).map(([date, dateSessions]) => ({
+      date,
+      sessions: dateSessions,
+    }));
+  } catch {
+    return [];
+  }
+}
+
 export async function getMedsDaySummary(
   userId: string,
   dateStr: string,
@@ -347,39 +423,13 @@ export async function getMedsDaySummary(
     const sessions = await db.substanceLogSession.findMany({
       where: {
         userId,
-        loggedAt: {
-          gte: startUtc,
-          lt: endUtcExclusive,
-        },
+        loggedAt: { gte: startUtc, lt: endUtcExclusive },
       },
       orderBy: { loggedAt: "asc" },
-      include: {
-        items: {
-          orderBy: { sortOrder: "asc" },
-          select: {
-            snapshotName: true,
-            doseValue: true,
-            doseUnit: true,
-            compoundServings: true,
-            deliveryMethod: {
-              select: { label: true },
-            },
-          },
-        },
-      },
+      include: substanceLogSessionInclude,
     });
 
-    return sessions.map((session: any) => ({
-      sessionId: session.id,
-      loggedAt: session.loggedAt.toISOString(),
-      items: session.items.map((item: any) => ({
-        substanceName: item.snapshotName,
-        doseValue: item.doseValue,
-        doseUnit: item.doseUnit,
-        compoundServings: item.compoundServings,
-        deliveryMethod: item.deliveryMethod?.label ?? null,
-      })),
-    }));
+    return sessions.map(mapSessionRow);
   } catch {
     return [];
   }

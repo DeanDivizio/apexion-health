@@ -10,6 +10,12 @@ import React, {
 } from "react";
 import { homeFetch } from "@/actions/InternalLogic";
 import { getUserGoalsAction, getTodayMacroTotalsAction } from "@/actions/nutrition";
+import {
+  DEFAULT_CALORIES,
+  DEFAULT_PROTEIN,
+  DEFAULT_CARBS,
+  DEFAULT_FAT,
+} from "@/lib/nutrition/defaults";
 import { getUserHomePreferencesAction } from "@/actions/settings";
 import { getHydrationSummaryAction } from "@/actions/hydration";
 import { getMicroNutrientSummaryAction } from "@/actions/nutrition";
@@ -49,7 +55,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui_primitives/popover";
-import { CalendarDays } from "lucide-react";
+import { CalendarDays, Settings } from "lucide-react";
+import Link from "next/link";
 
 const MacroRingChartsGrid = dynamic(
   () =>
@@ -117,10 +124,10 @@ export default function Home() {
   const [todayCarbs, setTodayCarbs] = useState(0);
   const [todayFat, setTodayFat] = useState(0);
   const [weeklyLoading, setWeeklyLoading] = useState(true);
-  const [calorieLimit, setCalorieLimit] = useState(0);
-  const [proteinGoal, setProteinGoal] = useState(0);
-  const [carbGoal, setCarbGoal] = useState(0);
-  const [fatGoal, setFatGoal] = useState(0);
+  const [calorieLimit, setCalorieLimit] = useState(DEFAULT_CALORIES);
+  const [proteinGoal, setProteinGoal] = useState(DEFAULT_PROTEIN);
+  const [carbGoal, setCarbGoal] = useState(DEFAULT_CARBS);
+  const [fatGoal, setFatGoal] = useState(DEFAULT_FAT);
 
   const [preferences, setPreferences] = useState<UserHomePreferencesView | null>(null);
   const [macrosReady, setMacrosReady] = useState(false);
@@ -185,10 +192,10 @@ export default function Home() {
 
       if (goalsResult.status === "fulfilled" && goalsResult.value) {
         const g = goalsResult.value;
-        setCalorieLimit(g.calories ?? 0);
-        setProteinGoal(g.protein ?? 0);
-        setCarbGoal(g.carbs ?? 0);
-        setFatGoal(g.fat ?? 0);
+        setCalorieLimit(g.calories ?? DEFAULT_CALORIES);
+        setProteinGoal(g.protein ?? DEFAULT_PROTEIN);
+        setCarbGoal(g.carbs ?? DEFAULT_CARBS);
+        setFatGoal(g.fat ?? DEFAULT_FAT);
       }
 
       setMacrosReady(true);
@@ -209,7 +216,7 @@ export default function Home() {
       if (micro.status === "fulfilled") setMicroData(micro.value);
 
       // 3) Recent days (7d) — fires last; does not block macro hero or secondary cards above
-      void homeFetch({ startDate, endDate })
+      void homeFetch({ startDate, endDate, timezoneOffsetMinutes })
         .then((summary) => {
           // @ts-ignore
           setData(summary as SummaryData);
@@ -247,7 +254,13 @@ export default function Home() {
   }, [dataFetch]);
 
   useEffect(() => {
-    setHeaderInnerLeft(null);
+    setHeaderInnerLeft(
+      <Link href="/settings">
+        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-neutral-400 hover:text-neutral-100">
+          <Settings className="h-4 w-4" />
+        </Button>
+      </Link>
+    );
     setHeaderInnerRight(null);
   }, [setHeaderInnerLeft, setHeaderInnerRight]);
 

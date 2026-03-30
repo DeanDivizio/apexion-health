@@ -31,7 +31,7 @@ export function MacroRingChartsGrid({
       <UniversalRingChart
         title="Today's Calorie Intake"
         shortTitle="Calories"
-        subtext="Your maintenence calorie intake is"
+        subtext="Your calorie target is"
         subtextOrder="unit last"
         description="Intake compared to maintenence"
         unit="Calories"
