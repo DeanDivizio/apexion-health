@@ -21,6 +21,7 @@ This is the index of provenance pages for **built-in strength + core exercises**
 - `frontRaise`: [front-raise.md](./exercises/front-raise.md)
 - `bicepCurl`: [bicep-curl.md](./exercises/bicep-curl.md)
 - `hammerCurl`: [hammer-curl.md](./exercises/hammer-curl.md)
+- `overheadTricepExtension`: [overhead-tricep-extension.md](./exercises/overhead-tricep-extension.md)
 - `preacherCurl`: [preacher-curl.md](./exercises/preacher-curl.md)
 - `tricepExtension`: [tricep-extension.md](./exercises/tricep-extension.md)
 - `tricepPushdown`: [tricep-pushdown.md](./exercises/tricep-pushdown.md)
