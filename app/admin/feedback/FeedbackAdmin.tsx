@@ -1,9 +1,17 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { FeedbackStatus } from "@prisma/client";
 import { updateFeedbackStatus, createAdminFeedback } from "@/actions/feedback";
-import { MessageSquareText, Plus, X, Loader2 } from "lucide-react";
+import {
+  MessageSquareText,
+  Plus,
+  X,
+  Loader2,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown,
+} from "lucide-react";
 
 type FeedbackEntry = {
   id: string;
@@ -15,39 +23,47 @@ type FeedbackEntry = {
   userEmail: string;
 };
 
+type SortKey = "status" | "createdAt" | "updatedAt" | "userName" | "message";
+type SortDir = "asc" | "desc";
+
 const STATUS_CONFIG: Record<
   FeedbackStatus,
-  { label: string; color: string; bgActive: string; bgInactive: string }
+  { label: string; color: string; bgActive: string; bgInactive: string; order: number }
 > = {
   NEW: {
     label: "New",
     color: "text-blue-300",
     bgActive: "bg-blue-500/20 border-blue-500/40 text-blue-300",
     bgInactive: "bg-neutral-800/40 border-neutral-700 text-neutral-500",
+    order: 0,
   },
   PRIORITY: {
     label: "Priority",
     color: "text-amber-300",
     bgActive: "bg-amber-500/20 border-amber-500/40 text-amber-300",
     bgInactive: "bg-neutral-800/40 border-neutral-700 text-neutral-500",
+    order: 1,
   },
   DEFERRED: {
     label: "Deferred",
     color: "text-neutral-300",
     bgActive: "bg-neutral-600/20 border-neutral-500/40 text-neutral-300",
     bgInactive: "bg-neutral-800/40 border-neutral-700 text-neutral-500",
+    order: 2,
   },
   IGNORED: {
     label: "Ignored",
     color: "text-red-400",
     bgActive: "bg-red-500/20 border-red-500/40 text-red-400",
     bgInactive: "bg-neutral-800/40 border-neutral-700 text-neutral-500",
+    order: 3,
   },
   COMPLETE: {
     label: "Complete",
     color: "text-emerald-300",
     bgActive: "bg-emerald-500/20 border-emerald-500/40 text-emerald-300",
     bgInactive: "bg-neutral-800/40 border-neutral-700 text-neutral-500",
+    order: 4,
   },
 };
 
@@ -98,6 +114,33 @@ function StatusSelect({
   );
 }
 
+function SortIcon({ column, activeKey, activeDir }: { column: SortKey; activeKey: SortKey | null; activeDir: SortDir }) {
+  if (activeKey !== column) return <ArrowUpDown className="h-3 w-3 opacity-40" />;
+  return activeDir === "asc"
+    ? <ArrowUp className="h-3 w-3" />
+    : <ArrowDown className="h-3 w-3" />;
+}
+
+function compareFeedback(a: FeedbackEntry, b: FeedbackEntry, key: SortKey, dir: SortDir): number {
+  let cmp = 0;
+  switch (key) {
+    case "status":
+      cmp = STATUS_CONFIG[a.status].order - STATUS_CONFIG[b.status].order;
+      break;
+    case "createdAt":
+    case "updatedAt":
+      cmp = a[key].localeCompare(b[key]);
+      break;
+    case "userName":
+      cmp = a.userName.localeCompare(b.userName, undefined, { sensitivity: "base" });
+      break;
+    case "message":
+      cmp = a.message.localeCompare(b.message, undefined, { sensitivity: "base" });
+      break;
+  }
+  return dir === "asc" ? cmp : -cmp;
+}
+
 export function FeedbackAdmin({ entries }: { entries: FeedbackEntry[] }) {
   const [visibleStatuses, setVisibleStatuses] = useState<
     Set<FeedbackStatus>
@@ -107,6 +150,21 @@ export function FeedbackAdmin({ entries }: { entries: FeedbackEntry[] }) {
   const [newMessage, setNewMessage] = useState("");
   const [isPending, startTransition] = useTransition();
   const [createError, setCreateError] = useState<string | null>(null);
+  const [sortKey, setSortKey] = useState<SortKey | null>(null);
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
+
+  const toggleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      if (sortDir === "desc") {
+        setSortDir("asc");
+      } else {
+        setSortKey(null);
+      }
+    } else {
+      setSortKey(key);
+      setSortDir("desc");
+    }
+  };
 
   const toggleStatus = (status: FeedbackStatus) => {
     setVisibleStatuses((prev) => {
@@ -153,7 +211,11 @@ export function FeedbackAdmin({ entries }: { entries: FeedbackEntry[] }) {
     });
   };
 
-  const filtered = localEntries.filter((e) => visibleStatuses.has(e.status));
+  const filtered = useMemo(() => {
+    const visible = localEntries.filter((e) => visibleStatuses.has(e.status));
+    if (!sortKey) return visible;
+    return [...visible].sort((a, b) => compareFeedback(a, b, sortKey, sortDir));
+  }, [localEntries, visibleStatuses, sortKey, sortDir]);
 
   const statusCounts = localEntries.reduce(
     (acc, e) => {
@@ -162,6 +224,9 @@ export function FeedbackAdmin({ entries }: { entries: FeedbackEntry[] }) {
     },
     {} as Record<FeedbackStatus, number>,
   );
+
+  const thClass =
+    "px-4 py-3 font-medium text-neutral-400 select-none cursor-pointer transition-colors hover:text-neutral-200";
 
   return (
     <div>
@@ -255,20 +320,35 @@ export function FeedbackAdmin({ entries }: { entries: FeedbackEntry[] }) {
             <table className="w-full text-left text-sm">
               <thead>
                 <tr className="border-b border-neutral-800 bg-neutral-900/60">
-                  <th className="px-4 py-3 font-medium text-neutral-400">
-                    Status
+                  <th className={thClass} onClick={() => toggleSort("status")}>
+                    <span className="flex items-center gap-1.5">
+                      Status
+                      <SortIcon column="status" activeKey={sortKey} activeDir={sortDir} />
+                    </span>
                   </th>
-                  <th className="px-4 py-3 font-medium text-neutral-400">
-                    Created
+                  <th className={thClass} onClick={() => toggleSort("createdAt")}>
+                    <span className="flex items-center gap-1.5">
+                      Created
+                      <SortIcon column="createdAt" activeKey={sortKey} activeDir={sortDir} />
+                    </span>
                   </th>
-                  <th className="px-4 py-3 font-medium text-neutral-400">
-                    Updated
+                  <th className={thClass} onClick={() => toggleSort("updatedAt")}>
+                    <span className="flex items-center gap-1.5">
+                      Updated
+                      <SortIcon column="updatedAt" activeKey={sortKey} activeDir={sortDir} />
+                    </span>
                   </th>
-                  <th className="px-4 py-3 font-medium text-neutral-400">
-                    User
+                  <th className={thClass} onClick={() => toggleSort("userName")}>
+                    <span className="flex items-center gap-1.5">
+                      User
+                      <SortIcon column="userName" activeKey={sortKey} activeDir={sortDir} />
+                    </span>
                   </th>
-                  <th className="px-4 py-3 font-medium text-neutral-400">
-                    Message
+                  <th className={thClass} onClick={() => toggleSort("message")}>
+                    <span className="flex items-center gap-1.5">
+                      Message
+                      <SortIcon column="message" activeKey={sortKey} activeDir={sortDir} />
+                    </span>
                   </th>
                   <th className="px-4 py-3 font-medium text-neutral-400">
                     Actions
