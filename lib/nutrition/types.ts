@@ -102,11 +102,30 @@ export interface MealItemViewEntry {
   snapshotFat: number;
 }
 
+export interface FoodPresetItemView {
+  foodSource: "foundation" | "complex" | "retail";
+  sourceFoodId: string | null;
+  foundationFoodId: string | null;
+  snapshotName: string;
+  snapshotBrand: string | null;
+  servings: number;
+  portionLabel: string | null;
+  portionGramWeight: number | null;
+  nutrients: NutrientProfile;
+}
+
+export interface FoodPresetView {
+  id: string;
+  name: string;
+  items: FoodPresetItemView[];
+}
+
 export interface NutritionBootstrap {
   userFoods: NutritionUserFoodView[];
   retailChains: RetailChainView[];
   goals: NutritionUserGoalsView | null;
   recentFoods: RecentFoodEntry[];
+  presets: FoodPresetView[];
 }
 
 export interface NutritionUserGoalsView {

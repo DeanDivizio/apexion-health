@@ -243,6 +243,7 @@ export const GRIP_ASSISTANCE_TEMPLATE: VariationTemplate = {
   options: [
     { key: "none", label: "None", description: "No grip assistance.", order: 1 },
     { key: "straps", label: "Straps", description: "Using lifting straps.", order: 2 },
+    { key: "hooks", label: "Hooks", description: "Using hooks to assist grip.", order: 3 },
   ],
 };
 

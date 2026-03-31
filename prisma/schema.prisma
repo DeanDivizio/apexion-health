@@ -1090,6 +1090,40 @@ model NutritionMealItemNutrient {
   @@index([nutrientKey, amount])
 }
 
+model NutritionFoodPreset {
+  id        String   @id @default(uuid())
+  userId    String
+  name      String
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items NutritionFoodPresetItem[]
+
+  @@index([userId, active])
+  @@index([userId, name])
+}
+
+model NutritionFoodPresetItem {
+  id                String              @id @default(uuid())
+  presetId          String
+  preset            NutritionFoodPreset @relation(fields: [presetId], references: [id], onDelete: Cascade)
+  foodSource        NutritionFoodSource
+  sourceFoodId      String?
+  foundationFoodId  String?
+  snapshotName      String
+  snapshotBrand     String?
+  servings          Float
+  portionLabel      String?
+  portionGramWeight Float?
+  nutrients         Json
+  sortOrder         Int                 @default(0)
+
+  createdAt DateTime @default(now())
+
+  @@index([presetId, sortOrder])
+}
+
 model NutritionUserGoals {
   id              String   @id @default(uuid())
   userId          String   @unique

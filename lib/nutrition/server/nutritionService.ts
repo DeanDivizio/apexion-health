@@ -7,6 +7,8 @@ import {
 } from "@/lib/nutrition/nutrientKeys";
 import { normalizeDateInput, toCompactDateStr } from "@/lib/dates/dateStr";
 import type {
+  FoodPresetItemView,
+  FoodPresetView,
   FoundationFoodView,
   MacroSummaryByDate,
   MealItemViewEntry,
@@ -20,12 +22,14 @@ import type {
   RetailItemView,
 } from "@/lib/nutrition/types";
 import type {
+  CreateFoodPresetInput,
   CreateMealSessionInput,
   CreateRetailChainInput,
   CreateRetailItemInput,
   CreateRetailUserItemInput,
   CreateUserFoodInput,
   MealItemDraftInput,
+  UpdateFoodPresetInput,
   UpsertUserGoalsInput,
 } from "@/lib/nutrition/schemas";
 
@@ -127,6 +131,28 @@ function toSessionView(row: any): NutritionMealSessionView {
     mealLabel: row.mealLabel ?? null,
     notes: row.notes ?? null,
     items: (row.items ?? []).map(toMealItemViewEntry),
+  };
+}
+
+function toPresetItemView(row: any): FoodPresetItemView {
+  return {
+    foodSource: row.foodSource,
+    sourceFoodId: row.sourceFoodId ?? null,
+    foundationFoodId: row.foundationFoodId ?? null,
+    snapshotName: row.snapshotName,
+    snapshotBrand: row.snapshotBrand ?? null,
+    servings: row.servings,
+    portionLabel: row.portionLabel ?? null,
+    portionGramWeight: row.portionGramWeight ?? null,
+    nutrients: row.nutrients as NutrientProfile,
+  };
+}
+
+function toPresetView(row: any): FoodPresetView {
+  return {
+    id: row.id,
+    name: row.name,
+    items: (row.items ?? []).map(toPresetItemView),
   };
 }
 
@@ -280,11 +306,11 @@ export async function getNutritionBootstrap(
   userId: string,
 ): Promise<NutritionBootstrap> {
   if (!hasNutritionModels()) {
-    return { userFoods: [], retailChains: [], goals: null, recentFoods: [] };
+    return { userFoods: [], retailChains: [], goals: null, recentFoods: [], presets: [] };
   }
 
   try {
-    const [userFoods, retailChains, goals, recentFoods] = await Promise.all([
+    const [userFoods, retailChains, goals, recentFoods, presetRows] = await Promise.all([
       db.nutritionUserFood.findMany({
         where: { userId, active: true },
         orderBy: { name: "asc" },
@@ -295,6 +321,11 @@ export async function getNutritionBootstrap(
       }),
       db.nutritionUserGoals.findUnique({ where: { userId } }),
       getRecentlyLoggedFoods(userId),
+      db.nutritionFoodPreset?.findMany?.({
+        where: { userId, active: true },
+        orderBy: { name: "asc" },
+        include: { items: { orderBy: { sortOrder: "asc" } } },
+      }) ?? [],
     ]);
 
     return {
@@ -302,9 +333,10 @@ export async function getNutritionBootstrap(
       retailChains: retailChains.map(toRetailChainView),
       goals: goals ? toGoalsView(goals) : null,
       recentFoods,
+      presets: (presetRows ?? []).map(toPresetView),
     };
   } catch {
-    return { userFoods: [], retailChains: [], goals: null, recentFoods: [] };
+    return { userFoods: [], retailChains: [], goals: null, recentFoods: [], presets: [] };
   }
 }
 
@@ -460,6 +492,127 @@ export async function bulkCreateRetailItems(
   });
 
   return result.count;
+}
+
+// ─── Food preset CRUD ─────────────────────────────────────────────────────────
+
+export async function listFoodPresets(
+  userId: string,
+): Promise<FoodPresetView[]> {
+  assertModelsAvailable();
+
+  const rows = await db.nutritionFoodPreset.findMany({
+    where: { userId, active: true },
+    orderBy: { name: "asc" },
+    include: { items: { orderBy: { sortOrder: "asc" } } },
+  });
+
+  return rows.map(toPresetView);
+}
+
+export async function createFoodPreset(
+  userId: string,
+  input: CreateFoodPresetInput,
+): Promise<FoodPresetView> {
+  assertModelsAvailable();
+
+  return db.$transaction(async (tx: TxClient) => {
+    const preset = await tx.nutritionFoodPreset.create({
+      data: { userId, name: input.name },
+    });
+
+    await tx.nutritionFoodPresetItem.createMany({
+      data: input.items.map((item, index) => ({
+        presetId: preset.id,
+        foodSource: item.foodSource,
+        sourceFoodId: item.sourceFoodId,
+        foundationFoodId: item.foundationFoodId,
+        snapshotName: item.snapshotName,
+        snapshotBrand: item.snapshotBrand,
+        servings: item.servings,
+        portionLabel: item.portionLabel,
+        portionGramWeight: item.portionGramWeight,
+        nutrients: item.nutrients,
+        sortOrder: index,
+      })),
+    });
+
+    const full = await tx.nutritionFoodPreset.findUnique({
+      where: { id: preset.id },
+      include: { items: { orderBy: { sortOrder: "asc" } } },
+    });
+
+    return toPresetView(full);
+  });
+}
+
+export async function updateFoodPreset(
+  userId: string,
+  presetId: string,
+  input: UpdateFoodPresetInput,
+): Promise<FoodPresetView> {
+  assertModelsAvailable();
+
+  return db.$transaction(async (tx: TxClient) => {
+    const existing = await tx.nutritionFoodPreset.findFirst({
+      where: { id: presetId, userId, active: true },
+      select: { id: true },
+    });
+
+    if (!existing) throw new Error("Preset not found.");
+
+    if (input.name) {
+      await tx.nutritionFoodPreset.update({
+        where: { id: presetId },
+        data: { name: input.name },
+      });
+    }
+
+    if (input.items) {
+      await tx.nutritionFoodPresetItem.deleteMany({ where: { presetId } });
+      await tx.nutritionFoodPresetItem.createMany({
+        data: input.items.map((item, index) => ({
+          presetId,
+          foodSource: item.foodSource,
+          sourceFoodId: item.sourceFoodId,
+          foundationFoodId: item.foundationFoodId,
+          snapshotName: item.snapshotName,
+          snapshotBrand: item.snapshotBrand,
+          servings: item.servings,
+          portionLabel: item.portionLabel,
+          portionGramWeight: item.portionGramWeight,
+          nutrients: item.nutrients,
+          sortOrder: index,
+        })),
+      });
+    }
+
+    const full = await tx.nutritionFoodPreset.findUnique({
+      where: { id: presetId },
+      include: { items: { orderBy: { sortOrder: "asc" } } },
+    });
+
+    return toPresetView(full);
+  });
+}
+
+export async function deleteFoodPreset(
+  userId: string,
+  presetId: string,
+): Promise<void> {
+  assertModelsAvailable();
+
+  const preset = await db.nutritionFoodPreset.findFirst({
+    where: { id: presetId, userId, active: true },
+    select: { id: true },
+  });
+
+  if (!preset) throw new Error("Preset not found.");
+
+  await db.nutritionFoodPreset.update({
+    where: { id: presetId },
+    data: { active: false },
+  });
 }
 
 // ─── Meal session CRUD ───────────────────────────────────────────────────────

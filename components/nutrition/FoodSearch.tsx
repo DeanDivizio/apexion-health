@@ -5,14 +5,20 @@ import { Camera, PlusCircle, Search, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui_primitives/input";
 import { Button } from "@/components/ui_primitives/button";
 import { ScrollArea } from "@/components/ui_primitives/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui_primitives/tabs";
 import { FoodResultCard } from "./FoodResultCard";
 import { FoodDetailDialog } from "./FoodDetailDialog";
 import { ManualFoodForm } from "./ManualFoodForm";
 import { LabelScanner } from "./LabelScanner";
+import { PresetCard } from "./PresetCard";
 import { searchFoodsAction } from "@/actions/nutrition";
+import { useToast } from "@/hooks/use-toast";
 import type {
+  FoodPresetView,
+  FoodPresetItemView,
   FoundationFoodView,
   MealItemDraft,
+  NutrientProfile,
   NutritionUserFoodView,
   RecentFoodEntry,
 } from "@/lib/nutrition";
@@ -20,7 +26,9 @@ import type {
 interface FoodSearchProps {
   userFoods: NutritionUserFoodView[];
   recentFoods: RecentFoodEntry[];
+  presets: FoodPresetView[];
   onAddItem: (item: MealItemDraft) => void;
+  onAddPresetItems: (items: MealItemDraft[]) => void;
   onUserFoodCreated: (food: NutritionUserFoodView) => void;
 }
 
@@ -28,7 +36,30 @@ type SelectedFood =
   | { type: "foundation"; data: FoundationFoodView }
   | { type: "complex"; data: NutritionUserFoodView };
 
-export function FoodSearch({ userFoods, recentFoods, onAddItem, onUserFoodCreated }: FoodSearchProps) {
+function presetItemToDraft(item: FoodPresetItemView): MealItemDraft {
+  return {
+    localId: crypto.randomUUID(),
+    foodSource: item.foodSource,
+    sourceFoodId: item.sourceFoodId,
+    foundationFoodId: item.foundationFoodId,
+    snapshotName: item.snapshotName,
+    snapshotBrand: item.snapshotBrand,
+    servings: item.servings,
+    portionLabel: item.portionLabel,
+    portionGramWeight: item.portionGramWeight,
+    nutrients: item.nutrients as NutrientProfile,
+  };
+}
+
+export function FoodSearch({
+  userFoods,
+  recentFoods,
+  presets,
+  onAddItem,
+  onAddPresetItems,
+  onUserFoodCreated,
+}: FoodSearchProps) {
+  const { toast } = useToast();
   const [query, setQuery] = React.useState("");
   const [searching, setSearching] = React.useState(false);
   const [foundationResults, setFoundationResults] = React.useState<FoundationFoodView[]>([]);
@@ -37,6 +68,9 @@ export function FoodSearch({ userFoods, recentFoods, onAddItem, onUserFoodCreate
   const [detailOpen, setDetailOpen] = React.useState(false);
   const [manualOpen, setManualOpen] = React.useState(false);
   const [scannerOpen, setScannerOpen] = React.useState(false);
+  const [browseTab, setBrowseTab] = React.useState<"presets" | "recents">(
+    presets.length > 0 ? "presets" : "recents",
+  );
 
   const isSearching = query.trim().length >= 2;
   const debounceRef = React.useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -81,7 +115,19 @@ export function FoodSearch({ userFoods, recentFoods, onAddItem, onUserFoodCreate
     setDetailOpen(true);
   }
 
+  function handleUsePreset(preset: FoodPresetView) {
+    const drafts = preset.items.map(presetItemToDraft);
+    onAddPresetItems(drafts);
+    toast({
+      title: `${preset.name} (${drafts.length} item${drafts.length !== 1 ? "s" : ""}) added to meal`,
+    });
+  }
+
   const hasSearchResults = userFoodResults.length > 0 || foundationResults.length > 0;
+
+  const matchingPresets = isSearching
+    ? presets.filter((p) => p.name.toLowerCase().includes(query.trim().toLowerCase()))
+    : [];
 
   return (
     <div className="space-y-4">
@@ -111,45 +157,75 @@ export function FoodSearch({ userFoods, recentFoods, onAddItem, onUserFoodCreate
 
       <ScrollArea className="max-h-[calc(100dvh-16rem)]">
         <div className="space-y-4 pr-2 pb-24">
-          {/* Recents (shown when not actively searching) */}
-          {!isSearching && recentFoods.length > 0 && (
+          {/* Browse mode: Presets / Recents tabs */}
+          {!isSearching && (
+            <Tabs value={browseTab} onValueChange={(v) => setBrowseTab(v as "presets" | "recents")}>
+              <TabsList className="grid w-full grid-cols-2 h-8">
+                <TabsTrigger value="presets" className="text-xs">Presets</TabsTrigger>
+                <TabsTrigger value="recents" className="text-xs">Recents</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="presets" className="mt-3 space-y-2">
+                {presets.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    No presets yet. Create one from the Meal Presets page or save one from a past meal.
+                  </p>
+                ) : (
+                  presets.map((preset) => (
+                    <PresetCard
+                      key={preset.id}
+                      preset={preset}
+                      onUse={() => handleUsePreset(preset)}
+                    />
+                  ))
+                )}
+              </TabsContent>
+
+              <TabsContent value="recents" className="mt-3 space-y-2">
+                {recentFoods.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    Search for a food or add one manually to get started.
+                  </p>
+                ) : (
+                  recentFoods.map((entry) => {
+                    const key = entry.type === "foundation" ? `f-${entry.data.id}` : `u-${entry.data.id}`;
+                    const name = entry.data.name;
+                    const subtitle =
+                      entry.type === "foundation"
+                        ? (entry.data.category ?? "per 100g")
+                        : (entry.data.brand ?? `${entry.data.servingSize}${entry.data.servingUnit}`);
+                    return (
+                      <FoodResultCard
+                        key={key}
+                        name={name}
+                        subtitle={subtitle}
+                        calories={entry.data.nutrients.calories}
+                        onClick={() => handleSelectRecent(entry)}
+                      />
+                    );
+                  })
+                )}
+              </TabsContent>
+            </Tabs>
+          )}
+
+          {/* Search results: matching presets */}
+          {isSearching && matchingPresets.length > 0 && (
             <div className="space-y-2">
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                Recently Logged
+                My Presets ({matchingPresets.length})
               </p>
-              {recentFoods.map((entry) => {
-                const key = entry.type === "foundation" ? `f-${entry.data.id}` : `u-${entry.data.id}`;
-                const name = entry.data.name;
-                const subtitle =
-                  entry.type === "foundation"
-                    ? (entry.data.category ?? "per 100g")
-                    : (entry.data.brand ?? `${entry.data.servingSize}${entry.data.servingUnit}`);
-                return (
-                  <FoodResultCard
-                    key={key}
-                    name={name}
-                    subtitle={subtitle}
-                    calories={entry.data.nutrients.calories}
-                    onClick={() => handleSelectRecent(entry)}
-                  />
-                );
-              })}
+              {matchingPresets.map((preset) => (
+                <PresetCard
+                  key={preset.id}
+                  preset={preset}
+                  onUse={() => handleUsePreset(preset)}
+                />
+              ))}
             </div>
           )}
 
-          {!isSearching && recentFoods.length === 0 && (
-            <p className="text-sm text-muted-foreground text-center py-4">
-              Search for a food or add one manually to get started.
-            </p>
-          )}
-
-          {/* Search results */}
-          {isSearching && !searching && !hasSearchResults && (
-            <p className="text-sm text-muted-foreground text-center py-4">
-              No results for &quot;{query}&quot;
-            </p>
-          )}
-
+          {/* Search results: user foods */}
           {isSearching && userFoodResults.length > 0 && (
             <div className="space-y-2">
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
@@ -167,6 +243,7 @@ export function FoodSearch({ userFoods, recentFoods, onAddItem, onUserFoodCreate
             </div>
           )}
 
+          {/* Search results: foundation foods */}
           {isSearching && foundationResults.length > 0 && (
             <div className="space-y-2">
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
@@ -182,6 +259,13 @@ export function FoodSearch({ userFoods, recentFoods, onAddItem, onUserFoodCreate
                 />
               ))}
             </div>
+          )}
+
+          {/* Empty search state */}
+          {isSearching && !searching && !hasSearchResults && matchingPresets.length === 0 && (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              No results for &quot;{query}&quot;
+            </p>
           )}
         </div>
       </ScrollArea>

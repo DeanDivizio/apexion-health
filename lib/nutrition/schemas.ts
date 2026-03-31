@@ -71,6 +71,16 @@ export const createRetailUserItemSchema = z.object({
   servingUnit: z.string().nullable().default(null),
 });
 
+export const createFoodPresetSchema = z.object({
+  name: z.string().trim().min(1),
+  items: z.array(mealItemDraftSchema).min(1),
+});
+
+export const updateFoodPresetSchema = z.object({
+  name: z.string().trim().min(1).optional(),
+  items: z.array(mealItemDraftSchema).min(1).optional(),
+});
+
 export const upsertUserGoalsSchema = z.object({
   calories: z.number().nullable().optional(),
   protein: z.number().nullable().optional(),
@@ -92,4 +102,6 @@ export type CreateMealSessionInput = z.infer<typeof createMealSessionSchema>;
 export type CreateRetailChainInput = z.infer<typeof createRetailChainSchema>;
 export type CreateRetailItemInput = z.infer<typeof createRetailItemSchema>;
 export type CreateRetailUserItemInput = z.infer<typeof createRetailUserItemSchema>;
+export type CreateFoodPresetInput = z.infer<typeof createFoodPresetSchema>;
+export type UpdateFoodPresetInput = z.infer<typeof updateFoodPresetSchema>;
 export type UpsertUserGoalsInput = z.infer<typeof upsertUserGoalsSchema>;

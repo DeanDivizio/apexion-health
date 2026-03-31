@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { format, parseISO } from "date-fns";
-import { Minus, Pencil, Plus, Trash2, X } from "lucide-react";
+import { Bookmark, Minus, Pencil, Plus, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui_primitives/button";
 import {
   Dialog,
@@ -31,8 +31,10 @@ import {
 } from "@/components/ui_primitives/select";
 import { Input } from "@/components/ui_primitives/input";
 import { Label } from "@/components/ui_primitives/label";
+import { Checkbox } from "@/components/ui_primitives/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import {
+  createFoodPresetAction,
   deleteMealSessionAction,
   updateMealSessionAction,
 } from "@/actions/nutrition";
@@ -84,6 +86,12 @@ export function MealsList({ initialSessions }: MealsListProps) {
   const [deleteSessionId, setDeleteSessionId] = React.useState<string | null>(null);
   const [submitting, setSubmitting] = React.useState(false);
 
+  // Save-as-preset state
+  const [presetSession, setPresetSession] = React.useState<NutritionMealSessionView | null>(null);
+  const [presetName, setPresetName] = React.useState("");
+  const [presetSelectedIndices, setPresetSelectedIndices] = React.useState<Set<number>>(new Set());
+  const [savingPreset, setSavingPreset] = React.useState(false);
+
   // Edit state
   const [editLabel, setEditLabel] = React.useState<string | null>(null);
   const [editDate, setEditDate] = React.useState("");
@@ -97,6 +105,45 @@ export function MealsList({ initialSessions }: MealsListProps) {
     setEditDate(format(loggedDate, "yyyy-MM-dd"));
     setEditTime(format(loggedDate, "HH:mm"));
     setEditItems([...session.items]);
+  }
+
+  function openSaveAsPreset(session: NutritionMealSessionView) {
+    setPresetSession(session);
+    setPresetName("");
+    setPresetSelectedIndices(new Set(session.items.map((_, i) => i)));
+  }
+
+  async function handleSavePreset() {
+    if (!presetSession || !presetName.trim() || presetSelectedIndices.size === 0) return;
+    setSavingPreset(true);
+    try {
+      const selectedItems = presetSession.items.filter((_, i) => presetSelectedIndices.has(i));
+      await createFoodPresetAction({
+        name: presetName.trim(),
+        items: selectedItems.map((item) => ({
+          foodSource: item.foodSource,
+          sourceFoodId: item.sourceFoodId,
+          foundationFoodId: item.foundationFoodId,
+          snapshotName: item.snapshotName,
+          snapshotBrand: item.snapshotBrand,
+          servings: item.servings,
+          portionLabel: item.portionLabel,
+          portionGramWeight: item.portionGramWeight,
+          nutrients: {
+            calories: item.snapshotCalories / item.servings,
+            protein: item.snapshotProtein / item.servings,
+            carbs: item.snapshotCarbs / item.servings,
+            fat: item.snapshotFat / item.servings,
+          },
+        })),
+      });
+      setPresetSession(null);
+      toast({ title: "Preset created", description: `"${presetName.trim()}" saved with ${presetSelectedIndices.size} item${presetSelectedIndices.size !== 1 ? "s" : ""}.` });
+    } catch {
+      toast({ title: "Error", description: "Failed to create preset.", variant: "destructive" });
+    } finally {
+      setSavingPreset(false);
+    }
   }
 
   async function handleSaveEdit() {
@@ -171,9 +218,7 @@ export function MealsList({ initialSessions }: MealsListProps) {
   const grouped = groupByDate(sessions);
 
   return (
-    <div className="max-w-2xl mx-auto px-4 pt-24 md:pt-6 pb-20 space-y-6">
-      <h1 className="text-2xl font-semibold">Your Meals</h1>
-
+    <div className="space-y-6">
       {sessions.length === 0 && (
         <p className="text-sm text-muted-foreground text-center py-12">
           No meals logged yet.
@@ -203,6 +248,9 @@ export function MealsList({ initialSessions }: MealsListProps) {
                     {timeStr && <span className="text-muted-foreground font-normal"> · {timeStr}</span>}
                   </p>
                   <div className="flex gap-1">
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openSaveAsPreset(session)} title="Save as Preset">
+                      <Bookmark className="h-3.5 w-3.5" />
+                    </Button>
                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(session)}>
                       <Pencil className="h-3.5 w-3.5" />
                     </Button>
@@ -308,6 +356,62 @@ export function MealsList({ initialSessions }: MealsListProps) {
             <Button variant="outline" className="flex-1" onClick={() => setEditSession(null)}>Cancel</Button>
             <Button className="flex-1" onClick={handleSaveEdit} disabled={submitting || editItems.length === 0}>
               {submitting ? "Saving..." : "Save Changes"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Save as Preset dialog */}
+      <Dialog open={presetSession !== null} onOpenChange={(open) => { if (!open) setPresetSession(null); }}>
+        <DialogContent className="max-h-[85vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Save as Preset</DialogTitle>
+            <DialogDescription>Name your preset and select which items to include.</DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto space-y-3 py-1">
+            <div className="space-y-1">
+              <Label>Preset Name</Label>
+              <Input
+                value={presetName}
+                onChange={(e) => setPresetName(e.target.value)}
+                placeholder='e.g. "Breakfast Burrito"'
+                className="h-9"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Items</Label>
+              {presetSession?.items.map((item, idx) => (
+                <label key={idx} className="flex items-center gap-2 rounded-md border border-border/40 px-2 py-1.5 cursor-pointer hover:bg-accent/50 transition-colors">
+                  <Checkbox
+                    checked={presetSelectedIndices.has(idx)}
+                    onCheckedChange={(checked) => {
+                      setPresetSelectedIndices((prev) => {
+                        const next = new Set(prev);
+                        if (checked) next.add(idx);
+                        else next.delete(idx);
+                        return next;
+                      });
+                    }}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium truncate">{item.snapshotName}</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {Math.round(item.snapshotCalories)} cal
+                      {item.servings !== 1 && ` · ${item.servings} servings`}
+                    </p>
+                  </div>
+                </label>
+              ))}
+            </div>
+          </div>
+          <DialogFooter className="flex-row gap-2 sm:flex-row">
+            <Button variant="outline" className="flex-1" onClick={() => setPresetSession(null)}>Cancel</Button>
+            <Button
+              className="flex-1"
+              onClick={handleSavePreset}
+              disabled={savingPreset || !presetName.trim() || presetSelectedIndices.size === 0}
+            >
+              {savingPreset ? "Saving..." : "Save Preset"}
             </Button>
           </DialogFooter>
         </DialogContent>

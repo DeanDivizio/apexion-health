@@ -17,10 +17,10 @@ import {
   clearPersistedMealState,
 } from "@/lib/nutrition/mealDraftStore";
 import type {
+  FoodPresetView,
   MealItemDraft,
   NutritionBootstrap,
   NutritionUserFoodView,
-  RecentFoodEntry,
 } from "@/lib/nutrition";
 import { isoDateToCompactDateStr, toCompactDateStr } from "@/lib/dates/dateStr";
 import { captureClientEvent } from "@/lib/posthog-client";
@@ -64,6 +64,7 @@ export function NutritionFlow({ bootstrap }: NutritionFlowProps) {
   const [selectedChainId, setSelectedChainId] = React.useState<string | null>(null);
   const [submitting, setSubmitting] = React.useState(false);
   const [userFoods, setUserFoods] = React.useState<NutritionUserFoodView[]>(bootstrap.userFoods);
+  const [presets] = React.useState<FoodPresetView[]>(bootstrap.presets);
 
   // ── Persistence ──────────────────────────────────────────────────────
   const hasRestored = useRef(false);
@@ -132,6 +133,19 @@ export function NutritionFlow({ bootstrap }: NutritionFlowProps) {
       toast({ title: `${item.snapshotName} added to meal` });
     },
     [toast],
+  );
+
+  const handleAddPresetItems = useCallback(
+    (items: MealItemDraft[]) => {
+      setStagedItems((prev) => [...prev, ...items]);
+      for (const item of items) {
+        captureClientEvent("food_item_added", {
+          food_name: item.snapshotName,
+          food_source: item.foodSource,
+        });
+      }
+    },
+    [],
   );
 
   const handleRemoveItem = useCallback((index: number) => {
@@ -229,7 +243,9 @@ export function NutritionFlow({ bootstrap }: NutritionFlowProps) {
           <FoodSearch
             userFoods={userFoods}
             recentFoods={bootstrap.recentFoods}
+            presets={presets}
             onAddItem={handleAddItem}
+            onAddPresetItems={handleAddPresetItems}
             onUserFoodCreated={handleUserFoodCreated}
           />
         </TabsContent>

@@ -2,32 +2,38 @@
 
 import { auth } from "@clerk/nextjs/server";
 import {
+  createFoodPresetSchema,
   createMealSessionSchema,
   createRetailChainSchema,
   createRetailItemSchema,
   createRetailUserItemSchema,
   createUserFoodSchema,
+  updateFoodPresetSchema,
   upsertUserGoalsSchema,
 } from "@/lib/nutrition";
 import { normalizeDateInput } from "@/lib/dates/dateStr";
 import { updateTag } from "next/cache";
 import {
   bulkCreateRetailItems,
+  createFoodPreset,
   createMealSession,
   createRetailChain,
   createRetailUserItem,
   createUserFood,
+  deleteFoodPreset,
   deleteMealSession,
   getMacroSummaryByDateRange,
   getMealSession,
   getMicroNutrientSummary,
   getNutritionBootstrap,
   getUserGoals,
+  listFoodPresets,
   listMealSessions,
   listRetailChains,
   searchFoundationFoods,
   searchRetailItems,
   searchUserFoods,
+  updateFoodPreset,
   updateMealSession,
   upsertUserGoals,
 } from "@/lib/nutrition/server/nutritionService";
@@ -198,4 +204,38 @@ export async function bulkCreateRetailItemsAction(
     createRetailItemSchema.parse(item),
   );
   return bulkCreateRetailItems(chainId, parsed);
+}
+
+// ─── Food presets ─────────────────────────────────────────────────────────────
+
+export async function listFoodPresetsAction() {
+  const userId = await requireUserId();
+  return listFoodPresets(userId);
+}
+
+export async function createFoodPresetAction(input: unknown) {
+  const userId = await requireUserId();
+  const parsed = createFoodPresetSchema.parse(input);
+  const result = await createFoodPreset(userId, parsed);
+  updateTag(`nutritionPresets:${userId}`);
+  return result;
+}
+
+export async function updateFoodPresetAction(
+  presetId: string,
+  input: unknown,
+) {
+  const userId = await requireUserId();
+  if (!presetId) throw new Error("Preset ID is required.");
+  const parsed = updateFoodPresetSchema.parse(input);
+  const result = await updateFoodPreset(userId, presetId, parsed);
+  updateTag(`nutritionPresets:${userId}`);
+  return result;
+}
+
+export async function deleteFoodPresetAction(presetId: string) {
+  const userId = await requireUserId();
+  if (!presetId) throw new Error("Preset ID is required.");
+  await deleteFoodPreset(userId, presetId);
+  updateTag(`nutritionPresets:${userId}`);
 }
