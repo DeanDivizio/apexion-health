@@ -4,13 +4,15 @@ import * as React from "react";
 import { Dumbbell, Activity, ClipboardCheck } from "lucide-react";
 import { Button } from "@/components/ui_primitives/button";
 import { ExerciseCombobox, type ExerciseGroupOption } from "./ExerciseCombobox";
-import type { ExerciseEntry } from "@/lib/gym";
+import { CreateCustomExerciseSheet } from "./CreateCustomExerciseSheet";
+import type { ExerciseEntry, CreateCustomExerciseInput } from "@/lib/gym";
 
 interface AddExerciseProps {
   strengthGroups: ExerciseGroupOption[];
   onSelectExercise: (exerciseKey: string) => void;
   sessionExercises: ExerciseEntry[];
   onReviewSession: () => void;
+  onCreateCustomExercise: (input: CreateCustomExerciseInput) => Promise<void>;
 }
 
 export function AddExercise({
@@ -18,8 +20,16 @@ export function AddExercise({
   onSelectExercise,
   sessionExercises,
   onReviewSession,
+  onCreateCustomExercise,
 }: AddExerciseProps) {
   const hasExercises = sessionExercises.length > 0;
+  const [createSheetOpen, setCreateSheetOpen] = React.useState(false);
+  const [searchQuery, setSearchQuery] = React.useState("");
+
+  const handleCreateCustom = React.useCallback((query: string) => {
+    setSearchQuery(query);
+    setCreateSheetOpen(true);
+  }, []);
 
   return (
     <div className="flex flex-col items-center justify-center px-2 py-8 space-y-8 w-full">
@@ -45,6 +55,7 @@ export function AddExercise({
           groups={strengthGroups}
           value=""
           onSelect={onSelectExercise}
+          onCreateCustom={handleCreateCustom}
           placeholder="Search exercises..."
         />
       </div>
@@ -76,6 +87,14 @@ export function AddExercise({
           </Button>
         </div>
       )}
+
+      {/* Create Custom Exercise Sheet */}
+      <CreateCustomExerciseSheet
+        open={createSheetOpen}
+        onOpenChange={setCreateSheetOpen}
+        initialSearchQuery={searchQuery}
+        onSubmit={onCreateCustomExercise}
+      />
     </div>
   );
 }

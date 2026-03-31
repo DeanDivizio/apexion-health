@@ -2,9 +2,11 @@
 
 import { auth } from "@clerk/nextjs/server";
 import { Prisma } from "@prisma/client";
+import { nanoid } from "nanoid";
 import {
   workoutSessionSchema,
   createCustomExerciseInputSchema,
+  updateCustomExerciseInputSchema,
   listSessionsOptionsSchema,
   updateGymPreferencesSchema,
   EXERCISE_MAP,
@@ -24,6 +26,7 @@ import {
   updateWorkoutSession,
 } from "@/lib/gym/server/gymService";
 import { prisma } from "@/lib/db/prisma";
+import { getPostHogClient } from "@/lib/posthog-server";
 import { z } from "zod";
 
 // =============================================================================
@@ -101,30 +104,40 @@ export async function getGymMetaAction() {
 // CUSTOM EXERCISE ACTIONS
 // =============================================================================
 
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 40);
+}
+
+function generateExerciseKey(name: string): string {
+  return `custom_${slugify(name)}_${nanoid(6)}`;
+}
+
 export async function createCustomExerciseAction(input: unknown) {
   const userId = await requireUserId();
   const parsed = createCustomExerciseInputSchema.parse(input);
 
-  if (EXERCISE_MAP.has(parsed.key)) {
-    throw new Error("That name matches a built-in exercise. Try a more specific custom name.");
-  }
+  const key = generateExerciseKey(parsed.name);
 
-  const existingCustom = await prisma.gymCustomExercise.findUnique({
-    where: { userId_key: { userId, key: parsed.key } },
-    select: { id: true },
-  });
-  if (existingCustom) {
-    throw new Error("You already have a custom exercise with that name.");
+  if (EXERCISE_MAP.has(key)) {
+    throw new Error("Generated key collides with a built-in exercise. Try a different name.");
   }
 
   try {
-    return prisma.gymCustomExercise.create({
+    const exercise = await prisma.gymCustomExercise.create({
       data: {
         userId,
-        key: parsed.key,
+        key,
         name: parsed.name,
         category: parsed.category,
         repMode: parsed.repMode,
+        presetId: parsed.presetId ?? null,
+        movementPattern: parsed.movementPattern ?? null,
+        bodyRegion: parsed.bodyRegion ?? null,
+        movementPlane: parsed.movementPlane ?? null,
         targets: parsed.targets.length
           ? {
               create: parsed.targets.map((target) => ({
@@ -163,16 +176,285 @@ export async function createCustomExerciseAction(input: unknown) {
           : undefined,
       },
     });
+
+    if (parsed.requestCanonicalization) {
+      await prisma.gymCanonRequest.create({
+        data: {
+          userId,
+          customExerciseId: exercise.id,
+          userNote: parsed.canonicalizationNote ?? null,
+          snapshotPayload: {
+            name: parsed.name,
+            category: parsed.category,
+            repMode: parsed.repMode,
+            presetId: parsed.presetId,
+            targets: parsed.targets,
+            variationSupports: parsed.variationSupports,
+          },
+        },
+      });
+
+      getPostHogClient().capture({
+        distinctId: userId,
+        event: "gym_custom_exercise_canonicalization_requested",
+        properties: {
+          exercise_key: key,
+          category: parsed.category,
+          preset_id: parsed.presetId ?? null,
+          has_user_note: !!parsed.canonicalizationNote,
+        },
+      });
+    }
+
+    updateTag(`gymMeta:${userId}`);
+
+    getPostHogClient().capture({
+      distinctId: userId,
+      event: "gym_custom_exercise_created",
+      properties: {
+        exercise_key: key,
+        is_custom: true,
+        category: parsed.category,
+        preset_id: parsed.presetId ?? null,
+        movement_pattern: parsed.movementPattern ?? null,
+        body_region: parsed.bodyRegion ?? null,
+        movement_plane: parsed.movementPlane ?? null,
+        variation_template_count: parsed.variationSupports.length,
+        has_variation_effects: false,
+        requested_canonicalization: parsed.requestCanonicalization,
+        source_surface: "search_empty_state",
+      },
+    });
+
+    return { key, id: exercise.id, name: exercise.name };
   } catch (error) {
-    // Guard against race conditions where another request inserts the same key.
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&
       error.code === "P2002"
     ) {
       throw new Error("You already have a custom exercise with that name.");
     }
+
+    getPostHogClient().capture({
+      distinctId: userId,
+      event: "gym_custom_exercise_create_failed",
+      properties: {
+        error: error instanceof Error ? error.message : "Unknown error",
+        category: parsed.category,
+        preset_id: parsed.presetId ?? null,
+      },
+    });
+
     throw error;
   }
+}
+
+export async function updateCustomExerciseAction(input: unknown) {
+  const userId = await requireUserId();
+  const parsed = updateCustomExerciseInputSchema.parse(input);
+
+  const existing = await prisma.gymCustomExercise.findUnique({
+    where: { userId_key: { userId, key: parsed.exerciseKey } },
+    select: { id: true },
+  });
+  if (!existing) {
+    throw new Error("Custom exercise not found.");
+  }
+
+  await prisma.$transaction(async (tx) => {
+    if (parsed.name) {
+      await tx.gymCustomExercise.update({
+        where: { id: existing.id },
+        data: { name: parsed.name },
+      });
+    }
+
+    if (parsed.targets) {
+      const sum = parsed.targets.reduce((acc, t) => acc + t.weight, 0);
+      if (parsed.targets.length === 0 || Math.abs(sum - 1) >= 1e-6) {
+        throw new Error("Targets must sum to 1.0");
+      }
+      await tx.gymCustomExerciseTarget.deleteMany({
+        where: { exerciseId: existing.id },
+      });
+      await tx.gymCustomExerciseTarget.createMany({
+        data: parsed.targets.map((t) => ({
+          exerciseId: existing.id,
+          muscle: t.muscle,
+          weight: t.weight,
+        })),
+      });
+    }
+
+    if (parsed.variationSupports) {
+      await tx.gymExerciseVariationSupport.deleteMany({
+        where: { exerciseId: existing.id },
+      });
+      if (parsed.variationSupports.length > 0) {
+        await tx.gymExerciseVariationSupport.createMany({
+          data: parsed.variationSupports.map((s) => ({
+            exerciseId: existing.id,
+            templateId: s.templateId,
+            labelOverride: s.labelOverride ?? null,
+            defaultOptionKey: s.defaultOptionKey ?? null,
+          })),
+        });
+      }
+    }
+  });
+
+  updateTag(`gymMeta:${userId}`);
+}
+
+export async function archiveCustomExerciseAction(exerciseKey: string) {
+  const userId = await requireUserId();
+  if (!exerciseKey) throw new Error("Exercise key is required.");
+
+  const existing = await prisma.gymCustomExercise.findUnique({
+    where: { userId_key: { userId, key: exerciseKey } },
+    select: { id: true, archivedAt: true },
+  });
+  if (!existing) throw new Error("Custom exercise not found.");
+  if (existing.archivedAt) throw new Error("Exercise is already archived.");
+
+  await prisma.gymCustomExercise.update({
+    where: { id: existing.id },
+    data: { archivedAt: new Date() },
+  });
+
+  updateTag(`gymMeta:${userId}`);
+
+  getPostHogClient().capture({
+    distinctId: userId,
+    event: "gym_custom_exercise_archived",
+    properties: { exercise_key: exerciseKey },
+  });
+
+  return { success: true };
+}
+
+export async function unarchiveCustomExerciseAction(exerciseKey: string) {
+  const userId = await requireUserId();
+  if (!exerciseKey) throw new Error("Exercise key is required.");
+
+  const existing = await prisma.gymCustomExercise.findUnique({
+    where: { userId_key: { userId, key: exerciseKey } },
+    select: { id: true, archivedAt: true },
+  });
+  if (!existing) throw new Error("Custom exercise not found.");
+  if (!existing.archivedAt) throw new Error("Exercise is not archived.");
+
+  await prisma.gymCustomExercise.update({
+    where: { id: existing.id },
+    data: { archivedAt: null },
+  });
+
+  updateTag(`gymMeta:${userId}`);
+  return { success: true };
+}
+
+export async function renameCustomExerciseAction(exerciseKey: string, newName: string) {
+  const userId = await requireUserId();
+  if (!exerciseKey) throw new Error("Exercise key is required.");
+  if (!newName || newName.trim().length === 0) throw new Error("Name is required.");
+  if (newName.trim().length > 100) throw new Error("Name must be 100 characters or fewer.");
+
+  const existing = await prisma.gymCustomExercise.findUnique({
+    where: { userId_key: { userId, key: exerciseKey } },
+    select: { id: true },
+  });
+  if (!existing) throw new Error("Custom exercise not found.");
+
+  await prisma.gymCustomExercise.update({
+    where: { id: existing.id },
+    data: { name: newName.trim() },
+  });
+
+  updateTag(`gymMeta:${userId}`);
+
+  getPostHogClient().capture({
+    distinctId: userId,
+    event: "gym_custom_exercise_renamed",
+    properties: { exercise_key: exerciseKey },
+  });
+
+  return { success: true };
+}
+
+// =============================================================================
+// VARIATION PRESET ACTIONS
+// =============================================================================
+
+const createVariationPresetSchema = z.object({
+  exerciseKey: z.string().min(1),
+  name: z.string().min(1).max(60),
+  variations: z.record(z.string(), z.string()),
+});
+
+export async function createVariationPresetAction(input: unknown) {
+  const userId = await requireUserId();
+  const parsed = createVariationPresetSchema.parse(input);
+
+  try {
+    const preset = await prisma.gymExerciseVariationPreset.create({
+      data: {
+        userId,
+        exerciseKey: parsed.exerciseKey,
+        name: parsed.name,
+        variations: parsed.variations,
+      },
+    });
+
+    updateTag(`gymMeta:${userId}`);
+
+    getPostHogClient().capture({
+      distinctId: userId,
+      event: "gym_variation_preset_created",
+      properties: {
+        exercise_key: parsed.exerciseKey,
+        preset_name: parsed.name,
+        variation_count: Object.keys(parsed.variations).length,
+      },
+    });
+
+    return { id: preset.id, name: preset.name };
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      throw new Error("You already have a preset with that name for this exercise.");
+    }
+    throw error;
+  }
+}
+
+export async function deleteVariationPresetAction(presetId: string) {
+  const userId = await requireUserId();
+  if (!presetId) throw new Error("Preset ID is required.");
+
+  const existing = await prisma.gymExerciseVariationPreset.findUnique({
+    where: { id: presetId },
+    select: { id: true, userId: true, exerciseKey: true, name: true },
+  });
+  if (!existing || existing.userId !== userId) {
+    throw new Error("Preset not found.");
+  }
+
+  await prisma.gymExerciseVariationPreset.delete({ where: { id: presetId } });
+
+  updateTag(`gymMeta:${userId}`);
+
+  getPostHogClient().capture({
+    distinctId: userId,
+    event: "gym_variation_preset_deleted",
+    properties: {
+      exercise_key: existing.exerciseKey,
+      preset_name: existing.name,
+    },
+  });
+
+  return { success: true };
 }
 
 // =============================================================================

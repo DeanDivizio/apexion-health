@@ -27,6 +27,7 @@ import {
   EXERCISE_MAP,
   VARIATION_TEMPLATES,
   calculateSetVolume,
+  exerciseStatsKey,
   type CustomExerciseDefinition,
   type DistanceUnit,
   type ExerciseCategory,
@@ -37,6 +38,7 @@ import {
   type GymUserMeta,
   type VariationEffect,
   type VariationEffects,
+  type VariationPresetSummary,
   type VariationTemplateOverride,
   type RepCount,
   type StrengthSet,
@@ -168,6 +170,7 @@ function calculateVolumeFromColumns(weight: number, cols: RepColumns): number {
 function transformExercise(dbExercise: {
   type: string;
   exerciseKey: string;
+  presetName: string | null;
   durationMinutes: number | null;
   distance: number | null;
   distanceUnit: string | null;
@@ -218,6 +221,7 @@ function transformExercise(dbExercise: {
       duration: set.durationSeconds ?? undefined,
     })),
     variations: hasVariations ? variations : undefined,
+    presetName: dbExercise.presetName || undefined,
     notes: dbExercise.notes ?? undefined,
   };
 }
@@ -236,12 +240,16 @@ async function createExercisesForSession(
   exercises: ExerciseEntry[],
 ) {
   for (const [exerciseIndex, exercise] of exercises.entries()) {
+    const presetName =
+      exercise.type === "strength" ? exercise.presetName ?? null : null;
+
     const createdExercise = await tx.gymWorkoutExercise.create({
       data: {
         sessionId,
         order: exerciseIndex,
         type: exercise.type,
         exerciseKey: exercise.exerciseType,
+        presetName,
         notes: exercise.notes ?? null,
         durationMinutes: exercise.type === "cardio" ? exercise.duration : null,
         distance: exercise.type === "cardio" ? exercise.distance ?? null : null,
@@ -294,7 +302,6 @@ async function updateStatsAfterCreate(
   for (const exercise of session.exercises) {
     if (exercise.type !== "strength") continue;
 
-    // Find the highest-volume set in this exercise
     let bestVolume = 0;
     let bestSet: StrengthSet | null = null;
     for (const set of exercise.sets) {
@@ -307,20 +314,25 @@ async function updateStatsAfterCreate(
 
     if (!bestSet || bestVolume <= 0) continue;
 
+    const presetName = exercise.presetName ?? "";
     const existing = await tx.gymUserExerciseStat.findUnique({
       where: {
-        userId_exerciseKey: { userId, exerciseKey: exercise.exerciseType },
+        userId_exerciseKey_presetName: {
+          userId,
+          exerciseKey: exercise.exerciseType,
+          presetName,
+        },
       },
     });
 
     const repCols = repCountToColumns(bestSet.reps);
 
     if (!existing) {
-      // First time performing this exercise — create stat with PR
       await tx.gymUserExerciseStat.create({
         data: {
           userId,
           exerciseKey: exercise.exerciseType,
+          presetName,
           prDateStr: session.date,
           prWeight: bestSet.weight,
           prRepsBilateral: repCols.repsBilateral,
@@ -330,7 +342,6 @@ async function updateStatsAfterCreate(
         },
       });
     } else if (existing.prTotalVolume === null || bestVolume > existing.prTotalVolume) {
-      // New personal record — update
       await tx.gymUserExerciseStat.update({
         where: { id: existing.id },
         data: {
@@ -357,12 +368,13 @@ async function recalculateExerciseStat(
   tx: TxClient,
   userId: string,
   exerciseKey: string,
+  presetName: string = "",
 ) {
-  // Find all strength sets for this exercise across all user's sessions
   const sets = await tx.gymStrengthSet.findMany({
     where: {
       exercise: {
         exerciseKey,
+        presetName: presetName || null,
         session: { userId },
       },
     },
@@ -375,10 +387,32 @@ async function recalculateExerciseStat(
     },
   });
 
-  let bestVolume = 0;
-  let bestSet: (typeof sets)[number] | null = null;
+  // Also include rows where presetName is null (old data mapped to "")
+  const setsNoPreset = presetName === ""
+    ? await tx.gymStrengthSet.findMany({
+        where: {
+          exercise: {
+            exerciseKey,
+            presetName: null,
+            session: { userId },
+          },
+        },
+        include: {
+          exercise: {
+            include: {
+              session: { select: { dateStr: true } },
+            },
+          },
+        },
+      })
+    : [];
 
-  for (const set of sets) {
+  const allSets = [...sets, ...setsNoPreset];
+
+  let bestVolume = 0;
+  let bestSet: (typeof allSets)[number] | null = null;
+
+  for (const set of allSets) {
     const volume = calculateVolumeFromColumns(set.weight, {
       repsBilateral: set.repsBilateral,
       repsLeft: set.repsLeft,
@@ -391,7 +425,9 @@ async function recalculateExerciseStat(
   }
 
   const existing = await tx.gymUserExerciseStat.findUnique({
-    where: { userId_exerciseKey: { userId, exerciseKey } },
+    where: {
+      userId_exerciseKey_presetName: { userId, exerciseKey, presetName },
+    },
   });
 
   if (!existing) return;
@@ -409,7 +445,6 @@ async function recalculateExerciseStat(
       },
     });
   } else {
-    // No sets remain — clear the PR but keep the stat row (preserves notes)
     await tx.gymUserExerciseStat.update({
       where: { id: existing.id },
       data: {
@@ -556,29 +591,31 @@ export async function updateWorkoutSession(
 ) {
   await ensureVariationTemplatesSeeded();
   return prisma.$transaction(async (tx) => {
-    // Verify ownership and collect old exercise keys
     const existing = await tx.gymWorkoutSession.findFirst({
       where: { id: sessionId, userId },
       include: {
         exercises: {
           where: { type: "strength" },
-          select: { exerciseKey: true },
+          select: { exerciseKey: true, presetName: true },
         },
       },
     });
 
     if (!existing) throw new Error("Workout session not found");
 
-    // Track all exercise keys that need stat recalculation (old + new)
-    const affectedKeys = new Set(existing.exercises.map((e) => e.exerciseKey));
+    // Track all (exerciseKey, presetName) pairs that need stat recalculation
+    const affectedPairs = new Set<string>();
+    for (const e of existing.exercises) {
+      affectedPairs.add(`${e.exerciseKey}\0${e.presetName ?? ""}`);
+    }
     for (const ex of session.exercises) {
-      if (ex.type === "strength") affectedKeys.add(ex.exerciseType);
+      if (ex.type === "strength") {
+        affectedPairs.add(`${ex.exerciseType}\0${ex.presetName ?? ""}`);
+      }
     }
 
-    // Delete old child records (cascade: exercises → sets + variations)
     await tx.gymWorkoutExercise.deleteMany({ where: { sessionId } });
 
-    // Update session-level fields
     await tx.gymWorkoutSession.update({
       where: { id: sessionId },
       data: {
@@ -588,12 +625,11 @@ export async function updateWorkoutSession(
       },
     });
 
-    // Recreate exercises, sets, and variations
     await createExercisesForSession(tx, sessionId, session.exercises);
 
-    // Recalculate stats for all affected exercises
-    for (const key of affectedKeys) {
-      await recalculateExerciseStat(tx, userId, key);
+    for (const pair of affectedPairs) {
+      const [key, preset] = pair.split("\0");
+      await recalculateExerciseStat(tx, userId, key, preset);
     }
   });
 }
@@ -608,27 +644,28 @@ export async function updateWorkoutSession(
  */
 export async function deleteWorkoutSession(userId: string, sessionId: string) {
   return prisma.$transaction(async (tx) => {
-    // Verify ownership and collect affected exercise keys
     const session = await tx.gymWorkoutSession.findFirst({
       where: { id: sessionId, userId },
       include: {
         exercises: {
           where: { type: "strength" },
-          select: { exerciseKey: true },
+          select: { exerciseKey: true, presetName: true },
         },
       },
     });
 
     if (!session) throw new Error("Workout session not found");
 
-    const affectedKeys = [...new Set(session.exercises.map((e) => e.exerciseKey))];
+    const affectedPairs = new Set<string>();
+    for (const e of session.exercises) {
+      affectedPairs.add(`${e.exerciseKey}\0${e.presetName ?? ""}`);
+    }
 
-    // Cascade deletes exercises, sets, and variations
     await tx.gymWorkoutSession.delete({ where: { id: sessionId } });
 
-    // Recalculate stats for exercises that were in the deleted session
-    for (const key of affectedKeys) {
-      await recalculateExerciseStat(tx, userId, key);
+    for (const pair of affectedPairs) {
+      const [key, preset] = pair.split("\0");
+      await recalculateExerciseStat(tx, userId, key, preset);
     }
   });
 }
@@ -744,9 +781,9 @@ function toCustomExerciseDefinition(customExercise: {
  * - Most recent session data for each exercise (for "repeat last workout" feature)
  */
 export async function getGymMeta(userId: string): Promise<GymUserMeta> {
-  const [customExercises, statRows, sessions] = await Promise.all([
+  const [customExercises, statRows, sessions, variationPresetRows] = await Promise.all([
     prisma.gymCustomExercise.findMany({
-      where: { userId },
+      where: { userId, archivedAt: null },
       select: {
         id: true,
         key: true,
@@ -789,7 +826,19 @@ export async function getGymMeta(userId: string): Promise<GymUserMeta> {
     // TODO: Optimize — currently loads all sessions to find most recent per exercise.
     // Consider storing lastSessionDate/sets on GymUserExerciseStat or using a targeted query.
     listWorkoutSessions(userId),
+    prisma.gymExerciseVariationPreset.findMany({
+      where: { userId },
+      select: { id: true, exerciseKey: true, name: true, variations: true },
+      orderBy: { createdAt: "asc" },
+    }),
   ]);
+
+  const variationPresets: VariationPresetSummary[] = variationPresetRows.map((row) => ({
+    id: row.id,
+    exerciseKey: row.exerciseKey,
+    name: row.name,
+    variations: row.variations as Record<string, string>,
+  }));
 
   const exerciseData: Record<string, ExerciseStats> = {};
   const customExerciseDefinitions: Record<string, CustomExerciseDefinition> = {};
@@ -801,13 +850,15 @@ export async function getGymMeta(userId: string): Promise<GymUserMeta> {
     customExercises.map((exercise) => [exercise.key, exercise]),
   );
 
-  // Build stats from pre-computed PR data
+  // Build stats from pre-computed PR data (keyed by exerciseKey::presetName)
   for (const row of statRows) {
     const exerciseDef = EXERCISE_MAP.get(row.exerciseKey);
     const customExercise = customExerciseMap.get(row.exerciseKey);
+    const presetName = row.presetName || undefined;
+    const sKey = exerciseStatsKey(row.exerciseKey, presetName);
 
-    const displayName =
-      exerciseDef?.name ?? customExercise?.name ?? row.exerciseKey;
+    const baseName = exerciseDef?.name ?? customExercise?.name ?? row.exerciseKey;
+    const displayName = presetName ? `${baseName} · ${presetName}` : baseName;
     const category: ExerciseCategory =
       (exerciseDef?.category as ExerciseCategory) ??
       (customExercise?.category as ExerciseCategory) ??
@@ -827,7 +878,7 @@ export async function getGymMeta(userId: string): Promise<GymUserMeta> {
       };
     }
 
-    exerciseData[row.exerciseKey] = {
+    exerciseData[sKey] = {
       exerciseKey: row.exerciseKey,
       displayName,
       category,
@@ -837,36 +888,34 @@ export async function getGymMeta(userId: string): Promise<GymUserMeta> {
     };
   }
 
-  // Augment with most recent session info (for "repeat last workout")
+  // Augment with most recent session info
   for (const session of sessions) {
     for (const exercise of session.exercises) {
       if (exercise.type !== "strength") continue;
 
-      const exerciseKey = exercise.exerciseType;
-      const existing = exerciseData[exerciseKey];
+      const presetName = exercise.presetName || undefined;
+      const sKey = exerciseStatsKey(exercise.exerciseType, presetName);
+      const existing = exerciseData[sKey];
       const sessionVolume = exercise.sets.reduce(
         (sum, set) => sum + calculateSetVolume(set),
         0,
       );
       const bestSessionVolume = Math.max(existing?.bestSessionVolume ?? 0, sessionVolume);
 
-      // Skip if we already found a more recent session for this exercise
       if (existing?.mostRecentSession) {
-        exerciseData[exerciseKey] = {
-          exerciseKey,
-          displayName: existing.displayName,
-          category: existing.category,
-          mostRecentSession: existing.mostRecentSession,
-          recordSet: existing.recordSet,
+        exerciseData[sKey] = {
+          ...existing,
           bestSessionVolume,
-          notes: existing.notes,
         };
         continue;
       }
 
-      exerciseData[exerciseKey] = {
-        exerciseKey,
-        displayName: existing?.displayName ?? exercise.exerciseType,
+      const baseName = existing?.displayName ?? exercise.exerciseType;
+      exerciseData[sKey] = {
+        exerciseKey: exercise.exerciseType,
+        displayName: presetName && !baseName.includes(" · ")
+          ? `${baseName} · ${presetName}`
+          : baseName,
         category: existing?.category ?? "upperBody",
         mostRecentSession: {
           date: session.date,
@@ -884,6 +933,7 @@ export async function getGymMeta(userId: string): Promise<GymUserMeta> {
     customExercises: buildCustomExerciseGroups(customExercises),
     customExerciseDefinitions,
     exerciseData,
+    variationPresets,
   };
 }
 

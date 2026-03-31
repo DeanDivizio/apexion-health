@@ -161,6 +161,7 @@ export const strengthExerciseEntrySchema = z.object({
   exerciseType: z.string().min(1, "Select an exercise"),
   sets: z.array(strengthSetSchema).min(1, "Add at least one set"),
   variations: z.record(z.string(), z.string()).optional(),
+  presetName: z.string().optional(),
   notes: z.string().optional(),
 });
 
@@ -226,11 +227,19 @@ export const customExerciseDefinitionSchema = z.object({
   variationEffects: variationEffectsSchema.optional(),
 });
 
+export const variationPresetSummarySchema = z.object({
+  id: z.string().min(1),
+  exerciseKey: z.string().min(1),
+  name: z.string().min(1),
+  variations: z.record(z.string(), z.string()),
+});
+
 export const gymUserMetaSchema = z.object({
   userID: z.string().min(1),
   customExercises: z.array(exerciseGroupSchema),
   customExerciseDefinitions: z.record(z.string(), customExerciseDefinitionSchema),
   exerciseData: z.record(z.string(), exerciseStatsSchema),
+  variationPresets: z.array(variationPresetSummarySchema),
 });
 
 // =============================================================================
@@ -311,13 +320,16 @@ export type WeightUnitSchema = z.infer<typeof weightUnitSchema>;
 
 /**
  * Input schema for creating a custom exercise.
- * Used in the createCustomExerciseAction server action.
+ * Key is server-generated — never client-supplied.
  */
 export const createCustomExerciseInputSchema = z.object({
-  key: z.string().min(1, "Exercise key is required"),
-  name: z.string().min(1, "Exercise name is required"),
+  name: z.string().min(1, "Exercise name is required").max(100),
   category: exerciseCategorySchema,
   repMode: strengthRepModeSchema.default("bilateral"),
+  presetId: z.string().optional(),
+  movementPattern: z.string().optional(),
+  bodyRegion: z.string().optional(),
+  movementPlane: z.string().optional(),
   targets: z.array(muscleTargetSchema).default([]),
   variationSupports: z.array(z.object({
     templateId: z.string().min(1),
@@ -335,6 +347,8 @@ export const createCustomExerciseInputSchema = z.object({
     multipliers: z.record(z.string(), z.number()).optional(),
     deltas: z.record(z.string(), z.number()).optional(),
   })).default([]),
+  requestCanonicalization: z.boolean().default(false),
+  canonicalizationNote: z.string().max(500).optional(),
 });
 export type CreateCustomExerciseInput = z.infer<typeof createCustomExerciseInputSchema>;
 
@@ -354,3 +368,18 @@ export const updateGymPreferencesSchema = z.object({
   weightUnit: weightUnitSchema.optional(),
 });
 export type UpdateGymPreferences = z.infer<typeof updateGymPreferencesSchema>;
+
+/**
+ * Input schema for updating an existing custom exercise.
+ */
+export const updateCustomExerciseInputSchema = z.object({
+  exerciseKey: z.string().min(1),
+  name: z.string().min(1).max(100).optional(),
+  targets: z.array(muscleTargetSchema).optional(),
+  variationSupports: z.array(z.object({
+    templateId: z.string().min(1),
+    labelOverride: z.string().optional(),
+    defaultOptionKey: z.string().optional(),
+  })).optional(),
+});
+export type UpdateCustomExerciseInput = z.infer<typeof updateCustomExerciseInputSchema>;

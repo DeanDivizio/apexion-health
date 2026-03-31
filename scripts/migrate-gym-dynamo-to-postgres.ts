@@ -175,9 +175,10 @@ async function main() {
       const recordSet = stats.recordSet;
       await prisma.gymUserExerciseStat.upsert({
         where: {
-          userId_exerciseKey: {
+          userId_exerciseKey_presetName: {
             userId: meta.userID,
             exerciseKey,
+            presetName: "",
           },
         },
         create: {

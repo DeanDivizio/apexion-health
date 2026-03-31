@@ -13,18 +13,27 @@ import { ExerciseLogger } from "./ExerciseLogger";
 import { ExerciseSettingsSheet } from "./ExerciseSettingsSheet";
 import { SessionOverviewSheet } from "./SessionOverviewSheet";
 import type { ExerciseGroupOption } from "./ExerciseCombobox";
-import { createWorkoutSessionAction, getExerciseDefaultsAction } from "@/actions/gym";
+import {
+  createWorkoutSessionAction,
+  createCustomExerciseAction,
+  getExerciseDefaultsAction,
+} from "@/actions/gym";
 import type {
   ExerciseEntry,
   ExerciseDefinition,
   GymUserMeta,
   StrengthSet,
   StrengthExerciseEntry,
+  CreateCustomExerciseInput,
+  CustomExerciseDefinition,
+  ExerciseCategory,
+  VariationPresetSummary,
 } from "@/lib/gym";
 import {
   EXERCISE_MAP,
   DEFAULT_EXERCISE_GROUPS,
   CATEGORY_DISPLAY_NAMES,
+  exerciseStatsKey,
 } from "@/lib/gym";
 
 // ---------------------------------------------------------------------------
@@ -121,6 +130,7 @@ export function WorkoutFlow({ userMeta, customExerciseGroups }: WorkoutFlowProps
   // Overlay state
   const [settingsOpen, setSettingsOpen] = React.useState(false);
   const [overviewOpen, setOverviewOpen] = React.useState(false);
+  const [activePresetName, setActivePresetName] = React.useState<string | null>(null);
   const hasWarnedMissingExercise = React.useRef(false);
 
   // ---- Restore from localStorage on mount ----
@@ -181,15 +191,32 @@ export function WorkoutFlow({ userMeta, customExerciseGroups }: WorkoutFlowProps
     return merged;
   }, [userMeta]);
 
+  // Locally injected custom definitions (created this session, before server refresh)
+  const [localCustomDefs, setLocalCustomDefs] = React.useState<
+    Record<string, CustomExerciseDefinition>
+  >({});
+
+  // Locally injected presets (created this session, before server refresh)
+  const [localPresets, setLocalPresets] = React.useState<VariationPresetSummary[]>([]);
+
+  const effectiveExerciseMap = useMemo(() => {
+    const merged = new Map(runtimeExerciseMap);
+    for (const [key, def] of Object.entries(localCustomDefs)) {
+      merged.set(key, def);
+    }
+    return merged;
+  }, [runtimeExerciseMap, localCustomDefs]);
+
   const activeExercise: ExerciseDefinition | null = useMemo(() => {
     if (!activeExerciseKey) return null;
-    return runtimeExerciseMap.get(activeExerciseKey) ?? null;
-  }, [activeExerciseKey, runtimeExerciseMap]);
+    return effectiveExerciseMap.get(activeExerciseKey) ?? null;
+  }, [activeExerciseKey, effectiveExerciseMap]);
 
   const exerciseStats = useMemo(() => {
     if (!activeExerciseKey || !userMeta) return null;
-    return userMeta.exerciseData[activeExerciseKey] ?? null;
-  }, [activeExerciseKey, userMeta]);
+    const sKey = exerciseStatsKey(activeExerciseKey, activePresetName);
+    return userMeta.exerciseData[sKey] ?? null;
+  }, [activeExerciseKey, activePresetName, userMeta]);
 
   // Build strength exercise groups for the combobox
   const strengthGroups: ExerciseGroupOption[] = useMemo(() => {
@@ -199,18 +226,62 @@ export function WorkoutFlow({ userMeta, customExerciseGroups }: WorkoutFlowProps
         label: CATEGORY_DISPLAY_NAMES[g.group] ?? g.group,
         exercises: g.items
           .map((key) => {
-            const def = runtimeExerciseMap.get(key);
+            const def = effectiveExerciseMap.get(key);
             return def ? { key: def.key, name: def.name } : null;
           })
           .filter(Boolean) as { key: string; name: string }[],
       }));
 
-    // Add custom exercises if any
-    if (customExerciseGroups.length > 0) {
-      return [...customExerciseGroups, ...defaultGroups];
+    // Add locally created custom exercises
+    const localCustomGroups: ExerciseGroupOption[] = [];
+    for (const def of Object.values(localCustomDefs)) {
+      const catLabel = `Custom - ${CATEGORY_DISPLAY_NAMES[def.category] ?? def.category}`;
+      let group = localCustomGroups.find((g) => g.label === catLabel);
+      if (!group) {
+        group = { label: catLabel, exercises: [] };
+        localCustomGroups.push(group);
+      }
+      group.exercises.push({ key: def.key, name: def.name });
     }
-    return defaultGroups;
-  }, [customExerciseGroups, runtimeExerciseMap]);
+
+    const allCustom = [...customExerciseGroups];
+    for (const lcg of localCustomGroups) {
+      const existing = allCustom.find((g) => g.label === lcg.label);
+      if (existing) {
+        const existingKeys = new Set(existing.exercises.map((e) => e.key));
+        for (const ex of lcg.exercises) {
+          if (!existingKeys.has(ex.key)) existing.exercises.push(ex);
+        }
+      } else {
+        allCustom.push(lcg);
+      }
+    }
+
+    // Build variation preset group (server + locally created)
+    const serverPresets = userMeta?.variationPresets ?? [];
+    const serverIds = new Set(serverPresets.map((p) => p.id));
+    const mergedPresets = [
+      ...serverPresets,
+      ...localPresets.filter((lp) => !serverIds.has(lp.id)),
+    ];
+    const presetGroup: ExerciseGroupOption | null =
+      mergedPresets.length > 0
+        ? {
+            label: "My Presets",
+            exercises: mergedPresets.map((p) => {
+              const baseName =
+                effectiveExerciseMap.get(p.exerciseKey)?.name ?? p.exerciseKey;
+              return {
+                key: `preset::${p.id}`,
+                name: `${baseName} · ${p.name}`,
+              };
+            }),
+          }
+        : null;
+
+    const groups = [...(presetGroup ? [presetGroup] : []), ...allCustom, ...defaultGroups];
+    return groups;
+  }, [customExerciseGroups, effectiveExerciseMap, localCustomDefs, localPresets, userMeta]);
 
   // ---- Header overrides ----
   const settingsButton = useMemo(
@@ -282,19 +353,23 @@ export function WorkoutFlow({ userMeta, customExerciseGroups }: WorkoutFlowProps
 
   // ---- Handlers ----
   const handleSelectExercise = useCallback(
-    async (key: string) => {
+    async (key: string, presetVariations?: Record<string, string>, presetName?: string) => {
       setActiveExerciseKey(key);
       setActiveSets([{ weight: 0, reps: { bilateral: 0 } }]);
+      setActivePresetName(presetName ?? null);
       setView("logExercise");
 
-      // Load saved defaults if any
+      if (presetVariations) {
+        setActiveVariations(presetVariations);
+        return;
+      }
+
       try {
         const defaults = await getExerciseDefaultsAction(key);
         if (defaults && Object.keys(defaults).length > 0) {
           setActiveVariations(defaults);
         } else {
-          // Use exercise's built-in defaults
-          const def = runtimeExerciseMap.get(key);
+          const def = effectiveExerciseMap.get(key);
           if (def?.variationTemplates) {
             const v: Record<string, string> = {};
             for (const [tid, override] of Object.entries(def.variationTemplates)) {
@@ -311,13 +386,77 @@ export function WorkoutFlow({ userMeta, customExerciseGroups }: WorkoutFlowProps
         setActiveVariations({});
       }
     },
-    [runtimeExerciseMap],
+    [effectiveExerciseMap],
+  );
+
+  const presetMap = useMemo(() => {
+    const map = new Map<string, VariationPresetSummary>();
+    for (const p of userMeta?.variationPresets ?? []) {
+      map.set(p.id, p);
+    }
+    for (const p of localPresets) {
+      map.set(p.id, p);
+    }
+    return map;
+  }, [userMeta, localPresets]);
+
+  const handleComboboxSelect = useCallback(
+    (key: string) => {
+      if (key.startsWith("preset::")) {
+        const presetId = key.slice("preset::".length);
+        const preset = presetMap.get(presetId);
+        if (preset) {
+          handleSelectExercise(preset.exerciseKey, preset.variations, preset.name);
+          return;
+        }
+      }
+      handleSelectExercise(key);
+    },
+    [handleSelectExercise, presetMap],
+  );
+
+  const handleCreateCustomExercise = useCallback(
+    async (input: CreateCustomExerciseInput) => {
+      const result = await createCustomExerciseAction(input);
+
+      const newDef: CustomExerciseDefinition = {
+        id: result.id,
+        key: result.key,
+        name: result.name,
+        category: input.category as ExerciseCategory,
+        repMode: input.repMode ?? "bilateral",
+        baseTargets: input.targets.map((t) => ({
+          muscle: t.muscle as CustomExerciseDefinition["baseTargets"][number]["muscle"],
+          weight: t.weight,
+        })),
+        isCustom: true,
+        variationTemplates: input.variationSupports.reduce(
+          (acc, s) => {
+            acc[s.templateId] = {
+              templateId: s.templateId,
+              defaultOptionKey: s.defaultOptionKey,
+            };
+            return acc;
+          },
+          {} as NonNullable<CustomExerciseDefinition["variationTemplates"]>,
+        ),
+      };
+
+      setLocalCustomDefs((prev) => ({ ...prev, [result.key]: newDef }));
+
+      toast({
+        title: "Custom exercise created",
+        description: `"${result.name}" is ready to use.`,
+      });
+
+      handleSelectExercise(result.key);
+    },
+    [handleSelectExercise, toast],
   );
 
   const handleSaveExercise = useCallback(() => {
     if (!activeExerciseKey) return;
 
-    // Build the entry
     const entry: StrengthExerciseEntry = {
       type: "strength",
       exerciseType: activeExerciseKey,
@@ -328,6 +467,7 @@ export function WorkoutFlow({ userMeta, customExerciseGroups }: WorkoutFlowProps
             ((s.reps.left ?? 0) > 0 && (s.reps.right ?? 0) > 0)),
       ),
       variations: Object.keys(activeVariations).length > 0 ? activeVariations : undefined,
+      presetName: activePresetName ?? undefined,
     };
 
     if (entry.sets.length === 0) {
@@ -347,18 +487,20 @@ export function WorkoutFlow({ userMeta, customExerciseGroups }: WorkoutFlowProps
     setActiveExerciseKey(null);
     setActiveSets([{ weight: 0, reps: { bilateral: 0 } }]);
     setActiveVariations({});
+    setActivePresetName(null);
     setView("addExercise");
 
     toast({
       title: "Exercise saved",
-      description: `${runtimeExerciseMap.get(activeExerciseKey)?.name ?? activeExerciseKey} added to session.`,
+      description: `${effectiveExerciseMap.get(activeExerciseKey)?.name ?? activeExerciseKey} added to session.`,
     });
-  }, [activeExerciseKey, activeSets, activeVariations, runtimeExerciseMap, toast]);
+  }, [activeExerciseKey, activeSets, activeVariations, effectiveExerciseMap, toast]);
 
   const handleDiscardExercise = useCallback(() => {
     setActiveExerciseKey(null);
     setActiveSets([{ weight: 0, reps: { bilateral: 0 } }]);
     setActiveVariations({});
+    setActivePresetName(null);
     setView("addExercise");
   }, []);
 
@@ -376,6 +518,7 @@ export function WorkoutFlow({ userMeta, customExerciseGroups }: WorkoutFlowProps
     setActiveExerciseKey(null);
     setActiveSets([{ weight: 0, reps: { bilateral: 0 } }]);
     setActiveVariations({});
+    setActivePresetName(null);
     setSessionDate(new Date());
     setStartTime(formatTimeNow());
     setEndTime(null);
@@ -436,9 +579,10 @@ export function WorkoutFlow({ userMeta, customExerciseGroups }: WorkoutFlowProps
       {view === "addExercise" && (
         <AddExercise
           strengthGroups={strengthGroups}
-          onSelectExercise={handleSelectExercise}
+          onSelectExercise={handleComboboxSelect}
           sessionExercises={exercises}
           onReviewSession={() => setOverviewOpen(true)}
+          onCreateCustomExercise={handleCreateCustomExercise}
         />
       )}
 
@@ -452,6 +596,7 @@ export function WorkoutFlow({ userMeta, customExerciseGroups }: WorkoutFlowProps
           onEditVariations={() => setSettingsOpen(true)}
           variations={activeVariations}
           stats={exerciseStats}
+          presetName={activePresetName}
         />
       )}
 
@@ -480,13 +625,27 @@ export function WorkoutFlow({ userMeta, customExerciseGroups }: WorkoutFlowProps
         exercise={activeExercise}
         variations={activeVariations}
         onVariationsChange={setActiveVariations}
+        onExerciseArchived={() => {
+          setActiveExerciseKey(null);
+          setActiveSets([{ weight: 0, reps: { bilateral: 0 } }]);
+          setActiveVariations({});
+          setActivePresetName(null);
+          setView("addExercise");
+          router.refresh();
+        }}
+        onExerciseRenamed={() => router.refresh()}
+        onPresetCreated={(preset) => {
+          setLocalPresets((prev) => [...prev, preset]);
+          setActivePresetName(preset.name);
+          router.refresh();
+        }}
       />
 
       <SessionOverviewSheet
         open={overviewOpen}
         onOpenChange={setOverviewOpen}
         exercises={exercises}
-        exerciseMap={runtimeExerciseMap}
+        exerciseMap={effectiveExerciseMap}
         onDeleteExercise={handleDeleteExercise}
         sessionDate={sessionDate}
         onSessionDateChange={setSessionDate}

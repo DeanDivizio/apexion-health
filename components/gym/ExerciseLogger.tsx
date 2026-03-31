@@ -29,6 +29,7 @@ interface ExerciseLoggerProps {
   onEditVariations?: () => void;
   variations?: Record<string, string>;
   stats?: ExerciseStats | null;
+  presetName?: string | null;
 }
 
 function makeEmptySet(): StrengthSet {
@@ -71,6 +72,7 @@ export function ExerciseLogger({
   onEditVariations,
   variations,
   stats,
+  presetName,
 }: ExerciseLoggerProps) {
   const repMode =
     exercise.repMode ?? (exercise.isUnilateral ? "dualUnilateral" : "bilateral");
@@ -237,7 +239,12 @@ export function ExerciseLogger({
     <div className="flex flex-col w-full pb-12">
       {/* Exercise Header */}
       <div className="w-[calc(100vw-0.5rem)] -translate-x-1 align-self-start px-3 pt-3 pb-1 bg-gradient-to-br from-blue-950/35 to-emerald-950/60 rounded-xl border border-blue-400">
-        <h2 className="text-xl font-semibold text-foreground">{exercise.name}</h2>
+        <h2 className="text-xl font-semibold text-foreground">
+          {exercise.name}
+          {presetName && (
+            <span className="text-base font-normal text-blue-400"> · {presetName}</span>
+          )}
+        </h2>
         {visibleVariationChips.length > 0 && (
           <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
             {visibleVariationChips.map((chip) => (

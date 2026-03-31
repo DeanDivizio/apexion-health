@@ -37,6 +37,7 @@ model GymWorkoutExercise {
   order           Int
   type            GymExerciseType
   exerciseKey     String
+  presetName      String?
   notes           String?
   durationMinutes Float?
   distance        Float?
@@ -92,12 +93,35 @@ model GymCustomExercise {
   category         String
   repMode          GymRepMode
   createdAt        DateTime                              @default(now())
+  updatedAt        DateTime                              @updatedAt
+  archivedAt       DateTime?
+  presetId         String?
+  movementPattern  String?
+  bodyRegion       String?
+  movementPlane    String?
   targets          GymCustomExerciseTarget[]
   variationSupports GymExerciseVariationSupport[]
   optionOverrides  GymExerciseVariationOptionLabelOverride[]
   effects          GymExerciseVariationEffect[]
+  canonRequests    GymCanonRequest[]
 
   @@unique([userId, key])
+  @@index([userId])
+}
+
+model GymCanonRequest {
+  id                String            @id @default(uuid())
+  userId            String
+  customExerciseId  String
+  customExercise    GymCustomExercise @relation(fields: [customExerciseId], references: [id], onDelete: Cascade)
+  status            String            @default("new")
+  userNote          String?
+  adminNote         String?
+  snapshotPayload   Json
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  @@index([status, createdAt])
   @@index([userId])
 }
 
@@ -163,6 +187,7 @@ model GymUserExerciseStat {
   id             String   @id @default(uuid())
   userId         String
   exerciseKey    String
+  presetName     String   @default("")
   prDateStr      String?
   prWeight       Float?
   prRepsBilateral Int?
@@ -173,7 +198,7 @@ model GymUserExerciseStat {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  @@unique([userId, exerciseKey])
+  @@unique([userId, exerciseKey, presetName])
   @@index([userId])
 }
 
@@ -194,6 +219,18 @@ model GymUserExerciseDefault {
 
   @@unique([userId, exerciseKey, templateId])
   @@index([userId, exerciseKey])
+}
+
+model GymExerciseVariationPreset {
+  id          String   @id @default(uuid())
+  userId      String
+  exerciseKey String
+  name        String
+  variations  Json
+  createdAt   DateTime @default(now())
+
+  @@unique([userId, exerciseKey, name])
+  @@index([userId])
 }
 
 // ─── Substance / Medication Logging ──────────────────────────────────────────

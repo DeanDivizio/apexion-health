@@ -93,5 +93,90 @@
     "event": "hydration_logged",
     "description": "User logs a hydration entry",
     "file": "components/hydration/LogHydrationDialog.tsx"
+  },
+  {
+    "event": "gym_custom_exercise_create_started",
+    "description": "User opens the create custom exercise modal (client)",
+    "file": "components/gym/CreateCustomExerciseSheet.tsx"
+  },
+  {
+    "event": "gym_custom_exercise_create_submitted",
+    "description": "User submits the create custom exercise form (client)",
+    "file": "components/gym/CreateCustomExerciseSheet.tsx"
+  },
+  {
+    "event": "gym_custom_exercise_created",
+    "description": "Custom exercise successfully persisted to database (server)",
+    "file": "actions/gym.ts"
+  },
+  {
+    "event": "gym_custom_exercise_create_failed",
+    "description": "Custom exercise creation failed due to validation or DB error (server)",
+    "file": "actions/gym.ts"
+  },
+  {
+    "event": "gym_custom_exercise_canonicalization_requested",
+    "description": "User checked 'request canonicalization' and exercise was submitted (server)",
+    "file": "actions/gym.ts"
+  },
+  {
+    "event": "gym_custom_exercise_advanced_mode_toggled",
+    "description": "User toggles the advanced target editor on/off during custom exercise creation (client)",
+    "file": "components/gym/CreateCustomExerciseSheet.tsx"
+  },
+  {
+    "event": "gym_custom_exercise_targets_edited",
+    "description": "User adjusts muscle target sliders in the advanced target editor (client)",
+    "file": "components/gym/AdvancedTargetEditor.tsx"
+  },
+  {
+    "event": "gym_custom_exercise_reset_to_preset",
+    "description": "User resets custom targets back to preset defaults in the advanced editor (client)",
+    "file": "components/gym/AdvancedTargetEditor.tsx"
+  },
+  {
+    "event": "gym_variation_preset_created",
+    "description": "User saves a named variation preset for an exercise (server)",
+    "file": "actions/gym.ts"
+  },
+  {
+    "event": "gym_variation_preset_deleted",
+    "description": "User deletes a saved variation preset (server)",
+    "file": "actions/gym.ts"
+  },
+  {
+    "event": "gym_custom_exercise_archived",
+    "description": "User archives a custom exercise via soft-delete (server)",
+    "file": "actions/gym.ts"
+  },
+  {
+    "event": "gym_custom_exercise_renamed",
+    "description": "User renames a custom exercise (server)",
+    "file": "actions/gym.ts"
+  },
+  {
+    "event": "gym_canonicalization_queue_viewed",
+    "description": "Admin views the canonicalization request queue (client)",
+    "file": "app/admin/gym/canonicalization/page.tsx"
+  },
+  {
+    "event": "gym_canonicalization_request_opened",
+    "description": "Admin opens the detail view for a specific canonicalization request (server)",
+    "file": "actions/gymAdmin.ts"
+  },
+  {
+    "event": "gym_canonicalization_marked_in_review",
+    "description": "Admin changes a canonicalization request status to in_review (server)",
+    "file": "actions/gymAdmin.ts"
+  },
+  {
+    "event": "gym_canonicalization_approved",
+    "description": "Admin approves a canonicalization request (server)",
+    "file": "actions/gymAdmin.ts"
+  },
+  {
+    "event": "gym_canonicalization_rejected",
+    "description": "Admin rejects a canonicalization request (server)",
+    "file": "actions/gymAdmin.ts"
   }
 ]

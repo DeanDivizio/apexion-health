@@ -286,6 +286,8 @@ export interface StrengthExerciseEntry {
    * Example: { width: "wide", planeAngle: "30" }
    */
   variations?: Record<string, string>;
+  /** Preset name if this was logged via a variation preset */
+  presetName?: string;
   /** User notes for this exercise instance */
   notes?: string;
 }
@@ -398,6 +400,16 @@ export interface CustomExerciseDefinition {
 }
 
 /**
+ * A saved variation preset — a named combination of variation settings for an exercise.
+ */
+export interface VariationPresetSummary {
+  id: string;
+  exerciseKey: string;
+  name: string;
+  variations: Record<string, string>;
+}
+
+/**
  * Per-user gym metadata stored in PostgreSQL.
  * Contains custom exercises and historical stats.
  */
@@ -410,6 +422,8 @@ export interface GymUserMeta {
   customExerciseDefinitions: Record<string, CustomExerciseDefinition>;
   /** Stats for each exercise the user has performed */
   exerciseData: Record<string, ExerciseStats>;
+  /** Saved variation presets for exercises */
+  variationPresets: VariationPresetSummary[];
 }
 
 // =============================================================================
@@ -593,4 +607,12 @@ export function computeEffectiveTargets(
   }
 
   return targetMapToTargets(normalizeTargetMap(map));
+}
+
+/**
+ * Build a composite key for exercise stats lookup.
+ * Base exercise: "benchPress", preset: "benchPress::Fast Twitch"
+ */
+export function exerciseStatsKey(exerciseKey: string, presetName?: string | null): string {
+  return presetName ? `${exerciseKey}::${presetName}` : exerciseKey;
 }

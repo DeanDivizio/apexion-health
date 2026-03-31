@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Check, ChevronsUpDown } from "lucide-react";
+import { Check, ChevronsUpDown, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui_primitives/button";
 import {
@@ -35,6 +35,7 @@ interface ExerciseComboboxProps {
   groups: ExerciseGroupOption[];
   value: string;
   onSelect: (key: string) => void;
+  onCreateCustom?: (searchQuery: string) => void;
   placeholder?: string;
   disabled?: boolean;
   className?: string;
@@ -44,11 +45,13 @@ export function ExerciseCombobox({
   groups,
   value,
   onSelect,
+  onCreateCustom,
   placeholder = "Open Selector",
   disabled = false,
   className,
 }: ExerciseComboboxProps) {
   const [open, setOpen] = React.useState(false);
+  const [search, setSearch] = React.useState("");
   const isMobile = useIsMobile();
 
   const selectedName = React.useMemo(() => {
@@ -59,27 +62,29 @@ export function ExerciseCombobox({
     return "";
   }, [groups, value]);
 
-  const triggerButton = (
-    <Button
-      variant="outline"
-      role="combobox"
-      aria-expanded={open}
-      disabled={disabled}
-      className={cn(
-        "w-full justify-between text-left font-normal h-12",
-        !value && "text-muted-foreground",
-        className,
-      )}
-    >
-      {value ? selectedName : placeholder}
-    </Button>
-  );
+  const handleCreateCustom = React.useCallback(() => {
+    onCreateCustom?.(search.trim());
+    setOpen(false);
+    setSearch("");
+  }, [onCreateCustom, search]);
+
+  const createCtaLabel = search.trim()
+    ? `Create "${search.trim()}" as custom exercise`
+    : "Create custom exercise";
 
   const commandContent = (
-    <Command>
-      <CommandInput placeholder="Search exercises..." />
+    <Command shouldFilter={true}>
+      <CommandInput
+        placeholder="Search exercises..."
+        value={search}
+        onValueChange={setSearch}
+      />
       <CommandList>
-        <CommandEmpty>No exercise found.</CommandEmpty>
+        <CommandEmpty>
+          <div className="py-2 text-center text-sm text-muted-foreground">
+            No exercise found.
+          </div>
+        </CommandEmpty>
         {groups.map((group) => (
           <CommandGroup key={group.label} heading={group.label}>
             {group.exercises.map((exercise) => (
@@ -89,6 +94,7 @@ export function ExerciseCombobox({
                 onSelect={() => {
                   onSelect(exercise.key);
                   setOpen(false);
+                  setSearch("");
                 }}
               >
                 <Check
@@ -102,6 +108,19 @@ export function ExerciseCombobox({
             ))}
           </CommandGroup>
         ))}
+        {onCreateCustom && (
+          <CommandGroup heading="">
+            <CommandItem
+              value={`__create_custom__ ${search}`}
+              onSelect={handleCreateCustom}
+              className="text-blue-400 cursor-pointer"
+              forceMount
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              {createCtaLabel}
+            </CommandItem>
+          </CommandGroup>
+        )}
       </CommandList>
     </Command>
   );
@@ -134,6 +153,22 @@ export function ExerciseCombobox({
       </>
     );
   }
+
+  const triggerButton = (
+    <Button
+      variant="outline"
+      role="combobox"
+      aria-expanded={open}
+      disabled={disabled}
+      className={cn(
+        "w-full justify-between text-left font-normal h-12",
+        !value && "text-muted-foreground",
+        className,
+      )}
+    >
+      {value ? selectedName : placeholder}
+    </Button>
+  );
 
   return (
     <Popover open={open} onOpenChange={setOpen}>

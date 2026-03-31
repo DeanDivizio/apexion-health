@@ -41,6 +41,7 @@ export type {
   ExerciseRecord,
   ExerciseStats,
   CustomExerciseDefinition,
+  VariationPresetSummary,
   GymUserMeta,
   // Form state
   DateFormFields,
@@ -61,6 +62,7 @@ export {
   targetMapToTargets,
   applyVariationEffect,
   computeEffectiveTargets,
+  exerciseStatsKey,
 } from "./types";
 
 // Zod schemas
@@ -102,6 +104,7 @@ export {
   workoutFormSchema,
   // Action inputs
   createCustomExerciseInputSchema,
+  updateCustomExerciseInputSchema,
   listSessionsOptionsSchema,
   updateGymPreferencesSchema,
 } from "./schemas";
@@ -127,6 +130,7 @@ export type {
   CreateCustomExerciseInput,
   ListSessionsOptions,
   UpdateGymPreferences,
+  UpdateCustomExerciseInput,
 } from "./schemas";
 
 // Variation templates
@@ -154,6 +158,10 @@ export {
   VARIATION_TEMPLATE_MAP,
   getVariationOptionLabel,
 } from "./variations";
+
+// Presets
+export type { MovementPreset } from "./presets";
+export { getPreset, getPresetsForCategory, getFallbackPreset } from "./presets";
 
 // Exercise definitions & utilities
 export {
