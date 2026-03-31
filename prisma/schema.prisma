@@ -1106,12 +1106,23 @@ model NutritionUserGoals {
   updatedAt       DateTime @updatedAt
 }
 
+enum FeedbackStatus {
+  NEW
+  DEFERRED
+  PRIORITY
+  IGNORED
+  COMPLETE
+}
+
 model Feedback {
-  id        String   @id @default(cuid())
+  id        String         @id @default(cuid())
   userId    String
   message   String
-  createdAt DateTime @default(now())
+  status    FeedbackStatus @default(NEW)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
 
   @@index([userId])
   @@index([createdAt])
+  @@index([status])
 }
