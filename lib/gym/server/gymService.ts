@@ -1097,7 +1097,7 @@ export async function getUserPreferences(userId: string) {
   const prefs = await prisma.gymUserPreferences.findUnique({
     where: { userId },
   });
-  return prefs ?? { userId, weightUnit: "lbs" };
+  return prefs ?? { userId, weightUnit: "lbs", repInputStyle: "dropdown" };
 }
 
 /**
@@ -1105,16 +1105,18 @@ export async function getUserPreferences(userId: string) {
  */
 export async function updateUserPreferences(
   userId: string,
-  data: { weightUnit?: string },
+  data: { weightUnit?: string; repInputStyle?: string },
 ) {
   return prisma.gymUserPreferences.upsert({
     where: { userId },
     create: {
       userId,
       weightUnit: data.weightUnit ?? "lbs",
+      repInputStyle: data.repInputStyle ?? "dropdown",
     },
     update: {
       ...(data.weightUnit !== undefined ? { weightUnit: data.weightUnit } : {}),
+      ...(data.repInputStyle !== undefined ? { repInputStyle: data.repInputStyle } : {}),
     },
   });
 }

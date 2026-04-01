@@ -35,7 +35,7 @@ import {
 import { Button } from "@/components/ui_primitives/button";
 import { Input } from "@/components/ui_primitives/input";
 import { Label } from "@/components/ui_primitives/label";
-import type { StrengthRepMode, StrengthSet } from "@/lib/gym";
+import type { RepInputStyle, StrengthRepMode, StrengthSet } from "@/lib/gym";
 
 // ---------------------------------------------------------------------------
 // RPE labels per the spec
@@ -78,6 +78,7 @@ interface SetCardProps {
   isPr?: boolean;
   splitReps: boolean;
   repMode?: StrengthRepMode;
+  repInputStyle?: RepInputStyle;
   onUpdate: (set: StrengthSet) => void;
   onSplitRepsToggle: () => void;
   onDelete: () => void;
@@ -126,10 +127,12 @@ export function SetCard({
   isPr = false,
   splitReps,
   repMode = "bilateral",
+  repInputStyle = "dropdown",
   onUpdate,
   onSplitRepsToggle,
   onDelete,
 }: SetCardProps) {
+  const isFreeform = (repInputStyle ?? "dropdown") === "freeform";
   const [draftSet, setDraftSet] = React.useState<StrengthSet>(set);
   const debounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const latestDraftRef = React.useRef<StrengthSet>(set);
@@ -226,7 +229,7 @@ export function SetCard({
     applySetUpdate((prev) => ({ ...prev, reps: { bilateral: n } }));
   };
 
-  // custom reps bilateral
+  // custom reps bilateral (dropdown mode)
   const [customRepsBilateral, setCustomRepsBilateral] = React.useState("");
   const handleCustomRepsBilateralChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const v = e.target.value.replace(/\D/g, "");
@@ -235,6 +238,65 @@ export function SetCard({
       const n = parseInt(v, 10);
       applySetUpdate((prev) => ({ ...prev, reps: { bilateral: n } }));
     }
+  };
+
+  // ---- freeform reps ----
+  const [freeformRepsBilateral, setFreeformRepsBilateral] = React.useState(
+    draftSet.reps.bilateral !== undefined && draftSet.reps.bilateral > 0
+      ? String(draftSet.reps.bilateral)
+      : "",
+  );
+  const [freeformRepsLeft, setFreeformRepsLeft] = React.useState(
+    draftSet.reps.left !== undefined && draftSet.reps.left > 0
+      ? String(draftSet.reps.left)
+      : "",
+  );
+  const [freeformRepsRight, setFreeformRepsRight] = React.useState(
+    draftSet.reps.right !== undefined && draftSet.reps.right > 0
+      ? String(draftSet.reps.right)
+      : "",
+  );
+
+  React.useEffect(() => {
+    setFreeformRepsBilateral(
+      draftSet.reps.bilateral !== undefined && draftSet.reps.bilateral > 0
+        ? String(draftSet.reps.bilateral)
+        : "",
+    );
+    setFreeformRepsLeft(
+      draftSet.reps.left !== undefined && draftSet.reps.left > 0
+        ? String(draftSet.reps.left)
+        : "",
+    );
+    setFreeformRepsRight(
+      draftSet.reps.right !== undefined && draftSet.reps.right > 0
+        ? String(draftSet.reps.right)
+        : "",
+    );
+  }, [draftSet.reps.bilateral, draftSet.reps.left, draftSet.reps.right]);
+
+  const handleFreeformRepsBilateral = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const v = e.target.value.replace(/\D/g, "");
+    setFreeformRepsBilateral(v);
+    applySetUpdate((prev) => ({ ...prev, reps: { bilateral: v ? parseInt(v, 10) : 0 } }));
+  };
+
+  const handleFreeformRepsLeft = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const v = e.target.value.replace(/\D/g, "");
+    setFreeformRepsLeft(v);
+    applySetUpdate((prev) => ({
+      ...prev,
+      reps: { left: v ? parseInt(v, 10) : 0, right: prev.reps.right ?? 0 },
+    }));
+  };
+
+  const handleFreeformRepsRight = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const v = e.target.value.replace(/\D/g, "");
+    setFreeformRepsRight(v);
+    applySetUpdate((prev) => ({
+      ...prev,
+      reps: { left: prev.reps.left ?? 0, right: v ? parseInt(v, 10) : 0 },
+    }));
   };
 
   // ---- reps (split L/R) ----
@@ -384,104 +446,28 @@ export function SetCard({
                 <FieldPopover text={REPS_TOOLTIP} />
               </div>
 
-              {splitReps ? (
-                <div className="flex items-start gap-2">
-                  <div className="flex-1 min-w-0 space-y-2">
-                    <Select value={leftRepsSelectVal} onValueChange={handleRepsLeft}>
-                      <SelectTrigger className="h-10 min-w-0">
-                        <SelectValue placeholder="L" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Array.from({ length: 21 }, (_, i) => (
-                          <SelectItem key={i} value={String(i)}>
-                            {i}
-                          </SelectItem>
-                        ))}
-                        <SelectItem value="custom">Custom...</SelectItem>
-                      </SelectContent>
-                    </Select>
-
-                    {leftRepsSelectVal === "custom" && (
-                      <Input
-                        type="text"
-                        inputMode="numeric"
-                        placeholder="Custom"
-                        value={customRepsLeft}
-                        onChange={handleCustomRepsLeftChange}
-                        className="h-10"
-                        aria-label="Left reps custom value"
-                      />
-                    )}
-                  </div>
-
-                  <div className="flex-1 min-w-0 space-y-2">
-                    <Select value={rightRepsSelectVal} onValueChange={handleRepsRight}>
-                      <SelectTrigger className="h-10 min-w-0">
-                        <SelectValue placeholder="R" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Array.from({ length: 21 }, (_, i) => (
-                          <SelectItem key={i} value={String(i)}>
-                            {i}
-                          </SelectItem>
-                        ))}
-                        <SelectItem value="custom">Custom...</SelectItem>
-                      </SelectContent>
-                    </Select>
-
-                    {rightRepsSelectVal === "custom" && (
-                      <Input
-                        type="text"
-                        inputMode="numeric"
-                        placeholder="Custom"
-                        value={customRepsRight}
-                        onChange={handleCustomRepsRightChange}
-                        className="h-10"
-                        aria-label="Right reps custom value"
-                      />
-                    )}
-                  </div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button
-                        type="button"
-                        className="h-10 w-6 flex items-center justify-center rounded-md border border-input hover:bg-accent shrink-0"
-                        aria-label="Reps options"
-                      >
-                        <MoreVertical className="h-4 w-4" />
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        onClick={() => {
-                          flushPendingUpdate();
-                          onSplitRepsToggle();
-                        }}
-                      >
-                        <SplitSquareHorizontal className="mr-2 h-4 w-4" />
-                        Merge L/R Reps
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              ) : (
-                <div className="flex items-center gap-1">
-                  <Select value={repsSelectVal} onValueChange={handleRepsBilateral}>
-                    <SelectTrigger className="flex-1 h-10 min-w-0">
-                      <SelectValue placeholder="Reps" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Array.from({ length: 21 }, (_, i) => (
-                        <SelectItem key={i} value={String(i)}>
-                          {i}
-                        </SelectItem>
-                      ))}
-                      <SelectItem value="custom">Custom...</SelectItem>
-                    </SelectContent>
-                  </Select>
-
-                  {/* Context menu: only relevant for unilateral lifts */}
-                  {isUnilateral && (
+              {isFreeform ? (
+                /* ── Freeform mode ─────────────────────────────────────── */
+                splitReps ? (
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="L"
+                      value={freeformRepsLeft}
+                      onChange={handleFreeformRepsLeft}
+                      className="flex-1 h-10 min-w-0"
+                      aria-label="Left reps"
+                    />
+                    <Input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="R"
+                      value={freeformRepsRight}
+                      onChange={handleFreeformRepsRight}
+                      className="flex-1 h-10 min-w-0"
+                      aria-label="Right reps"
+                    />
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <button
@@ -500,16 +486,176 @@ export function SetCard({
                           }}
                         >
                           <SplitSquareHorizontal className="mr-2 h-4 w-4" />
-                          Split L/R Reps
+                          Merge L/R Reps
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
-                  )}
-                </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1">
+                    <Input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="Reps"
+                      value={freeformRepsBilateral}
+                      onChange={handleFreeformRepsBilateral}
+                      className="flex-1 h-10 min-w-0"
+                    />
+                    {isUnilateral && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            type="button"
+                            className="h-10 w-6 flex items-center justify-center rounded-md border border-input hover:bg-accent shrink-0"
+                            aria-label="Reps options"
+                          >
+                            <MoreVertical className="h-4 w-4" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() => {
+                              flushPendingUpdate();
+                              onSplitRepsToggle();
+                            }}
+                          >
+                            <SplitSquareHorizontal className="mr-2 h-4 w-4" />
+                            Split L/R Reps
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
+                  </div>
+                )
+              ) : (
+                /* ── Dropdown mode ─────────────────────────────────────── */
+                splitReps ? (
+                  <div className="flex items-start gap-2">
+                    <div className="flex-1 min-w-0 space-y-2">
+                      <Select value={leftRepsSelectVal} onValueChange={handleRepsLeft}>
+                        <SelectTrigger className="h-10 min-w-0">
+                          <SelectValue placeholder="L" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Array.from({ length: 21 }, (_, i) => (
+                            <SelectItem key={i} value={String(i)}>
+                              {i}
+                            </SelectItem>
+                          ))}
+                          <SelectItem value="custom">Custom...</SelectItem>
+                        </SelectContent>
+                      </Select>
+
+                      {leftRepsSelectVal === "custom" && (
+                        <Input
+                          type="text"
+                          inputMode="numeric"
+                          placeholder="Custom"
+                          value={customRepsLeft}
+                          onChange={handleCustomRepsLeftChange}
+                          className="h-10"
+                          aria-label="Left reps custom value"
+                        />
+                      )}
+                    </div>
+
+                    <div className="flex-1 min-w-0 space-y-2">
+                      <Select value={rightRepsSelectVal} onValueChange={handleRepsRight}>
+                        <SelectTrigger className="h-10 min-w-0">
+                          <SelectValue placeholder="R" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Array.from({ length: 21 }, (_, i) => (
+                            <SelectItem key={i} value={String(i)}>
+                              {i}
+                            </SelectItem>
+                          ))}
+                          <SelectItem value="custom">Custom...</SelectItem>
+                        </SelectContent>
+                      </Select>
+
+                      {rightRepsSelectVal === "custom" && (
+                        <Input
+                          type="text"
+                          inputMode="numeric"
+                          placeholder="Custom"
+                          value={customRepsRight}
+                          onChange={handleCustomRepsRightChange}
+                          className="h-10"
+                          aria-label="Right reps custom value"
+                        />
+                      )}
+                    </div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          type="button"
+                          className="h-10 w-6 flex items-center justify-center rounded-md border border-input hover:bg-accent shrink-0"
+                          aria-label="Reps options"
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={() => {
+                            flushPendingUpdate();
+                            onSplitRepsToggle();
+                          }}
+                        >
+                          <SplitSquareHorizontal className="mr-2 h-4 w-4" />
+                          Merge L/R Reps
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1">
+                    <Select value={repsSelectVal} onValueChange={handleRepsBilateral}>
+                      <SelectTrigger className="flex-1 h-10 min-w-0">
+                        <SelectValue placeholder="Reps" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 21 }, (_, i) => (
+                          <SelectItem key={i} value={String(i)}>
+                            {i}
+                          </SelectItem>
+                        ))}
+                        <SelectItem value="custom">Custom...</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    {/* Context menu: only relevant for unilateral lifts */}
+                    {isUnilateral && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            type="button"
+                            className="h-10 w-6 flex items-center justify-center rounded-md border border-input hover:bg-accent shrink-0"
+                            aria-label="Reps options"
+                          >
+                            <MoreVertical className="h-4 w-4" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() => {
+                              flushPendingUpdate();
+                              onSplitRepsToggle();
+                            }}
+                          >
+                            <SplitSquareHorizontal className="mr-2 h-4 w-4" />
+                            Split L/R Reps
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
+                  </div>
+                )
               )}
 
-              {/* Custom rep input when "Custom" selected */}
-              {!splitReps && repsSelectVal === "custom" && (
+              {/* Custom rep input when "Custom" selected (dropdown mode only) */}
+              {!isFreeform && !splitReps && repsSelectVal === "custom" && (
                 <Input
                   type="text"
                   inputMode="numeric"

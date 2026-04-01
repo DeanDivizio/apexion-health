@@ -1,21 +1,32 @@
 import { Suspense } from "react";
-import { getGymMetaAction } from "@/actions/gym";
+import { getGymMetaAction, getGymUserPreferencesAction } from "@/actions/gym";
 import { WorkoutFlow } from "@/components/gym/WorkoutFlow";
 import {
   CATEGORY_DISPLAY_NAMES,
   type GymUserMeta,
   type ExerciseCategory,
+  type RepInputStyle,
 } from "@/lib/gym";
 import type { ExerciseGroupOption } from "@/components/gym/ExerciseCombobox";
+
+function toRepInputStyle(value: string | undefined | null): RepInputStyle {
+  return value === "freeform" ? "freeform" : "dropdown";
+}
 
 // ---------------------------------------------------------------------------
 // Data loader (runs at request time, wrapped in Suspense)
 // ---------------------------------------------------------------------------
 async function WorkoutFlowLoader() {
   let userMeta: GymUserMeta | null = null;
+  let repInputStyle: RepInputStyle = "dropdown";
 
   try {
-    userMeta = await getGymMetaAction();
+    const [meta, prefs] = await Promise.all([
+      getGymMetaAction(),
+      getGymUserPreferencesAction(),
+    ]);
+    userMeta = meta;
+    repInputStyle = toRepInputStyle(prefs?.repInputStyle);
   } catch {
     // User might not have any data yet -- that's fine
   }
@@ -41,7 +52,13 @@ async function WorkoutFlowLoader() {
     }
   }
 
-  return <WorkoutFlow userMeta={userMeta} customExerciseGroups={customGroups} />;
+  return (
+    <WorkoutFlow
+      userMeta={userMeta}
+      customExerciseGroups={customGroups}
+      repInputStyle={repInputStyle}
+    />
+  );
 }
 
 // ---------------------------------------------------------------------------

@@ -17,7 +17,7 @@ import {
 } from "@/components/ui_primitives/alert-dialog";
 import { SetCard } from "./SetCard";
 import { ExerciseStatsInline } from "./ExerciseStatsPanel";
-import type { StrengthSet, ExerciseDefinition, ExerciseStats } from "@/lib/gym";
+import type { RepInputStyle, StrengthSet, ExerciseDefinition, ExerciseStats } from "@/lib/gym";
 import { VARIATION_TEMPLATE_MAP, calculateSetVolume } from "@/lib/gym";
 
 interface ExerciseLoggerProps {
@@ -30,6 +30,7 @@ interface ExerciseLoggerProps {
   variations?: Record<string, string>;
   stats?: ExerciseStats | null;
   presetName?: string | null;
+  repInputStyle?: RepInputStyle;
 }
 
 function makeEmptySet(): StrengthSet {
@@ -73,6 +74,7 @@ export function ExerciseLogger({
   variations,
   stats,
   presetName,
+  repInputStyle,
 }: ExerciseLoggerProps) {
   const repMode =
     exercise.repMode ?? (exercise.isUnilateral ? "dualUnilateral" : "bilateral");
@@ -307,6 +309,7 @@ export function ExerciseLogger({
               }
               splitReps={!!splitMap[i]}
               repMode={repMode}
+              repInputStyle={repInputStyle ?? "dropdown"}
               onUpdate={(updated) => handleUpdateSet(i, updated)}
               onSplitRepsToggle={() => handleSplitToggle(i)}
               onDelete={() => {

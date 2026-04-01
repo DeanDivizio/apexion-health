@@ -39,8 +39,10 @@ export default function MobileHeader() {
     (next: boolean) => {
       if (next) {
         captureClientEvent("feedback_popover_opened");
-      }
-      if (!next) {
+        setMessage("");
+        setSubmitted(false);
+        setError(null);
+      } else {
         if (timeoutRef.current) clearTimeout(timeoutRef.current);
         setMessage("");
         setSubmitted(false);

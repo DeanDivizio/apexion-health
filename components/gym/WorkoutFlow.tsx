@@ -17,11 +17,13 @@ import {
   createWorkoutSessionAction,
   createCustomExerciseAction,
   getExerciseDefaultsAction,
+  getGymUserPreferencesAction,
 } from "@/actions/gym";
 import type {
   ExerciseEntry,
   ExerciseDefinition,
   GymUserMeta,
+  RepInputStyle,
   StrengthSet,
   StrengthExerciseEntry,
   CreateCustomExerciseInput,
@@ -101,12 +103,13 @@ function formatDateToYYYYMMDD(date: Date): string {
 interface WorkoutFlowProps {
   userMeta: GymUserMeta | null;
   customExerciseGroups: ExerciseGroupOption[];
+  repInputStyle?: RepInputStyle;
 }
 
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
-export function WorkoutFlow({ userMeta, customExerciseGroups }: WorkoutFlowProps) {
+export function WorkoutFlow({ userMeta, customExerciseGroups, repInputStyle }: WorkoutFlowProps) {
   const router = useRouter();
   const { toast } = useToast();
   const {
@@ -132,6 +135,19 @@ export function WorkoutFlow({ userMeta, customExerciseGroups }: WorkoutFlowProps
   const [overviewOpen, setOverviewOpen] = React.useState(false);
   const [activePresetName, setActivePresetName] = React.useState<string | null>(null);
   const hasWarnedMissingExercise = React.useRef(false);
+
+  // Rep input style -- seeded from server prop, refreshed client-side on mount
+  // so navigating back from settings always picks up the latest value.
+  const [liveRepInputStyle, setLiveRepInputStyle] = React.useState<RepInputStyle>(
+    repInputStyle ?? "dropdown",
+  );
+
+  useEffect(() => {
+    getGymUserPreferencesAction().then((data) => {
+      const val = data?.repInputStyle;
+      setLiveRepInputStyle(val === "freeform" ? "freeform" : "dropdown");
+    }).catch(() => {});
+  }, []);
 
   // ---- Restore from localStorage on mount ----
   const hasRestored = useRef(false);
@@ -597,6 +613,7 @@ export function WorkoutFlow({ userMeta, customExerciseGroups }: WorkoutFlowProps
           variations={activeVariations}
           stats={exerciseStats}
           presetName={activePresetName}
+          repInputStyle={liveRepInputStyle}
         />
       )}
 

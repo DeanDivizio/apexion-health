@@ -361,11 +361,15 @@ export const listSessionsOptionsSchema = z.object({
 });
 export type ListSessionsOptions = z.infer<typeof listSessionsOptionsSchema>;
 
+export const repInputStyleSchema = z.enum(["dropdown", "freeform"]);
+export type RepInputStyle = z.infer<typeof repInputStyleSchema>;
+
 /**
  * Input schema for updating gym user preferences.
  */
 export const updateGymPreferencesSchema = z.object({
   weightUnit: weightUnitSchema.optional(),
+  repInputStyle: repInputStyleSchema.optional(),
 });
 export type UpdateGymPreferences = z.infer<typeof updateGymPreferencesSchema>;
 

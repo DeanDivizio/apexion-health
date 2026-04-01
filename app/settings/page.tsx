@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronRight, Home, Apple } from "lucide-react";
+import { ChevronRight, Home, Apple, Dumbbell } from "lucide-react";
 import { Card, CardContent } from "@/components/ui_primitives/card";
 
 const SECTIONS = [
@@ -14,6 +14,12 @@ const SECTIONS = [
     icon: Apple,
     title: "Nutrition",
     description: "Macros, hydration & electrolyte targets",
+  },
+  {
+    href: "/settings/gym",
+    icon: Dumbbell,
+    title: "Gym",
+    description: "Rep input style and logging preferences",
   },
 ] as const;
 

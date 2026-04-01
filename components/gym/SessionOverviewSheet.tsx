@@ -1,8 +1,18 @@
 "use client";
 
 import * as React from "react";
-import { X, Clock, CalendarDays, Dumbbell, Flame, Weight, Trash2, CheckCircle2, } from "lucide-react";
-import { UserButton } from "@clerk/nextjs";
+import Link from "next/link";
+import {
+  X,
+  Clock,
+  CalendarDays,
+  Dumbbell,
+  Flame,
+  Weight,
+  Trash2,
+  CheckCircle2,
+  Settings,
+} from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -159,11 +169,11 @@ export function SessionOverviewSheet({
             <X className="h-4 w-4" />
           </Button>
           <SheetTitle className="text-base font-medium">Session Overview</SheetTitle>
-          <UserButton
-            appearance={{
-              elements: { avatarBox: "h-8 w-8" },
-            }}
-          />
+          <Button asChild variant="ghost" size="icon" className="h-8 w-8">
+            <Link href="/settings/gym" aria-label="Open gym settings">
+              <Settings className="h-4 w-4" />
+            </Link>
+          </Button>
         </div>
 
         <Separator />

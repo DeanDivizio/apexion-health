@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useContext, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, ClipboardList, Plus, Trash2 } from "lucide-react";
+import { ClipboardList, Plus, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MobileHeaderContext } from "@/context/MobileHeaderContext";
 import { useToast } from "@/hooks/use-toast";
@@ -314,6 +314,22 @@ export function MedicationFlow({ bootstrap }: MedicationFlowProps) {
     });
   }, [resetActiveEntry, toast, validateAndBuildDraftItem]);
 
+  const handleAddAndReview = React.useCallback(() => {
+    const item = validateAndBuildDraftItem();
+    if (!item) return;
+    setStagedItems((prev) => [...prev, item]);
+    captureClientEvent("medication_item_staged", {
+      substance_name: item.snapshotName,
+      has_delivery_method: !!item.deliveryMethodId,
+    });
+    resetActiveEntry();
+    setOverviewOpen(true);
+    toast({
+      title: "Item staged",
+      description: `${item.snapshotName} added to the sheet.`,
+    });
+  }, [resetActiveEntry, toast, validateAndBuildDraftItem]);
+
   const handleSaveSession = React.useCallback(
     async (
       items: MedicationDraftItem[],
@@ -370,12 +386,6 @@ export function MedicationFlow({ bootstrap }: MedicationFlowProps) {
     },
     [resetActiveEntry, router, sessionDate, sessionTime, toast, useManualTimestamp],
   );
-
-  const handleQuickLog = React.useCallback(async () => {
-    const item = validateAndBuildDraftItem();
-    if (!item) return;
-    await handleSaveSession([item], null, new Date().toISOString());
-  }, [handleSaveSession, validateAndBuildDraftItem]);
 
   const handleSavePreset = React.useCallback(() => {
     if (!stagedItems.length) return;
@@ -594,15 +604,15 @@ export function MedicationFlow({ bootstrap }: MedicationFlowProps) {
               className="flex-1 h-11"
             >
               <Plus className="mr-2 h-4 w-4" />
-              Add Another
+              Add and continue
             </Button>
             <Button
-              onClick={handleQuickLog}
+              onClick={handleAddAndReview}
               className="flex-1 h-11 bg-green-600 hover:bg-green-700 text-white"
               disabled={submitting}
             >
-              <CheckCircle2 className="mr-2 h-4 w-4" />
-              {submitting ? "Submitting..." : "Log"}
+              <ClipboardList className="mr-2 h-4 w-4" />
+              Add and review
             </Button>
           </DialogFooter>
         </DialogContent>
