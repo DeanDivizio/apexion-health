@@ -1161,3 +1161,15 @@ model Feedback {
   @@index([createdAt])
   @@index([status])
 }
+
+model EmailBroadcast {
+  id        String    @id @default(cuid())
+  subject   String
+  body      String
+  sentAt    DateTime?
+  sentCount Int?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([createdAt])
+}

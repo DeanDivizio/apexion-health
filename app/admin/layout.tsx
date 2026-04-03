@@ -1,7 +1,7 @@
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { DatabaseZap, Dumbbell, MessageSquareText, Shield } from "lucide-react";
+import { DatabaseZap, Dumbbell, Mail, MessageSquareText, Shield } from "lucide-react";
 
 const ADMIN_EMAIL = "dean@deandivizio.com";
 
@@ -58,6 +58,13 @@ export default async function AdminLayout({
           >
             <Dumbbell className="h-4 w-4" />
             Canonicalization
+          </Link>
+          <Link
+            href="/admin/emails"
+            className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-neutral-400 transition-colors hover:bg-neutral-800/60 hover:text-neutral-200"
+          >
+            <Mail className="h-4 w-4" />
+            Emails
           </Link>
         </nav>
       </aside>
