@@ -5,6 +5,7 @@ import {
   Heading,
   Hr,
   Html,
+  Img,
   Markdown,
   Preview,
   Section,
@@ -18,13 +19,19 @@ interface BroadcastTemplateProps {
 
 export function BroadcastTemplate({ subject, body }: BroadcastTemplateProps) {
   return (
-    <Html>
+    <Html style={{ backgroundColor: "#0a0a0a" }}>
       <Head />
       <Preview>{subject}</Preview>
       <Body style={bodyStyle}>
         <Container style={containerStyle}>
           <Section style={headerStyle}>
-            <Text style={brandStyle}>Apexion Health</Text>
+            <Img
+              src="https://beta.apexion.health/logo.webp"
+              width={40}
+              height={40}
+              alt="Apexion Health"
+              style={logoStyle}
+            />
           </Section>
 
           <Section style={contentStyle}>
@@ -50,7 +57,7 @@ export function BroadcastTemplate({ subject, body }: BroadcastTemplateProps) {
           <Section style={footerStyle}>
             <Text style={footerTextStyle}>
               You are receiving this email because you have an account with
-              Apexion Health.
+              Apexion Health. This inbox is unmonitored.
             </Text>
           </Section>
         </Container>
@@ -80,14 +87,12 @@ const headerStyle = {
   backgroundColor: "#0d0d0d",
   borderBottom: "1px solid #262626",
   padding: "20px 32px",
+  textAlign: "center" as const,
 };
 
-const brandStyle = {
-  color: "#e5e5e5",
-  fontSize: "16px",
-  fontWeight: "600",
-  letterSpacing: "0.05em",
-  margin: "0",
+const logoStyle = {
+  display: "block",
+  margin: "0 auto",
 };
 
 const contentStyle = {
