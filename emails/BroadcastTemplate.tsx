@@ -23,44 +23,46 @@ export function BroadcastTemplate({ subject, body }: BroadcastTemplateProps) {
       <Head />
       <Preview>{subject}</Preview>
       <Body style={bodyStyle}>
-        <Container style={containerStyle}>
-          <Section style={headerStyle}>
-            <Img
-              src="https://beta.apexion.health/logo.webp"
-              width={40}
-              height={40}
-              alt="Apexion Health"
-              style={logoStyle}
-            />
-          </Section>
+        <Section style={outerWrapperStyle}>
+          <Container style={containerStyle}>
+            <Section style={headerStyle}>
+              <Img
+                src="https://beta.apexion.health/logo.webp"
+                width={40}
+                height={40}
+                alt="Apexion Health"
+                style={logoStyle}
+              />
+            </Section>
 
-          <Section style={contentStyle}>
-            <Heading style={subjectStyle}>{subject}</Heading>
+            <Section style={contentStyle}>
+              <Heading style={subjectStyle}>{subject}</Heading>
+              <Hr style={dividerStyle} />
+              <Markdown
+                markdownContainerStyles={markdownContainerStyle}
+                markdownCustomStyles={{
+                  p: markdownParagraphStyle,
+                  h1: markdownH1Style,
+                  h2: markdownH2Style,
+                  h3: markdownH3Style,
+                  li: markdownListItemStyle,
+                  link: markdownLinkStyle,
+                  codeInline: markdownCodeStyle,
+                }}
+              >
+                {body}
+              </Markdown>
+            </Section>
+
             <Hr style={dividerStyle} />
-            <Markdown
-              markdownContainerStyles={markdownContainerStyle}
-              markdownCustomStyles={{
-                p: markdownParagraphStyle,
-                h1: markdownH1Style,
-                h2: markdownH2Style,
-                h3: markdownH3Style,
-                li: markdownListItemStyle,
-                link: markdownLinkStyle,
-                codeInline: markdownCodeStyle,
-              }}
-            >
-              {body}
-            </Markdown>
-          </Section>
-
-          <Hr style={dividerStyle} />
-          <Section style={footerStyle}>
-            <Text style={footerTextStyle}>
-              You are receiving this email because you have an account with
-              Apexion Health. This inbox is unmonitored.
-            </Text>
-          </Section>
-        </Container>
+            <Section style={footerStyle}>
+              <Text style={footerTextStyle}>
+                You are receiving this email because you have an account with
+                Apexion Health. This inbox is unmonitored.
+              </Text>
+            </Section>
+          </Container>
+        </Section>
       </Body>
     </Html>
   );
@@ -71,7 +73,13 @@ const bodyStyle = {
   fontFamily:
     "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
   margin: "0",
+  padding: "0",
+};
+
+const outerWrapperStyle = {
+  backgroundColor: "#0a0a0a",
   padding: "24px 0",
+  width: "100%",
 };
 
 const containerStyle = {

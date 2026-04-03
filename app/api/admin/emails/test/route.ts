@@ -7,7 +7,8 @@ import { BroadcastTemplate } from "@/emails/BroadcastTemplate";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM_ADDRESS =
-  process.env.RESEND_FROM_EMAIL ?? "Apexion Health <noreply@apexion.health>";
+  process.env.RESEND_FROM_EMAIL ??
+  "Dean from Apexion Health <noreply@apexion.health>";
 
 export async function POST(req: NextRequest) {
   try {
