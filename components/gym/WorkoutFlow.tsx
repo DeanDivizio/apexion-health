@@ -18,6 +18,7 @@ import {
   createCustomExerciseAction,
   getExerciseDefaultsAction,
   getGymUserPreferencesAction,
+  updatePersistentExerciseNoteAction,
 } from "@/actions/gym";
 import type {
   ExerciseEntry,
@@ -52,6 +53,7 @@ interface PersistedState {
   sessionDate: string; // ISO string
   startTime: string;
   endTime: string | null;
+  sessionNotes?: string;
 }
 
 function loadPersistedState(): PersistedState | null {
@@ -129,11 +131,13 @@ export function WorkoutFlow({ userMeta, customExerciseGroups, repInputStyle }: W
   const [startTime, setStartTime] = React.useState(formatTimeNow());
   const [endTime, setEndTime] = React.useState<string | null>(null); // null = "now"
   const [submitting, setSubmitting] = React.useState(false);
+  const [sessionNotes, setSessionNotes] = React.useState("");
 
   // Overlay state
   const [settingsOpen, setSettingsOpen] = React.useState(false);
   const [overviewOpen, setOverviewOpen] = React.useState(false);
   const [activePresetName, setActivePresetName] = React.useState<string | null>(null);
+  const [activeExerciseNotes, setActiveExerciseNotes] = React.useState("");
   const hasWarnedMissingExercise = React.useRef(false);
 
   // Rep input style -- seeded from server prop, refreshed client-side on mount
@@ -164,6 +168,7 @@ export function WorkoutFlow({ userMeta, customExerciseGroups, repInputStyle }: W
       setSessionDate(new Date(saved.sessionDate));
       setStartTime(saved.startTime);
       setEndTime(saved.endTime);
+      setSessionNotes(saved.sessionNotes ?? "");
     }
   }, []);
 
@@ -193,9 +198,10 @@ export function WorkoutFlow({ userMeta, customExerciseGroups, repInputStyle }: W
       sessionDate: sessionDate.toISOString(),
       startTime,
       endTime,
+      sessionNotes,
     };
     savePersistedState(state);
-  }, [view, exercises, activeExerciseKey, activeSets, activeVariations, sessionDate, startTime, endTime]);
+  }, [view, exercises, activeExerciseKey, activeSets, activeVariations, sessionDate, startTime, endTime, sessionNotes]);
 
   // ---- Derived ----
   const runtimeExerciseMap = useMemo(() => {
@@ -473,6 +479,7 @@ export function WorkoutFlow({ userMeta, customExerciseGroups, repInputStyle }: W
   const handleSaveExercise = useCallback(() => {
     if (!activeExerciseKey) return;
 
+    const trimmedNotes = activeExerciseNotes.trim();
     const entry: StrengthExerciseEntry = {
       type: "strength",
       exerciseType: activeExerciseKey,
@@ -484,6 +491,7 @@ export function WorkoutFlow({ userMeta, customExerciseGroups, repInputStyle }: W
       ),
       variations: Object.keys(activeVariations).length > 0 ? activeVariations : undefined,
       presetName: activePresetName ?? undefined,
+      notes: trimmedNotes || undefined,
     };
 
     if (entry.sets.length === 0) {
@@ -504,19 +512,42 @@ export function WorkoutFlow({ userMeta, customExerciseGroups, repInputStyle }: W
     setActiveSets([{ weight: 0, reps: { bilateral: 0 } }]);
     setActiveVariations({});
     setActivePresetName(null);
+    setActiveExerciseNotes("");
     setView("addExercise");
 
     toast({
       title: "Exercise saved",
       description: `${effectiveExerciseMap.get(activeExerciseKey)?.name ?? activeExerciseKey} added to session.`,
     });
-  }, [activeExerciseKey, activeSets, activeVariations, effectiveExerciseMap, toast]);
+  }, [activeExerciseKey, activeExerciseNotes, activeSets, activeVariations, effectiveExerciseMap, toast]);
+
+  const handlePersistentNoteChange = useCallback(
+    async (notes: string | null) => {
+      if (!activeExerciseKey) return;
+      try {
+        await updatePersistentExerciseNoteAction({
+          exerciseKey: activeExerciseKey,
+          presetName: activePresetName ?? "",
+          notes,
+        });
+        router.refresh();
+      } catch (err) {
+        toast({
+          title: "Failed to save note",
+          description: err instanceof Error ? err.message : "Unknown error",
+          variant: "destructive",
+        });
+      }
+    },
+    [activeExerciseKey, activePresetName, router, toast],
+  );
 
   const handleDiscardExercise = useCallback(() => {
     setActiveExerciseKey(null);
     setActiveSets([{ weight: 0, reps: { bilateral: 0 } }]);
     setActiveVariations({});
     setActivePresetName(null);
+    setActiveExerciseNotes("");
     setView("addExercise");
   }, []);
 
@@ -538,6 +569,7 @@ export function WorkoutFlow({ userMeta, customExerciseGroups, repInputStyle }: W
     setSessionDate(new Date());
     setStartTime(formatTimeNow());
     setEndTime(null);
+    setSessionNotes("");
     setView("addExercise");
 
     toast({
@@ -561,6 +593,7 @@ export function WorkoutFlow({ userMeta, customExerciseGroups, repInputStyle }: W
         startTime,
         endTime: endTimeStr,
         exercises,
+        notes: sessionNotes.trim() || undefined,
       });
       captureClientEvent("workout_session_logged", {
         exercise_count: exercises.length,
@@ -587,7 +620,7 @@ export function WorkoutFlow({ userMeta, customExerciseGroups, repInputStyle }: W
     } finally {
       setSubmitting(false);
     }
-  }, [exercises, endTime, sessionDate, startTime, toast, router]);
+  }, [exercises, endTime, sessionDate, sessionNotes, startTime, toast, router]);
 
   // ---- Render ----
   return (
@@ -614,6 +647,9 @@ export function WorkoutFlow({ userMeta, customExerciseGroups, repInputStyle }: W
           stats={exerciseStats}
           presetName={activePresetName}
           repInputStyle={liveRepInputStyle}
+          sessionExerciseNotes={activeExerciseNotes}
+          onSessionExerciseNotesChange={setActiveExerciseNotes}
+          onPersistentNoteChange={handlePersistentNoteChange}
         />
       )}
 
@@ -647,6 +683,7 @@ export function WorkoutFlow({ userMeta, customExerciseGroups, repInputStyle }: W
           setActiveSets([{ weight: 0, reps: { bilateral: 0 } }]);
           setActiveVariations({});
           setActivePresetName(null);
+          setActiveExerciseNotes("");
           setView("addExercise");
           router.refresh();
         }}
@@ -670,6 +707,8 @@ export function WorkoutFlow({ userMeta, customExerciseGroups, repInputStyle }: W
         onStartTimeChange={setStartTime}
         endTimeLabel={endTime ?? "now"}
         onEndTimeChange={setEndTime}
+        sessionNotes={sessionNotes}
+        onSessionNotesChange={setSessionNotes}
         onDiscardSession={handleDiscardSession}
         onEndSession={handleEndSession}
         submitting={submitting}

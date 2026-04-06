@@ -1,6 +1,6 @@
 "use client"
 
-import { Clock, Flame, Timer } from "lucide-react"
+import { Clock, FileText, Timer } from "lucide-react"
 import { capitalize } from "@/lib/utils"
 import type { ExerciseEntry, StrengthSet } from "@/lib/gym"
 import { calcExerciseVolume, formatRepCount, formatVolume } from "./helpers"
@@ -85,6 +85,13 @@ export function ExerciseBlock({ entry }: { entry: ExerciseEntry }) {
               {entry.distance} {entry.unit ?? ""}
             </span>
           )}
+        </div>
+      )}
+
+      {entry.notes && (
+        <div className="mt-2.5 flex items-start gap-1.5 text-xs text-muted-foreground/70">
+          <FileText className="h-3 w-3 mt-0.5 shrink-0" />
+          <p className="whitespace-pre-wrap">{entry.notes}</p>
         </div>
       )}
     </div>

@@ -108,6 +108,7 @@ export {
   listSessionsOptionsSchema,
   updateGymPreferencesSchema,
   repInputStyleSchema,
+  updatePersistentExerciseNoteSchema,
 } from "./schemas";
 
 // Inferred schema types (when you need types derived from schemas)
@@ -132,6 +133,7 @@ export type {
   ListSessionsOptions,
   UpdateGymPreferences,
   UpdateCustomExerciseInput,
+  UpdatePersistentExerciseNote,
   RepInputStyle,
 } from "./schemas";
 

@@ -189,6 +189,7 @@ export const workoutSessionSchema = z.object({
   startTime: z.string().min(1, "Start time is required"),
   endTime: z.string().min(1, "End time is required"),
   exercises: z.array(exerciseEntrySchema),
+  notes: z.string().max(5000).optional(),
 });
 
 // =============================================================================
@@ -387,3 +388,13 @@ export const updateCustomExerciseInputSchema = z.object({
   })).optional(),
 });
 export type UpdateCustomExerciseInput = z.infer<typeof updateCustomExerciseInputSchema>;
+
+/**
+ * Input schema for updating a persistent exercise note (keyed by exerciseKey + presetName).
+ */
+export const updatePersistentExerciseNoteSchema = z.object({
+  exerciseKey: z.string().min(1),
+  presetName: z.string().default(""),
+  notes: z.string().max(5000).nullable(),
+});
+export type UpdatePersistentExerciseNote = z.infer<typeof updatePersistentExerciseNoteSchema>;

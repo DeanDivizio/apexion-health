@@ -32,6 +32,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui_primitives/popover";
 import { Input } from "@/components/ui_primitives/input";
+import { Textarea } from "@/components/ui_primitives/textarea";
 import { Separator } from "@/components/ui_primitives/separator";
 import { ScrollArea } from "@/components/ui_primitives/scroll-area";
 import {
@@ -66,6 +67,8 @@ interface SessionOverviewSheetProps {
   onStartTimeChange: (time: string) => void;
   endTimeLabel: string; // "now" or a specific time
   onEndTimeChange: (time: string | null) => void; // null = use "now"
+  sessionNotes: string;
+  onSessionNotesChange: (notes: string) => void;
   onDiscardSession: () => void;
   onEndSession: () => void;
   submitting?: boolean;
@@ -126,6 +129,8 @@ export function SessionOverviewSheet({
   onStartTimeChange,
   endTimeLabel,
   onEndTimeChange,
+  sessionNotes,
+  onSessionNotesChange,
   onDiscardSession,
   onEndSession,
   submitting = false,
@@ -156,7 +161,7 @@ export function SessionOverviewSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="w-[85vw] sm:max-w-md flex flex-col p-0 [&>button:last-child]:hidden"
+        className="w-[85vw] sm:max-w-md flex flex-col p-0 [&>button:last-child]:hidden rounded-l-2xl border-white/20 bg-gradient-to-br from-blue-950/20 via-slate-950/35 to-neutral-950/50 backdrop-blur-xl"
       >
         {/* Custom Header */}
         <div className="flex items-center justify-between px-4 pt-4 pb-2">
@@ -178,90 +183,96 @@ export function SessionOverviewSheet({
 
         <Separator />
 
-        {/* Date & Time */}
+        {/* Session Meta */}
         <div className="px-4 py-3 space-y-3">
-          {/* Date picker */}
-          <div className="flex items-center gap-2">
-            <CalendarDays className="h-4 w-4 text-muted-foreground" />
-            <Popover>
-              <PopoverTrigger asChild>
-                <button className="text-sm hover:text-blue-400 transition-colors">
-                  {sessionDate.toLocaleDateString("en-US", {
-                    weekday: "short",
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
-                </button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={sessionDate}
-                  onSelect={(d) => d && onSessionDateChange(d)}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
+          {/* Date + Time on one row */}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5">
+              <CalendarDays className="h-4 w-4 text-muted-foreground shrink-0" />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button className="text-sm hover:text-blue-400 transition-colors whitespace-nowrap">
+                    {sessionDate.toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent
+                  className="w-auto p-0 rounded-xl border-white/20 bg-gradient-to-br from-blue-950/18 via-card/45 to-emerald-950/14 backdrop-blur-2xl"
+                  align="start"
+                >
+                  <Calendar
+                    mode="single"
+                    selected={sessionDate}
+                    onSelect={(d) => d && onSessionDateChange(d)}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
 
-          {/* Time display */}
-          <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-muted-foreground" />
-            <div className="flex items-center gap-1 text-sm">
-              {/* Start time */}
-              {editingStartTime ? (
-                <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5">
+              <Clock className="h-4 w-4 text-muted-foreground shrink-0" />
+              <div className="flex items-center gap-1 text-sm">
+                {editingStartTime ? (
                   <Input
                     value={startTimeInput}
                     onChange={(e) => setStartTimeInput(e.target.value)}
-                    className="h-7 w-24 text-xs"
+                    className="h-7 w-20 text-xs"
                     placeholder="5:10 AM"
                     autoFocus
                     onKeyDown={(e) => e.key === "Enter" && handleStartTimeSave()}
                     onBlur={handleStartTimeSave}
                   />
-                </div>
-              ) : (
-                <button
-                  className="hover:text-blue-400 transition-colors"
-                  onClick={() => {
-                    setStartTimeInput(startTime);
-                    setEditingStartTime(true);
-                  }}
-                >
-                  {startTime}
-                </button>
-              )}
+                ) : (
+                  <button
+                    className="hover:text-blue-400 transition-colors"
+                    onClick={() => {
+                      setStartTimeInput(startTime);
+                      setEditingStartTime(true);
+                    }}
+                  >
+                    {startTime}
+                  </button>
+                )}
 
-              <span className="text-muted-foreground mx-1">-</span>
+                <span className="text-muted-foreground">-</span>
 
-              {/* End time */}
-              {editingEndTime ? (
-                <div className="flex items-center gap-1">
+                {editingEndTime ? (
                   <Input
                     value={endTimeInput}
                     onChange={(e) => setEndTimeInput(e.target.value)}
-                    className="h-7 w-24 text-xs"
+                    className="h-7 w-20 text-xs"
                     placeholder="6:30 PM"
                     autoFocus
                     onKeyDown={(e) => e.key === "Enter" && handleEndTimeSave()}
                     onBlur={handleEndTimeSave}
                   />
-                </div>
-              ) : (
-                <button
-                  className="hover:text-blue-400 transition-colors"
-                  onClick={() => {
-                    setEndTimeInput(endTimeLabel === "now" ? "" : endTimeLabel);
-                    setEditingEndTime(true);
-                  }}
-                >
-                  {endTimeLabel}
-                </button>
-              )}
+                ) : (
+                  <button
+                    className="hover:text-blue-400 transition-colors"
+                    onClick={() => {
+                      setEndTimeInput(endTimeLabel === "now" ? "" : endTimeLabel);
+                      setEditingEndTime(true);
+                    }}
+                  >
+                    {endTimeLabel}
+                  </button>
+                )}
+              </div>
             </div>
           </div>
+
+          {/* Session note */}
+          <Textarea
+            value={sessionNotes}
+            onChange={(e) => onSessionNotesChange(e.target.value)}
+            placeholder="session notes"
+            className="min-h-[2.5rem] h-auto resize-none text-sm"
+            rows={2}
+          />
         </div>
 
         <Separator />
@@ -333,7 +344,7 @@ export function SessionOverviewSheet({
                           Remove exercise
                         </Button>
                       </AlertDialogTrigger>
-                      <AlertDialogContent>
+                      <AlertDialogContent className="rounded-2xl border-white/20 bg-gradient-to-br from-blue-950/18 via-card/45 to-emerald-950/14 backdrop-blur-2xl">
                         <AlertDialogHeader>
                           <AlertDialogTitle>Remove exercise?</AlertDialogTitle>
                           <AlertDialogDescription>
@@ -400,7 +411,7 @@ export function SessionOverviewSheet({
 <Trash2 className="h-4 w-4" />
               </Button>
             </AlertDialogTrigger>
-            <AlertDialogContent>
+            <AlertDialogContent className="rounded-2xl border-white/20 bg-gradient-to-br from-blue-950/18 via-card/45 to-emerald-950/14 backdrop-blur-2xl">
               <AlertDialogHeader>
                 <AlertDialogTitle>Discard this session?</AlertDialogTitle>
                 <AlertDialogDescription>

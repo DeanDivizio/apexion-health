@@ -479,6 +479,7 @@ export async function createWorkoutSession(userId: string, session: WorkoutSessi
         dateStr: session.date,
         startTimeStr: session.startTime,
         endTimeStr: session.endTime,
+        notes: session.notes?.trim() || null,
       },
     });
 
@@ -524,6 +525,7 @@ export async function getWorkoutSession(
     date: session.dateStr,
     startTime: session.startTimeStr,
     endTime: session.endTimeStr,
+    notes: session.notes ?? undefined,
     linkedBiometricProviders: [...new Set(session.biometricWorkouts.map((workout) => workout.provider))],
     exercises: session.exercises.map(transformExercise),
   };
@@ -569,6 +571,7 @@ export async function listWorkoutSessions(
     date: session.dateStr,
     startTime: session.startTimeStr,
     endTime: session.endTimeStr,
+    notes: session.notes ?? undefined,
     linkedBiometricProviders: [...new Set(session.biometricWorkouts.map((workout) => workout.provider))],
     exercises: session.exercises.map(transformExercise),
   }));
@@ -622,6 +625,7 @@ export async function updateWorkoutSession(
         dateStr: session.date,
         startTimeStr: session.startTime,
         endTimeStr: session.endTime,
+        notes: session.notes?.trim() || null,
       },
     });
 
@@ -1082,6 +1086,37 @@ export async function saveExerciseDefaults(
     if (rows.length > 0) {
       await tx.gymUserExerciseDefault.createMany({ data: rows });
     }
+  });
+}
+
+// =============================================================================
+// PERSISTENT EXERCISE NOTES
+// =============================================================================
+
+/**
+ * Updates the persistent note for a specific exercise+preset combination.
+ * Creates the stat row if it doesn't exist yet (with null PR fields).
+ */
+export async function updatePersistentExerciseNote(
+  userId: string,
+  exerciseKey: string,
+  presetName: string,
+  notes: string | null,
+) {
+  const normalizedNotes = notes?.trim() || null;
+  await prisma.gymUserExerciseStat.upsert({
+    where: {
+      userId_exerciseKey_presetName: { userId, exerciseKey, presetName },
+    },
+    create: {
+      userId,
+      exerciseKey,
+      presetName,
+      notes: normalizedNotes,
+    },
+    update: {
+      notes: normalizedNotes,
+    },
   });
 }
 

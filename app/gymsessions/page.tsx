@@ -190,7 +190,7 @@ export default function GymSessions() {
           if (!open) setDeleteConfirmId(null)
         }}
       >
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-2xl border-white/20 bg-gradient-to-br from-blue-950/18 via-card/45 to-emerald-950/14 backdrop-blur-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle>Delete this session?</AlertDialogTitle>
             <AlertDialogDescription>

@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useMemo, useState } from "react"
-import { Activity, ChevronDown, Pencil, Settings, Trash2 } from "lucide-react"
+import { Activity, ChevronDown, Pencil, Settings, StickyNote, Trash2 } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -160,6 +160,18 @@ export function SessionCard({
                   <ExerciseBlock key={`${exercise.exerciseType}-${i}`} entry={exercise} />
                 ))}
               </div>
+
+              {session.notes && (
+                <div className="mt-3 pt-2.5 border-t border-border/40">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <StickyNote className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground uppercase tracking-wider font-medium">
+                      Session Notes
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground/80 whitespace-pre-wrap">{session.notes}</p>
+                </div>
+              )}
 
               {sessionVolume > 0 && (
                 <div className="mt-3 pt-2.5 border-t border-border/40 flex items-center justify-between">

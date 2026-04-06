@@ -1,10 +1,11 @@
 "use client"
 
 import { useState } from "react"
-import { CalendarDays, Plus, Save, Trash2, X } from "lucide-react"
+import { CalendarDays, Plus, Save, StickyNote, Trash2, X } from "lucide-react"
 import { Button } from "@/components/ui_primitives/button"
 import { Calendar } from "@/components/ui_primitives/calendar"
 import { Input } from "@/components/ui_primitives/input"
+import { Textarea } from "@/components/ui_primitives/textarea"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui_primitives/popover"
 import { capitalize } from "@/lib/utils"
 import type { ExerciseEntry, StrengthSet } from "@/lib/gym"
@@ -326,7 +327,7 @@ export function EditableSessionContent({
         isOpen ? "opacity-100 scale-100" : "opacity-0 scale-[0.99]"
       }`}
     >
-      <div className="px-4 pt-4 pb-3 border-b border-border/30">
+      <div className="px-4 pt-4 pb-3 border-b border-border/30 space-y-2.5">
         <div className="grid grid-cols-3 gap-2">
           <div>
             <label className="text-[9px] text-muted-foreground/50 uppercase tracking-wider">Date</label>
@@ -340,7 +341,10 @@ export function EditableSessionContent({
                   <CalendarDays className="h-4 w-4 text-muted-foreground" />
                 </button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
+              <PopoverContent
+                className="w-auto p-0 rounded-xl border-white/20 bg-gradient-to-br from-blue-950/18 via-card/45 to-emerald-950/14 backdrop-blur-2xl"
+                align="start"
+              >
                 <Calendar
                   mode="single"
                   selected={selectedDate}
@@ -374,6 +378,17 @@ export function EditableSessionContent({
               className="w-full h-9 rounded-md border border-input bg-background px-2 text-sm text-foreground"
             />
           </div>
+        </div>
+
+        <div className="flex items-start gap-1.5">
+          <StickyNote className="h-4 w-4 text-muted-foreground shrink-0 mt-2" />
+          <Textarea
+            value={draft.notes ?? ""}
+            onChange={(e) => setDraft((prev) => ({ ...prev, notes: e.target.value }))}
+            placeholder="Session notes..."
+            className="min-h-[2.5rem] h-auto resize-none text-sm"
+            rows={2}
+          />
         </div>
       </div>
 
@@ -428,6 +443,16 @@ export function EditableSessionContent({
                 onRemove={() => removeExercise(exIndex)}
               />
             )}
+
+            <Input
+              defaultValue={exercise.notes ?? ""}
+              onBlur={(e) => {
+                const v = e.target.value.trim()
+                updateExercise(exIndex, { ...exercise, notes: v || undefined })
+              }}
+              placeholder="Exercise note for this session..."
+              className="mt-2 h-8 text-xs text-muted-foreground"
+            />
           </div>
         ))}
       </div>

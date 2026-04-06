@@ -332,6 +332,8 @@ export interface WorkoutSession {
   endTime: string;
   /** All exercises performed in this session */
   exercises: ExerciseEntry[];
+  /** Session-level notes (overall workout observations, how you felt, etc.) */
+  notes?: string;
 }
 
 // =============================================================================

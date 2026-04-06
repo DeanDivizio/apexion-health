@@ -9,6 +9,7 @@ import {
   updateCustomExerciseInputSchema,
   listSessionsOptionsSchema,
   updateGymPreferencesSchema,
+  updatePersistentExerciseNoteSchema,
   EXERCISE_MAP,
 } from "@/lib/gym";
 import { updateTag } from "next/cache";
@@ -22,6 +23,7 @@ import {
   getUserPreferences,
   listWorkoutSessions,
   saveExerciseDefaults,
+  updatePersistentExerciseNote,
   updateUserPreferences,
   updateWorkoutSession,
 } from "@/lib/gym/server/gymService";
@@ -98,6 +100,23 @@ export async function deleteWorkoutSessionAction(sessionId: string) {
 export async function getGymMetaAction() {
   const userId = await requireUserId();
   return getGymMeta(userId);
+}
+
+// =============================================================================
+// PERSISTENT EXERCISE NOTE ACTIONS
+// =============================================================================
+
+export async function updatePersistentExerciseNoteAction(input: unknown) {
+  const userId = await requireUserId();
+  const parsed = updatePersistentExerciseNoteSchema.parse(input);
+  await updatePersistentExerciseNote(
+    userId,
+    parsed.exerciseKey,
+    parsed.presetName,
+    parsed.notes,
+  );
+  updateTag(`gymMeta:${userId}`);
+  return { success: true };
 }
 
 // =============================================================================

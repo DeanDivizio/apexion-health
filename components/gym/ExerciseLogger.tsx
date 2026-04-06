@@ -31,6 +31,9 @@ interface ExerciseLoggerProps {
   stats?: ExerciseStats | null;
   presetName?: string | null;
   repInputStyle?: RepInputStyle;
+  sessionExerciseNotes?: string;
+  onSessionExerciseNotesChange?: (notes: string) => void;
+  onPersistentNoteChange?: (notes: string | null) => void;
 }
 
 function makeEmptySet(): StrengthSet {
@@ -75,6 +78,9 @@ export function ExerciseLogger({
   stats,
   presetName,
   repInputStyle,
+  sessionExerciseNotes,
+  onSessionExerciseNotesChange,
+  onPersistentNoteChange,
 }: ExerciseLoggerProps) {
   const repMode =
     exercise.repMode ?? (exercise.isUnilateral ? "dualUnilateral" : "bilateral");
@@ -240,7 +246,7 @@ export function ExerciseLogger({
   return (
     <div className="flex flex-col w-full pb-12">
       {/* Exercise Header */}
-      <div className="w-[calc(100vw-0.5rem)] -translate-x-1 align-self-start px-3 pt-3 pb-1 bg-gradient-to-br from-blue-950/35 to-emerald-950/60 rounded-xl border border-blue-400">
+      <div className="relative w-[calc(100vw-0.5rem)] -translate-x-1 align-self-start px-3 pt-3 pb-1 bg-gradient-to-br from-blue-950/35 to-emerald-950/60 rounded-xl border border-blue-400">
         <h2 className="text-xl font-semibold text-foreground">
           {exercise.name}
           {presetName && (
@@ -284,6 +290,9 @@ export function ExerciseLogger({
           stats={statsForDisplay}
           currentSets={sets}
           onCollapsedChange={setStatsCollapsed}
+          sessionExerciseNotes={sessionExerciseNotes}
+          onSessionExerciseNotesChange={onSessionExerciseNotesChange}
+          onPersistentNoteChange={onPersistentNoteChange}
         />
       </div>
 
