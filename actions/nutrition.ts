@@ -79,6 +79,7 @@ export async function createMealSessionAction(input: unknown) {
   const userId = await requireUserId();
   const parsed = createMealSessionSchema.parse(input);
   const result = await createMealSession(userId, parsed);
+  console.log(`[NUTRITION] createMeal done for user=${userId}, session dateStr=${result.dateStr}, items=${result.items?.length ?? "?"}`);
   updateTag(`hydrationSummary:${userId}`);
   updateTag(`microSummary:${userId}`);
   updateTag(`macroSummary:${userId}`);
@@ -142,7 +143,9 @@ export async function getTodayMacroTotalsAction(
   dateStr: string,
 ): Promise<TodayMacroTotals> {
   const userId = await requireUserId();
+  console.log(`[NUTRITION] getTodayMacroTotals called for date=${dateStr} user=${userId}`);
   const rows = await getMacroSummaryByDateRange(userId, dateStr, dateStr);
+  console.log(`[NUTRITION] getMacroSummaryByDateRange returned ${rows.length} rows:`, JSON.stringify(rows));
   const dateCandidates = new Set(normalizeDateInput(dateStr).sessionDateCandidates);
   let calories = 0;
   let protein = 0;
@@ -157,6 +160,7 @@ export async function getTodayMacroTotalsAction(
     fat += row.fat;
   }
 
+  console.log(`[NUTRITION] getTodayMacroTotals result: cal=${calories} pro=${protein} carb=${carbs} fat=${fat}`);
   return {
     calories,
     protein,

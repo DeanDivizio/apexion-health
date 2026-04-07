@@ -135,24 +135,30 @@ export default function Home() {
   const [workoutData, setWorkoutData] = useState<WorkoutDaySummarySession[] | null>(null);
   const [medsData, setMedsData] = useState<MedsDaySummarySession[] | null>(null);
   const [microData, setMicroData] = useState<MicroNutrientEntry[] | null>(null);
-  const isFetchingRef = useRef(false);
+  const fetchGenRef = useRef(0);
+  const loadingGenRef = useRef(0);
   const lastFetchAtRef = useRef(0);
 
   const BACKGROUND_REFRESH_DEBOUNCE_MS = 30_000;
 
   const dataFetch = useCallback(async (silent = false) => {
     const now = Date.now();
-    if (isFetchingRef.current) return;
     if (
       silent &&
       lastFetchAtRef.current > 0 &&
       now - lastFetchAtRef.current < BACKGROUND_REFRESH_DEBOUNCE_MS
     ) {
+      console.log("[HOME] dataFetch skipped (silent debounce)");
       return;
     }
 
-    isFetchingRef.current = true;
+    const gen = ++fetchGenRef.current;
     lastFetchAtRef.current = now;
+    const stale = () => gen !== fetchGenRef.current;
+    const loadingGen = silent ? null : (loadingGenRef.current = gen);
+
+    console.log(`[HOME] dataFetch START gen=${gen} silent=${silent} date=${selectedDateStr}`);
+
     const endDate = selectedDateStr;
     const selectedDate = new Date(
       Number(selectedDateStr.slice(0, 4)),
@@ -174,20 +180,26 @@ export default function Home() {
     }
 
     try {
-      // 1) Critical path: today’s macros + goals first (bundle-dynamic-imports: one chart chunk after this resolves)
+      console.log(`[HOME] gen=${gen} fetching macros+goals...`);
       const [macroTodayResult, goalsResult] = await Promise.allSettled([
         getTodayMacroTotalsAction(todayDateStr),
         getUserGoalsAction(),
       ]);
 
+      if (stale()) {
+        console.log(`[HOME] gen=${gen} STALE after macros+goals, bailing`);
+        return;
+      }
+
       if (macroTodayResult.status === "fulfilled") {
         const m = macroTodayResult.value;
+        console.log(`[HOME] gen=${gen} macros received:`, JSON.stringify(m));
         setTodayCalories(m.calories);
         setTodayProtein(m.protein);
         setTodayCarbs(m.carbs);
         setTodayFat(m.fat);
       } else {
-        console.error(macroTodayResult.reason);
+        console.error(`[HOME] gen=${gen} macros REJECTED:`, macroTodayResult.reason);
       }
 
       if (goalsResult.status === "fulfilled" && goalsResult.value) {
@@ -200,7 +212,7 @@ export default function Home() {
 
       setMacrosReady(true);
 
-      // 2) Secondary cards — parallel (async-parallel / defer-await pattern: macros are not blocked by these)
+      console.log(`[HOME] gen=${gen} fetching secondary cards...`);
       const [prefs, hydration, workout, meds, micro] = await Promise.allSettled([
         getUserHomePreferencesAction(),
         getHydrationSummaryAction(todayDateStr, timezoneOffsetMinutes),
@@ -209,15 +221,24 @@ export default function Home() {
         getMicroNutrientSummaryAction(todayDateStr),
       ]);
 
+      if (stale()) {
+        console.log(`[HOME] gen=${gen} STALE after secondary, bailing`);
+        return;
+      }
+
       if (prefs.status === "fulfilled") setPreferences(prefs.value);
-      if (hydration.status === "fulfilled") setHydrationData(hydration.value);
+      if (hydration.status === "fulfilled") {
+        console.log(`[HOME] gen=${gen} hydration received:`, JSON.stringify(hydration.value));
+        setHydrationData(hydration.value);
+      }
       if (workout.status === "fulfilled") setWorkoutData(workout.value);
       if (meds.status === "fulfilled") setMedsData(meds.value);
       if (micro.status === "fulfilled") setMicroData(micro.value);
 
-      // 3) Recent days (7d) — fires last; does not block macro hero or secondary cards above
+      console.log(`[HOME] gen=${gen} firing homeFetch...`);
       void homeFetch({ startDate, endDate, timezoneOffsetMinutes })
         .then((summary) => {
+          if (stale()) return;
           // @ts-ignore
           setData(summary as SummaryData);
         })
@@ -225,15 +246,14 @@ export default function Home() {
           console.error(err);
         })
         .finally(() => {
-          if (!silent) {
+          if (loadingGen !== null && loadingGenRef.current === loadingGen) {
             setWeeklyLoading(false);
           }
         });
     } catch (err) {
-      console.error(err);
-    } finally {
-      isFetchingRef.current = false;
+      console.error(`[HOME] gen=${gen} ERROR:`, err);
     }
+    console.log(`[HOME] gen=${gen} dataFetch END`);
   }, [BACKGROUND_REFRESH_DEBOUNCE_MS, selectedDateStr]);
 
   useEffect(() => {

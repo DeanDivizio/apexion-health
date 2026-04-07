@@ -786,16 +786,21 @@ async function getMacroSummaryByDateRangeImpl(
     const start = normalizeDateInput(startDate);
     const end = normalizeDateInput(endDate);
     const dayCandidates = new Set<string>();
-    const startUtc = new Date(`${start.isoDate}T00:00:00.000Z`);
-    const endUtc = new Date(`${end.isoDate}T00:00:00.000Z`);
+    const [startY, startM, startD] = start.isoDate.split("-").map(Number);
+    const [endY, endM, endD] = end.isoDate.split("-").map(Number);
+    const startMs = Date.UTC(startY, startM - 1, startD);
+    const endMs = Date.UTC(endY, endM - 1, endD);
     const MS_PER_DAY = 24 * 60 * 60 * 1000;
-    const totalDays = Math.floor((endUtc.getTime() - startUtc.getTime()) / MS_PER_DAY) + 1;
+    const totalDays = Math.floor((endMs - startMs) / MS_PER_DAY) + 1;
 
     if (Number.isFinite(totalDays) && totalDays > 0 && totalDays <= 366) {
       for (let i = 0; i < totalDays; i++) {
-        const d = new Date(startUtc.getTime() + i * MS_PER_DAY);
-        const compact = toCompactDateStr(d);
-        const iso = `${compact.slice(0, 4)}-${compact.slice(4, 6)}-${compact.slice(6, 8)}`;
+        const d = new Date(startMs + i * MS_PER_DAY);
+        const y = d.getUTCFullYear();
+        const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+        const dd = String(d.getUTCDate()).padStart(2, "0");
+        const compact = `${y}${m}${dd}`;
+        const iso = `${y}-${m}-${dd}`;
         dayCandidates.add(compact);
         dayCandidates.add(iso);
       }
@@ -804,10 +809,13 @@ async function getMacroSummaryByDateRangeImpl(
       for (const candidate of end.sessionDateCandidates) dayCandidates.add(candidate);
     }
 
+    const candidateArray = Array.from(dayCandidates);
+    console.log(`[MACRO-IMPL] querying sessions for user=${userId} dayCandidates=${JSON.stringify(candidateArray)}`);
+
     const sessions = await db.nutritionMealSession.findMany({
       where: {
         userId,
-        dateStr: { in: Array.from(dayCandidates) },
+        dateStr: { in: candidateArray },
       },
       include: {
         items: {
@@ -820,6 +828,8 @@ async function getMacroSummaryByDateRangeImpl(
         },
       },
     });
+
+    console.log(`[MACRO-IMPL] found ${sessions.length} sessions, dateStrs: ${sessions.map((s: any) => s.dateStr)}`);
 
     const map = new Map<string, MacroSummaryByDate>();
     for (const session of sessions) {
@@ -853,6 +863,7 @@ export async function getMacroSummaryByDateRange(
   cacheTag(`macroSummary:${userId}`);
   cacheLife("minutes");
 
+  console.log(`[CACHE-HIT] getMacroSummaryByDateRange EXECUTING (cache miss) user=${userId} ${startDate}-${endDate}`);
   return getMacroSummaryByDateRangeImpl(userId, startDate, endDate);
 }
 
