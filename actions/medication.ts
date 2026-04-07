@@ -5,6 +5,7 @@ import { updateTag } from "next/cache";
 import {
   createMedicationLogSessionInputSchema,
   createMedicationPresetInputSchema,
+  updateMedicationPresetInputSchema,
   createSubstanceInputSchema,
 } from "@/lib/medication";
 import {
@@ -12,10 +13,13 @@ import {
   createMedicationPreset,
   createSubstance,
   deleteMedicationLogSession,
+  deleteMedicationPreset,
   getMedsDaySummary,
   getMedicationBootstrap,
   listMedicationLogSessions,
+  listMedicationPresets,
   updateMedicationLogSession,
+  updateMedicationPreset,
 } from "@/lib/medication/server/medicationService";
 
 async function requireUserId(): Promise<string> {
@@ -39,6 +43,27 @@ export async function createMedicationPresetAction(input: unknown) {
   const userId = await requireUserId();
   const parsed = createMedicationPresetInputSchema.parse(input);
   return createMedicationPreset(userId, parsed);
+}
+
+export async function listMedicationPresetsAction() {
+  const userId = await requireUserId();
+  return listMedicationPresets(userId);
+}
+
+export async function updateMedicationPresetAction(
+  presetId: string,
+  input: unknown,
+) {
+  const userId = await requireUserId();
+  if (!presetId) throw new Error("Preset ID is required.");
+  const parsed = updateMedicationPresetInputSchema.parse(input);
+  return updateMedicationPreset(userId, presetId, parsed);
+}
+
+export async function deleteMedicationPresetAction(presetId: string) {
+  const userId = await requireUserId();
+  if (!presetId) throw new Error("Preset ID is required.");
+  await deleteMedicationPreset(userId, presetId);
 }
 
 export async function createMedicationLogSessionAction(input: unknown) {

@@ -3,13 +3,12 @@
 import * as React from "react";
 import { Minus, Plus, Search, Loader2, X } from "lucide-react";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui_primitives/dialog";
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui_primitives/sheet";
 import { Input } from "@/components/ui_primitives/input";
 import { Button } from "@/components/ui_primitives/button";
 import { Label } from "@/components/ui_primitives/label";
@@ -33,6 +32,14 @@ import type {
 type SelectedFood =
   | { type: "foundation"; data: FoundationFoodView }
   | { type: "complex"; data: NutritionUserFoodView };
+
+function summarizeCalories(item: MealItemDraft): string {
+  const scale =
+    item.foodSource === "foundation" && item.portionGramWeight != null
+      ? (item.portionGramWeight / 100) * item.servings
+      : item.servings;
+  return `${Math.round(item.nutrients.calories * scale)} cal`;
+}
 
 interface PresetBuilderProps {
   open: boolean;
@@ -147,129 +154,132 @@ export function PresetBuilder({ open, onOpenChange, editingPreset, onSaved }: Pr
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-h-[90vh] flex flex-col">
-          <DialogHeader>
-            <DialogTitle>{editingPreset ? "Edit Preset" : "Create Preset"}</DialogTitle>
-            <DialogDescription>
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        <SheetContent side="right" className="flex flex-col w-full sm:max-w-md p-0">
+          <SheetHeader className="px-4 pt-4 pb-2">
+            <SheetTitle>{editingPreset ? "Edit Preset" : "Create Preset"}</SheetTitle>
+            <SheetDescription>
               {editingPreset ? "Update your preset name or items." : "Name your preset and add foods to it."}
-            </DialogDescription>
-          </DialogHeader>
+            </SheetDescription>
+          </SheetHeader>
 
-          <div className="flex-1 overflow-y-auto space-y-4 py-1">
-            <div className="space-y-1">
-              <Label>Preset Name</Label>
-              <Input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder='e.g. "Breakfast Burrito"'
-                className="h-9"
-              />
-            </div>
-
-            {items.length > 0 && (
-              <div className="space-y-1.5">
-                <Label>Items ({items.length})</Label>
-                {items.map((item, idx) => (
-                  <div key={item.localId} className="flex items-center gap-2 rounded-md border border-border/40 px-2 py-1.5">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium truncate">{item.snapshotName}</p>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-6 w-6"
-                        disabled={item.servings <= 0.25}
-                        onClick={() => {
-                          const s = Math.max(0.25, item.servings - 0.5);
-                          setItems((prev) => prev.map((it, i) => (i === idx ? { ...it, servings: s } : it)));
-                        }}
-                      >
-                        <Minus className="h-3 w-3" />
-                      </Button>
-                      <span className="text-xs w-6 text-center">{item.servings}</span>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-6 w-6"
-                        onClick={() => {
-                          const s = item.servings + 0.5;
-                          setItems((prev) => prev.map((it, i) => (i === idx ? { ...it, servings: s } : it)));
-                        }}
-                      >
-                        <Plus className="h-3 w-3" />
-                      </Button>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6"
-                      onClick={() => setItems((prev) => prev.filter((_, i) => i !== idx))}
-                    >
-                      <X className="h-3 w-3 text-red-400" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <Label>Add Foods</Label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <ScrollArea className="flex-1 px-4">
+            <div className="space-y-4 pb-4">
+              <div className="space-y-1">
+                <Label>Preset Name</Label>
                 <Input
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search foods to add..."
-                  className="pl-9 h-9"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder='e.g. "Breakfast Burrito"'
+                  className="h-9"
                 />
-                {searching && (
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                  </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Add Foods</Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Search foods to add..."
+                    className="pl-9 h-9"
+                  />
+                  {searching && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    </div>
+                  )}
+                </div>
+
+                {isSearching && (
+                  <ScrollArea className="max-h-48">
+                    <div className="space-y-1 pr-2">
+                      {!searching && !hasSearchResults && (
+                        <p className="text-xs text-muted-foreground text-center py-2">
+                          No results for &quot;{query}&quot;
+                        </p>
+                      )}
+                      {userFoodResults.map((food) => (
+                        <FoodResultCard
+                          key={food.id}
+                          name={food.name}
+                          subtitle={food.brand ?? `${food.servingSize}${food.servingUnit}`}
+                          calories={food.nutrients.calories}
+                          onClick={() => {
+                            setSelectedFood({ type: "complex", data: food });
+                            setDetailOpen(true);
+                          }}
+                        />
+                      ))}
+                      {foundationResults.map((food) => (
+                        <FoodResultCard
+                          key={food.id}
+                          name={food.name}
+                          subtitle={food.category ?? "per 100g"}
+                          calories={food.nutrients.calories}
+                          onClick={() => {
+                            setSelectedFood({ type: "foundation", data: food });
+                            setDetailOpen(true);
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </ScrollArea>
                 )}
               </div>
 
-              {isSearching && (
-                <ScrollArea className="max-h-48">
-                  <div className="space-y-1 pr-2">
-                    {!searching && !hasSearchResults && (
-                      <p className="text-xs text-muted-foreground text-center py-2">
-                        No results for &quot;{query}&quot;
-                      </p>
-                    )}
-                    {userFoodResults.map((food) => (
-                      <FoodResultCard
-                        key={food.id}
-                        name={food.name}
-                        subtitle={food.brand ?? `${food.servingSize}${food.servingUnit}`}
-                        calories={food.nutrients.calories}
-                        onClick={() => {
-                          setSelectedFood({ type: "complex", data: food });
-                          setDetailOpen(true);
-                        }}
-                      />
-                    ))}
-                    {foundationResults.map((food) => (
-                      <FoodResultCard
-                        key={food.id}
-                        name={food.name}
-                        subtitle={food.category ?? "per 100g"}
-                        calories={food.nutrients.calories}
-                        onClick={() => {
-                          setSelectedFood({ type: "foundation", data: food });
-                          setDetailOpen(true);
-                        }}
-                      />
-                    ))}
-                  </div>
-                </ScrollArea>
+              {items.length > 0 && (
+                <div className="space-y-1.5">
+                  <Label>Items ({items.length})</Label>
+                  {items.map((item, idx) => (
+                    <div key={item.localId} className="flex items-center gap-2 rounded-md border border-border/40 px-2 py-1.5">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium truncate">{item.snapshotName}</p>
+                        <p className="text-[10px] text-muted-foreground">{summarizeCalories(item)}</p>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-6 w-6"
+                          disabled={item.servings <= 0.25}
+                          onClick={() => {
+                            const s = Math.max(0.25, item.servings - 0.5);
+                            setItems((prev) => prev.map((it, i) => (i === idx ? { ...it, servings: s } : it)));
+                          }}
+                        >
+                          <Minus className="h-3 w-3" />
+                        </Button>
+                        <span className="text-xs w-6 text-center">{item.servings}</span>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-6 w-6"
+                          onClick={() => {
+                            const s = item.servings + 0.5;
+                            setItems((prev) => prev.map((it, i) => (i === idx ? { ...it, servings: s } : it)));
+                          }}
+                        >
+                          <Plus className="h-3 w-3" />
+                        </Button>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        onClick={() => setItems((prev) => prev.filter((_, i) => i !== idx))}
+                      >
+                        <X className="h-3 w-3 text-red-400" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
-          </div>
+          </ScrollArea>
 
-          <DialogFooter className="flex-row gap-2 sm:flex-row">
+          <div className="flex gap-2 px-4 py-4 border-t border-border/40">
             <Button variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
@@ -280,9 +290,9 @@ export function PresetBuilder({ open, onOpenChange, editingPreset, onSaved }: Pr
             >
               {submitting ? "Saving..." : editingPreset ? "Save Changes" : "Create Preset"}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </div>
+        </SheetContent>
+      </Sheet>
 
       <FoodDetailDialog
         food={selectedFood}

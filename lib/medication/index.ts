@@ -14,6 +14,7 @@ export {
   medicationDraftItemSchema,
   createMedicationLogSessionInputSchema,
   createMedicationPresetInputSchema,
+  updateMedicationPresetInputSchema,
   createSubstanceInputSchema,
 } from "./schemas";
 
@@ -21,5 +22,6 @@ export type {
   MedicationDraftItemInput,
   CreateMedicationLogSessionInput,
   CreateMedicationPresetInput,
+  UpdateMedicationPresetInput,
   CreateSubstanceInput,
 } from "./schemas";

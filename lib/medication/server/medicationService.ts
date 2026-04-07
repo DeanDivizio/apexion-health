@@ -11,6 +11,7 @@ import type {
 import type {
   CreateMedicationLogSessionInput,
   CreateMedicationPresetInput,
+  UpdateMedicationPresetInput,
   CreateSubstanceInput,
   MedicationDraftItemInput,
 } from "@/lib/medication/schemas";
@@ -124,6 +125,30 @@ const substanceInclude = {
     },
   },
 } as const;
+
+const presetItemsInclude = {
+  items: {
+    orderBy: { sortOrder: "asc" as const },
+    select: {
+      substanceId: true,
+      snapshotName: true,
+      doseValue: true,
+      doseUnit: true,
+      compoundServings: true,
+      deliveryMethodId: true,
+      variantId: true,
+      injectionDepth: true,
+    },
+  },
+} as const;
+
+function toPresetView(raw: any): MedicationPresetView {
+  return {
+    id: raw.id,
+    name: raw.name,
+    items: (raw.items ?? []).map(toDraftItem),
+  };
+}
 
 // ─── Validation ─────────────────────────────────────────────────────────────
 
@@ -466,37 +491,17 @@ export async function getMedicationBootstrap(
       db.substancePreset.findMany({
         where: { userId },
         orderBy: { updatedAt: "desc" },
-        include: {
-          items: {
-            orderBy: { sortOrder: "asc" },
-            select: {
-              substanceId: true,
-              snapshotName: true,
-              doseValue: true,
-              doseUnit: true,
-              compoundServings: true,
-              deliveryMethodId: true,
-              variantId: true,
-              injectionDepth: true,
-            },
-          },
-        },
+        include: presetItemsInclude,
       }),
     ]);
   } catch {
     return { substances: [], deliveryMethods: [], presets: [] };
   }
 
-  const mappedPresets: MedicationPresetView[] = presets.map((p: any) => ({
-    id: p.id,
-    name: p.name,
-    items: p.items.map(toDraftItem),
-  }));
-
   return {
     substances: substances.map(mapSubstanceForUi),
     deliveryMethods,
-    presets: mappedPresets,
+    presets: presets.map(toPresetView),
   };
 }
 
@@ -681,6 +686,85 @@ export async function createMedicationPreset(
       })),
     });
 
-    return preset;
+    const full = await tx.substancePreset.findUniqueOrThrow({
+      where: { id: preset.id },
+      include: presetItemsInclude,
+    });
+    return toPresetView(full);
   });
+}
+
+export async function updateMedicationPreset(
+  userId: string,
+  presetId: string,
+  input: UpdateMedicationPresetInput,
+): Promise<MedicationPresetView> {
+  assertCatalogModelsAvailable();
+
+  return db.$transaction(async (tx: TxClient) => {
+    const existing = await tx.substancePreset.findFirst({
+      where: { id: presetId, userId },
+      select: { id: true },
+    });
+    if (!existing) throw new Error("Preset not found.");
+
+    await validateItemReferences(tx, userId, input.items);
+
+    await tx.substancePreset.update({
+      where: { id: presetId },
+      data: { name: input.name.trim() },
+    });
+
+    await tx.substancePresetItem.deleteMany({ where: { presetId } });
+
+    await tx.substancePresetItem.createMany({
+      data: input.items.map((item, index) => ({
+        presetId,
+        substanceId: item.substanceId,
+        snapshotName: item.snapshotName,
+        doseValue: item.doseValue ?? null,
+        doseUnit: item.doseUnit ?? null,
+        compoundServings: item.compoundServings ?? null,
+        deliveryMethodId: item.deliveryMethodId ?? null,
+        variantId: item.variantId ?? null,
+        injectionDepth: item.injectionDepth ?? null,
+        sortOrder: index,
+      })),
+    });
+
+    const full = await tx.substancePreset.findUniqueOrThrow({
+      where: { id: presetId },
+      include: presetItemsInclude,
+    });
+    return toPresetView(full);
+  });
+}
+
+export async function deleteMedicationPreset(
+  userId: string,
+  presetId: string,
+) {
+  assertCatalogModelsAvailable();
+
+  const existing = await db.substancePreset.findFirst({
+    where: { id: presetId, userId },
+    select: { id: true },
+  });
+  if (!existing) throw new Error("Preset not found.");
+
+  await db.substancePreset.delete({ where: { id: presetId } });
+}
+
+export async function listMedicationPresets(
+  userId: string,
+): Promise<MedicationPresetView[]> {
+  if (!hasCatalogModels()) return [];
+
+  const presets = await db.substancePreset.findMany({
+    where: { userId },
+    orderBy: { updatedAt: "desc" },
+    include: presetItemsInclude,
+  });
+
+  return presets.map(toPresetView);
 }

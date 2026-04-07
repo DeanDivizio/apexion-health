@@ -23,6 +23,11 @@ export const createMedicationPresetInputSchema = z.object({
   items: z.array(medicationDraftItemSchema).min(1),
 });
 
+export const updateMedicationPresetInputSchema = z.object({
+  name: z.string().trim().min(1),
+  items: z.array(medicationDraftItemSchema).min(1),
+});
+
 export const substanceIngredientInputSchema = z.object({
   name: z.string().trim().min(1),
   amountPerServing: z.number().positive(),
@@ -45,5 +50,8 @@ export type CreateMedicationLogSessionInput = z.infer<
 >;
 export type CreateMedicationPresetInput = z.infer<
   typeof createMedicationPresetInputSchema
+>;
+export type UpdateMedicationPresetInput = z.infer<
+  typeof updateMedicationPresetInputSchema
 >;
 export type CreateSubstanceInput = z.infer<typeof createSubstanceInputSchema>;
