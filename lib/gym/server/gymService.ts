@@ -1132,7 +1132,7 @@ export async function getUserPreferences(userId: string) {
   const prefs = await prisma.gymUserPreferences.findUnique({
     where: { userId },
   });
-  return prefs ?? { userId, weightUnit: "lbs", repInputStyle: "dropdown" };
+  return prefs ?? { userId, weightUnit: "lbs", repInputStyle: "dropdown", carryOverWeight: true, carryOverReps: false };
 }
 
 /**
@@ -1140,7 +1140,7 @@ export async function getUserPreferences(userId: string) {
  */
 export async function updateUserPreferences(
   userId: string,
-  data: { weightUnit?: string; repInputStyle?: string },
+  data: { weightUnit?: string; repInputStyle?: string; carryOverWeight?: boolean; carryOverReps?: boolean },
 ) {
   return prisma.gymUserPreferences.upsert({
     where: { userId },
@@ -1148,10 +1148,14 @@ export async function updateUserPreferences(
       userId,
       weightUnit: data.weightUnit ?? "lbs",
       repInputStyle: data.repInputStyle ?? "dropdown",
+      carryOverWeight: data.carryOverWeight ?? true,
+      carryOverReps: data.carryOverReps ?? false,
     },
     update: {
       ...(data.weightUnit !== undefined ? { weightUnit: data.weightUnit } : {}),
       ...(data.repInputStyle !== undefined ? { repInputStyle: data.repInputStyle } : {}),
+      ...(data.carryOverWeight !== undefined ? { carryOverWeight: data.carryOverWeight } : {}),
+      ...(data.carryOverReps !== undefined ? { carryOverReps: data.carryOverReps } : {}),
     },
   });
 }

@@ -2,13 +2,12 @@
 
 import * as React from "react";
 import {
-  AlertTriangle,
   Archive,
   Bookmark,
   Info,
   Pencil,
-  Plus,
   Save,
+  X,
 } from "lucide-react";
 import {
   Sheet,
@@ -44,14 +43,8 @@ import {
 import { Button } from "@/components/ui_primitives/button";
 import { Input } from "@/components/ui_primitives/input";
 import { Separator } from "@/components/ui_primitives/separator";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui_primitives/dialog";
+import { Switch } from "@/components/ui_primitives/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui_primitives/tabs";
 import { useToast } from "@/hooks/use-toast";
 import {
   saveExerciseDefaultsAction,
@@ -85,7 +78,6 @@ export function ExerciseSettingsSheet({
 }: ExerciseSettingsSheetProps) {
   const HALF_WIDTH_CHAR_BUDGET = 14;
   const { toast } = useToast();
-  const [addVariationOpen, setAddVariationOpen] = React.useState(false);
   const [savingDefault, setSavingDefault] = React.useState(false);
 
   // Preset save state
@@ -117,10 +109,6 @@ export function ExerciseSettingsSheet({
     ...new Set([...adoptedTemplateIds, ...Object.keys(variations)]),
   ];
 
-  const availableTemplates = VARIATION_TEMPLATES.filter(
-    (t) => !activeTemplateIds.includes(t.id),
-  );
-
   const selectorConfigs = activeTemplateIds.flatMap((templateId) => {
     const template = VARIATION_TEMPLATE_MAP.get(templateId);
     if (!template) return [];
@@ -136,8 +124,16 @@ export function ExerciseSettingsSheet({
       label.length <= HALF_WIDTH_CHAR_BUDGET &&
       longestOptionLabelLength <= HALF_WIDTH_CHAR_BUDGET;
 
-    return [{ templateId, template, override, label, shouldUseHalfWidth }];
+    const isDefault = adoptedTemplateIds.includes(templateId);
+    return [{ templateId, template, override, label, shouldUseHalfWidth, isDefault }];
   });
+
+  const nonDefaultTemplates = VARIATION_TEMPLATES.filter(
+    (t) => !adoptedTemplateIds.includes(t.id),
+  );
+  const activeNonDefaultIds = new Set(
+    activeTemplateIds.filter((id) => !adoptedTemplateIds.includes(id)),
+  );
 
   const hasFullWidthSelector = selectorConfigs.some((s) => !s.shouldUseHalfWidth);
   const orderedSelectorConfigs = [
@@ -149,12 +145,23 @@ export function ExerciseSettingsSheet({
     onVariationsChange({ ...variations, [templateId]: optionKey });
   };
 
-  const handleAdoptVariation = (template: VariationTemplate) => {
-    const firstKey = template.options[0]?.key;
-    if (firstKey) {
-      onVariationsChange({ ...variations, [template.id]: firstKey });
+  const handleToggleDimension = (template: VariationTemplate, enabled: boolean) => {
+    if (enabled) {
+      const firstKey = template.options[0]?.key;
+      if (firstKey) {
+        onVariationsChange({ ...variations, [template.id]: firstKey });
+      }
+    } else {
+      const next = { ...variations };
+      delete next[template.id];
+      onVariationsChange(next);
     }
-    setAddVariationOpen(false);
+  };
+
+  const handleRemoveVariation = (templateId: string) => {
+    const next = { ...variations };
+    delete next[templateId];
+    onVariationsChange(next);
   };
 
   const handleSaveDefault = async () => {
@@ -249,110 +256,112 @@ export function ExerciseSettingsSheet({
           <SheetDescription>{exercise.name}</SheetDescription>
         </SheetHeader>
 
-        {/* Variation Selectors */}
-        <div className="flex-1 ">
-          {activeTemplateIds.length === 0 && (
-            <p className="text-sm text-muted-foreground/60 italic py-4">
-              No variations configured for this exercise.
-            </p>
-          )}
-          <div className="grid grid-cols-2 gap-3">
-            {orderedSelectorConfigs.map((selector, index) => {
-              const forceFullWidth = !hasFullWidthSelector && index === 0;
-              const spanClass =
-                selector.shouldUseHalfWidth && !forceFullWidth
-                  ? "col-span-1"
-                  : "col-span-2";
+        {/* Variation Dimensions */}
+        <Tabs defaultValue="active" className="flex-1">
+          <TabsList className="w-full mb-4">
+            <TabsTrigger value="active" className="flex-1">
+              Active
+            </TabsTrigger>
+            {nonDefaultTemplates.length > 0 && (
+              <TabsTrigger value="manage" className="flex-1">
+                Add / Remove
+              </TabsTrigger>
+            )}
+          </TabsList>
 
-              return (
-                <div key={selector.templateId} className={`${spanClass} space-y-1.5`}>
-                  <label className="text-xs text-muted-foreground">{selector.label}</label>
-                  <Select
-                    value={
-                      variations[selector.templateId] ??
-                      selector.override?.defaultOptionKey ??
-                      selector.template.options[0]?.key
-                    }
-                    onValueChange={(val) =>
-                      handleVariationChange(selector.templateId, val)
-                    }
-                  >
-                    <SelectTrigger className="h-10 w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {selector.template.options.map((opt) => {
-                        const optLabel =
-                          selector.override?.optionLabelOverrides?.[opt.key] ?? opt.label;
-                        return (
-                          <SelectItem key={opt.key} value={opt.key}>
-                            {optLabel}
-                          </SelectItem>
-                        );
-                      })}
-                    </SelectContent>
-                  </Select>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Adopt new variation */}
-          <div className="mt-8 space-y-2">
-            <Dialog open={addVariationOpen} onOpenChange={setAddVariationOpen}>
-              <DialogTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  role="combobox"
-                  aria-expanded={addVariationOpen}
-                  disabled={availableTemplates.length === 0}
-                  className="w-full justify-center text-blue-400 hover:text-blue-300 hover:bg-blue-500/10"
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add variation dimension
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="w-[98vw] max-w-[98vw] sm:max-w-[98vw] rounded-2xl border border-white/10 bg-gradient-to-br from-blue-500/10 via-emerald-500/5 to-transparent backdrop-blur-xl p-0 overflow-hidden">
-                <DialogHeader className="px-4 pt-4 pb-1">
-                  <DialogTitle className="text-base">Add variation dimension</DialogTitle>
-                  <DialogDescription>
-                    Select a variation to add to this exercise.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="border-t">
-                  <div className="max-h-64 overflow-y-auto overscroll-contain p-2">
-                    {availableTemplates.map((template) => (
-                      <button
-                        key={template.id}
-                        type="button"
-                        onClick={() => handleAdoptVariation(template)}
-                        className="w-full rounded-sm px-2 py-2 text-left hover:bg-accent transition-colors"
-                      >
-                        <div className="flex flex-col">
-                          <span className="text-sm">{template.label}</span>
-                          <span className="text-xs text-muted-foreground">
-                            {template.description}
-                          </span>
-                        </div>
-                      </button>
-                    ))}
-                    {availableTemplates.length === 0 && (
-                      <p className="py-4 text-center text-sm text-muted-foreground">
-                        No variation available.
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
-            {availableTemplates.length === 0 && (
-              <p className="text-xs text-muted-foreground italic">
-                All available variations are already active.
+          {/* Tab 1: Active variation selectors */}
+          <TabsContent value="active">
+            {activeTemplateIds.length === 0 && (
+              <p className="text-sm text-muted-foreground/60 italic py-4">
+                No variations configured for this exercise.
               </p>
             )}
-          </div>
-        </div>
+            <div className="grid grid-cols-2 gap-3">
+              {orderedSelectorConfigs.map((selector, index) => {
+                const forceFullWidth = !hasFullWidthSelector && index === 0;
+                const spanClass =
+                  selector.shouldUseHalfWidth && !forceFullWidth
+                    ? "col-span-1"
+                    : "col-span-2";
+
+                return (
+                  <div key={selector.templateId} className={`${spanClass} space-y-1.5`}>
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs text-muted-foreground">{selector.label}</label>
+                      {!selector.isDefault && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveVariation(selector.templateId)}
+                          className="rounded p-0.5 text-muted-foreground/50 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                          aria-label={`Remove ${selector.label}`}
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                    </div>
+                    <Select
+                      value={
+                        variations[selector.templateId] ??
+                        selector.override?.defaultOptionKey ??
+                        selector.template.options[0]?.key
+                      }
+                      onValueChange={(val) =>
+                        handleVariationChange(selector.templateId, val)
+                      }
+                    >
+                      <SelectTrigger className="h-10 w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {selector.template.options.map((opt) => {
+                          const optLabel =
+                            selector.override?.optionLabelOverrides?.[opt.key] ?? opt.label;
+                          return (
+                            <SelectItem key={opt.key} value={opt.key}>
+                              {optLabel}
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                );
+              })}
+            </div>
+          </TabsContent>
+
+          {/* Tab 2: Toggle dimensions on/off */}
+          {nonDefaultTemplates.length > 0 && (
+            <TabsContent value="manage" className="space-y-0.5">
+              <p className="text-xs text-muted-foreground/70 mb-2">
+                Toggle additional dimensions. Built-in dimensions are always shown.
+              </p>
+              {nonDefaultTemplates.map((template) => {
+                const isActive = activeNonDefaultIds.has(template.id);
+                return (
+                  <label
+                    key={template.id}
+                    className="flex items-center gap-3 rounded-md px-2 py-2 hover:bg-accent/50 transition-colors cursor-pointer"
+                  >
+                    <Switch
+                      checked={isActive}
+                      onCheckedChange={(checked) =>
+                        handleToggleDimension(template, checked)
+                      }
+                      className="shrink-0 data-[state=checked]:bg-green-500 [&_span]:bg-gray-400 [&_span]:data-[state=checked]:bg-white"
+                    />
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-sm">{template.label}</span>
+                      <span className="text-xs text-muted-foreground truncate">
+                        {template.description}
+                      </span>
+                    </div>
+                  </label>
+                );
+              })}
+            </TabsContent>
+          )}
+        </Tabs>
 
         <Separator />
 

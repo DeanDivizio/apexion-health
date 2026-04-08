@@ -15,16 +15,21 @@ import {
   SelectValue,
 } from "@/components/ui_primitives/select";
 import { Label } from "@/components/ui_primitives/label";
+import { Switch } from "@/components/ui_primitives/switch";
 import { Button } from "@/components/ui_primitives/button";
-import { Loader2 } from "lucide-react";
+import { Loader2, SlidersHorizontal, Repeat2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface GymPrefsState {
   repInputStyle: RepInputStyle;
+  carryOverWeight: boolean;
+  carryOverReps: boolean;
 }
 
 const DEFAULT_PREFS: GymPrefsState = {
   repInputStyle: "dropdown",
+  carryOverWeight: true,
+  carryOverReps: false,
 };
 
 function toRepInputStyle(value: string | undefined | null): RepInputStyle {
@@ -40,6 +45,8 @@ export default function GymSettingsPage() {
     getGymUserPreferencesAction().then((data) => {
       setPrefs({
         repInputStyle: toRepInputStyle(data?.repInputStyle),
+        carryOverWeight: data?.carryOverWeight ?? DEFAULT_PREFS.carryOverWeight,
+        carryOverReps: data?.carryOverReps ?? DEFAULT_PREFS.carryOverReps,
       });
     });
   }, []);
@@ -50,7 +57,11 @@ export default function GymSettingsPage() {
     if (!prefs) return;
     startTransition(async () => {
       try {
-        await updateGymUserPreferencesAction({ repInputStyle: prefs.repInputStyle });
+        await updateGymUserPreferencesAction({
+          repInputStyle: prefs.repInputStyle,
+          carryOverWeight: prefs.carryOverWeight,
+          carryOverReps: prefs.carryOverReps,
+        });
         toast({ title: "Gym settings saved" });
       } catch {
         toast({ title: "Failed to save settings", variant: "destructive" });
@@ -60,13 +71,15 @@ export default function GymSettingsPage() {
 
   return (
     <div className="w-full max-w-lg space-y-4">
-      <p className="text-sm text-muted-foreground">
-        Customize your gym logging experience.
-      </p>
-
-      <Card className="bg-neutral-800/50 backdrop-blur-xl border-neutral-700/50">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-lg">UI Preferences</CardTitle>
+      <Card className="bg-gradient-to-br from-emerald-900/10 to-neutral-950 backdrop-blur-xl border-emerald-950/80 !rounded-xl ring-1 ring-emerald-950/30">
+        <CardHeader className="px-4 pt-4 pb-4 space-y-1">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <SlidersHorizontal className="h-5 w-5 text-emerald-400/90 shrink-0" />
+            UI Preferences
+          </CardTitle>
+          <p className="text-xs text-muted-foreground font-normal leading-relaxed">
+            Customize how you interact with the workout logging interface.
+          </p>
         </CardHeader>
         <CardContent className="space-y-4 px-4 pb-4">
           <div className="flex items-center justify-between gap-4">
@@ -85,6 +98,50 @@ export default function GymSettingsPage() {
                 <SelectItem value="freeform">Freeform</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="bg-gradient-to-br from-blue-900/10 to-neutral-950 backdrop-blur-xl border-blue-950/80 !rounded-xl ring-1 ring-blue-950/30">
+        <CardHeader className="px-4 pt-4 pb-4 space-y-1">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Repeat2 className="h-5 w-5 text-blue-400/90 shrink-0" />
+            Set Behavior
+          </CardTitle>
+          <p className="text-xs text-muted-foreground font-normal leading-relaxed">
+            Control how weight and reps are pre-filled when you add new sets.
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-4 px-4 pb-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="space-y-0.5">
+              <Label className="text-sm font-medium">Carry over weight</Label>
+              <p className="text-xs text-muted-foreground">
+                Pre-fill weight from the previous set when adding a new one.
+              </p>
+            </div>
+            <Switch
+              checked={prefs.carryOverWeight}
+              onCheckedChange={(checked) =>
+                setPrefs({ ...prefs, carryOverWeight: checked })
+              }
+              className="data-[state=checked]:bg-green-500 [&_span]:bg-gray-400 [&_span]:data-[state=checked]:bg-white"
+            />
+          </div>
+          <div className="flex items-center justify-between gap-4">
+            <div className="space-y-0.5">
+              <Label className="text-sm font-medium">Carry over reps</Label>
+              <p className="text-xs text-muted-foreground">
+                Pre-fill reps from the previous set when adding a new one.
+              </p>
+            </div>
+            <Switch
+              checked={prefs.carryOverReps}
+              onCheckedChange={(checked) =>
+                setPrefs({ ...prefs, carryOverReps: checked })
+              }
+              className="data-[state=checked]:bg-green-500 [&_span]:bg-gray-400 [&_span]:data-[state=checked]:bg-white"
+            />
           </div>
         </CardContent>
       </Card>

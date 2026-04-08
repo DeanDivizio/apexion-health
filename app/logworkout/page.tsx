@@ -19,6 +19,8 @@ function toRepInputStyle(value: string | undefined | null): RepInputStyle {
 async function WorkoutFlowLoader() {
   let userMeta: GymUserMeta | null = null;
   let repInputStyle: RepInputStyle = "dropdown";
+  let carryOverWeight = true;
+  let carryOverReps = false;
 
   try {
     const [meta, prefs] = await Promise.all([
@@ -27,6 +29,8 @@ async function WorkoutFlowLoader() {
     ]);
     userMeta = meta;
     repInputStyle = toRepInputStyle(prefs?.repInputStyle);
+    carryOverWeight = prefs?.carryOverWeight ?? true;
+    carryOverReps = prefs?.carryOverReps ?? false;
   } catch {
     // User might not have any data yet -- that's fine
   }
@@ -57,6 +61,8 @@ async function WorkoutFlowLoader() {
       userMeta={userMeta}
       customExerciseGroups={customGroups}
       repInputStyle={repInputStyle}
+      carryOverWeight={carryOverWeight}
+      carryOverReps={carryOverReps}
     />
   );
 }

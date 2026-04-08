@@ -371,6 +371,8 @@ export type RepInputStyle = z.infer<typeof repInputStyleSchema>;
 export const updateGymPreferencesSchema = z.object({
   weightUnit: weightUnitSchema.optional(),
   repInputStyle: repInputStyleSchema.optional(),
+  carryOverWeight: z.boolean().optional(),
+  carryOverReps: z.boolean().optional(),
 });
 export type UpdateGymPreferences = z.infer<typeof updateGymPreferencesSchema>;
 

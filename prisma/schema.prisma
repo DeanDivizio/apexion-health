@@ -204,12 +204,14 @@ model GymUserExerciseStat {
 }
 
 model GymUserPreferences {
-  id             String   @id @default(uuid())
-  userId         String   @unique
-  weightUnit     String   @default("lbs")
-  repInputStyle  String   @default("dropdown")
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  weightUnit      String   @default("lbs")
+  repInputStyle   String   @default("dropdown")
+  carryOverWeight Boolean  @default(true)
+  carryOverReps   Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
 
 model GymUserExerciseDefault {

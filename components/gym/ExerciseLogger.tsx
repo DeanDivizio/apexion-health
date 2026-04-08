@@ -31,6 +31,8 @@ interface ExerciseLoggerProps {
   stats?: ExerciseStats | null;
   presetName?: string | null;
   repInputStyle?: RepInputStyle;
+  carryOverWeight?: boolean;
+  carryOverReps?: boolean;
   sessionExerciseNotes?: string;
   onSessionExerciseNotesChange?: (notes: string) => void;
   onPersistentNoteChange?: (notes: string | null) => void;
@@ -78,6 +80,8 @@ export function ExerciseLogger({
   stats,
   presetName,
   repInputStyle,
+  carryOverWeight = true,
+  carryOverReps = false,
   sessionExerciseNotes,
   onSessionExerciseNotesChange,
   onPersistentNoteChange,
@@ -157,7 +161,12 @@ export function ExerciseLogger({
 
   const handleAddSet = () => {
     const nextIndex = sets.length;
-    onSetsChange([...sets, makeEmptySet()]);
+    const lastSet = sets[sets.length - 1];
+    const newSet: StrengthSet = {
+      weight: carryOverWeight && lastSet ? lastSet.weight : 0,
+      reps: carryOverReps && lastSet ? { ...lastSet.reps } : { bilateral: 0 },
+    };
+    onSetsChange([...sets, newSet]);
     setSetIds((prev) => [...prev, makeSetId()]);
     setOpenItem(`set-${nextIndex}`);
   };

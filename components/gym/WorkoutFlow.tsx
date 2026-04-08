@@ -106,12 +106,14 @@ interface WorkoutFlowProps {
   userMeta: GymUserMeta | null;
   customExerciseGroups: ExerciseGroupOption[];
   repInputStyle?: RepInputStyle;
+  carryOverWeight?: boolean;
+  carryOverReps?: boolean;
 }
 
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
-export function WorkoutFlow({ userMeta, customExerciseGroups, repInputStyle }: WorkoutFlowProps) {
+export function WorkoutFlow({ userMeta, customExerciseGroups, repInputStyle, carryOverWeight, carryOverReps }: WorkoutFlowProps) {
   const router = useRouter();
   const { toast } = useToast();
   const {
@@ -140,16 +142,20 @@ export function WorkoutFlow({ userMeta, customExerciseGroups, repInputStyle }: W
   const [activeExerciseNotes, setActiveExerciseNotes] = React.useState("");
   const hasWarnedMissingExercise = React.useRef(false);
 
-  // Rep input style -- seeded from server prop, refreshed client-side on mount
-  // so navigating back from settings always picks up the latest value.
+  // Preferences -- seeded from server props, refreshed client-side on mount
+  // so navigating back from settings always picks up the latest values.
   const [liveRepInputStyle, setLiveRepInputStyle] = React.useState<RepInputStyle>(
     repInputStyle ?? "dropdown",
   );
+  const [liveCarryOverWeight, setLiveCarryOverWeight] = React.useState(carryOverWeight ?? true);
+  const [liveCarryOverReps, setLiveCarryOverReps] = React.useState(carryOverReps ?? false);
 
   useEffect(() => {
     getGymUserPreferencesAction().then((data) => {
       const val = data?.repInputStyle;
       setLiveRepInputStyle(val === "freeform" ? "freeform" : "dropdown");
+      setLiveCarryOverWeight(data?.carryOverWeight ?? true);
+      setLiveCarryOverReps(data?.carryOverReps ?? false);
     }).catch(() => {});
   }, []);
 
@@ -647,6 +653,8 @@ export function WorkoutFlow({ userMeta, customExerciseGroups, repInputStyle }: W
           stats={exerciseStats}
           presetName={activePresetName}
           repInputStyle={liveRepInputStyle}
+          carryOverWeight={liveCarryOverWeight}
+          carryOverReps={liveCarryOverReps}
           sessionExerciseNotes={activeExerciseNotes}
           onSessionExerciseNotesChange={setActiveExerciseNotes}
           onPersistentNoteChange={handlePersistentNoteChange}
