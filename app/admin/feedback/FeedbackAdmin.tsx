@@ -51,19 +51,26 @@ const STATUS_CONFIG: Record<
     bgInactive: "bg-neutral-800/40 border-neutral-700 text-neutral-500",
     order: 2,
   },
+  NEED_CLARIFICATION: {
+    label: "Need Clarification",
+    color: "text-violet-300",
+    bgActive: "bg-violet-500/20 border-violet-500/40 text-violet-300",
+    bgInactive: "bg-neutral-800/40 border-neutral-700 text-neutral-500",
+    order: 3,
+  },
   IGNORED: {
     label: "Ignored",
     color: "text-red-400",
     bgActive: "bg-red-500/20 border-red-500/40 text-red-400",
     bgInactive: "bg-neutral-800/40 border-neutral-700 text-neutral-500",
-    order: 3,
+    order: 4,
   },
   COMPLETE: {
     label: "Complete",
     color: "text-emerald-300",
     bgActive: "bg-emerald-500/20 border-emerald-500/40 text-emerald-300",
     bgInactive: "bg-neutral-800/40 border-neutral-700 text-neutral-500",
-    order: 4,
+    order: 5,
   },
 };
 
@@ -144,7 +151,7 @@ function compareFeedback(a: FeedbackEntry, b: FeedbackEntry, key: SortKey, dir: 
 export function FeedbackAdmin({ entries }: { entries: FeedbackEntry[] }) {
   const [visibleStatuses, setVisibleStatuses] = useState<
     Set<FeedbackStatus>
-  >(() => new Set(ALL_STATUSES));
+  >(() => new Set<FeedbackStatus>(["NEW", "PRIORITY"]));
   const [localEntries, setLocalEntries] = useState(entries);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newMessage, setNewMessage] = useState("");

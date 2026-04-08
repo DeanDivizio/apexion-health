@@ -20,12 +20,12 @@ export function UniversalRingChart({ title, shortTitle, description, subtext, su
             const newPercentage = (value / goal) * 100;
             setPercentage(newPercentage);
             let newRingColor: string;
-            if (newPercentage > 100) {
-                if (overOkay){
-                    newRingColor = "hsl(var(--chart-2))";
-                } else {
-                    newRingColor = "hsl(var(--destructive))"
-                }
+            if (newPercentage > 120) {
+                newRingColor = overOkay ? "hsl(var(--chart-2))" : "hsl(var(--destructive))";
+            } else if (newPercentage > 110) {
+                newRingColor = overOkay ? "hsl(var(--chart-2))" : "hsl(var(--chart-1))";
+            } else if (newPercentage > 100) {
+                newRingColor = "hsl(var(--chart-2))";
             } else if (newPercentage > 85) {
                 newRingColor = "hsl(var(--chart-2))";
             } else if (newPercentage > 50) {

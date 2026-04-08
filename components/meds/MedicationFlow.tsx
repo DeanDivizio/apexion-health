@@ -3,7 +3,8 @@
 import * as React from "react";
 import { useContext, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { ClipboardList, Plus, Trash2 } from "lucide-react";
+import * as AccordionPrimitive from "@radix-ui/react-accordion";
+import { Camera, ChevronDown, ClipboardList, Plus, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MobileHeaderContext } from "@/context/MobileHeaderContext";
 import { useToast } from "@/hooks/use-toast";
@@ -13,6 +14,11 @@ import { Textarea } from "@/components/ui_primitives/textarea";
 import { Label } from "@/components/ui_primitives/label";
 import { Checkbox } from "@/components/ui_primitives/checkbox";
 import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+} from "@/components/ui_primitives/accordion";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -20,6 +26,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui_primitives/dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui_primitives/sheet";
 import {
   Select,
   SelectContent,
@@ -30,6 +43,8 @@ import {
 import { AddSubstance } from "./AddSubstance";
 import { SubstanceLogger } from "./SubstanceLogger";
 import { MedicationOverviewSheet } from "./MedicationOverviewSheet";
+import { SupplementScanner } from "./SupplementScanner";
+import type { SupplementScanResult } from "./SupplementScanner";
 import {
   createMedicationLogSessionAction,
   createMedicationPresetAction,
@@ -43,6 +58,28 @@ import type {
   SubstanceLogValues,
 } from "@/lib/medication";
 import { captureClientEvent } from "@/lib/posthog-client";
+
+// ─── Accordion trigger (matches MedPresetBuilder) ────────────────────────────
+
+const AccordionTriggerCompact = React.forwardRef<
+  React.ElementRef<typeof AccordionPrimitive.Trigger>,
+  React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Trigger>
+>(({ className, children, ...props }, ref) => (
+  <AccordionPrimitive.Header className="flex">
+    <AccordionPrimitive.Trigger
+      ref={ref}
+      className={cn(
+        "flex flex-1 items-center gap-1.5 text-left transition-all [&[data-state=open]>svg]:rotate-180",
+        className,
+      )}
+      {...props}
+    >
+      <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform duration-200" />
+      {children}
+    </AccordionPrimitive.Trigger>
+  </AccordionPrimitive.Header>
+));
+AccordionTriggerCompact.displayName = "AccordionTriggerCompact";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -163,6 +200,10 @@ export function MedicationFlow({ bootstrap }: MedicationFlowProps) {
   const [newIngredients, setNewIngredients] = React.useState<
     Array<{ name: string; amountPerServing: string; unit: string }>
   >([]);
+  const [scannerOpen, setScannerOpen] = React.useState(false);
+  const [expandedIngredient, setExpandedIngredient] = React.useState<
+    string | undefined
+  >(undefined);
 
   // Preset dialog state
   const [presetNameDialogOpen, setPresetNameDialogOpen] =
@@ -472,6 +513,31 @@ export function MedicationFlow({ bootstrap }: MedicationFlowProps) {
     applyPresetItems(preset);
   }, [applyPresetItems, presets, selectedPresetId]);
 
+  const handleScanResult = React.useCallback(
+    (data: SupplementScanResult) => {
+      setNewName((prev) => (data.productName?.trim() ? data.productName : prev));
+      setNewBrand((prev) => (data.brand?.trim() ? data.brand : prev));
+      setNewIsCompound(true);
+      setNewIngredients(data.ingredients);
+      setCreateDialogOpen(true);
+      captureClientEvent("supplement_label_scanned", {
+        ingredient_count: data.ingredients.length,
+      });
+      toast({
+        title: "Label scanned",
+        description: `${data.ingredients.length} ingredient${data.ingredients.length === 1 ? "" : "s"} extracted. Review and create.`,
+      });
+    },
+    [toast],
+  );
+
+  const handleScannerOpenChange = React.useCallback((open: boolean) => {
+    setScannerOpen(open);
+    if (!open) {
+      setCreateDialogOpen(true);
+    }
+  }, []);
+
   const handleCreateSubstance = React.useCallback(async () => {
     const trimmed = newName.trim();
     if (!trimmed) return;
@@ -638,219 +704,267 @@ export function MedicationFlow({ bootstrap }: MedicationFlowProps) {
         submitting={submitting}
       />
 
-      {/* ── Create substance dialog ────────────────────────────── */}
-      <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent className="max-h-[85vh] flex flex-col">
-          <DialogHeader>
-            <DialogTitle>Create Substance</DialogTitle>
-            <DialogDescription>
+      {/* ── Create substance sheet ────────────────────────────── */}
+      <Sheet open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+        <SheetContent side="right" className="flex flex-col w-full sm:max-w-md p-0">
+          <SheetHeader className="px-4 pt-4 pb-2">
+            <SheetTitle>Create Substance</SheetTitle>
+            <SheetDescription>
               Add a new substance to your personal catalog.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex-1 overflow-y-auto space-y-4">
-            <div className="space-y-1">
-              <Label>Name</Label>
-              <Input
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                placeholder="e.g., Vitamin D3"
-              />
-            </div>
+            </SheetDescription>
+          </SheetHeader>
 
-            <div className="space-y-1">
-              <Label>Brand <span className="text-muted-foreground font-normal">(optional)</span></Label>
-              <Input
-                value={newBrand}
-                onChange={(e) => setNewBrand(e.target.value)}
-                placeholder="e.g., Thorne, Nature Made"
-              />
-            </div>
-
-            <div className="flex items-center justify-between rounded-md border p-3">
-              <Label htmlFor="compound-toggle" className="cursor-pointer">
-                Multi-ingredient compound
-              </Label>
-              <Checkbox
-                id="compound-toggle"
-                checked={newIsCompound}
-                onCheckedChange={(v) => setNewIsCompound(v === true)}
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label>Delivery Methods</Label>
-              <div className="flex flex-wrap gap-2">
-                {bootstrap.deliveryMethods.map((method) => {
-                  const active = newMethodIds.includes(method.id);
-                  return (
-                    <button
-                      key={method.id}
-                      type="button"
-                      onClick={() =>
-                        setNewMethodIds((prev) =>
-                          active
-                            ? prev.filter((id) => id !== method.id)
-                            : [...prev, method.id],
-                        )
-                      }
-                      className={cn(
-                        "px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors",
-                        active
-                          ? "border-green-500 bg-green-500/15 text-green-400"
-                          : "border-border/60 bg-background text-muted-foreground hover:border-border hover:text-foreground",
-                      )}
-                    >
-                      {method.label}
-                    </button>
-                  );
-                })}
+          <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
+            <div className="space-y-4 px-4 pb-4">
+              <div className="space-y-1">
+                <Label>Name</Label>
+                <Input
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  placeholder="e.g., Vitamin D3"
+                  className="h-9"
+                />
               </div>
-            </div>
 
-            {newIsCompound ? (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label>Ingredients</Label>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() =>
-                      setNewIngredients((prev) => [
-                        { name: "", amountPerServing: "", unit: "mg" },
-                        ...prev,
-                      ])
-                    }
-                    className="h-7 text-xs gap-1"
-                  >
-                    <Plus className="h-3 w-3" />
-                    Add
-                  </Button>
-                </div>
+              <div className="space-y-1">
+                <Label>Brand <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                <Input
+                  value={newBrand}
+                  onChange={(e) => setNewBrand(e.target.value)}
+                  placeholder="e.g., Thorne, Nature Made"
+                  className="h-9"
+                />
+              </div>
 
-                {newIngredients.length === 0 && (
-                  <p className="text-sm text-muted-foreground border border-dashed rounded-md p-3 text-center">
-                    No ingredients yet. Add each ingredient and its amount per
-                    serving so doses can be tracked individually.
-                  </p>
-                )}
+              <div className="flex items-center justify-between rounded-md border p-3">
+                <Label htmlFor="compound-toggle" className="cursor-pointer">
+                  Multi-ingredient compound
+                </Label>
+                <Checkbox
+                  id="compound-toggle"
+                  checked={newIsCompound}
+                  onCheckedChange={(v) => setNewIsCompound(v === true)}
+                />
+              </div>
 
-                <div className="space-y-2">
-                  {newIngredients.map((ing, idx) => (
-                    <div
-                      key={idx}
-                      className="relative rounded-md border p-2.5 pr-8 space-y-2"
-                    >
+              {newIsCompound && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full h-11 gap-2"
+                  onClick={() => {
+                    setCreateDialogOpen(false);
+                    setScannerOpen(true);
+                  }}
+                >
+                  <Camera className="h-4 w-4" />
+                  Scan Supplement Label
+                </Button>
+              )}
+
+              <div className="space-y-1.5">
+                <Label>Delivery Methods</Label>
+                <div className="flex flex-wrap gap-2">
+                  {bootstrap.deliveryMethods.map((method) => {
+                    const active = newMethodIds.includes(method.id);
+                    return (
                       <button
+                        key={method.id}
                         type="button"
                         onClick={() =>
-                          setNewIngredients((prev) =>
-                            prev.filter((_, i) => i !== idx),
+                          setNewMethodIds((prev) =>
+                            active
+                              ? prev.filter((id) => id !== method.id)
+                              : [...prev, method.id],
                           )
                         }
-                        className="absolute top-2 right-2 p-0.5 rounded text-muted-foreground hover:text-destructive transition-colors"
+                        className={cn(
+                          "px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors",
+                          active
+                            ? "border-green-500 bg-green-500/15 text-green-400"
+                            : "border-border/60 bg-background text-muted-foreground hover:border-border hover:text-foreground",
+                        )}
                       >
-                        <Trash2 className="h-3.5 w-3.5" />
+                        {method.label}
                       </button>
-                      <Input
-                        value={ing.name}
-                        onChange={(e) =>
-                          setNewIngredients((prev) =>
-                            prev.map((item, i) =>
-                              i === idx
-                                ? { ...item, name: e.target.value }
-                                : item,
-                            ),
-                          )
-                        }
-                        placeholder="Ingredient name"
-                        className="h-8 text-sm"
-                      />
-                      <div className="flex gap-2">
-                        <div className="flex-1 space-y-1">
-                          <Label className="text-xs text-muted-foreground">
-                            Per serving
-                          </Label>
-                          <Input
-                            type="number"
-                            inputMode="decimal"
-                            value={ing.amountPerServing}
-                            onChange={(e) =>
-                              setNewIngredients((prev) =>
-                                prev.map((item, i) =>
-                                  i === idx
-                                    ? {
-                                        ...item,
-                                        amountPerServing: e.target.value,
-                                      }
-                                    : item,
-                                ),
-                              )
-                            }
-                            placeholder="300"
-                            className="h-8 text-sm"
-                          />
-                        </div>
-                        <div className="w-20 space-y-1">
-                          <Label className="text-xs text-muted-foreground">
-                            Unit
-                          </Label>
-                          <Select
-                            value={ing.unit}
-                            onValueChange={(val) =>
-                              setNewIngredients((prev) =>
-                                prev.map((item, i) =>
-                                  i === idx ? { ...item, unit: val } : item,
-                                ),
-                              )
-                            }
-                          >
-                            <SelectTrigger className="h-8 text-sm">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {DOSE_UNITS.map((u) => (
-                                <SelectItem key={u} value={u}>
-                                  {u}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
-            ) : (
-              <div className="space-y-1">
-                <Label>Dose unit</Label>
-                <Select value={newDoseUnit} onValueChange={setNewDoseUnit}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {DOSE_UNITS.map((unit) => (
-                      <SelectItem key={unit} value={unit}>
-                        {unit}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
 
-            <div className="space-y-1">
-              <Label>Notes <span className="text-muted-foreground font-normal">(optional)</span></Label>
-              <Textarea
-                value={newNotes}
-                onChange={(e) => setNewNotes(e.target.value)}
-                placeholder="e.g., take with food, prescribed by Dr. Smith"
-                rows={2}
-              />
+              {newIsCompound ? (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label>Ingredients ({newIngredients.length})</Label>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setNewIngredients((prev) => [
+                          { name: "", amountPerServing: "", unit: "mg" },
+                          ...prev,
+                        ]);
+                        setExpandedIngredient("ing-0");
+                      }}
+                      className="h-7 text-xs gap-1"
+                    >
+                      <Plus className="h-3 w-3" />
+                      Add
+                    </Button>
+                  </div>
+
+                  {newIngredients.length === 0 && (
+                    <p className="text-sm text-muted-foreground border border-dashed rounded-md p-3 text-center">
+                      No ingredients yet. Add each ingredient and its amount per
+                      serving so doses can be tracked individually.
+                    </p>
+                  )}
+
+                  {newIngredients.length > 0 && (
+                    <Accordion
+                      type="single"
+                      collapsible
+                      value={expandedIngredient}
+                      onValueChange={setExpandedIngredient}
+                      className="space-y-1"
+                    >
+                      {newIngredients.map((ing, idx) => (
+                        <AccordionItem
+                          key={idx}
+                          value={`ing-${idx}`}
+                          className="rounded-lg border border-border/40 overflow-hidden"
+                        >
+                          <div className="flex items-center gap-2 px-3 py-2">
+                            <AccordionTriggerCompact className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <span className="text-sm font-medium truncate">
+                                  {ing.name || "Unnamed ingredient"}
+                                </span>
+                                {ing.amountPerServing && (
+                                  <span className="text-xs text-muted-foreground shrink-0 tabular-nums">
+                                    {ing.amountPerServing} {ing.unit}
+                                  </span>
+                                )}
+                              </div>
+                            </AccordionTriggerCompact>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 shrink-0"
+                              onClick={() =>
+                                setNewIngredients((prev) =>
+                                  prev.filter((_, i) => i !== idx),
+                                )
+                              }
+                            >
+                              <Trash2 className="h-3 w-3 text-red-400" />
+                            </Button>
+                          </div>
+                          <AccordionContent className="px-3 pb-3 pt-0 space-y-2">
+                            <Input
+                              value={ing.name}
+                              onChange={(e) =>
+                                setNewIngredients((prev) =>
+                                  prev.map((item, i) =>
+                                    i === idx
+                                      ? { ...item, name: e.target.value }
+                                      : item,
+                                  ),
+                                )
+                              }
+                              placeholder="Ingredient name"
+                              className="h-8 text-sm"
+                            />
+                            <div className="flex gap-2">
+                              <div className="flex-1 space-y-1">
+                                <Label className="text-xs text-muted-foreground">
+                                  Per serving
+                                </Label>
+                                <Input
+                                  type="number"
+                                  inputMode="decimal"
+                                  value={ing.amountPerServing}
+                                  onChange={(e) =>
+                                    setNewIngredients((prev) =>
+                                      prev.map((item, i) =>
+                                        i === idx
+                                          ? {
+                                              ...item,
+                                              amountPerServing: e.target.value,
+                                            }
+                                          : item,
+                                      ),
+                                    )
+                                  }
+                                  placeholder="300"
+                                  className="h-8 text-sm"
+                                />
+                              </div>
+                              <div className="w-20 space-y-1">
+                                <Label className="text-xs text-muted-foreground">
+                                  Unit
+                                </Label>
+                                <Select
+                                  value={ing.unit}
+                                  onValueChange={(val) =>
+                                    setNewIngredients((prev) =>
+                                      prev.map((item, i) =>
+                                        i === idx ? { ...item, unit: val } : item,
+                                      ),
+                                    )
+                                  }
+                                >
+                                  <SelectTrigger className="h-8 text-sm">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {DOSE_UNITS.map((u) => (
+                                      <SelectItem key={u} value={u}>
+                                        {u}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+                          </AccordionContent>
+                        </AccordionItem>
+                      ))}
+                    </Accordion>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  <Label>Dose unit</Label>
+                  <Select value={newDoseUnit} onValueChange={setNewDoseUnit}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {DOSE_UNITS.map((unit) => (
+                        <SelectItem key={unit} value={unit}>
+                          {unit}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              <div className="space-y-1">
+                <Label>Notes <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                <Textarea
+                  value={newNotes}
+                  onChange={(e) => setNewNotes(e.target.value)}
+                  placeholder="e.g., take with food, prescribed by Dr. Smith"
+                  rows={2}
+                />
+              </div>
             </div>
           </div>
-          <DialogFooter className="flex-row gap-2 sm:flex-row">
+
+          <div className="flex gap-2 px-4 py-4 border-t border-border/40">
             <Button
               type="button"
               variant="outline"
@@ -867,9 +981,15 @@ export function MedicationFlow({ bootstrap }: MedicationFlowProps) {
             >
               Create
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      <SupplementScanner
+        open={scannerOpen}
+        onOpenChange={handleScannerOpenChange}
+        onResult={handleScanResult}
+      />
 
       {/* ── Save preset name dialog ──────────────────────────── */}
       <Dialog
