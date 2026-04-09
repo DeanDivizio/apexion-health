@@ -67,7 +67,7 @@ export interface RetailItemView {
 
 export interface MealItemDraft {
   localId: string;
-  foodSource: "foundation" | "complex" | "retail";
+  foodSource: "foundation" | "complex" | "retail" | "ai_estimate";
   sourceFoodId: string | null;
   foundationFoodId: string | null;
   snapshotName: string;
@@ -88,7 +88,7 @@ export interface NutritionMealSessionView {
 }
 
 export interface MealItemViewEntry {
-  foodSource: "foundation" | "complex" | "retail";
+  foodSource: "foundation" | "complex" | "retail" | "ai_estimate";
   sourceFoodId: string | null;
   foundationFoodId: string | null;
   snapshotName: string;
@@ -103,7 +103,7 @@ export interface MealItemViewEntry {
 }
 
 export interface FoodPresetItemView {
-  foodSource: "foundation" | "complex" | "retail";
+  foodSource: "foundation" | "complex" | "retail" | "ai_estimate";
   sourceFoodId: string | null;
   foundationFoodId: string | null;
   snapshotName: string;

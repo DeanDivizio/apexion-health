@@ -723,6 +723,7 @@ enum NutritionFoodSource {
   foundation
   complex
   retail
+  ai_estimate
 }
 
 enum NutritionSourceType {
