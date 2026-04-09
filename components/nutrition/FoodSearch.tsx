@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Camera, PlusCircle, Search, Loader2 } from "lucide-react";
+import { Camera, PlusCircle, Search, Loader2, Sparkles } from "lucide-react";
 import { Input } from "@/components/ui_primitives/input";
 import { Button } from "@/components/ui_primitives/button";
 import { ScrollArea } from "@/components/ui_primitives/scroll-area";
@@ -10,6 +10,7 @@ import { FoodResultCard } from "./FoodResultCard";
 import { FoodDetailDialog } from "./FoodDetailDialog";
 import { ManualFoodForm } from "./ManualFoodForm";
 import { LabelScanner } from "./LabelScanner";
+import { PhotoEstimator } from "./PhotoEstimator";
 import { PresetCard } from "./PresetCard";
 import { searchFoodsAction } from "@/actions/nutrition";
 import { useToast } from "@/hooks/use-toast";
@@ -68,6 +69,7 @@ export function FoodSearch({
   const [detailOpen, setDetailOpen] = React.useState(false);
   const [manualOpen, setManualOpen] = React.useState(false);
   const [scannerOpen, setScannerOpen] = React.useState(false);
+  const [photoEstimatorOpen, setPhotoEstimatorOpen] = React.useState(false);
   const [browseTab, setBrowseTab] = React.useState<"presets" | "recents">(
     presets.length > 0 ? "presets" : "recents",
   );
@@ -155,6 +157,10 @@ export function FoodSearch({
         <Button variant="outline" size="sm" className="flex-1 gap-1.5" onClick={() => setManualOpen(true)}>
           <PlusCircle className="h-4 w-4" />
           Add Manually
+        </Button>
+        <Button variant="outline" size="sm" className="flex-1 gap-1.5" onClick={() => setPhotoEstimatorOpen(true)}>
+          <Sparkles className="h-4 w-4" />
+          Estimate
         </Button>
       </div>
 
@@ -292,6 +298,17 @@ export function FoodSearch({
         onOpenChange={setScannerOpen}
         onAddItem={onAddItem}
         onUserFoodCreated={onUserFoodCreated}
+      />
+
+      <PhotoEstimator
+        open={photoEstimatorOpen}
+        onOpenChange={setPhotoEstimatorOpen}
+        onAddItems={(items) => {
+          onAddPresetItems(items);
+          toast({
+            title: `${items.length} estimated item${items.length !== 1 ? "s" : ""} added to meal`,
+          });
+        }}
       />
     </div>
   );
