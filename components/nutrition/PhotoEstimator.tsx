@@ -48,10 +48,9 @@ type Stage =
   | { step: "disclaimer" }
   | { step: "capture" }
   | { step: "context"; imageBase64: string; preview: string }
-  | { step: "processing-initial"; imageBase64: string; preview: string }
-  | { step: "refining"; imageBase64: string; initialEstimate: PhotoEstimateResponse; context: string; preview: string }
+  | { step: "refining"; preview: string }
   | { step: "review"; items: EditableItem[] }
-  | { step: "error"; message: string; imageBase64?: string };
+  | { step: "error"; message: string };
 
 interface EditableItem extends EstimatedFoodItem {
   localId: string;
@@ -66,46 +65,60 @@ function getInitialStep(): Stage {
   return { step: "disclaimer" };
 }
 
+function estimateToEditableItems(estimate: PhotoEstimateResponse): EditableItem[] {
+  return estimate.items.map((item) => ({
+    ...item,
+    localId: crypto.randomUUID(),
+    editing: false,
+  }));
+}
+
 export function PhotoEstimator({ open, onOpenChange, onAddItems }: PhotoEstimatorProps) {
   const { toast } = useToast();
   const [stage, setStage] = React.useState<Stage>(getInitialStep);
   const [dontShowAgain, setDontShowAgain] = React.useState(false);
   const [userContext, setUserContext] = React.useState("");
+  const [initialEstimateReady, setInitialEstimateReady] = React.useState(false);
+  const [submittingContext, setSubmittingContext] = React.useState(false);
   const cameraRef = React.useRef<HTMLInputElement>(null);
   const uploadRef = React.useRef<HTMLInputElement>(null);
+  const initialEstimatePromiseRef = React.useRef<Promise<PhotoEstimateResponse> | null>(null);
+  const imageBase64Ref = React.useRef<string>("");
 
   React.useEffect(() => {
     if (open) {
       setStage(getInitialStep());
       setUserContext("");
       setDontShowAgain(false);
+      setInitialEstimateReady(false);
+      setSubmittingContext(false);
+      initialEstimatePromiseRef.current = null;
+      imageBase64Ref.current = "";
     }
   }, [open]);
 
-  async function handleFile(file: File) {
-    try {
-      const base64 = await compressImage(file);
-      setStage({ step: "processing-initial", imageBase64: base64, preview: base64 });
-
-      const result = await estimateMealFromPhotoAction(base64);
-
-      setStage({
-        step: "context",
-        imageBase64: base64,
-        preview: base64,
-      });
+  function handleFile(file: File) {
+    compressImage(file).then((base64) => {
+      imageBase64Ref.current = base64;
       setUserContext("");
+      setInitialEstimateReady(false);
+      setStage({ step: "context", imageBase64: base64, preview: base64 });
 
-      contextResolveRef.current = result;
-    } catch (err) {
+      const promise = estimateMealFromPhotoAction(base64);
+      initialEstimatePromiseRef.current = promise;
+
+      promise.then(() => {
+        setInitialEstimateReady(true);
+      }).catch(() => {
+        // Error is handled when the user submits/skips context
+      });
+    }).catch((err) => {
       setStage({
         step: "error",
-        message: err instanceof Error ? err.message : "Failed to analyze photo.",
+        message: err instanceof Error ? err.message : "Failed to process image.",
       });
-    }
+    });
   }
-
-  const contextResolveRef = React.useRef<PhotoEstimateResponse | null>(null);
 
   function onInputChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -122,60 +135,59 @@ export function PhotoEstimator({ open, onOpenChange, onAddItems }: PhotoEstimato
 
   async function handleSubmitContext() {
     if (stage.step !== "context") return;
-    const initialEstimate = contextResolveRef.current;
-    if (!initialEstimate) return;
+    const promise = initialEstimatePromiseRef.current;
+    if (!promise) return;
 
     const contextText = userContext.trim();
-    if (!contextText) {
-      const items = initialEstimate.items.map((item) => ({
-        ...item,
-        localId: crypto.randomUUID(),
-        editing: false,
-      }));
-      setStage({ step: "review", items });
-      return;
-    }
+    const preview = stage.preview;
 
-    setStage({
-      step: "refining",
-      imageBase64: stage.imageBase64,
-      initialEstimate,
-      context: contextText,
-      preview: stage.preview,
-    });
+    setSubmittingContext(true);
 
     try {
+      const initialEstimate = await promise;
+
+      if (!contextText) {
+        setStage({ step: "review", items: estimateToEditableItems(initialEstimate) });
+        return;
+      }
+
+      setStage({ step: "refining", preview });
+
       const refined = await refineMealEstimateAction(
-        stage.imageBase64,
+        imageBase64Ref.current,
         initialEstimate,
         contextText,
       );
 
-      const items = refined.items.map((item) => ({
-        ...item,
-        localId: crypto.randomUUID(),
-        editing: false,
-      }));
-      setStage({ step: "review", items });
+      setStage({ step: "review", items: estimateToEditableItems(refined) });
     } catch (err) {
       setStage({
         step: "error",
-        message: err instanceof Error ? err.message : "Failed to refine estimate.",
-        imageBase64: stage.imageBase64,
+        message: err instanceof Error ? err.message : "Failed to estimate meal.",
       });
+    } finally {
+      setSubmittingContext(false);
     }
   }
 
-  function handleSkipContext() {
-    const initialEstimate = contextResolveRef.current;
-    if (!initialEstimate) return;
+  async function handleSkipContext() {
+    if (stage.step !== "context") return;
+    const promise = initialEstimatePromiseRef.current;
+    if (!promise) return;
 
-    const items = initialEstimate.items.map((item) => ({
-      ...item,
-      localId: crypto.randomUUID(),
-      editing: false,
-    }));
-    setStage({ step: "review", items });
+    setSubmittingContext(true);
+
+    try {
+      const initialEstimate = await promise;
+      setStage({ step: "review", items: estimateToEditableItems(initialEstimate) });
+    } catch (err) {
+      setStage({
+        step: "error",
+        message: err instanceof Error ? err.message : "Failed to estimate meal.",
+      });
+    } finally {
+      setSubmittingContext(false);
+    }
   }
 
   function handleUpdateItem(localId: string, updates: Partial<EditableItem>) {
@@ -239,7 +251,6 @@ export function PhotoEstimator({ open, onOpenChange, onAddItems }: PhotoEstimato
             <Sparkles className="h-5 w-5 text-amber-500" />
             {stage.step === "disclaimer" && "AI Meal Estimation"}
             {stage.step === "capture" && "Take a Photo"}
-            {stage.step === "processing-initial" && "Analyzing Photo"}
             {stage.step === "context" && "Add Context"}
             {stage.step === "refining" && "Refining Estimate"}
             {stage.step === "review" && "Review Items"}
@@ -248,7 +259,6 @@ export function PhotoEstimator({ open, onOpenChange, onAddItems }: PhotoEstimato
           <DrawerDescription>
             {stage.step === "disclaimer" && "Please read before continuing."}
             {stage.step === "capture" && "Snap a picture of your meal."}
-            {stage.step === "processing-initial" && "Our AI is identifying the foods in your photo..."}
             {stage.step === "context" && "Help us improve the estimate with details."}
             {stage.step === "refining" && "Refining the estimate with your context..."}
             {stage.step === "review" && "Edit items below, then add them to your meal."}
@@ -326,23 +336,7 @@ export function PhotoEstimator({ open, onOpenChange, onAddItems }: PhotoEstimato
             </div>
           )}
 
-          {/* ── Stage: Processing Initial ─────────────────── */}
-          {stage.step === "processing-initial" && (
-            <div className="flex flex-col items-center justify-center py-6 space-y-4">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={stage.preview}
-                alt="Meal preview"
-                className="max-h-40 rounded-lg object-contain"
-              />
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Identifying foods in your photo...
-              </div>
-            </div>
-          )}
-
-          {/* ── Stage: Context ────────────────────────────── */}
+          {/* ── Stage: Context (shown immediately while initial estimate runs) ── */}
           {stage.step === "context" && (
             <div className="space-y-4 py-2">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -351,6 +345,14 @@ export function PhotoEstimator({ open, onOpenChange, onAddItems }: PhotoEstimato
                 alt="Meal preview"
                 className="max-h-32 rounded-lg object-contain mx-auto"
               />
+
+              {!initialEstimateReady && (
+                <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  Analyzing photo in background...
+                </div>
+              )}
+
               <div className="space-y-1.5">
                 <Label className="text-sm">
                   Any details about this meal? <span className="text-muted-foreground font-normal">(optional)</span>
@@ -361,6 +363,7 @@ export function PhotoEstimator({ open, onOpenChange, onAddItems }: PhotoEstimato
                   placeholder='e.g. "Pad Thai from a local restaurant, large portion" or "Homemade chicken stir fry with brown rice, cooked in olive oil"'
                   rows={3}
                   className="resize-none"
+                  disabled={submittingContext}
                 />
                 <p className="text-xs text-muted-foreground">
                   Restaurant name, cooking method, portion size, or anything else that helps.
@@ -425,12 +428,26 @@ export function PhotoEstimator({ open, onOpenChange, onAddItems }: PhotoEstimato
 
           {stage.step === "context" && (
             <div className="flex gap-2">
-              <Button variant="outline" className="flex-1" onClick={handleSkipContext}>
-                Skip
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={handleSkipContext}
+                disabled={submittingContext}
+              >
+                {submittingContext && !userContext.trim() ? (
+                  <><Loader2 className="h-4 w-4 animate-spin mr-1.5" />Waiting...</>
+                ) : "Skip"}
               </Button>
-              <Button className="flex-1 gap-1.5" onClick={handleSubmitContext}>
-                <Send className="h-4 w-4" />
-                {userContext.trim() ? "Refine Estimate" : "Continue"}
+              <Button
+                className="flex-1 gap-1.5"
+                onClick={handleSubmitContext}
+                disabled={submittingContext}
+              >
+                {submittingContext ? (
+                  <><Loader2 className="h-4 w-4 animate-spin" />Processing...</>
+                ) : (
+                  <><Send className="h-4 w-4" />{userContext.trim() ? "Refine Estimate" : "Continue"}</>
+                )}
               </Button>
             </div>
           )}
