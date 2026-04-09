@@ -25,6 +25,7 @@ import { cacheTag, cacheLife } from "next/cache";
 import { normalizeDateInput } from "@/lib/dates/dateStr";
 import {
   EXERCISE_MAP,
+  MUSCLE_GROUP_LABELS,
   VARIATION_TEMPLATES,
   calculateSetVolume,
   exerciseStatsKey,
@@ -479,6 +480,7 @@ export async function createWorkoutSession(userId: string, session: WorkoutSessi
         dateStr: session.date,
         startTimeStr: session.startTime,
         endTimeStr: session.endTime,
+        sessionName: session.sessionName?.trim() || null,
         notes: session.notes?.trim() || null,
       },
     });
@@ -525,6 +527,7 @@ export async function getWorkoutSession(
     date: session.dateStr,
     startTime: session.startTimeStr,
     endTime: session.endTimeStr,
+    sessionName: session.sessionName ?? undefined,
     notes: session.notes ?? undefined,
     linkedBiometricProviders: [...new Set(session.biometricWorkouts.map((workout) => workout.provider))],
     exercises: session.exercises.map(transformExercise),
@@ -571,6 +574,7 @@ export async function listWorkoutSessions(
     date: session.dateStr,
     startTime: session.startTimeStr,
     endTime: session.endTimeStr,
+    sessionName: session.sessionName ?? undefined,
     notes: session.notes ?? undefined,
     linkedBiometricProviders: [...new Set(session.biometricWorkouts.map((workout) => workout.provider))],
     exercises: session.exercises.map(transformExercise),
@@ -625,6 +629,7 @@ export async function updateWorkoutSession(
         dateStr: session.date,
         startTimeStr: session.startTime,
         endTimeStr: session.endTime,
+        sessionName: session.sessionName?.trim() || null,
         notes: session.notes?.trim() || null,
       },
     });
@@ -635,6 +640,26 @@ export async function updateWorkoutSession(
       const [key, preset] = pair.split("\0");
       await recalculateExerciseStat(tx, userId, key, preset);
     }
+  });
+}
+
+/**
+ * Updates only the session name (for inline editing).
+ */
+export async function updateWorkoutSessionName(
+  userId: string,
+  sessionId: string,
+  sessionName: string | null,
+) {
+  const existing = await prisma.gymWorkoutSession.findFirst({
+    where: { id: sessionId, userId },
+    select: { id: true },
+  });
+  if (!existing) throw new Error("Workout session not found");
+
+  await prisma.gymWorkoutSession.update({
+    where: { id: sessionId },
+    data: { sessionName: sessionName?.trim() || null },
   });
 }
 
@@ -945,17 +970,7 @@ export async function getGymMeta(userId: string): Promise<GymUserMeta> {
 // WORKOUT DAY SUMMARY (for home screen)
 // =============================================================================
 
-const MUSCLE_GROUP_LABELS: Record<string, string> = {
-  chestUpper: "Chest", chestMid: "Chest", chestLower: "Chest",
-  lats: "Back", trapsUpper: "Traps", trapsMid: "Back", trapsLower: "Back",
-  rhomboids: "Back", lowerBack: "Lower Back",
-  deltsFront: "Shoulders", deltsSide: "Shoulders", deltsRear: "Shoulders",
-  biceps: "Biceps", triceps: "Triceps", forearms: "Forearms",
-  absUpper: "Core", absLower: "Core", obliques: "Core", transverseAbs: "Core",
-  quads: "Quads", hamstrings: "Hamstrings", glutes: "Glutes",
-  hipFlexors: "Hip Flexors", adductors: "Adductors",
-  abductors: "Abductors", calves: "Calves",
-};
+// MUSCLE_GROUP_LABELS is imported from "@/lib/gym" (defined in lib/gym/sessionName.ts)
 
 export interface WorkoutDaySummarySession {
   sessionId: string;

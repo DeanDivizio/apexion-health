@@ -26,6 +26,7 @@ import {
   updatePersistentExerciseNote,
   updateUserPreferences,
   updateWorkoutSession,
+  updateWorkoutSessionName,
 } from "@/lib/gym/server/gymService";
 import { prisma } from "@/lib/db/prisma";
 import { getPostHogClient } from "@/lib/posthog-server";
@@ -83,6 +84,12 @@ export async function updateWorkoutSessionAction(sessionId: string, session: unk
   const result = await updateWorkoutSession(userId, sessionId, parsed);
   updateTag(`workoutSummary:${userId}`);
   return result;
+}
+
+export async function updateWorkoutSessionNameAction(sessionId: string, sessionName: string | null) {
+  const userId = await requireUserId();
+  if (!sessionId) throw new Error("Session ID is required.");
+  await updateWorkoutSessionName(userId, sessionId, sessionName);
 }
 
 export async function deleteWorkoutSessionAction(sessionId: string) {

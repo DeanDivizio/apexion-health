@@ -163,6 +163,13 @@ export {
   getVariationOptionLabel,
 } from "./variations";
 
+// Session name & muscle group utilities
+export {
+  MUSCLE_GROUP_LABELS,
+  getMuscleGroupsForExercises,
+  generateSessionName,
+} from "./sessionName";
+
 // Presets
 export type { MovementPreset } from "./presets";
 export { getPreset, getPresetsForCategory, getFallbackPreset } from "./presets";

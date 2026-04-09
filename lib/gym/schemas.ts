@@ -189,6 +189,7 @@ export const workoutSessionSchema = z.object({
   startTime: z.string().min(1, "Start time is required"),
   endTime: z.string().min(1, "End time is required"),
   exercises: z.array(exerciseEntrySchema),
+  sessionName: z.string().max(100).optional(),
   notes: z.string().max(5000).optional(),
 });
 

@@ -6,6 +6,7 @@ import {
   deleteWorkoutSessionAction,
   listWorkoutSessionsAction,
   updateWorkoutSessionAction,
+  updateWorkoutSessionNameAction,
 } from "@/actions/gym"
 import { captureClientEvent } from "@/lib/posthog-client"
 import {
@@ -101,6 +102,28 @@ export default function GymSessions() {
     }
   }
 
+  const handleUpdateName = async (sessionId: string, name: string | null) => {
+    setSessions((prev) =>
+      prev.map((s) => (s.id === sessionId ? { ...s, sessionName: name ?? undefined } : s)),
+    )
+    try {
+      await updateWorkoutSessionNameAction(sessionId, name)
+    } catch {
+      setSessions((prev) =>
+        prev.map((s) => {
+          if (s.id !== sessionId) return s
+          const original = sessions.find((o) => o.id === sessionId)
+          return original ? { ...s, sessionName: original.sessionName } : s
+        }),
+      )
+      toast({
+        title: "Error",
+        description: "Failed to update session name.",
+        variant: "destructive",
+      })
+    }
+  }
+
   const handleDelete = async () => {
     if (!deleteConfirmId) return
     setDeleting(true)
@@ -178,6 +201,7 @@ export default function GymSessions() {
                   setOpenIndex(i)
                 }}
                 onRequestDelete={() => setDeleteConfirmId(session.id)}
+                onUpdateName={(name) => handleUpdateName(session.id, name)}
               />
             ),
           )}

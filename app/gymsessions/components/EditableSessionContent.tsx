@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui_primitives/textarea"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui_primitives/popover"
 import { capitalize } from "@/lib/utils"
 import type { ExerciseEntry, StrengthSet } from "@/lib/gym"
+import { generateSessionName } from "@/lib/gym"
 import { inputValueToDateStr, inputValueToTimeStr, spellOutDateShortYear, timeStrToInputValue } from "./helpers"
 import type { SessionWithId } from "./types"
 import { VariationChips } from "./VariationChips"
@@ -328,6 +329,16 @@ export function EditableSessionContent({
       }`}
     >
       <div className="px-4 pt-4 pb-3 border-b border-border/30 space-y-2.5">
+        <div>
+          <label className="text-[9px] text-muted-foreground/50 uppercase tracking-wider">Session Name</label>
+          <Input
+            value={draft.sessionName ?? ""}
+            onChange={(e) => setDraft((prev) => ({ ...prev, sessionName: e.target.value || undefined }))}
+            placeholder={generateSessionName(draft.exercises)}
+            maxLength={100}
+            className="h-9 text-sm"
+          />
+        </div>
         <div className="grid grid-cols-3 gap-2">
           <div>
             <label className="text-[9px] text-muted-foreground/50 uppercase tracking-wider">Date</label>

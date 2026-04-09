@@ -332,6 +332,8 @@ export interface WorkoutSession {
   endTime: string;
   /** All exercises performed in this session */
   exercises: ExerciseEntry[];
+  /** User-provided session name override (e.g., "Push Day"). When absent, auto-generated from muscle groups. */
+  sessionName?: string;
   /** Session-level notes (overall workout observations, how you felt, etc.) */
   notes?: string;
 }

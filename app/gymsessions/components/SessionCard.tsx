@@ -1,13 +1,14 @@
 "use client"
 
-import { useCallback, useMemo, useState } from "react"
-import { Activity, ChevronDown, Pencil, Settings, StickyNote, Trash2 } from "lucide-react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { Activity, Check, ChevronDown, Pencil, Settings, StickyNote, Trash2, X } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui_primitives/dropdown-menu"
+import { getMuscleGroupsForExercises, generateSessionName } from "@/lib/gym"
 import { calcSessionVolume, formatVolume, spellOutDateShortYear } from "./helpers"
 import { ExerciseBlock } from "./ExerciseBlock"
 import { WhoopWorkoutData } from "./WhoopWorkoutData"
@@ -19,6 +20,7 @@ interface SessionCardProps {
   onToggle: () => void
   onEdit: () => void
   onRequestDelete: () => void
+  onUpdateName: (name: string | null) => void
 }
 
 const BIOMETRIC_PROVIDER_BADGE_CONFIG: Record<
@@ -44,17 +46,75 @@ function getProviderBadge(provider: string): {
   )
 }
 
+function InlineNameEditor({
+  value,
+  placeholder,
+  onSave,
+  onCancel,
+}: {
+  value: string
+  placeholder: string
+  onSave: (name: string) => void
+  onCancel: () => void
+}) {
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [draft, setDraft] = useState(value)
+
+  useEffect(() => {
+    inputRef.current?.focus()
+    inputRef.current?.select()
+  }, [])
+
+  const commit = () => {
+    onSave(draft.trim())
+  }
+
+  return (
+    <div className="flex items-center gap-1 min-w-0" onClick={(e) => e.stopPropagation()}>
+      <input
+        ref={inputRef}
+        type="text"
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") commit()
+          if (e.key === "Escape") onCancel()
+        }}
+        placeholder={placeholder}
+        maxLength={100}
+        className="flex-1 min-w-0 bg-white/5 border border-white/20 rounded-md px-2 py-0.5 text-[15px] font-semibold text-foreground leading-tight outline-none focus:border-blue-400/50 focus:ring-1 focus:ring-blue-400/25"
+      />
+      <button
+        type="button"
+        onClick={commit}
+        className="p-0.5 rounded text-emerald-400 hover:bg-emerald-500/10 transition-colors"
+      >
+        <Check className="h-3.5 w-3.5" />
+      </button>
+      <button
+        type="button"
+        onClick={onCancel}
+        className="p-0.5 rounded text-muted-foreground hover:bg-white/5 transition-colors"
+      >
+        <X className="h-3.5 w-3.5" />
+      </button>
+    </div>
+  )
+}
+
 export function SessionCard({
   session,
   isOpen,
   onToggle,
   onEdit,
   onRequestDelete,
+  onUpdateName,
 }: SessionCardProps) {
   const sessionVolume = calcSessionVolume(session)
   const [linkedProviders, setLinkedProviders] = useState<string[]>(
     session.linkedBiometricProviders ?? [],
   )
+  const [isEditingName, setIsEditingName] = useState(false)
 
   const handleLinkChange = useCallback((providers: string[]) => {
     setLinkedProviders(providers);
@@ -64,6 +124,26 @@ export function SessionCard({
     () => [...new Set(linkedProviders.map((provider) => provider.toLowerCase()))],
     [linkedProviders],
   )
+
+  const muscleGroups = useMemo(
+    () => getMuscleGroupsForExercises(session.exercises),
+    [session.exercises],
+  )
+
+  const generatedName = useMemo(
+    () => generateSessionName(session.exercises),
+    [session.exercises],
+  )
+
+  const displayName = session.sessionName || generatedName
+
+  const handleNameSave = (name: string) => {
+    setIsEditingName(false)
+    const newName = name === "" || name === generatedName ? null : name
+    if (newName !== (session.sessionName ?? null)) {
+      onUpdateName(newName)
+    }
+  }
 
   return (
     <div
@@ -82,17 +162,55 @@ export function SessionCard({
 
       <div className="relative z-10">
         <div className="flex items-center gap-2 px-2 py-3.5">
-          <button
-            type="button"
+          <div
+            role="button"
+            tabIndex={0}
             onClick={onToggle}
-            className="flex-1 min-w-0 text-left active:opacity-70 transition-opacity"
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onToggle() }}
+            className="flex-1 min-w-0 text-left active:opacity-70 transition-opacity cursor-pointer"
           >
-            <p className="text-[15px] font-semibold text-foreground leading-tight">
-              {spellOutDateShortYear(session.date)}
+            <div className="flex items-center gap-1.5 min-w-0">
+              {isEditingName ? (
+                <InlineNameEditor
+                  value={session.sessionName ?? generatedName}
+                  placeholder={generatedName}
+                  onSave={handleNameSave}
+                  onCancel={() => setIsEditingName(false)}
+                />
+              ) : (
+                <>
+                  <p className="text-[15px] font-semibold text-foreground leading-tight truncate">
+                    {displayName}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setIsEditingName(true)
+                    }}
+                    className="p-0.5 rounded text-muted-foreground/50 hover:text-muted-foreground hover:bg-white/5 transition-colors shrink-0"
+                  >
+                    <Pencil className="h-3 w-3" />
+                  </button>
+                </>
+              )}
+            </div>
+            <p className="text-xs text-neutral-500 mt-0.5">
+            <span className="text-neutral-400 font-medium">
+              {spellOutDateShortYear(session.date)} </span>· {session.startTime} – {session.endTime}
             </p>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {session.startTime} – {session.endTime}
-            </p>
+            {muscleGroups.length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-1.5">
+                {muscleGroups.map((mg) => (
+                  <span
+                    key={mg}
+                    className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300"
+                  >
+                    {mg}
+                  </span>
+                ))}
+              </div>
+            )}
             {uniqueLinkedProviders.length > 0 && (
               <div className="mt-1.5 flex items-center gap-1.5">
                 <span className="inline-flex items-center rounded-full border border-emerald-400/30 bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-emerald-300">
@@ -112,7 +230,7 @@ export function SessionCard({
                 })}
               </div>
             )}
-          </button>
+          </div>
 
           <div className="flex items-center gap-1 shrink-0">
             <DropdownMenu>
