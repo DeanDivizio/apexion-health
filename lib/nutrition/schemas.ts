@@ -31,7 +31,7 @@ export const createUserFoodSchema = z.object({
 });
 
 export const mealItemDraftSchema = z.object({
-  foodSource: z.enum(["foundation", "complex", "retail"]),
+  foodSource: z.enum(["foundation", "complex", "retail", "ai_estimate"]),
   sourceFoodId: z.string().nullable().default(null),
   foundationFoodId: z.string().nullable().default(null),
   snapshotName: z.string().min(1),

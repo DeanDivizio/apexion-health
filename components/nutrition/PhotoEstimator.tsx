@@ -47,8 +47,8 @@ interface PhotoEstimatorProps {
 type Stage =
   | { step: "disclaimer" }
   | { step: "capture" }
-  | { step: "context"; imageBase64: string; preview: string }
-  | { step: "refining"; preview: string }
+  | { step: "context"; imageBase64: string }
+  | { step: "refining" }
   | { step: "review"; items: EditableItem[] }
   | { step: "error"; message: string };
 
@@ -78,7 +78,6 @@ export function PhotoEstimator({ open, onOpenChange, onAddItems }: PhotoEstimato
   const [stage, setStage] = React.useState<Stage>(getInitialStep);
   const [dontShowAgain, setDontShowAgain] = React.useState(false);
   const [userContext, setUserContext] = React.useState("");
-  const [initialEstimateReady, setInitialEstimateReady] = React.useState(false);
   const [submittingContext, setSubmittingContext] = React.useState(false);
   const cameraRef = React.useRef<HTMLInputElement>(null);
   const uploadRef = React.useRef<HTMLInputElement>(null);
@@ -90,7 +89,6 @@ export function PhotoEstimator({ open, onOpenChange, onAddItems }: PhotoEstimato
       setStage(getInitialStep());
       setUserContext("");
       setDontShowAgain(false);
-      setInitialEstimateReady(false);
       setSubmittingContext(false);
       initialEstimatePromiseRef.current = null;
       imageBase64Ref.current = "";
@@ -101,15 +99,12 @@ export function PhotoEstimator({ open, onOpenChange, onAddItems }: PhotoEstimato
     compressImage(file).then((base64) => {
       imageBase64Ref.current = base64;
       setUserContext("");
-      setInitialEstimateReady(false);
-      setStage({ step: "context", imageBase64: base64, preview: base64 });
+      setStage({ step: "context", imageBase64: base64 });
 
       const promise = estimateMealFromPhotoAction(base64);
       initialEstimatePromiseRef.current = promise;
 
-      promise.then(() => {
-        setInitialEstimateReady(true);
-      }).catch(() => {
+      promise.catch(() => {
         // Error is handled when the user submits/skips context
       });
     }).catch((err) => {
@@ -139,7 +134,6 @@ export function PhotoEstimator({ open, onOpenChange, onAddItems }: PhotoEstimato
     if (!promise) return;
 
     const contextText = userContext.trim();
-    const preview = stage.preview;
 
     setSubmittingContext(true);
 
@@ -151,7 +145,7 @@ export function PhotoEstimator({ open, onOpenChange, onAddItems }: PhotoEstimato
         return;
       }
 
-      setStage({ step: "refining", preview });
+      setStage({ step: "refining" });
 
       const refined = await refineMealEstimateAction(
         imageBase64Ref.current,
@@ -225,7 +219,7 @@ export function PhotoEstimator({ open, onOpenChange, onAddItems }: PhotoEstimato
 
     const drafts: MealItemDraft[] = stage.items.map((item) => ({
       localId: crypto.randomUUID(),
-      foodSource: "complex" as const,
+      foodSource: "ai_estimate" as const,
       sourceFoodId: null,
       foundationFoodId: null,
       snapshotName: item.name,
@@ -277,8 +271,9 @@ export function PhotoEstimator({ open, onOpenChange, onAddItems }: PhotoEstimato
                     <strong className="text-foreground">This feature uses AI to estimate nutrition from a photo.</strong>
                   </p>
                   <p>
-                    Estimates may be inaccurate. Portion sizes, hidden ingredients, cooking
-                    methods, and image quality all affect accuracy. This is intended as a{" "}
+                    Estimates are likely to be <span className="italic">roughly</span> accurate. Portion sizes, hidden ingredients, cooking
+                    methods, and image quality all affect accuracy. </p>
+                    <p>This is intended as a{" "}
                     <strong className="text-foreground">last resort</strong> when no other
                     nutrition info is available (e.g. restaurant meals, food prepared by
                     others).
@@ -338,25 +333,8 @@ export function PhotoEstimator({ open, onOpenChange, onAddItems }: PhotoEstimato
 
           {/* ── Stage: Context (shown immediately while initial estimate runs) ── */}
           {stage.step === "context" && (
-            <div className="space-y-4 py-2">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={stage.preview}
-                alt="Meal preview"
-                className="max-h-32 rounded-lg object-contain mx-auto"
-              />
-
-              {!initialEstimateReady && (
-                <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  Analyzing photo in background...
-                </div>
-              )}
-
+            <div className="">
               <div className="space-y-1.5">
-                <Label className="text-sm">
-                  Any details about this meal? <span className="text-muted-foreground font-normal">(optional)</span>
-                </Label>
                 <Textarea
                   value={userContext}
                   onChange={(e) => setUserContext(e.target.value)}
@@ -365,7 +343,7 @@ export function PhotoEstimator({ open, onOpenChange, onAddItems }: PhotoEstimato
                   className="resize-none"
                   disabled={submittingContext}
                 />
-                <p className="text-xs text-muted-foreground">
+                <p className="pt-4 text-xs text-muted-foreground">
                   Restaurant name, cooking method, portion size, or anything else that helps.
                 </p>
               </div>
@@ -375,12 +353,6 @@ export function PhotoEstimator({ open, onOpenChange, onAddItems }: PhotoEstimato
           {/* ── Stage: Refining ───────────────────────────── */}
           {stage.step === "refining" && (
             <div className="flex flex-col items-center justify-center py-6 space-y-4">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={stage.preview}
-                alt="Meal preview"
-                className="max-h-32 rounded-lg object-contain"
-              />
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin" />
                 Refining estimate with your context...
@@ -553,7 +525,7 @@ function ReviewItemCard({
   }
 
   return (
-    <div className="flex items-center gap-3 rounded-lg border border-border/40 px-3 py-2.5">
+    <div className="flex items-center gap-3 border bg-gradient-to-br from-blue-950/20 via-slate-950/50 to-neutral-950 border-neutral-400/40 rounded-xl px-3 py-2.5">
       <div className="min-w-0 flex-1">
         <p className="text-sm font-medium truncate">{item.name}</p>
         <p className="text-xs text-muted-foreground">

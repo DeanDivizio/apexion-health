@@ -77,6 +77,7 @@ function sourceBadge(item: MealItemDraft) {
     case "foundation": return "Foundation";
     case "complex": return "My Food";
     case "retail": return item.snapshotBrand ?? "Restaurant";
+    case "ai_estimate": return "AI Estimate";
   }
 }
 
