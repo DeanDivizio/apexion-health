@@ -1,7 +1,13 @@
 "use client";
 
 import * as React from "react";
-import { Camera, PlusCircle, Search, Loader2, Sparkles } from "lucide-react";
+import { Camera, EllipsisVertical, PlusCircle, Search, Loader2, Sparkles } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui_primitives/dropdown-menu";
 import { Input } from "@/components/ui_primitives/input";
 import { Button } from "@/components/ui_primitives/button";
 import { ScrollArea } from "@/components/ui_primitives/scroll-area";
@@ -150,18 +156,27 @@ export function FoodSearch({
       </div>
 
       <div className="flex gap-2">
-        <Button variant="outline" size="sm" className="flex-1 gap-1.5" onClick={() => setScannerOpen(true)}>
-          <Camera className="h-4 w-4" />
+        <Button variant="outline" size="sm" className="flex-1 gap-1.5 border-green-500/40" onClick={() => setScannerOpen(true)}>
+          <Camera className="h-4 w-4 text-green-400/90 mr-1" />
           Scan Label
         </Button>
-        <Button variant="outline" size="sm" className="flex-1 gap-1.5" onClick={() => setManualOpen(true)}>
-          <PlusCircle className="h-4 w-4" />
-          Add Manually
+        <Button variant="outline" size="sm" className="flex-1 gap-1.5 border-amber-500/40" onClick={() => setPhotoEstimatorOpen(true)}>
+          <Sparkles className="h-4 w-4 text-amber-400/90 mr-1" />
+          Estimate with AI
         </Button>
-        <Button variant="outline" size="sm" className="flex-1 gap-1.5" onClick={() => setPhotoEstimatorOpen(true)}>
-          <Sparkles className="h-4 w-4" />
-          Estimate
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="flex-1 max-w-fit gap-1">
+              <EllipsisVertical className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => setManualOpen(true)}>
+              <PlusCircle className="h-4 w-4 mr-2" />
+              Add Manually
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <ScrollArea className="max-h-[calc(100dvh-16rem)]">
