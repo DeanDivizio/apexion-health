@@ -10,13 +10,24 @@ import {
   normalizeDateInput,
   toCompactDateStr,
 } from "@/lib/dates/dateStr";
+import {
+  DEFAULT_WATER_GOAL_OZ,
+  DEFAULT_SODIUM_GOAL_MG,
+  DEFAULT_POTASSIUM_GOAL_MG,
+  DEFAULT_MAGNESIUM_GOAL_MG,
+} from "@/lib/nutrition/defaults";
+
+const BEVERAGE_TYPES = ["water", "coffee", "tea"] as const;
+export type BeverageType = (typeof BEVERAGE_TYPES)[number];
 
 const logHydrationSchema = z.object({
   amount: z.number().positive(),
-  unit: z.enum(["oz", "ml"]),
+  unit: z.enum(["oz", "ml", "cup"]),
+  beverageType: z.enum(BEVERAGE_TYPES),
 });
 
 const ML_PER_OZ = 29.5735;
+const OZ_PER_CUP = 8;
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const db = prisma as any;
@@ -66,9 +77,12 @@ function resolveElectrolyteKey(
 
 export async function logHydrationAction(input: unknown) {
   const userId = await requireUserId();
-  const { amount, unit } = logHydrationSchema.parse(input);
+  const { amount, unit, beverageType } = logHydrationSchema.parse(input);
 
-  const amountOz = unit === "ml" ? amount / ML_PER_OZ : amount;
+  const amountOz =
+    unit === "ml" ? amount / ML_PER_OZ :
+    unit === "cup" ? amount * OZ_PER_CUP :
+    amount;
 
   const now = new Date();
   const dateStr = toCompactDateStr(now);
@@ -77,6 +91,7 @@ export async function logHydrationAction(input: unknown) {
     data: {
       userId,
       amountOz,
+      beverageType,
       dateStr,
     },
   });
@@ -85,19 +100,13 @@ export async function logHydrationAction(input: unknown) {
   return result;
 }
 
-import {
-  DEFAULT_WATER_GOAL_OZ,
-  DEFAULT_SODIUM_GOAL_MG,
-  DEFAULT_POTASSIUM_GOAL_MG,
-  DEFAULT_MAGNESIUM_GOAL_MG,
-} from "@/lib/nutrition/defaults";
-
 export interface HydrationSummaryView {
   waterOz: number;
+  coffeeOz: number;
+  teaOz: number;
   sodiumMg: number;
   potassiumMg: number;
   magnesiumMg: number;
-  /** Resolved targets (DB or app defaults) for progress UI */
   waterGoalOz: number;
   sodiumGoalMg: number;
   potassiumGoalMg: number;
@@ -129,7 +138,7 @@ async function getHydrationSummaryCached(
             lt: endUtcExclusive,
           },
         },
-        select: { amountOz: true },
+        select: { amountOz: true, beverageType: true },
       }),
       db.nutritionMealItemNutrient
         .findMany({
@@ -179,10 +188,11 @@ async function getHydrationSummaryCached(
         .catch(() => null),
     ]);
 
-  const waterOz = hydrationLogs.reduce(
-    (sum: number, log: { amountOz: number }) => sum + log.amountOz,
-    0,
-  );
+  const fluidBuckets = { water: 0, coffee: 0, tea: 0 };
+  for (const log of hydrationLogs) {
+    const key = (log.beverageType ?? "water") as keyof typeof fluidBuckets;
+    fluidBuckets[key in fluidBuckets ? key : "water"] += log.amountOz;
+  }
 
   const electrolytes: Record<string, number> = {
     sodium: 0,
@@ -222,7 +232,9 @@ async function getHydrationSummaryCached(
       : DEFAULT_MAGNESIUM_GOAL_MG;
 
   return {
-    waterOz,
+    waterOz: fluidBuckets.water,
+    coffeeOz: fluidBuckets.coffee,
+    teaOz: fluidBuckets.tea,
     sodiumMg: electrolytes.sodium,
     potassiumMg: electrolytes.potassium,
     magnesiumMg: electrolytes.magnesium,

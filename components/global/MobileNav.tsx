@@ -18,7 +18,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui_primitives/dropdown-menu-raw";
 import { useState } from "react";
-import LogHydrationDialog from "@/components/hydration/LogHydrationDialog";
+import LogHydrationDrawer from "@/components/hydration/LogHydrationDrawer";
 
 const navItems = [
   { href: "/", icon: House, label: "Home" },
@@ -96,7 +96,7 @@ function AddButton({
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/[0.06]">
               <Droplets className="h-4 w-4 text-blue-400" />
             </span>
-            <span className="text-[15px] font-light text-white/90">Water</span>
+            <span className="text-[15px] font-light text-white/90">Hydration</span>
           </span>
         </DropdownMenuItem>
       </DropdownMenuContent>
@@ -164,7 +164,7 @@ export default function MobileNav() {
         />
       </nav>
 
-      <LogHydrationDialog open={hydrationOpen} onOpenChange={setHydrationOpen} />
+      <LogHydrationDrawer open={hydrationOpen} onOpenChange={setHydrationOpen} />
     </>
   );
 }
