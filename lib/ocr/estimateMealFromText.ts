@@ -54,6 +54,16 @@ Return ONLY valid JSON matching this shape:
   ]
 }`;
 
+function extractJson(text: string): unknown {
+  const fenced = text.match(/```(?:json)?\s*\n?([\s\S]*?)```/);
+  if (fenced) return JSON.parse(fenced[1].trim());
+
+  const braceMatch = text.match(/\{[\s\S]*\}/);
+  if (braceMatch) return JSON.parse(braceMatch[0]);
+
+  return JSON.parse(text);
+}
+
 export async function estimateMealFromText(
   description: string,
 ): Promise<TextEstimateResponse> {
@@ -66,13 +76,12 @@ export async function estimateMealFromText(
     instructions: TEXT_ESTIMATE_SYSTEM_PROMPT,
     input: description,
     tools: [{ type: "web_search_preview" }],
-    text: { format: { type: "json_object" } },
   });
 
   const rawText = response.output_text;
   if (!rawText) throw new Error("Empty response from model during text estimation.");
 
-  const parsed = JSON.parse(rawText);
+  const parsed = extractJson(rawText);
   const result = photoEstimateResponseSchema.safeParse(parsed);
   if (!result.success) {
     throw new Error(`Validation failed: ${result.error.message}`);
