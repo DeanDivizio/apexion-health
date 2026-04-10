@@ -33,7 +33,6 @@ import { useToast } from "@/hooks/use-toast";
 import {
   estimateMealFromPhotoAction,
   refineMealEstimateAction,
-  estimateMealFromTextAction,
 } from "@/actions/ocr";
 import { compressImage } from "@/lib/compressImage";
 import type { EstimatedFoodItem, PhotoEstimateResponse } from "@/lib/ocr/estimateMealFromPhoto";
@@ -200,7 +199,18 @@ export function PhotoEstimator({ open, onOpenChange, onAddItems }: PhotoEstimato
     setStage({ step: "text-estimating" });
 
     try {
-      const estimate = await estimateMealFromTextAction(desc);
+      const res = await fetch("/api/nutrition/estimate-text", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ description: desc }),
+      });
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.error ?? `Request failed (${res.status})`);
+      }
+
+      const estimate: PhotoEstimateResponse = await res.json();
       setStage({ step: "review", items: estimateToEditableItems(estimate) });
     } catch (err) {
       setStage({

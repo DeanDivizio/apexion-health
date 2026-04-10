@@ -9,7 +9,6 @@ import {
   refineMealEstimate,
   type PhotoEstimateResponse,
 } from "@/lib/ocr/estimateMealFromPhoto";
-import { estimateMealFromText } from "@/lib/ocr/estimateMealFromText";
 
 export async function extractNutritionLabelAction(imageBase64: string) {
   const { userId } = await auth();
@@ -46,10 +45,4 @@ export async function refineMealEstimateAction(
   const { userId } = await auth();
   if (!userId) throw new Error("User is not signed in.");
   return refineMealEstimate(imageBase64, initialEstimate, userContext, userId);
-}
-
-export async function estimateMealFromTextAction(description: string) {
-  const { userId } = await auth();
-  if (!userId) throw new Error("User is not signed in.");
-  return estimateMealFromText(description);
 }
