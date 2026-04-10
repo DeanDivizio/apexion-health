@@ -693,13 +693,15 @@ model BiometricBodyMeasurement {
 }
 
 model HydrationLog {
-  id           String   @id @default(uuid())
-  userId       String
-  amountOz     Float
-  beverageType String   @default("water")
-  dateStr      String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id              String   @id @default(uuid())
+  userId          String
+  amountOz        Float
+  beverageType    String   @default("water")
+  beverageSubtype String?
+  caffeineMg      Float    @default(0)
+  dateStr         String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   @@index([userId, dateStr])
 }

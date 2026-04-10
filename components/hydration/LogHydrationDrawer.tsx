@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useMemo } from "react";
 import {
   Drawer,
   DrawerContent,
@@ -20,9 +20,17 @@ import { Input } from "@/components/ui_primitives/input";
 import { Button } from "@/components/ui_primitives/button";
 import { logHydrationAction, type BeverageType } from "@/actions/hydration";
 import { captureClientEvent } from "@/lib/posthog-client";
-import { Coffee, CupSoda, Leaf } from "lucide-react";
+import { Coffee, CupSoda, Leaf, Zap } from "lucide-react";
+import {
+  SUBTYPE_MAP,
+  DEFAULT_SUBTYPE,
+  estimateCaffeineMg,
+} from "@/lib/hydration/caffeineData";
 
 type Unit = "oz" | "ml" | "cup";
+
+const OZ_PER_CUP = 8;
+const ML_PER_OZ = 29.5735;
 
 const BEVERAGE_OPTIONS: {
   value: BeverageType;
@@ -62,6 +70,12 @@ const BEVERAGE_OPTIONS: {
   },
 ];
 
+function toOz(amount: number, unit: Unit): number {
+  if (unit === "ml") return amount / ML_PER_OZ;
+  if (unit === "cup") return amount * OZ_PER_CUP;
+  return amount;
+}
+
 interface LogHydrationDrawerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -72,12 +86,24 @@ export default function LogHydrationDrawer({
   onOpenChange,
 }: LogHydrationDrawerProps) {
   const [beverageType, setBeverageType] = useState<BeverageType>("water");
+  const [beverageSubtype, setBeverageSubtype] = useState<string | null>(null);
   const [amount, setAmount] = useState("");
   const [unit, setUnit] = useState<Unit>("oz");
   const [isPending, startTransition] = useTransition();
 
+  const subtypeOptions = SUBTYPE_MAP[beverageType] ?? null;
+  const activeSubtype =
+    beverageSubtype ?? DEFAULT_SUBTYPE[beverageType] ?? null;
+
+  const caffeineEstimate = useMemo(() => {
+    const parsed = parseFloat(amount);
+    if (!parsed || parsed <= 0 || !activeSubtype) return 0;
+    return estimateCaffeineMg(beverageType, activeSubtype, toOz(parsed, unit));
+  }, [beverageType, activeSubtype, amount, unit]);
+
   function reset() {
     setBeverageType("water");
+    setBeverageSubtype(null);
     setAmount("");
     setUnit("oz");
   }
@@ -85,6 +111,7 @@ export default function LogHydrationDrawer({
   function handleBeverageChange(type: BeverageType) {
     const option = BEVERAGE_OPTIONS.find((o) => o.value === type)!;
     setBeverageType(type);
+    setBeverageSubtype(null);
     setUnit(option.defaultUnit);
     setAmount(option.defaultAmount);
   }
@@ -94,11 +121,18 @@ export default function LogHydrationDrawer({
     if (!parsed || parsed <= 0) return;
 
     startTransition(async () => {
-      await logHydrationAction({ amount: parsed, unit, beverageType });
+      await logHydrationAction({
+        amount: parsed,
+        unit,
+        beverageType,
+        beverageSubtype: activeSubtype,
+      });
       captureClientEvent("hydration_logged", {
         amount: parsed,
         unit,
         beverageType,
+        beverageSubtype: activeSubtype,
+        caffeineMg: caffeineEstimate,
       });
       reset();
       onOpenChange(false);
@@ -151,6 +185,31 @@ export default function LogHydrationDrawer({
             ))}
           </div>
 
+          {/* Subtype selector — only for coffee & tea */}
+          {subtypeOptions && (
+            <div className="mb-4">
+              <p className="text-[11px] text-white/40 mb-1.5">Type</p>
+              <div className="flex flex-wrap gap-1.5">
+                {subtypeOptions.map((st) => (
+                  <button
+                    key={st.key}
+                    type="button"
+                    onClick={() => setBeverageSubtype(st.key)}
+                    className={`rounded-full px-3 py-1 text-xs font-medium border transition-all ${
+                      activeSubtype === st.key
+                        ? beverageType === "coffee"
+                          ? "bg-amber-500/20 border-amber-500/40 text-amber-300"
+                          : "bg-emerald-500/20 border-emerald-500/40 text-emerald-300"
+                        : "border-white/10 text-white/40 hover:border-white/20 hover:text-white/60"
+                    }`}
+                  >
+                    {st.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Amount + unit */}
           <div className="flex gap-2">
             <Input
@@ -176,9 +235,20 @@ export default function LogHydrationDrawer({
             </Select>
           </div>
 
-          {unit === "cup" && (
-            <p className="mt-1.5 text-[11px] text-white/30">1 cup = 8 oz</p>
-          )}
+          <div className="flex items-center justify-between mt-1.5">
+            {unit === "cup" ? (
+              <p className="text-[11px] text-white/30">1 cup = 8 oz</p>
+            ) : (
+              <span />
+            )}
+
+            {caffeineEstimate > 0 && (
+              <span className="flex items-center gap-1 text-[11px] text-amber-400/80">
+                <Zap className="h-3 w-3" />
+                ~{caffeineEstimate} mg caffeine
+              </span>
+            )}
+          </div>
 
           <DrawerFooter className="px-0 flex-row gap-2">
             <Button

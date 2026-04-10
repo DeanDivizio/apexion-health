@@ -16,6 +16,7 @@ import {
   DEFAULT_POTASSIUM_GOAL_MG,
   DEFAULT_MAGNESIUM_GOAL_MG,
 } from "@/lib/nutrition/defaults";
+import { estimateCaffeineMg } from "@/lib/hydration/caffeineData";
 
 const BEVERAGE_TYPES = ["water", "coffee", "tea"] as const;
 export type BeverageType = (typeof BEVERAGE_TYPES)[number];
@@ -24,6 +25,7 @@ const logHydrationSchema = z.object({
   amount: z.number().positive(),
   unit: z.enum(["oz", "ml", "cup"]),
   beverageType: z.enum(BEVERAGE_TYPES),
+  beverageSubtype: z.string().nullable().optional(),
 });
 
 const ML_PER_OZ = 29.5735;
@@ -77,12 +79,15 @@ function resolveElectrolyteKey(
 
 export async function logHydrationAction(input: unknown) {
   const userId = await requireUserId();
-  const { amount, unit, beverageType } = logHydrationSchema.parse(input);
+  const { amount, unit, beverageType, beverageSubtype } =
+    logHydrationSchema.parse(input);
 
   const amountOz =
     unit === "ml" ? amount / ML_PER_OZ :
     unit === "cup" ? amount * OZ_PER_CUP :
     amount;
+
+  const caffeineMg = estimateCaffeineMg(beverageType, beverageSubtype, amountOz);
 
   const now = new Date();
   const dateStr = toCompactDateStr(now);
@@ -92,6 +97,8 @@ export async function logHydrationAction(input: unknown) {
       userId,
       amountOz,
       beverageType,
+      beverageSubtype: beverageSubtype ?? null,
+      caffeineMg,
       dateStr,
     },
   });
