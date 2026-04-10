@@ -16,6 +16,7 @@ import {
   DEFAULT_POTASSIUM_GOAL_MG,
   DEFAULT_MAGNESIUM_GOAL_MG,
 } from "@/lib/nutrition/defaults";
+import { estimateCaffeineMg } from "@/lib/hydration/caffeineData";
 
 const BEVERAGE_TYPES = ["water", "coffee", "tea"] as const;
 export type BeverageType = (typeof BEVERAGE_TYPES)[number];
@@ -24,6 +25,7 @@ const logHydrationSchema = z.object({
   amount: z.number().positive(),
   unit: z.enum(["oz", "ml", "cup"]),
   beverageType: z.enum(BEVERAGE_TYPES),
+  beverageSubtype: z.string().nullable().optional(),
 });
 
 const ML_PER_OZ = 29.5735;
@@ -77,12 +79,15 @@ function resolveElectrolyteKey(
 
 export async function logHydrationAction(input: unknown) {
   const userId = await requireUserId();
-  const { amount, unit, beverageType } = logHydrationSchema.parse(input);
+  const { amount, unit, beverageType, beverageSubtype } =
+    logHydrationSchema.parse(input);
 
   const amountOz =
     unit === "ml" ? amount / ML_PER_OZ :
     unit === "cup" ? amount * OZ_PER_CUP :
     amount;
+
+  const caffeineMg = estimateCaffeineMg(beverageType, beverageSubtype, amountOz);
 
   const now = new Date();
   const dateStr = toCompactDateStr(now);
@@ -92,6 +97,8 @@ export async function logHydrationAction(input: unknown) {
       userId,
       amountOz,
       beverageType,
+      beverageSubtype: beverageSubtype ?? null,
+      caffeineMg,
       dateStr,
     },
   });
@@ -104,6 +111,7 @@ export interface HydrationSummaryView {
   waterOz: number;
   coffeeOz: number;
   teaOz: number;
+  caffeineMg: number;
   sodiumMg: number;
   potassiumMg: number;
   magnesiumMg: number;
@@ -138,7 +146,7 @@ async function getHydrationSummaryCached(
             lt: endUtcExclusive,
           },
         },
-        select: { amountOz: true, beverageType: true },
+        select: { amountOz: true, beverageType: true, caffeineMg: true },
       }),
       db.nutritionMealItemNutrient
         .findMany({
@@ -189,9 +197,11 @@ async function getHydrationSummaryCached(
     ]);
 
   const fluidBuckets = { water: 0, coffee: 0, tea: 0 };
+  let totalCaffeineMg = 0;
   for (const log of hydrationLogs) {
     const key = (log.beverageType ?? "water") as keyof typeof fluidBuckets;
     fluidBuckets[key in fluidBuckets ? key : "water"] += log.amountOz;
+    totalCaffeineMg += log.caffeineMg ?? 0;
   }
 
   const electrolytes: Record<string, number> = {
@@ -214,6 +224,10 @@ async function getHydrationSummaryCached(
     if (electrolyteKey) {
       electrolytes[electrolyteKey] += toMilligrams(ing.amountTotal, ing.unit);
     }
+
+    if (ing.ingredientKey === "caffeine") {
+      totalCaffeineMg += toMilligrams(ing.amountTotal, ing.unit);
+    }
   }
 
   const waterGoalOz =
@@ -235,6 +249,7 @@ async function getHydrationSummaryCached(
     waterOz: fluidBuckets.water,
     coffeeOz: fluidBuckets.coffee,
     teaOz: fluidBuckets.tea,
+    caffeineMg: totalCaffeineMg,
     sodiumMg: electrolytes.sodium,
     potassiumMg: electrolytes.potassium,
     magnesiumMg: electrolytes.magnesium,
