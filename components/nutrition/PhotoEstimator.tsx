@@ -12,6 +12,9 @@ import {
   ChevronDown,
   Sparkles,
   ShieldAlert,
+  MessageSquareText,
+  Globe,
+  ArrowLeft,
 } from "lucide-react";
 import {
   Drawer,
@@ -30,6 +33,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   estimateMealFromPhotoAction,
   refineMealEstimateAction,
+  estimateMealFromTextAction,
 } from "@/actions/ocr";
 import { compressImage } from "@/lib/compressImage";
 import type { EstimatedFoodItem, PhotoEstimateResponse } from "@/lib/ocr/estimateMealFromPhoto";
@@ -49,6 +53,8 @@ type Stage =
   | { step: "capture" }
   | { step: "context"; imageBase64: string }
   | { step: "refining" }
+  | { step: "text-input" }
+  | { step: "text-estimating" }
   | { step: "review"; items: EditableItem[] }
   | { step: "error"; message: string };
 
@@ -78,6 +84,7 @@ export function PhotoEstimator({ open, onOpenChange, onAddItems }: PhotoEstimato
   const [stage, setStage] = React.useState<Stage>(getInitialStep);
   const [dontShowAgain, setDontShowAgain] = React.useState(false);
   const [userContext, setUserContext] = React.useState("");
+  const [textDescription, setTextDescription] = React.useState("");
   const [submittingContext, setSubmittingContext] = React.useState(false);
   const cameraRef = React.useRef<HTMLInputElement>(null);
   const uploadRef = React.useRef<HTMLInputElement>(null);
@@ -88,6 +95,7 @@ export function PhotoEstimator({ open, onOpenChange, onAddItems }: PhotoEstimato
     if (open) {
       setStage(getInitialStep());
       setUserContext("");
+      setTextDescription("");
       setDontShowAgain(false);
       setSubmittingContext(false);
       initialEstimatePromiseRef.current = null;
@@ -184,6 +192,24 @@ export function PhotoEstimator({ open, onOpenChange, onAddItems }: PhotoEstimato
     }
   }
 
+  async function handleSubmitTextEstimate() {
+    if (stage.step !== "text-input") return;
+    const desc = textDescription.trim();
+    if (!desc) return;
+
+    setStage({ step: "text-estimating" });
+
+    try {
+      const estimate = await estimateMealFromTextAction(desc);
+      setStage({ step: "review", items: estimateToEditableItems(estimate) });
+    } catch (err) {
+      setStage({
+        step: "error",
+        message: err instanceof Error ? err.message : "Failed to estimate meal from description.",
+      });
+    }
+  }
+
   function handleUpdateItem(localId: string, updates: Partial<EditableItem>) {
     if (stage.step !== "review") return;
     setStage({
@@ -233,6 +259,7 @@ export function PhotoEstimator({ open, onOpenChange, onAddItems }: PhotoEstimato
     onAddItems(drafts);
     captureClientEvent("photo_estimate_items_added", {
       item_count: drafts.length,
+      source: imageBase64Ref.current ? "photo" : "text",
     });
     onOpenChange(false);
   }
@@ -247,6 +274,8 @@ export function PhotoEstimator({ open, onOpenChange, onAddItems }: PhotoEstimato
             {stage.step === "capture" && "Take a Photo"}
             {stage.step === "context" && "Add Context"}
             {stage.step === "refining" && "Refining Estimate"}
+            {stage.step === "text-input" && "Describe Your Meal"}
+            {stage.step === "text-estimating" && "Searching & Estimating"}
             {stage.step === "review" && "Review Items"}
             {stage.step === "error" && "Something Went Wrong"}
           </DrawerTitle>
@@ -255,6 +284,8 @@ export function PhotoEstimator({ open, onOpenChange, onAddItems }: PhotoEstimato
             {stage.step === "capture" && "Snap a picture of your meal."}
             {stage.step === "context" && "Help us improve the estimate with details."}
             {stage.step === "refining" && "Refining the estimate with your context..."}
+            {stage.step === "text-input" && "Describe what you ate — we'll search for nutrition data."}
+            {stage.step === "text-estimating" && "Searching the web for nutrition info..."}
             {stage.step === "review" && "Edit items below, then add them to your meal."}
             {stage.step === "error" && "We hit a snag. You can try again."}
           </DrawerDescription>
@@ -268,7 +299,7 @@ export function PhotoEstimator({ open, onOpenChange, onAddItems }: PhotoEstimato
                 <ShieldAlert className="h-5 w-5 text-amber-500 mt-0.5 shrink-0" />
                 <div className="space-y-2 text-sm text-muted-foreground">
                   <p>
-                    <strong className="text-foreground">This feature uses AI to estimate nutrition from a photo.</strong>
+                    <strong className="text-foreground">This feature uses AI to estimate nutrition from a photo or text description.</strong>
                   </p>
                   <p>
                     Estimates are likely to be <span className="italic">roughly</span> accurate. Portion sizes, hidden ingredients, cooking
@@ -313,6 +344,22 @@ export function PhotoEstimator({ open, onOpenChange, onAddItems }: PhotoEstimato
                 <Upload className="h-5 w-5" />
                 Upload Image
               </Button>
+
+              <div className="flex items-center gap-3 w-full max-w-xs py-1">
+                <div className="h-px flex-1 bg-border" />
+                <span className="text-xs text-muted-foreground">or</span>
+                <div className="h-px flex-1 bg-border" />
+              </div>
+
+              <Button
+                variant="outline"
+                className="w-full max-w-xs h-12 gap-2 border-violet-500/40"
+                onClick={() => setStage({ step: "text-input" })}
+              >
+                <MessageSquareText className="h-5 w-5 text-violet-400/90" />
+                Describe with Text
+              </Button>
+
               <input
                 ref={cameraRef}
                 type="file"
@@ -346,6 +393,38 @@ export function PhotoEstimator({ open, onOpenChange, onAddItems }: PhotoEstimato
                 <p className="pt-4 text-xs text-muted-foreground">
                   Restaurant name, cooking method, portion size, or anything else that helps.
                 </p>
+              </div>
+            </div>
+          )}
+
+          {/* ── Stage: Text Input ──────────────────────────── */}
+          {stage.step === "text-input" && (
+            <div className="">
+              <div className="space-y-3">
+                <div className="flex items-start gap-2.5 rounded-lg border border-violet-500/20 bg-violet-500/5 p-2.5">
+                  <Globe className="h-4 w-4 text-violet-400 mt-0.5 shrink-0" />
+                  <p className="text-xs text-muted-foreground">
+                    Great for restaurant meals and branded foods. We&apos;ll search the web for real nutrition data.
+                  </p>
+                </div>
+                <Textarea
+                  value={textDescription}
+                  onChange={(e) => setTextDescription(e.target.value)}
+                  placeholder={'e.g. "Big Mac meal with medium fries and a Coke from McDonald\'s" or "Chicken tikka masala with naan from a local Indian restaurant"'}
+                  rows={3}
+                  className="resize-none"
+                  autoFocus
+                />
+              </div>
+            </div>
+          )}
+
+          {/* ── Stage: Text Estimating ─────────────────────── */}
+          {stage.step === "text-estimating" && (
+            <div className="flex flex-col items-center justify-center py-6 space-y-4">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Searching the web &amp; estimating nutrition...
               </div>
             </div>
           )}
@@ -420,6 +499,27 @@ export function PhotoEstimator({ open, onOpenChange, onAddItems }: PhotoEstimato
                 ) : (
                   <><Send className="h-4 w-4" />{userContext.trim() ? "Refine Estimate" : "Continue"}</>
                 )}
+              </Button>
+            </div>
+          )}
+
+          {stage.step === "text-input" && (
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setStage({ step: "capture" })}
+              >
+                <ArrowLeft className="h-4 w-4 mr-1.5" />
+                Back
+              </Button>
+              <Button
+                className="flex-1 gap-1.5"
+                onClick={handleSubmitTextEstimate}
+                disabled={!textDescription.trim()}
+              >
+                <Globe className="h-4 w-4" />
+                Search &amp; Estimate
               </Button>
             </div>
           )}
