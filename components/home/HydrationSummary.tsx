@@ -1,6 +1,6 @@
 "use client";
 
-import { Droplets, Info, Zap } from "lucide-react";
+import { Droplets, Info } from "lucide-react";
 import {
   Popover,
   PopoverTrigger,
@@ -11,7 +11,6 @@ interface HydrationSummaryProps {
   waterOz: number;
   coffeeOz: number;
   teaOz: number;
-  caffeineMg: number;
   waterGoalOz: number;
   sodiumMg: number;
   potassiumMg: number;
@@ -33,7 +32,6 @@ export function HydrationSummary({
   waterOz,
   coffeeOz,
   teaOz,
-  caffeineMg,
   waterGoalOz,
   sodiumMg,
   potassiumMg,
@@ -86,7 +84,7 @@ export function HydrationSummary({
 
           {/* Legend (only show types with > 0 oz) */}
           {(coffeeOz > 0 || teaOz > 0) && (
-            <div className="flex items-center gap-3 pt-0.5">
+            <div className="flex gap-3 pt-0.5">
               {FLUID_SEGMENTS.filter(({ key }) => amounts[key] > 0).map(
                 ({ key, label, dotColor }) => (
                   <span key={key} className="flex items-center gap-1 text-[9px] text-neutral-500">
@@ -94,12 +92,6 @@ export function HydrationSummary({
                     {label} {Math.round(amounts[key])} oz
                   </span>
                 ),
-              )}
-              {caffeineMg > 0 && (
-                <span className="flex items-center gap-1 text-[9px] text-amber-400/70 ml-auto">
-                  <Zap className="h-2.5 w-2.5" />
-                  {Math.round(caffeineMg)} mg caffeine
-                </span>
               )}
             </div>
           )}

@@ -111,7 +111,6 @@ export interface HydrationSummaryView {
   waterOz: number;
   coffeeOz: number;
   teaOz: number;
-  caffeineMg: number;
   sodiumMg: number;
   potassiumMg: number;
   magnesiumMg: number;
@@ -146,7 +145,7 @@ async function getHydrationSummaryCached(
             lt: endUtcExclusive,
           },
         },
-        select: { amountOz: true, beverageType: true, caffeineMg: true },
+        select: { amountOz: true, beverageType: true },
       }),
       db.nutritionMealItemNutrient
         .findMany({
@@ -197,11 +196,9 @@ async function getHydrationSummaryCached(
     ]);
 
   const fluidBuckets = { water: 0, coffee: 0, tea: 0 };
-  let totalCaffeineMg = 0;
   for (const log of hydrationLogs) {
     const key = (log.beverageType ?? "water") as keyof typeof fluidBuckets;
     fluidBuckets[key in fluidBuckets ? key : "water"] += log.amountOz;
-    totalCaffeineMg += log.caffeineMg ?? 0;
   }
 
   const electrolytes: Record<string, number> = {
@@ -224,10 +221,6 @@ async function getHydrationSummaryCached(
     if (electrolyteKey) {
       electrolytes[electrolyteKey] += toMilligrams(ing.amountTotal, ing.unit);
     }
-
-    if (ing.ingredientKey === "caffeine") {
-      totalCaffeineMg += toMilligrams(ing.amountTotal, ing.unit);
-    }
   }
 
   const waterGoalOz =
@@ -249,7 +242,6 @@ async function getHydrationSummaryCached(
     waterOz: fluidBuckets.water,
     coffeeOz: fluidBuckets.coffee,
     teaOz: fluidBuckets.tea,
-    caffeineMg: totalCaffeineMg,
     sodiumMg: electrolytes.sodium,
     potassiumMg: electrolytes.potassium,
     magnesiumMg: electrolytes.magnesium,
