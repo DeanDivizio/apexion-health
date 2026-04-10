@@ -23,6 +23,7 @@ This is the index of provenance pages for **built-in strength + core exercises**
 - `hammerCurl`: [hammer-curl.md](./exercises/hammer-curl.md)
 - `overheadTricepExtension`: [overhead-tricep-extension.md](./exercises/overhead-tricep-extension.md)
 - `preacherCurl`: [preacher-curl.md](./exercises/preacher-curl.md)
+- `bayesianCurl`: [bayesian-curl.md](./exercises/bayesian-curl.md)
 - `tricepExtension`: [tricep-extension.md](./exercises/tricep-extension.md)
 - `tricepPushdown`: [tricep-pushdown.md](./exercises/tricep-pushdown.md)
 - `tricepRopePushdown`: [tricep-rope-pushdown.md](./exercises/tricep-rope-pushdown.md)
@@ -57,4 +58,5 @@ This is the index of provenance pages for **built-in strength + core exercises**
 - `kettlebellSwing`: [kettlebell-swing.md](./exercises/kettlebell-swing.md)
 - `hipAbduction`: [hip-abduction.md](./exercises/hip-abduction.md)
 - `hipAdduction`: [hip-adduction.md](./exercises/hip-adduction.md)
+- `gluteKickback`: [glute-kickback.md](./exercises/glute-kickback.md)
 

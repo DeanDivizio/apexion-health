@@ -716,12 +716,20 @@ const RAW_DEFAULT_EXERCISES: RawExerciseDefinition[] = [
       ["trapsMid", 0.20],
     ),
     variationTemplates: {
+      width: { templateId: WIDTH_TEMPLATE.id, labelOverride: "Grip Width", defaultOptionKey: "neutral" },
       resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source", defaultOptionKey: "untracked" },
       barType: { templateId: BAR_TYPE_TEMPLATE.id, labelOverride: "Bar Type", defaultOptionKey: "straightBar" },
       cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence", defaultOptionKey: "untracked" },
       pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause", defaultOptionKey: "untracked" },
     },
     variationEffects: {
+      width: {
+        closest: {},
+        close: {},
+        neutral: {},
+        wide: { deltas: { trapsLower: +0.05, trapsMid: -0.05 } },
+        widest: { deltas: { trapsLower: +0.08, trapsMid: -0.08 } },
+      },
       resistanceSource: {
         untracked: {},
         bodyweight: {},
@@ -1406,6 +1414,40 @@ const RAW_DEFAULT_EXERCISES: RawExerciseDefinition[] = [
         machineSelectorized: {},
         machinePlateLoaded: {},
       },
+      cadence: {
+        untracked: {},
+        even: {},
+        fastConcentric: {},
+        slowEccentric: {},
+        fastConcentricSlowEccentric: {},
+        slowConcentricFastEccentric: {},
+        slowConcentric: {},
+        fastEccentric: {},
+      },
+      pause: {
+        untracked: {},
+        none: {},
+        end: {},
+        start: {},
+        both: {},
+      },
+    },
+  },
+
+  {
+    id: "bayesianCurl",
+    name: "Bayesian Curl",
+    category: "upperBody",
+    baseTargets: targets(
+      ["biceps", 0.85],
+      ["forearms", 0.15],
+    ),
+    isUnilateral: true,
+    variationTemplates: {
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence", defaultOptionKey: "untracked" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause", defaultOptionKey: "untracked" },
+    },
+    variationEffects: {
       cadence: {
         untracked: {},
         even: {},
@@ -2755,6 +2797,63 @@ const RAW_DEFAULT_EXERCISES: RawExerciseDefinition[] = [
       },
     },
   },
+  {
+    id: "gluteKickback",
+    name: "Glute Kickback",
+    category: "lowerBody",
+    baseTargets: targets(
+      ["glutes", 0.70],
+      ["hamstrings", 0.25],
+      ["lowerBack", 0.05],
+    ),
+    isUnilateral: true,
+    variationTemplates: {
+      bodyPosition: { templateId: BODY_POSITION_TEMPLATE.id, labelOverride: "Body Position", defaultOptionKey: "standing" },
+      resistanceSource: { templateId: RESISTANCE_SOURCE_TEMPLATE.id, labelOverride: "Resistance Source", defaultOptionKey: "cable" },
+      cadence: { templateId: CADENCE_TEMPLATE.id, labelOverride: "Cadence", defaultOptionKey: "untracked" },
+      pause: { templateId: PAUSE_TEMPLATE.id, labelOverride: "Pause", defaultOptionKey: "untracked" },
+    },
+    variationEffects: {
+      bodyPosition: {
+        standing: {},
+        seated: {},
+        supine: {},
+        prone: {},
+        kneeling: { deltas: { glutes: +0.05, lowerBack: -0.05 } },
+        halfKneeling: {},
+        hipHinged: {},
+      },
+      resistanceSource: {
+        untracked: {},
+        bodyweight: {},
+        dumbbell: {},
+        barbell: {},
+        kettlebell: {},
+        cable: {},
+        band: {},
+        smithMachine: {},
+        machineSelectorized: {},
+        machinePlateLoaded: {},
+      },
+      cadence: {
+        untracked: {},
+        even: {},
+        fastConcentric: {},
+        slowEccentric: {},
+        fastConcentricSlowEccentric: {},
+        slowConcentricFastEccentric: {},
+        slowConcentric: {},
+        fastEccentric: {},
+      },
+      pause: {
+        untracked: {},
+        none: {},
+        end: {},
+        start: {},
+        both: {},
+      },
+    },
+  },
 ];
 
 /**
@@ -2885,6 +2984,7 @@ export const DEFAULT_EXERCISE_GROUPS: ExerciseGroup[] = [
   {
     group: "upperBody",
     items: [
+      "bayesianCurl",
       "benchPress",
       "bentOverRow",
       "bicepCurl",
@@ -2930,6 +3030,7 @@ export const DEFAULT_EXERCISE_GROUPS: ExerciseGroup[] = [
       "deadlift",
       "frontSquat",
       "gluteBridge",
+      "gluteKickback",
       "hackSquat",
       "hipAbduction",
       "hipAdduction",
