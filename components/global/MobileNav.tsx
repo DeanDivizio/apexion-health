@@ -22,7 +22,7 @@ import LogHydrationDrawer from "@/components/hydration/LogHydrationDrawer";
 
 const navItems = [
   { href: "/", icon: House, label: "Home" },
-  { href: "/meals", icon: Apple, label: "Meals" },
+  { href: "/meals", icon: Apple, label: "Food" },
   { href: "/gymsessions", icon: Dumbbell, label: "Gym" },
   { href: "/meds", icon: Pill, label: "Meds" },
 ];
