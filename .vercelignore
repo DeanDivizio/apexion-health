@@ -3,3 +3,9 @@ app/api/admin/knowledge/
 app/admin/knowledge/
 actions/knowledge.ts
 lib/knowledge/
+scripts/audit-graph.ts
+scripts/inspect-graph.ts
+scripts/reprocess-knowledge.ts
+scripts/verify-claims.ts
+scripts/reset-knowledge.ts
+scripts/eval-verification.ts
