@@ -1,0 +1,5 @@
+# Knowledge pipeline — runs only on local hardware
+app/api/admin/knowledge/
+app/admin/knowledge/
+actions/knowledge.ts
+lib/knowledge/

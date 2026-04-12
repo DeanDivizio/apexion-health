@@ -30,6 +30,15 @@ export const createUserFoodSchema = z.object({
   ingredients: z.string().nullable().default(null),
 });
 
+export const updateUserFoodSchema = z.object({
+  name: z.string().trim().min(1).optional(),
+  brand: z.string().trim().nullable().optional(),
+  nutrients: nutrientProfileSchema.optional(),
+  servingSize: z.number().positive().optional(),
+  servingUnit: z.string().min(1).optional(),
+  ingredients: z.string().nullable().optional(),
+});
+
 export const mealItemDraftSchema = z.object({
   foodSource: z.enum(["foundation", "complex", "retail", "ai_estimate"]),
   sourceFoodId: z.string().nullable().default(null),
@@ -97,6 +106,7 @@ export const upsertUserGoalsSchema = z.object({
 });
 
 export type CreateUserFoodInput = z.infer<typeof createUserFoodSchema>;
+export type UpdateUserFoodInput = z.infer<typeof updateUserFoodSchema>;
 export type MealItemDraftInput = z.infer<typeof mealItemDraftSchema>;
 export type CreateMealSessionInput = z.infer<typeof createMealSessionSchema>;
 export type CreateRetailChainInput = z.infer<typeof createRetailChainSchema>;

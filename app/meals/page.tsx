@@ -1,10 +1,17 @@
-import { listFoodPresetsAction, listMealSessionsAction } from "@/actions/nutrition";
+import { listFoodPresetsAction, listMealSessionsAction, listUserFoodsAction } from "@/actions/nutrition";
 import { NutritionCollection } from "@/components/nutrition/NutritionCollection";
 
 export default async function MealsPage() {
-  const [sessions, presets] = await Promise.all([
+  const [sessions, presets, userFoods] = await Promise.all([
     listMealSessionsAction(),
     listFoodPresetsAction(),
+    listUserFoodsAction(),
   ]);
-  return <NutritionCollection initialSessions={sessions} initialPresets={presets} />;
+  return (
+    <NutritionCollection
+      initialSessions={sessions}
+      initialPresets={presets}
+      initialUserFoods={userFoods}
+    />
+  );
 }

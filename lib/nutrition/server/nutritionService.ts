@@ -30,6 +30,7 @@ import type {
   CreateUserFoodInput,
   MealItemDraftInput,
   UpdateFoodPresetInput,
+  UpdateUserFoodInput,
   UpsertUserGoalsInput,
 } from "@/lib/nutrition/schemas";
 
@@ -400,6 +401,53 @@ export async function searchUserFoods(
   });
 
   return rows.map(toUserFoodView);
+}
+
+export async function listUserFoods(
+  userId: string,
+): Promise<NutritionUserFoodView[]> {
+  assertModelsAvailable();
+
+  const rows = await db.nutritionUserFood.findMany({
+    where: { userId, active: true },
+    orderBy: { name: "asc" },
+  });
+
+  return rows.map(toUserFoodView);
+}
+
+export async function updateUserFood(
+  userId: string,
+  foodId: string,
+  input: UpdateUserFoodInput,
+): Promise<NutritionUserFoodView> {
+  assertModelsAvailable();
+
+  const updated = await db.nutritionUserFood.update({
+    where: { id: foodId, userId },
+    data: {
+      ...(input.name !== undefined && { name: input.name }),
+      ...(input.brand !== undefined && { brand: input.brand }),
+      ...(input.nutrients !== undefined && { nutrients: input.nutrients }),
+      ...(input.servingSize !== undefined && { servingSize: input.servingSize }),
+      ...(input.servingUnit !== undefined && { servingUnit: input.servingUnit }),
+      ...(input.ingredients !== undefined && { ingredients: input.ingredients }),
+    },
+  });
+
+  return toUserFoodView(updated);
+}
+
+export async function deleteUserFood(
+  userId: string,
+  foodId: string,
+): Promise<void> {
+  assertModelsAvailable();
+
+  await db.nutritionUserFood.update({
+    where: { id: foodId, userId },
+    data: { active: false },
+  });
 }
 
 // ─── Retail operations ───────────────────────────────────────────────────────

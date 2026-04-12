@@ -9,6 +9,7 @@ import {
   createRetailUserItemSchema,
   createUserFoodSchema,
   updateFoodPresetSchema,
+  updateUserFoodSchema,
   upsertUserGoalsSchema,
 } from "@/lib/nutrition";
 import { normalizeDateInput } from "@/lib/dates/dateStr";
@@ -20,6 +21,7 @@ import {
   createRetailChain,
   createRetailUserItem,
   createUserFood,
+  deleteUserFood,
   deleteFoodPreset,
   deleteMealSession,
   getMacroSummaryByDateRange,
@@ -30,11 +32,13 @@ import {
   listFoodPresets,
   listMealSessions,
   listRetailChains,
+  listUserFoods,
   searchFoundationFoods,
   searchRetailItems,
   searchUserFoods,
   updateFoodPreset,
   updateMealSession,
+  updateUserFood,
   upsertUserGoals,
 } from "@/lib/nutrition/server/nutritionService";
 
@@ -62,6 +66,24 @@ export async function createUserFoodAction(input: unknown) {
   const userId = await requireUserId();
   const parsed = createUserFoodSchema.parse(input);
   return createUserFood(userId, parsed);
+}
+
+export async function listUserFoodsAction() {
+  const userId = await requireUserId();
+  return listUserFoods(userId);
+}
+
+export async function updateUserFoodAction(foodId: string, input: unknown) {
+  const userId = await requireUserId();
+  if (!foodId) throw new Error("Food ID is required.");
+  const parsed = updateUserFoodSchema.parse(input);
+  return updateUserFood(userId, foodId, parsed);
+}
+
+export async function deleteUserFoodAction(foodId: string) {
+  const userId = await requireUserId();
+  if (!foodId) throw new Error("Food ID is required.");
+  await deleteUserFood(userId, foodId);
 }
 
 export async function searchRetailItemsAction(chainId: string, query: string) {
