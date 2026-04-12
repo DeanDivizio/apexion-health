@@ -147,7 +147,7 @@ export default function LogHydrationDrawer({
   const activeBeverage = BEVERAGE_OPTIONS.find((o) => o.value === beverageType)!;
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
+    <Drawer open={open} onOpenChange={onOpenChange} modal>
       <DrawerContent>
         <DrawerHeader>
           <DrawerTitle className="bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent pb-1">
