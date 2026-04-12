@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useMemo } from "react";
+import { useState, useTransition, useMemo, useEffect } from "react";
 import {
   Drawer,
   DrawerContent,
@@ -90,6 +90,25 @@ export default function LogHydrationDrawer({
   const [amount, setAmount] = useState("");
   const [unit, setUnit] = useState<Unit>("oz");
   const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    if (!open) return;
+    const scrollY = window.scrollY;
+    const html = document.documentElement;
+    html.style.position = "fixed";
+    html.style.top = `-${scrollY}px`;
+    html.style.left = "0";
+    html.style.right = "0";
+    html.style.overflow = "hidden";
+    return () => {
+      html.style.position = "";
+      html.style.top = "";
+      html.style.left = "";
+      html.style.right = "";
+      html.style.overflow = "";
+      window.scrollTo(0, scrollY);
+    };
+  }, [open]);
 
   const subtypeOptions = SUBTYPE_MAP[beverageType] ?? null;
   const activeSubtype =
