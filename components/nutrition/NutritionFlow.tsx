@@ -227,7 +227,7 @@ export function NutritionFlow({ bootstrap }: NutritionFlowProps) {
   }, []);
 
   return (
-    <div className="relative px-2 pt-16 flex flex-col items-center w-full">
+    <div className="relative px-2 pt-16 pb-24 flex flex-col items-center w-full">
     <h1 className="text-2xl mb-8 mt-4">Log Meal</h1>
       <Tabs
         value={activeTab}
