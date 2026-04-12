@@ -1182,3 +1182,123 @@ model EmailBroadcast {
 
   @@index([createdAt])
 }
+
+// ─── Knowledge Base ─────────────────────────────────────────────────────────
+
+enum KnowledgeSourceType {
+  PODCAST
+  PAPER
+  MANUAL
+}
+
+enum KnowledgeSourceStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum KnowledgeIngestionStep {
+  FETCH
+  CHUNK
+  EMBED
+  EXTRACT_ENTITIES
+  RESOLVE_ENTITIES
+  SYNTHESIZE_RELATIONSHIPS
+  EXTRACT_CLAIMS
+  VERIFY_CLAIMS
+}
+
+enum KnowledgeIngestionRunStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+enum KnowledgeClaimVerification {
+  UNVERIFIED
+  SUPPORTED
+  CONTESTED
+  REFUTED
+}
+
+model KnowledgeChannel {
+  id                 String    @id @default(uuid())
+  channelId          String    @unique
+  name               String
+  url                String
+  topicDomains       String[]
+  relevanceThreshold Float     @default(0.7)
+  active             Boolean   @default(true)
+  lastScannedAt      DateTime?
+  metadata           Json?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  sources KnowledgeSource[]
+
+  @@index([active])
+}
+
+model KnowledgeSource {
+  id             String                @id @default(uuid())
+  sourceType     KnowledgeSourceType
+  title          String
+  authors        String[]
+  publishedAt    DateTime?
+  externalId     String?
+  url            String?
+  channelId      String?
+  channel        KnowledgeChannel?     @relation(fields: [channelId], references: [id], onDelete: SetNull)
+  status         KnowledgeSourceStatus @default(PENDING)
+  relevanceScore Float?
+  fetchTier      String?
+  metadata       Json?
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+
+  ingestionRuns KnowledgeIngestionRun[]
+  claims        KnowledgeClaim[]
+
+  @@unique([sourceType, externalId])
+  @@index([status])
+  @@index([channelId])
+  @@index([sourceType])
+}
+
+model KnowledgeIngestionRun {
+  id          String                      @id @default(uuid())
+  sourceId    String
+  source      KnowledgeSource             @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  step        KnowledgeIngestionStep
+  status      KnowledgeIngestionRunStatus @default(PENDING)
+  error       String?
+  stats       Json?
+  batchId     String?
+  startedAt   DateTime                    @default(now())
+  completedAt DateTime?
+  createdAt   DateTime                    @default(now())
+  updatedAt   DateTime                    @updatedAt
+
+  @@index([sourceId, step])
+  @@index([status])
+  @@index([batchId])
+}
+
+model KnowledgeClaim {
+  id                 String                       @id @default(uuid())
+  sourceId           String
+  source             KnowledgeSource              @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  chunkRef           String?
+  claimText          String
+  confidence         Float?
+  verificationStatus KnowledgeClaimVerification   @default(UNVERIFIED)
+  supportingPaperIds String[]
+  metadata           Json?
+  createdAt          DateTime                     @default(now())
+  updatedAt          DateTime                     @updatedAt
+
+  @@index([sourceId])
+  @@index([verificationStatus])
+}

@@ -1,25 +1,18 @@
-import { auth, clerkClient } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { DatabaseZap, Dumbbell, Mail, MessageSquareText, Shield } from "lucide-react";
-
-const ADMIN_EMAIL = "dean@deandivizio.com";
+import { BookOpen, BrainCircuit, DatabaseZap, Dumbbell, Mail, MessageSquareText, Shield } from "lucide-react";
+import { requireAdminUserId } from "@/lib/auth/admin";
 
 export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { userId } = await auth();
-  if (!userId) redirect("/sign-in");
-
-  const client = await clerkClient();
-  const user = await client.users.getUser(userId);
-  const email = user.emailAddresses.find(
-    (e) => e.id === user.primaryEmailAddressId,
-  )?.emailAddress;
-
-  if (email !== ADMIN_EMAIL) redirect("/");
+  try {
+    await requireAdminUserId();
+  } catch {
+    redirect("/");
+  }
 
   return (
     <main className="flex min-h-screen bg-gradient-to-br from-neutral-950 to-neutral-900 pt-16 md:pt-0">
@@ -65,6 +58,23 @@ export default async function AdminLayout({
           >
             <Mail className="h-4 w-4" />
             Emails
+          </Link>
+
+          <div className="my-2 border-t border-neutral-800" />
+
+          <Link
+            href="/admin/knowledge"
+            className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-neutral-400 transition-colors hover:bg-neutral-800/60 hover:text-neutral-200"
+          >
+            <BrainCircuit className="h-4 w-4" />
+            Knowledge Base
+          </Link>
+          <Link
+            href="/admin/knowledge/channels"
+            className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-neutral-400 transition-colors hover:bg-neutral-800/60 hover:text-neutral-200"
+          >
+            <BookOpen className="h-4 w-4" />
+            Channels
           </Link>
         </nav>
       </aside>

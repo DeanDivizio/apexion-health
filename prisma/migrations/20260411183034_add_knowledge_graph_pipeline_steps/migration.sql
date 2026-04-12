@@ -1,0 +1,3 @@
+-- AlterEnum
+ALTER TYPE "KnowledgeIngestionStep" ADD VALUE 'RESOLVE_ENTITIES';
+ALTER TYPE "KnowledgeIngestionStep" ADD VALUE 'SYNTHESIZE_RELATIONSHIPS';
