@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { MoreVertical, Info, SplitSquareHorizontal, Trash2 } from "lucide-react";
+import { MoreVertical, Info, SplitSquareHorizontal, Trash2, StickyNote, Pencil, Check, X } from "lucide-react";
 import {
   AccordionContent,
   AccordionItem,
@@ -35,6 +35,7 @@ import {
 import { Button } from "@/components/ui_primitives/button";
 import { Input } from "@/components/ui_primitives/input";
 import { Label } from "@/components/ui_primitives/label";
+import { Textarea } from "@/components/ui_primitives/textarea";
 import type { RepInputStyle, StrengthRepMode, StrengthSet } from "@/lib/gym";
 
 // ---------------------------------------------------------------------------
@@ -118,6 +119,62 @@ function FieldPopover({ text }: { text: string }) {
         {text}
       </PopoverContent>
     </Popover>
+  );
+}
+
+function InlineSetNameEditor({
+  value,
+  placeholder,
+  onSave,
+  onCancel,
+}: {
+  value: string;
+  placeholder: string;
+  onSave: (name: string) => void;
+  onCancel: () => void;
+}) {
+  const inputRef = React.useRef<HTMLInputElement>(null);
+  const [draft, setDraft] = React.useState(value);
+
+  React.useEffect(() => {
+    inputRef.current?.focus();
+    inputRef.current?.select();
+  }, []);
+
+  const commit = () => {
+    onSave(draft.trim());
+  };
+
+  return (
+    <div className="flex items-center gap-1 min-w-0 flex-1" onClick={(e) => e.stopPropagation()}>
+      <input
+        ref={inputRef}
+        type="text"
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") commit();
+          if (e.key === "Escape") onCancel();
+        }}
+        placeholder={placeholder}
+        maxLength={100}
+        className="flex-1 min-w-0 bg-white/5 border border-white/20 rounded-md px-2 py-0.5 text-sm font-medium text-foreground leading-tight outline-none focus:border-blue-400/50 focus:ring-1 focus:ring-blue-400/25"
+      />
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); commit(); }}
+        className="p-0.5 rounded text-emerald-400 hover:bg-emerald-500/10 transition-colors"
+      >
+        <Check className="h-3.5 w-3.5" />
+      </button>
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); onCancel(); }}
+        className="p-0.5 rounded text-muted-foreground hover:bg-white/5 transition-colors"
+      >
+        <X className="h-3.5 w-3.5" />
+      </button>
+    </div>
   );
 }
 
@@ -389,6 +446,32 @@ export function SetCard({
     applySetUpdate((prev) => ({ ...prev, duration: v ? parseInt(v, 10) : undefined }));
   };
 
+  // ---- name (inline rename) ----
+  const [isEditingName, setIsEditingName] = React.useState(false);
+
+  const handleNameSave = React.useCallback(
+    (name: string) => {
+      setIsEditingName(false);
+      const defaultTitle = `Set ${index + 1}`;
+      const newName = name === "" || name === defaultTitle ? undefined : name;
+      applySetUpdate((prev) => ({ ...prev, name: newName }));
+    },
+    [applySetUpdate, index],
+  );
+
+  // ---- notes ----
+  const [notesOpen, setNotesOpen] = React.useState(() => !!draftSet.notes);
+  const [notesStr, setNotesStr] = React.useState(draftSet.notes ?? "");
+  React.useEffect(() => {
+    setNotesStr(draftSet.notes ?? "");
+    if (draftSet.notes) setNotesOpen(true);
+  }, [draftSet.notes]);
+  const handleNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const v = e.target.value;
+    setNotesStr(v);
+    applySetUpdate((prev) => ({ ...prev, notes: v.trim() || undefined }));
+  };
+
   // Determine if custom reps are in use
   const bilateralVal = draftSet.reps.bilateral;
   const isCustomReps = bilateralVal !== undefined && bilateralVal > 20;
@@ -418,7 +501,44 @@ export function SetCard({
     >
       <AccordionTrigger className="text-sm hover:no-underline">
         <span className="text-muted-foreground text-xs mr-2">#{index + 1}</span>
-        <span className="flex-1 text-left">{hasData ? formatTitle(index, draftSet, hasData) : `Set ${index + 1}`}</span>
+        {isEditingName ? (
+          <InlineSetNameEditor
+            value={draftSet.name ?? `Set ${index + 1}`}
+            placeholder={`Set ${index + 1}`}
+            onSave={handleNameSave}
+            onCancel={() => setIsEditingName(false)}
+          />
+        ) : (
+          <>
+            <span className="flex-1 text-left truncate">
+              {draftSet.name
+                ? draftSet.name
+                : hasData
+                  ? formatTitle(index, draftSet, hasData)
+                  : `Set ${index + 1}`}
+            </span>
+            <div className="flex items-center gap-2 mr-2 shrink-0">
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setIsEditingName(true); }}
+                className="p-1 rounded text-muted-foreground/40 hover:text-muted-foreground hover:bg-white/5 transition-colors"
+              >
+                <Pencil className="h-3 w-3" />
+              </button>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setNotesOpen(true); }}
+                className={`p-1 rounded transition-colors ${
+                  draftSet.notes
+                    ? "text-blue-400/70 hover:text-blue-400"
+                    : "text-muted-foreground/40 hover:text-muted-foreground hover:bg-white/5"
+                }`}
+              >
+                <StickyNote className="h-3 w-3" />
+              </button>
+            </div>
+          </>
+        )}
       </AccordionTrigger>
       <AccordionContent className="space-y-4 pt-2">
         <div className="space-y-3">
@@ -709,6 +829,23 @@ export function SetCard({
               />
             </div>
           </div>
+
+          {notesOpen && (
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-1.5">
+                <StickyNote className="h-3.5 w-3.5 text-muted-foreground" />
+                <Label className="text-xs text-muted-foreground">Set Note</Label>
+              </div>
+              <Textarea
+                value={notesStr}
+                onChange={handleNotesChange}
+                placeholder="Note for this set..."
+                className="min-h-[2.5rem] resize-none text-sm"
+                rows={2}
+                maxLength={2000}
+              />
+            </div>
+          )}
 
           <AlertDialog>
             <AlertDialogTrigger asChild>

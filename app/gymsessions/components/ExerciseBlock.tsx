@@ -1,6 +1,6 @@
 "use client"
 
-import { Clock, FileText, Timer } from "lucide-react"
+import { Clock, FileText, StickyNote, Timer } from "lucide-react"
 import { capitalize } from "@/lib/utils"
 import type { ExerciseEntry, StrengthSet } from "@/lib/gym"
 import { calcExerciseVolume, formatRepCount, formatVolume } from "./helpers"
@@ -9,36 +9,48 @@ import { VariationChips } from "./VariationChips"
 function SetChip({ set, index }: { set: StrengthSet; index: number }) {
   const hasEffort = set.effort !== undefined && set.effort > 0
   const hasDuration = set.duration !== undefined && set.duration > 0
+  const hasNotes = !!set.notes
 
   return (
-    <div className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs">
-      <span className="text-[10px] text-muted-foreground/70 font-mono">#{index + 1}</span>
-      <span className="font-medium tabular-nums text-foreground/90">
-        {set.weight}
-        <span className="text-[10px] text-muted-foreground ml-0.5">lbs</span>
-      </span>
-      <span className="text-muted-foreground/30">×</span>
-      <span className="font-medium tabular-nums text-foreground/90">
-        {formatRepCount(set.reps)}
-        <span className="text-[10px] text-muted-foreground ml-0.5">reps</span>
-      </span>
-      {hasEffort && (
-        <>
-          <span className="text-muted-foreground/30">•</span>
-          <span className="inline-flex items-center gap-0.5 text-amber-400/90">
-            {/* <Flame className="h-3 w-3" /> */}
-            <span className="tabular-nums">{set.effort}</span>
-          </span>
-        </>
-      )}
-      {hasDuration && (
-        <>
-          <span className="text-muted-foreground/30">•</span>
-          <span className="inline-flex items-center gap-0.5 text-blue-400/80">
-            <Timer className="h-3 w-3" />
-            <span className="tabular-nums">{set.duration}s</span>
-          </span>
-        </>
+    <div className="flex flex-col gap-0.5">
+      <div className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs">
+        <span className="text-[10px] text-muted-foreground/70 font-mono">{set.name || `#${index + 1}`}</span>
+        <span className="font-medium tabular-nums text-foreground/90">
+          {set.weight}
+          <span className="text-[10px] text-muted-foreground ml-0.5">lbs</span>
+        </span>
+        <span className="text-muted-foreground/30">×</span>
+        <span className="font-medium tabular-nums text-foreground/90">
+          {formatRepCount(set.reps)}
+          <span className="text-[10px] text-muted-foreground ml-0.5">reps</span>
+        </span>
+        {hasEffort && (
+          <>
+            <span className="text-muted-foreground/30">•</span>
+            <span className="inline-flex items-center gap-0.5 text-amber-400/90">
+              {/* <Flame className="h-3 w-3" /> */}
+              <span className="tabular-nums">{set.effort}</span>
+            </span>
+          </>
+        )}
+        {hasDuration && (
+          <>
+            <span className="text-muted-foreground/30">•</span>
+            <span className="inline-flex items-center gap-0.5 text-blue-400/80">
+              <Timer className="h-3 w-3" />
+              <span className="tabular-nums">{set.duration}s</span>
+            </span>
+          </>
+        )}
+        {hasNotes && (
+          <>
+            <span className="text-muted-foreground/30">•</span>
+            <StickyNote className="h-3 w-3 text-muted-foreground/70" />
+          </>
+        )}
+      </div>
+      {hasNotes && (
+        <p className="text-[10px] text-muted-foreground/60 pl-2 whitespace-pre-wrap leading-tight">{set.notes}</p>
       )}
     </div>
   )

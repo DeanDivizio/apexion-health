@@ -269,6 +269,10 @@ export interface StrengthSet {
   effort?: number;
   /** Duration of the set in seconds (for time-under-tension tracking) */
   duration?: number;
+  /** User-assigned name for this set (e.g., "Warm-up", "Working Set", "Drop Set") */
+  name?: string;
+  /** User notes for this individual set */
+  notes?: string;
 }
 
 /**

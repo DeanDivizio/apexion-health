@@ -62,6 +62,8 @@ model GymStrengthSet {
   repsRight      Int?
   effort         Int?
   durationSeconds Int?
+  name           String?
+  notes          String?
 
   @@index([exerciseId, order])
 }

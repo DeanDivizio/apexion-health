@@ -183,6 +183,8 @@ function transformExercise(dbExercise: {
     repsRight: number | null;
     effort: number | null;
     durationSeconds: number | null;
+    name: string | null;
+    notes: string | null;
   }>;
   variations: Array<{
     templateId: string;
@@ -220,6 +222,8 @@ function transformExercise(dbExercise: {
       }),
       effort: set.effort ?? undefined,
       duration: set.durationSeconds ?? undefined,
+      name: set.name ?? undefined,
+      notes: set.notes ?? undefined,
     })),
     variations: hasVariations ? variations : undefined,
     presetName: dbExercise.presetName || undefined,
@@ -268,6 +272,8 @@ async function createExercisesForSession(
             weight: set.weight,
             effort: set.effort ?? null,
             durationSeconds: set.duration ?? null,
+            name: set.name?.trim() || null,
+            notes: set.notes?.trim() || null,
             ...repCountToColumns(set.reps),
           },
         });

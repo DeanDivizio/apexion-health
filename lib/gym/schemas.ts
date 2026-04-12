@@ -154,6 +154,8 @@ export const strengthSetSchema = z.object({
   reps: repCountSchema,
   effort: z.number().int().min(0).max(10).optional(),
   duration: z.number().min(0).optional(),
+  name: z.string().max(100).optional(),
+  notes: z.string().max(2000).optional(),
 });
 
 export const strengthExerciseEntrySchema = z.object({

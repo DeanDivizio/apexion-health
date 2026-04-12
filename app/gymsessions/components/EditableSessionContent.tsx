@@ -70,6 +70,16 @@ function EditableSetRow({
     onUpdate({ ...set, duration: isNaN(v) || v <= 0 ? undefined : v })
   }
 
+  const commitName = (e: React.FocusEvent<HTMLInputElement>) => {
+    const v = e.target.value.trim()
+    onUpdate({ ...set, name: v || undefined })
+  }
+
+  const commitNotes = (e: React.FocusEvent<HTMLInputElement>) => {
+    const v = e.target.value.trim()
+    onUpdate({ ...set, notes: v || undefined })
+  }
+
   return (
     <div className="flex items-start gap-1.5 py-2 border-b border-white/5 last:border-b-0">
       <span className="text-[10px] text-muted-foreground/60 font-mono pt-2.5 h-fit my-auto -translate-x-1 w-4 shrink-0 text-center">
@@ -154,6 +164,26 @@ function EditableSetRow({
             onBlur={commitDuration}
             placeholder="sec"
             className={`h-8 text-xs ${NUMBER_INPUT_NO_SPIN_CLASS}`}
+          />
+        </div>
+        <div className="col-span-2 space-y-1">
+          <Input
+            key={`${setKey}-name`}
+            type="text"
+            defaultValue={set.name ?? ""}
+            onBlur={commitName}
+            placeholder="Set name..."
+            className="h-7 text-[11px] text-muted-foreground"
+            maxLength={100}
+          />
+          <Input
+            key={`${setKey}-n`}
+            type="text"
+            defaultValue={set.notes ?? ""}
+            onBlur={commitNotes}
+            placeholder="Set note..."
+            className="h-7 text-[11px] text-muted-foreground"
+            maxLength={2000}
           />
         </div>
       </div>
