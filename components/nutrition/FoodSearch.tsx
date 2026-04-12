@@ -180,7 +180,7 @@ export function FoodSearch({
       </div>
 
       <ScrollArea className="max-h-[calc(100dvh-16rem)]">
-        <div className="space-y-4 pr-2 pb-24">
+        <div className="space-y-4 pr-2 pb-36">
           {/* Browse mode: Presets / Recents tabs */}
           {!isSearching && (
             <Tabs value={browseTab} onValueChange={(v) => setBrowseTab(v as "presets" | "recents")}>
@@ -298,7 +298,10 @@ export function FoodSearch({
         food={selectedFood}
         open={detailOpen}
         onOpenChange={setDetailOpen}
-        onAddItem={onAddItem}
+        onAddItem={(item) => {
+          onAddItem(item);
+          setQuery("");
+        }}
       />
 
       <ManualFoodForm
