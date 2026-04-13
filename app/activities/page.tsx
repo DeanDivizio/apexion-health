@@ -1,3 +1,4 @@
+import { connection } from "next/server";
 import {
   getActivityContributionAction,
   listActivityLogsAction,
@@ -15,6 +16,7 @@ function getMonthRange(): { startDate: string; endDate: string } {
 }
 
 export default async function ActivitiesPage() {
+  await connection();
   const { startDate, endDate } = getMonthRange();
   const [types, logs, contributions] = await Promise.all([
     listActivityTypesAction(),
