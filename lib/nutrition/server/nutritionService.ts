@@ -922,13 +922,17 @@ export interface MicroNutrientEntry {
   nutrientName: string;
   amount: number;
   unit: string;
-  category: "vitamin" | "mineral" | "other";
+  category: "vitamin" | "mineral" | "caffeine" | "other";
 }
 
 const MACRO_KEYS = new Set([
   "calories", "protein", "carbs", "fat",
   "saturated-fat", "trans-fat", "fiber", "sugars", "added-sugars",
 ]);
+
+function isCaffeineVariant(key: string, name: string): boolean {
+  return key.toLowerCase().includes("caffeine") || name.toLowerCase().includes("caffeine");
+}
 
 export async function getMicroNutrientSummary(
   userId: string,
@@ -942,7 +946,7 @@ export async function getMicroNutrientSummary(
 
   try {
     const { isoDate, sessionDateCandidates } = normalizeDateInput(dateStr);
-    const [mealNutrients, substanceIngredients] = await Promise.all([
+    const [mealNutrients, substanceIngredients, hydrationLogs] = await Promise.all([
       db.nutritionMealItemNutrient.findMany({
         where: {
           mealItem: {
@@ -978,6 +982,20 @@ export async function getMicroNutrientSummary(
           unit: true,
         },
       }),
+      db.hydrationLog
+        .findMany({
+          where: {
+            userId,
+            dateStr: { in: sessionDateCandidates },
+            caffeineMg: { gt: 0 },
+          },
+          select: {
+            caffeineMg: true,
+            beverageType: true,
+            beverageSubtype: true,
+          },
+        })
+        .catch(() => [] as { caffeineMg: number; beverageType: string; beverageSubtype: string | null }[]),
     ]);
 
     const totals = new Map<
@@ -1000,12 +1018,15 @@ export async function getMicroNutrientSummary(
     }
 
     for (const ing of substanceIngredients) {
-      if (!MICRONUTRIENT_KEY_SET.has(ing.ingredientKey)) continue;
-      const existing = totals.get(ing.ingredientKey);
+      const isCaffeine = isCaffeineVariant(ing.ingredientKey, ing.ingredientName);
+      if (!isCaffeine && !MICRONUTRIENT_KEY_SET.has(ing.ingredientKey)) continue;
+
+      const key = isCaffeine ? `caffeine:${ing.ingredientKey}` : ing.ingredientKey;
+      const existing = totals.get(key);
       if (existing) {
         existing.amount += ing.amountTotal;
       } else {
-        totals.set(ing.ingredientKey, {
+        totals.set(key, {
           name: ing.ingredientName,
           amount: ing.amountTotal,
           unit: ing.unit,
@@ -1013,19 +1034,49 @@ export async function getMicroNutrientSummary(
       }
     }
 
+    for (const log of hydrationLogs) {
+      const label = log.beverageSubtype
+        ? `${log.beverageType} (${log.beverageSubtype})`
+        : log.beverageType;
+      const variantKey = `caffeine:hydration:${log.beverageType}:${log.beverageSubtype ?? "default"}`;
+      const existing = totals.get(variantKey);
+      if (existing) {
+        existing.amount += log.caffeineMg;
+      } else {
+        totals.set(variantKey, {
+          name: `Caffeine from ${label}`,
+          amount: log.caffeineMg,
+          unit: "mg",
+        });
+      }
+    }
+
     const result: MicroNutrientEntry[] = [];
     for (const [key, data] of totals) {
+      if (key.startsWith("caffeine:")) {
+        result.push({
+          nutrientKey: key,
+          nutrientName: data.name,
+          amount: data.amount,
+          unit: "mg",
+          category: "caffeine",
+        });
+        continue;
+      }
+
       const meta = NUTRIENT_KEYS[
         Object.keys(NUTRIENT_KEYS).find(
           (k) => NUTRIENT_KEYS[k].key === key,
         ) ?? ""
       ];
-      const category: "vitamin" | "mineral" | "other" =
+      const category: MicroNutrientEntry["category"] =
         meta?.category === "vitamin"
           ? "vitamin"
           : meta?.category === "mineral"
             ? "mineral"
-            : "other";
+            : meta?.category === "caffeine"
+              ? "caffeine"
+              : "other";
 
       result.push({
         nutrientKey: key,
@@ -1037,7 +1088,7 @@ export async function getMicroNutrientSummary(
     }
 
     return result.sort((a, b) => {
-      const catOrder = { vitamin: 0, mineral: 1, other: 2 };
+      const catOrder = { vitamin: 0, mineral: 1, caffeine: 2, other: 3 };
       const catDiff = catOrder[a.category] - catOrder[b.category];
       if (catDiff !== 0) return catDiff;
       return a.nutrientName.localeCompare(b.nutrientName);

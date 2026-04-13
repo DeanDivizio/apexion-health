@@ -104,6 +104,9 @@ export async function logHydrationAction(input: unknown) {
   });
 
   updateTag(`hydrationSummary:${userId}`);
+  if (caffeineMg > 0) {
+    updateTag(`microSummary:${userId}`);
+  }
   return result;
 }
 
