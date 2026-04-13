@@ -39,6 +39,7 @@ interface ExerciseComboboxProps {
   placeholder?: string;
   disabled?: boolean;
   className?: string;
+  icon?: React.ReactNode;
 }
 
 export function ExerciseCombobox({
@@ -49,6 +50,7 @@ export function ExerciseCombobox({
   placeholder = "Open Selector",
   disabled = false,
   className,
+  icon,
 }: ExerciseComboboxProps) {
   const [open, setOpen] = React.useState(false);
   const [search, setSearch] = React.useState("");
@@ -135,11 +137,12 @@ export function ExerciseCombobox({
           disabled={disabled}
           onClick={() => setOpen(true)}
           className={cn(
-            "w-full justify-between text-left font-normal h-12",
+            "w-full justify-center font-normal h-12",
             !value && "text-muted-foreground",
             className,
           )}
         >
+          {icon && <span className="mr-2 shrink-0">{icon}</span>}
           {value ? selectedName : placeholder}
         </Button>
         <Drawer open={open} onOpenChange={setOpen}>
@@ -161,11 +164,12 @@ export function ExerciseCombobox({
       aria-expanded={open}
       disabled={disabled}
       className={cn(
-        "w-full justify-between text-left font-normal h-12",
+        "w-full justify-center font-normal h-12",
         !value && "text-muted-foreground",
         className,
       )}
     >
+      {icon && <span className="mr-2 shrink-0">{icon}</span>}
       {value ? selectedName : placeholder}
     </Button>
   );

@@ -83,6 +83,14 @@ interface SetCardProps {
   onUpdate: (set: StrengthSet) => void;
   onSplitRepsToggle: () => void;
   onDelete: () => void;
+  /** Replaces the default "#N" prefix (e.g. "1a"). */
+  labelOverride?: string;
+  /** Replaces the default "Set N" empty-state title (e.g. exercise name). */
+  titleOverride?: string;
+  /** Extra class(es) appended to the AccordionItem (e.g. left border accent). */
+  accentColorClass?: string;
+  /** Overrides the AccordionItem value to avoid collisions in shared accordions. */
+  accordionValue?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -188,6 +196,10 @@ export function SetCard({
   onUpdate,
   onSplitRepsToggle,
   onDelete,
+  labelOverride,
+  titleOverride,
+  accentColorClass,
+  accordionValue,
 }: SetCardProps) {
   const isFreeform = (repInputStyle ?? "dropdown") === "freeform";
   const [draftSet, setDraftSet] = React.useState<StrengthSet>(set);
@@ -492,19 +504,19 @@ export function SetCard({
 
   return (
     <AccordionItem
-      value={`set-${index}`}
+      value={accordionValue ?? `set-${index}`}
       className={`border rounded-xl px-4 transition-colors ${
         isPr
           ? "border-emerald-600 bg-gradient-to-br from-emerald-950/50 to-teal-950/40"
           : "border-teal-800 bg-card/40"
-      }`}
+      } ${accentColorClass ?? ""}`}
     >
       <AccordionTrigger className="text-sm hover:no-underline">
-        <span className="text-muted-foreground text-xs mr-2">#{index + 1}</span>
+        <span className="text-muted-foreground text-xs mr-2">{labelOverride ?? `#${index + 1}`}</span>
         {isEditingName ? (
           <InlineSetNameEditor
-            value={draftSet.name ?? `Set ${index + 1}`}
-            placeholder={`Set ${index + 1}`}
+            value={draftSet.name ?? (titleOverride ?? `Set ${index + 1}`)}
+            placeholder={titleOverride ?? `Set ${index + 1}`}
             onSave={handleNameSave}
             onCancel={() => setIsEditingName(false)}
           />
@@ -515,27 +527,31 @@ export function SetCard({
                 ? draftSet.name
                 : hasData
                   ? formatTitle(index, draftSet, hasData)
-                  : `Set ${index + 1}`}
+                  : (titleOverride ?? `Set ${index + 1}`)}
             </span>
             <div className="flex items-center gap-2 mr-2 shrink-0">
-              <button
-                type="button"
+              <div
+                role="button"
+                tabIndex={0}
                 onClick={(e) => { e.stopPropagation(); setIsEditingName(true); }}
-                className="p-1 rounded text-muted-foreground/40 hover:text-muted-foreground hover:bg-white/5 transition-colors"
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); setIsEditingName(true); } }}
+                className="p-1 rounded text-muted-foreground/40 hover:text-muted-foreground hover:bg-white/5 transition-colors cursor-pointer"
               >
                 <Pencil className="h-3 w-3" />
-              </button>
-              <button
-                type="button"
+              </div>
+              <div
+                role="button"
+                tabIndex={0}
                 onClick={(e) => { e.stopPropagation(); setNotesOpen(true); }}
-                className={`p-1 rounded transition-colors ${
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); setNotesOpen(true); } }}
+                className={`p-1 rounded transition-colors cursor-pointer ${
                   draftSet.notes
                     ? "text-blue-400/70 hover:text-blue-400"
                     : "text-muted-foreground/40 hover:text-muted-foreground hover:bg-white/5"
                 }`}
               >
                 <StickyNote className="h-3 w-3" />
-              </button>
+              </div>
             </div>
           </>
         )}
@@ -858,7 +874,7 @@ export function SetCard({
               <AlertDialogHeader>
                 <AlertDialogTitle>Delete this set?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  This will permanently remove Set {index + 1} from this exercise.
+                  This will permanently remove {titleOverride ? `${labelOverride ?? `#${index + 1}`} ${titleOverride}` : `Set ${index + 1}`} from this exercise.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>

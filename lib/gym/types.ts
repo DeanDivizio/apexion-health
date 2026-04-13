@@ -294,6 +294,10 @@ export interface StrengthExerciseEntry {
   presetName?: string;
   /** User notes for this exercise instance */
   notes?: string;
+  /** Shared group ID linking two exercises in a superset pair */
+  supersetGroupId?: string;
+  /** FK to GymSupersetTemplate if logged from a saved template */
+  supersetTemplateId?: string;
 }
 
 /**
@@ -418,6 +422,16 @@ export interface VariationPresetSummary {
 }
 
 /**
+ * A saved superset pairing — two exercises the user frequently supersets together.
+ */
+export interface SupersetTemplateSummary {
+  id: string;
+  exerciseAKey: string;
+  exerciseBKey: string;
+  createdAt: string;
+}
+
+/**
  * Per-user gym metadata stored in PostgreSQL.
  * Contains custom exercises and historical stats.
  */
@@ -432,6 +446,8 @@ export interface GymUserMeta {
   exerciseData: Record<string, ExerciseStats>;
   /** Saved variation presets for exercises */
   variationPresets: VariationPresetSummary[];
+  /** Saved superset templates */
+  supersetTemplates: SupersetTemplateSummary[];
 }
 
 // =============================================================================

@@ -37,6 +37,7 @@ import {
   type ExerciseRecord,
   type ExerciseStats,
   type GymUserMeta,
+  type SupersetTemplateSummary,
   type VariationEffect,
   type VariationEffects,
   type VariationPresetSummary,
@@ -176,6 +177,8 @@ function transformExercise(dbExercise: {
   distance: number | null;
   distanceUnit: string | null;
   notes: string | null;
+  supersetGroupId: string | null;
+  supersetTemplateId: string | null;
   strengthSets: Array<{
     weight: number;
     repsBilateral: number | null;
@@ -228,6 +231,8 @@ function transformExercise(dbExercise: {
     variations: hasVariations ? variations : undefined,
     presetName: dbExercise.presetName || undefined,
     notes: dbExercise.notes ?? undefined,
+    supersetGroupId: dbExercise.supersetGroupId ?? undefined,
+    supersetTemplateId: dbExercise.supersetTemplateId ?? undefined,
   };
 }
 
@@ -248,6 +253,11 @@ async function createExercisesForSession(
     const presetName =
       exercise.type === "strength" ? exercise.presetName ?? null : null;
 
+    const supersetGroupId =
+      exercise.type === "strength" ? exercise.supersetGroupId ?? null : null;
+    const supersetTemplateId =
+      exercise.type === "strength" ? exercise.supersetTemplateId ?? null : null;
+
     const createdExercise = await tx.gymWorkoutExercise.create({
       data: {
         sessionId,
@@ -259,6 +269,8 @@ async function createExercisesForSession(
         durationMinutes: exercise.type === "cardio" ? exercise.duration : null,
         distance: exercise.type === "cardio" ? exercise.distance ?? null : null,
         distanceUnit: exercise.type === "cardio" ? exercise.unit ?? null : null,
+        supersetGroupId,
+        supersetTemplateId,
       },
     });
 
@@ -816,7 +828,7 @@ function toCustomExerciseDefinition(customExercise: {
  * - Most recent session data for each exercise (for "repeat last workout" feature)
  */
 export async function getGymMeta(userId: string): Promise<GymUserMeta> {
-  const [customExercises, statRows, sessions, variationPresetRows] = await Promise.all([
+  const [customExercises, statRows, sessions, variationPresetRows, supersetTemplateRows] = await Promise.all([
     prisma.gymCustomExercise.findMany({
       where: { userId, archivedAt: null },
       select: {
@@ -865,6 +877,11 @@ export async function getGymMeta(userId: string): Promise<GymUserMeta> {
       where: { userId },
       select: { id: true, exerciseKey: true, name: true, variations: true },
       orderBy: { createdAt: "asc" },
+    }),
+    prisma.gymSupersetTemplate.findMany({
+      where: { userId },
+      select: { id: true, exerciseAKey: true, exerciseBKey: true, createdAt: true },
+      orderBy: { createdAt: "desc" },
     }),
   ]);
 
@@ -963,12 +980,20 @@ export async function getGymMeta(userId: string): Promise<GymUserMeta> {
     }
   }
 
+  const supersetTemplates: SupersetTemplateSummary[] = supersetTemplateRows.map((t) => ({
+    id: t.id,
+    exerciseAKey: t.exerciseAKey,
+    exerciseBKey: t.exerciseBKey,
+    createdAt: t.createdAt.toISOString(),
+  }));
+
   return {
     userID: userId,
     customExercises: buildCustomExerciseGroups(customExercises),
     customExerciseDefinitions,
     exerciseData,
     variationPresets,
+    supersetTemplates,
   };
 }
 
@@ -1179,4 +1204,97 @@ export async function updateUserPreferences(
       ...(data.carryOverReps !== undefined ? { carryOverReps: data.carryOverReps } : {}),
     },
   });
+}
+
+// =============================================================================
+// SUPERSET TEMPLATES
+// =============================================================================
+
+export async function createSupersetTemplate(
+  userId: string,
+  exerciseAKey: string,
+  exerciseBKey: string,
+): Promise<SupersetTemplateSummary> {
+  const [a, b] = [exerciseAKey, exerciseBKey].sort();
+  const template = await prisma.gymSupersetTemplate.upsert({
+    where: {
+      userId_exerciseAKey_exerciseBKey: { userId, exerciseAKey: a, exerciseBKey: b },
+    },
+    create: { userId, exerciseAKey: a, exerciseBKey: b },
+    update: {},
+  });
+  return {
+    id: template.id,
+    exerciseAKey: template.exerciseAKey,
+    exerciseBKey: template.exerciseBKey,
+    createdAt: template.createdAt.toISOString(),
+  };
+}
+
+export async function deleteSupersetTemplate(
+  userId: string,
+  templateId: string,
+): Promise<void> {
+  await prisma.gymSupersetTemplate.deleteMany({
+    where: { id: templateId, userId },
+  });
+}
+
+export async function getSupersetTemplates(
+  userId: string,
+): Promise<SupersetTemplateSummary[]> {
+  const templates = await prisma.gymSupersetTemplate.findMany({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+  });
+  return templates.map((t) => ({
+    id: t.id,
+    exerciseAKey: t.exerciseAKey,
+    exerciseBKey: t.exerciseBKey,
+    createdAt: t.createdAt.toISOString(),
+  }));
+}
+
+export async function getRecentSupersetPairings(
+  userId: string,
+  limit = 5,
+): Promise<Array<{ exerciseAKey: string; exerciseBKey: string }>> {
+  const recent = await prisma.gymWorkoutExercise.findMany({
+    where: {
+      session: { userId },
+      supersetGroupId: { not: null },
+    },
+    select: {
+      exerciseKey: true,
+      supersetGroupId: true,
+      session: { select: { createdAt: true } },
+    },
+    orderBy: { session: { createdAt: "desc" } },
+  });
+
+  const groupMap = new Map<string, { keys: Set<string>; date: Date }>();
+  for (const row of recent) {
+    const gid = row.supersetGroupId!;
+    if (!groupMap.has(gid)) {
+      groupMap.set(gid, { keys: new Set(), date: row.session.createdAt });
+    }
+    groupMap.get(gid)!.keys.add(row.exerciseKey);
+  }
+
+  const seen = new Set<string>();
+  const result: Array<{ exerciseAKey: string; exerciseBKey: string }> = [];
+  const sorted = [...groupMap.values()]
+    .filter((g) => g.keys.size === 2)
+    .sort((a, b) => b.date.getTime() - a.date.getTime());
+
+  for (const group of sorted) {
+    const [a, b] = [...group.keys].sort();
+    const pairKey = `${a}\0${b}`;
+    if (seen.has(pairKey)) continue;
+    seen.add(pairKey);
+    result.push({ exerciseAKey: a, exerciseBKey: b });
+    if (result.length >= limit) break;
+  }
+
+  return result;
 }

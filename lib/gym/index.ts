@@ -42,6 +42,7 @@ export type {
   ExerciseStats,
   CustomExerciseDefinition,
   VariationPresetSummary,
+  SupersetTemplateSummary,
   GymUserMeta,
   // Form state
   DateFormFields,
@@ -109,6 +110,8 @@ export {
   updateGymPreferencesSchema,
   repInputStyleSchema,
   updatePersistentExerciseNoteSchema,
+  createSupersetTemplateInputSchema,
+  supersetTemplateSummarySchema,
 } from "./schemas";
 
 // Inferred schema types (when you need types derived from schemas)
@@ -135,6 +138,7 @@ export type {
   UpdateCustomExerciseInput,
   UpdatePersistentExerciseNote,
   RepInputStyle,
+  CreateSupersetTemplateInput,
 } from "./schemas";
 
 // Variation templates

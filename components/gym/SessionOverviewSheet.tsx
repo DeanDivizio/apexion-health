@@ -49,8 +49,9 @@ import {
 import type {
   ExerciseEntry,
   ExerciseDefinition,
+  StrengthExerciseEntry,
 } from "@/lib/gym";
-import { calculateSetVolume, EXERCISE_MAP } from "@/lib/gym";
+import { calculateSetVolume, EXERCISE_MAP, isStrengthExercise } from "@/lib/gym";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -114,6 +115,41 @@ function computeTotalSets(exercises: ExerciseEntry[]): number {
   return count;
 }
 
+/**
+ * Computes display labels for exercises, detecting superset pairs by
+ * shared supersetGroupId on adjacent entries.
+ * Standalone exercises: "1.", "2.", "3."
+ * Superset pairs: "1a.", "1b.", "2.", "3a.", "3b."
+ */
+function computeExerciseLabels(exercises: ExerciseEntry[]): string[] {
+  const labels: string[] = [];
+  let displayNum = 1;
+  let i = 0;
+
+  while (i < exercises.length) {
+    const current = exercises[i];
+    const next = i + 1 < exercises.length ? exercises[i + 1] : null;
+
+    const currentGroupId =
+      isStrengthExercise(current) ? (current as StrengthExerciseEntry).supersetGroupId : undefined;
+    const nextGroupId =
+      next && isStrengthExercise(next) ? (next as StrengthExerciseEntry).supersetGroupId : undefined;
+
+    if (currentGroupId && nextGroupId && currentGroupId === nextGroupId) {
+      labels.push(`${displayNum}a`);
+      labels.push(`${displayNum}b`);
+      displayNum++;
+      i += 2;
+    } else {
+      labels.push(`${displayNum}`);
+      displayNum++;
+      i++;
+    }
+  }
+
+  return labels;
+}
+
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
@@ -142,6 +178,7 @@ export function SessionOverviewSheet({
 
   const totalVolume = computeTotalVolume(exercises);
   const totalSets = computeTotalSets(exercises);
+  const exerciseLabels = React.useMemo(() => computeExerciseLabels(exercises), [exercises]);
 
   const handleStartTimeSave = () => {
     onStartTimeChange(startTimeInput);
@@ -294,7 +331,7 @@ export function SessionOverviewSheet({
                   <AccordionTrigger className="text-sm hover:no-underline py-3">
                     <div className="flex items-center gap-2 flex-1 text-left">
                       <span className="text-xs text-muted-foreground font-mono">
-                        {i + 1}.
+                        {exerciseLabels[i] ?? i + 1}.
                       </span>
                       <span>{getExerciseName(entry.exerciseType, exerciseMap)}</span>
                       {entry.type === "strength" && (

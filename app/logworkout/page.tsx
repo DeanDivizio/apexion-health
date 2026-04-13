@@ -84,7 +84,7 @@ function WorkoutSkeleton() {
 // ---------------------------------------------------------------------------
 export default async function LogWorkoutPage() {
   return (
-    <main className="w-full min-h-screen overflow-y-auto pt-16 pb-20">
+    <main className="w-full min-h-screen overflow-y-auto pt-16 pb-20 bg-gradient-to-br from-blue-950/15 via-slate-950/30 to-black">
       <Suspense fallback={<WorkoutSkeleton />}>
         <WorkoutFlowLoader />
       </Suspense>

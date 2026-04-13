@@ -10,6 +10,7 @@ import { Button } from "@/components/ui_primitives/button";
 import { captureClientEvent } from "@/lib/posthog-client";
 import { AddExercise } from "./AddExercise";
 import { ExerciseLogger } from "./ExerciseLogger";
+import { SupersetLogger } from "./SupersetLogger";
 import { ExerciseSettingsSheet } from "./ExerciseSettingsSheet";
 import { SessionOverviewSheet } from "./SessionOverviewSheet";
 import type { ExerciseGroupOption } from "./ExerciseCombobox";
@@ -31,6 +32,7 @@ import type {
   CustomExerciseDefinition,
   ExerciseCategory,
   VariationPresetSummary,
+  SupersetTemplateSummary,
 } from "@/lib/gym";
 import {
   EXERCISE_MAP,
@@ -45,7 +47,7 @@ import {
 const STORAGE_KEY = "apexion-workout-session";
 
 interface PersistedState {
-  view: "addExercise" | "logExercise";
+  view: "addExercise" | "logExercise" | "logSuperset";
   exercises: ExerciseEntry[];
   activeExerciseKey: string | null;
   activeSets: StrengthSet[];
@@ -54,6 +56,15 @@ interface PersistedState {
   startTime: string;
   endTime: string | null;
   sessionNotes?: string;
+  // Superset state
+  activeSupersetAKey: string | null;
+  activeSupersetBKey: string | null;
+  activeSupersetSetsA: StrengthSet[];
+  activeSupersetSetsB: StrengthSet[];
+  activeSupersetVariationsA: Record<string, string>;
+  activeSupersetVariationsB: Record<string, string>;
+  activeSupersetGroupId: string | null;
+  activeSupersetTemplateId: string | null;
 }
 
 function loadPersistedState(): PersistedState | null {
@@ -122,7 +133,7 @@ export function WorkoutFlow({ userMeta, customExerciseGroups, repInputStyle, car
   } = useContext(MobileHeaderContext);
 
   // ---- State ----
-  const [view, setView] = React.useState<"addExercise" | "logExercise">("addExercise");
+  const [view, setView] = React.useState<"addExercise" | "logExercise" | "logSuperset">("addExercise");
   const [exercises, setExercises] = React.useState<ExerciseEntry[]>([]);
   const [activeExerciseKey, setActiveExerciseKey] = React.useState<string | null>(null);
   const [activeSets, setActiveSets] = React.useState<StrengthSet[]>([
@@ -134,6 +145,20 @@ export function WorkoutFlow({ userMeta, customExerciseGroups, repInputStyle, car
   const [endTime, setEndTime] = React.useState<string | null>(null); // null = "now"
   const [submitting, setSubmitting] = React.useState(false);
   const [sessionNotes, setSessionNotes] = React.useState("");
+
+  // Superset state
+  const [activeSupersetAKey, setActiveSupersetAKey] = React.useState<string | null>(null);
+  const [activeSupersetBKey, setActiveSupersetBKey] = React.useState<string | null>(null);
+  const [activeSupersetSetsA, setActiveSupersetSetsA] = React.useState<StrengthSet[]>([
+    { weight: 0, reps: { bilateral: 0 } },
+  ]);
+  const [activeSupersetSetsB, setActiveSupersetSetsB] = React.useState<StrengthSet[]>([
+    { weight: 0, reps: { bilateral: 0 } },
+  ]);
+  const [activeSupersetVariationsA, setActiveSupersetVariationsA] = React.useState<Record<string, string>>({});
+  const [activeSupersetVariationsB, setActiveSupersetVariationsB] = React.useState<Record<string, string>>({});
+  const [activeSupersetGroupId, setActiveSupersetGroupId] = React.useState<string | null>(null);
+  const [activeSupersetTemplateId, setActiveSupersetTemplateId] = React.useState<string | null>(null);
 
   // Overlay state
   const [settingsOpen, setSettingsOpen] = React.useState(false);
@@ -175,6 +200,15 @@ export function WorkoutFlow({ userMeta, customExerciseGroups, repInputStyle, car
       setStartTime(saved.startTime);
       setEndTime(saved.endTime);
       setSessionNotes(saved.sessionNotes ?? "");
+      // Restore superset state
+      if (saved.activeSupersetAKey) setActiveSupersetAKey(saved.activeSupersetAKey);
+      if (saved.activeSupersetBKey) setActiveSupersetBKey(saved.activeSupersetBKey);
+      if (saved.activeSupersetSetsA) setActiveSupersetSetsA(saved.activeSupersetSetsA);
+      if (saved.activeSupersetSetsB) setActiveSupersetSetsB(saved.activeSupersetSetsB);
+      if (saved.activeSupersetVariationsA) setActiveSupersetVariationsA(saved.activeSupersetVariationsA);
+      if (saved.activeSupersetVariationsB) setActiveSupersetVariationsB(saved.activeSupersetVariationsB);
+      if (saved.activeSupersetGroupId) setActiveSupersetGroupId(saved.activeSupersetGroupId);
+      if (saved.activeSupersetTemplateId) setActiveSupersetTemplateId(saved.activeSupersetTemplateId);
     }
   }, []);
 
@@ -189,8 +223,9 @@ export function WorkoutFlow({ userMeta, customExerciseGroups, repInputStyle, car
           ((s.reps.bilateral !== undefined && s.reps.bilateral > 0) ||
             ((s.reps.left ?? 0) > 0 && (s.reps.right ?? 0) > 0)),
       );
+    const hasActiveSuperset = activeSupersetAKey !== null && activeSupersetBKey !== null;
 
-    if (!hasStagedExercises && !hasValidActiveSets) {
+    if (!hasStagedExercises && !hasValidActiveSets && !hasActiveSuperset) {
       clearPersistedState();
       return;
     }
@@ -205,9 +240,22 @@ export function WorkoutFlow({ userMeta, customExerciseGroups, repInputStyle, car
       startTime,
       endTime,
       sessionNotes,
+      activeSupersetAKey,
+      activeSupersetBKey,
+      activeSupersetSetsA,
+      activeSupersetSetsB,
+      activeSupersetVariationsA,
+      activeSupersetVariationsB,
+      activeSupersetGroupId,
+      activeSupersetTemplateId,
     };
     savePersistedState(state);
-  }, [view, exercises, activeExerciseKey, activeSets, activeVariations, sessionDate, startTime, endTime, sessionNotes]);
+  }, [
+    view, exercises, activeExerciseKey, activeSets, activeVariations,
+    sessionDate, startTime, endTime, sessionNotes,
+    activeSupersetAKey, activeSupersetBKey, activeSupersetSetsA, activeSupersetSetsB,
+    activeSupersetVariationsA, activeSupersetVariationsB, activeSupersetGroupId, activeSupersetTemplateId,
+  ]);
 
   // ---- Derived ----
   const runtimeExerciseMap = useMemo(() => {
@@ -245,6 +293,27 @@ export function WorkoutFlow({ userMeta, customExerciseGroups, repInputStyle, car
     const sKey = exerciseStatsKey(activeExerciseKey, activePresetName);
     return userMeta.exerciseData[sKey] ?? null;
   }, [activeExerciseKey, activePresetName, userMeta]);
+
+  // Superset exercise lookups
+  const supersetExerciseA: ExerciseDefinition | null = useMemo(() => {
+    if (!activeSupersetAKey) return null;
+    return effectiveExerciseMap.get(activeSupersetAKey) ?? null;
+  }, [activeSupersetAKey, effectiveExerciseMap]);
+
+  const supersetExerciseB: ExerciseDefinition | null = useMemo(() => {
+    if (!activeSupersetBKey) return null;
+    return effectiveExerciseMap.get(activeSupersetBKey) ?? null;
+  }, [activeSupersetBKey, effectiveExerciseMap]);
+
+  const supersetStatsA = useMemo(() => {
+    if (!activeSupersetAKey || !userMeta) return null;
+    return userMeta.exerciseData[activeSupersetAKey] ?? null;
+  }, [activeSupersetAKey, userMeta]);
+
+  const supersetStatsB = useMemo(() => {
+    if (!activeSupersetBKey || !userMeta) return null;
+    return userMeta.exerciseData[activeSupersetBKey] ?? null;
+  }, [activeSupersetBKey, userMeta]);
 
   // Build strength exercise groups for the combobox
   const strengthGroups: ExerciseGroupOption[] = useMemo(() => {
@@ -378,6 +447,130 @@ export function WorkoutFlow({ userMeta, customExerciseGroups, repInputStyle, car
     setHeaderInnerLeft,
     setHeaderInnerRight,
   ]);
+
+  // ---- Superset Handlers ----
+  const handleStartSuperset = useCallback(
+    async (exerciseAKey: string, exerciseBKey: string, templateId?: string) => {
+      setActiveSupersetAKey(exerciseAKey);
+      setActiveSupersetBKey(exerciseBKey);
+      setActiveSupersetSetsA([{ weight: 0, reps: { bilateral: 0 } }]);
+      setActiveSupersetSetsB([{ weight: 0, reps: { bilateral: 0 } }]);
+      setActiveSupersetGroupId(crypto.randomUUID());
+      setActiveSupersetTemplateId(templateId ?? null);
+      setView("logSuperset");
+
+      // Load variation defaults for both exercises
+      const loadDefaults = async (key: string) => {
+        try {
+          const defaults = await getExerciseDefaultsAction(key);
+          if (defaults && Object.keys(defaults).length > 0) return defaults;
+          const def = effectiveExerciseMap.get(key);
+          if (def?.variationTemplates) {
+            const v: Record<string, string> = {};
+            for (const [tid, override] of Object.entries(def.variationTemplates)) {
+              if (override.defaultOptionKey) v[tid] = override.defaultOptionKey;
+            }
+            return v;
+          }
+        } catch {}
+        return {};
+      };
+
+      const [defaultsA, defaultsB] = await Promise.all([
+        loadDefaults(exerciseAKey),
+        loadDefaults(exerciseBKey),
+      ]);
+      setActiveSupersetVariationsA(defaultsA);
+      setActiveSupersetVariationsB(defaultsB);
+    },
+    [effectiveExerciseMap],
+  );
+
+  const handleSaveSuperset = useCallback(() => {
+    if (!activeSupersetAKey || !activeSupersetBKey || !activeSupersetGroupId) return;
+
+    const validSetsA = activeSupersetSetsA.filter(
+      (s) =>
+        s.weight > 0 &&
+        ((s.reps.bilateral !== undefined && s.reps.bilateral > 0) ||
+          ((s.reps.left ?? 0) > 0 && (s.reps.right ?? 0) > 0)),
+    );
+    const validSetsB = activeSupersetSetsB.filter(
+      (s) =>
+        s.weight > 0 &&
+        ((s.reps.bilateral !== undefined && s.reps.bilateral > 0) ||
+          ((s.reps.left ?? 0) > 0 && (s.reps.right ?? 0) > 0)),
+    );
+
+    if (validSetsA.length === 0 || validSetsB.length === 0) {
+      toast({
+        title: "Incomplete superset",
+        description: "Both exercises need at least one valid set with weight and reps.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const entryA: StrengthExerciseEntry = {
+      type: "strength",
+      exerciseType: activeSupersetAKey,
+      sets: validSetsA,
+      variations: Object.keys(activeSupersetVariationsA).length > 0 ? activeSupersetVariationsA : undefined,
+      supersetGroupId: activeSupersetGroupId,
+      supersetTemplateId: activeSupersetTemplateId ?? undefined,
+    };
+    const entryB: StrengthExerciseEntry = {
+      type: "strength",
+      exerciseType: activeSupersetBKey,
+      sets: validSetsB,
+      variations: Object.keys(activeSupersetVariationsB).length > 0 ? activeSupersetVariationsB : undefined,
+      supersetGroupId: activeSupersetGroupId,
+      supersetTemplateId: activeSupersetTemplateId ?? undefined,
+    };
+
+    setExercises((prev) => [...prev, entryA, entryB]);
+    captureClientEvent("workout_superset_staged", {
+      exercise_a_key: activeSupersetAKey,
+      exercise_b_key: activeSupersetBKey,
+      rounds_a: validSetsA.length,
+      rounds_b: validSetsB.length,
+    });
+
+    // Clear superset state
+    setActiveSupersetAKey(null);
+    setActiveSupersetBKey(null);
+    setActiveSupersetSetsA([{ weight: 0, reps: { bilateral: 0 } }]);
+    setActiveSupersetSetsB([{ weight: 0, reps: { bilateral: 0 } }]);
+    setActiveSupersetVariationsA({});
+    setActiveSupersetVariationsB({});
+    setActiveSupersetGroupId(null);
+    setActiveSupersetTemplateId(null);
+    setView("addExercise");
+
+    const nameA = effectiveExerciseMap.get(activeSupersetAKey)?.name ?? activeSupersetAKey;
+    const nameB = effectiveExerciseMap.get(activeSupersetBKey)?.name ?? activeSupersetBKey;
+    toast({
+      title: "Superset saved",
+      description: `${nameA} + ${nameB} added to session.`,
+    });
+  }, [
+    activeSupersetAKey, activeSupersetBKey, activeSupersetGroupId,
+    activeSupersetSetsA, activeSupersetSetsB,
+    activeSupersetVariationsA, activeSupersetVariationsB, activeSupersetTemplateId,
+    effectiveExerciseMap, toast,
+  ]);
+
+  const handleDiscardSuperset = useCallback(() => {
+    setActiveSupersetAKey(null);
+    setActiveSupersetBKey(null);
+    setActiveSupersetSetsA([{ weight: 0, reps: { bilateral: 0 } }]);
+    setActiveSupersetSetsB([{ weight: 0, reps: { bilateral: 0 } }]);
+    setActiveSupersetVariationsA({});
+    setActiveSupersetVariationsB({});
+    setActiveSupersetGroupId(null);
+    setActiveSupersetTemplateId(null);
+    setView("addExercise");
+  }, []);
 
   // ---- Handlers ----
   const handleSelectExercise = useCallback(
@@ -572,6 +765,14 @@ export function WorkoutFlow({ userMeta, customExerciseGroups, repInputStyle, car
     setActiveSets([{ weight: 0, reps: { bilateral: 0 } }]);
     setActiveVariations({});
     setActivePresetName(null);
+    setActiveSupersetAKey(null);
+    setActiveSupersetBKey(null);
+    setActiveSupersetSetsA([{ weight: 0, reps: { bilateral: 0 } }]);
+    setActiveSupersetSetsB([{ weight: 0, reps: { bilateral: 0 } }]);
+    setActiveSupersetVariationsA({});
+    setActiveSupersetVariationsB({});
+    setActiveSupersetGroupId(null);
+    setActiveSupersetTemplateId(null);
     setSessionDate(new Date());
     setStartTime(formatTimeNow());
     setEndTime(null);
@@ -638,6 +839,29 @@ export function WorkoutFlow({ userMeta, customExerciseGroups, repInputStyle, car
           sessionExercises={exercises}
           onReviewSession={() => setOverviewOpen(true)}
           onCreateCustomExercise={handleCreateCustomExercise}
+          exerciseMap={effectiveExerciseMap}
+          savedSupersetTemplates={userMeta?.supersetTemplates ?? []}
+          onStartSuperset={handleStartSuperset}
+        />
+      )}
+
+      {view === "logSuperset" && supersetExerciseA && supersetExerciseB && (
+        <SupersetLogger
+          exerciseA={supersetExerciseA}
+          exerciseB={supersetExerciseB}
+          setsA={activeSupersetSetsA}
+          setsB={activeSupersetSetsB}
+          onSetsAChange={setActiveSupersetSetsA}
+          onSetsBChange={setActiveSupersetSetsB}
+          onSaveSuperset={handleSaveSuperset}
+          onDiscardSuperset={handleDiscardSuperset}
+          variationsA={activeSupersetVariationsA}
+          variationsB={activeSupersetVariationsB}
+          statsA={supersetStatsA}
+          statsB={supersetStatsB}
+          repInputStyle={liveRepInputStyle}
+          carryOverWeight={liveCarryOverWeight}
+          carryOverReps={liveCarryOverReps}
         />
       )}
 

@@ -10,6 +10,7 @@ import {
   listSessionsOptionsSchema,
   updateGymPreferencesSchema,
   updatePersistentExerciseNoteSchema,
+  createSupersetTemplateInputSchema,
   EXERCISE_MAP,
 } from "@/lib/gym";
 import { updateTag } from "next/cache";
@@ -27,6 +28,10 @@ import {
   updateUserPreferences,
   updateWorkoutSession,
   updateWorkoutSessionName,
+  createSupersetTemplate,
+  deleteSupersetTemplate,
+  getSupersetTemplates,
+  getRecentSupersetPairings,
 } from "@/lib/gym/server/gymService";
 import { prisma } from "@/lib/db/prisma";
 import { getPostHogClient } from "@/lib/posthog-server";
@@ -526,4 +531,34 @@ export async function updateGymUserPreferencesAction(input: unknown) {
 export async function getWorkoutDaySummaryAction(dateStr: string) {
   const userId = await requireUserId();
   return getWorkoutDaySummary(userId, dateStr);
+}
+
+// =============================================================================
+// SUPERSET TEMPLATE ACTIONS
+// =============================================================================
+
+export async function createSupersetTemplateAction(input: unknown) {
+  const userId = await requireUserId();
+  const parsed = createSupersetTemplateInputSchema.parse(input);
+  const template = await createSupersetTemplate(userId, parsed.exerciseAKey, parsed.exerciseBKey);
+  updateTag(`gymMeta:${userId}`);
+  return template;
+}
+
+export async function deleteSupersetTemplateAction(templateId: string) {
+  const userId = await requireUserId();
+  if (!templateId) throw new Error("Template ID is required.");
+  await deleteSupersetTemplate(userId, templateId);
+  updateTag(`gymMeta:${userId}`);
+  return { success: true };
+}
+
+export async function getSupersetTemplatesAction() {
+  const userId = await requireUserId();
+  return getSupersetTemplates(userId);
+}
+
+export async function getRecentSupersetPairingsAction() {
+  const userId = await requireUserId();
+  return getRecentSupersetPairings(userId);
 }

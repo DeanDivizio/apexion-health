@@ -1,11 +1,17 @@
 "use client";
 
 import * as React from "react";
-import { Dumbbell, Activity, ClipboardCheck } from "lucide-react";
+import { Dumbbell, Activity, ClipboardCheck, Zap } from "lucide-react";
 import { Button } from "@/components/ui_primitives/button";
 import { ExerciseCombobox, type ExerciseGroupOption } from "./ExerciseCombobox";
 import { CreateCustomExerciseSheet } from "./CreateCustomExerciseSheet";
-import type { ExerciseEntry, CreateCustomExerciseInput } from "@/lib/gym";
+import { CreateSupersetSheet } from "./CreateSupersetSheet";
+import type {
+  ExerciseEntry,
+  ExerciseDefinition,
+  CreateCustomExerciseInput,
+  SupersetTemplateSummary,
+} from "@/lib/gym";
 
 interface AddExerciseProps {
   strengthGroups: ExerciseGroupOption[];
@@ -13,6 +19,9 @@ interface AddExerciseProps {
   sessionExercises: ExerciseEntry[];
   onReviewSession: () => void;
   onCreateCustomExercise: (input: CreateCustomExerciseInput) => Promise<void>;
+  exerciseMap?: Map<string, ExerciseDefinition>;
+  savedSupersetTemplates?: SupersetTemplateSummary[];
+  onStartSuperset?: (exerciseAKey: string, exerciseBKey: string, templateId?: string) => void;
 }
 
 export function AddExercise({
@@ -21,9 +30,13 @@ export function AddExercise({
   sessionExercises,
   onReviewSession,
   onCreateCustomExercise,
+  exerciseMap,
+  savedSupersetTemplates,
+  onStartSuperset,
 }: AddExerciseProps) {
   const hasExercises = sessionExercises.length > 0;
   const [createSheetOpen, setCreateSheetOpen] = React.useState(false);
+  const [supersetSheetOpen, setSupersetSheetOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState("");
 
   const handleCreateCustom = React.useCallback((query: string) => {
@@ -57,8 +70,24 @@ export function AddExercise({
           onSelect={onSelectExercise}
           onCreateCustom={handleCreateCustom}
           placeholder="Search exercises..."
+          className="border-green-500/50 text-white hover:bg-green-500/10"
+          icon={<Dumbbell className="h-4 w-4 text-green-400" />}
         />
       </div>
+
+      {/* Create Superset */}
+      {onStartSuperset && exerciseMap && (
+        <div className="w-full">
+          <Button
+            variant="outline"
+            onClick={() => setSupersetSheetOpen(true)}
+            className="w-full h-12 border-purple-500/50 text-white hover:bg-purple-500/10"
+          >
+            <Zap className="mr-2 h-4 w-4 text-purple-400" />
+            Create Superset
+          </Button>
+        </div>
+      )}
 
       {/* Cardio Dropdown (placeholder) */}
       <div className="w-full space-y-2">
@@ -95,6 +124,18 @@ export function AddExercise({
         initialSearchQuery={searchQuery}
         onSubmit={onCreateCustomExercise}
       />
+
+      {/* Create Superset Sheet */}
+      {onStartSuperset && exerciseMap && (
+        <CreateSupersetSheet
+          open={supersetSheetOpen}
+          onOpenChange={setSupersetSheetOpen}
+          strengthGroups={strengthGroups}
+          exerciseMap={exerciseMap}
+          savedTemplates={savedSupersetTemplates ?? []}
+          onStartSuperset={onStartSuperset}
+        />
+      )}
     </div>
   );
 }

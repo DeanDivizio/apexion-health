@@ -33,22 +33,26 @@ model GymWorkoutSession {
 }
 
 model GymWorkoutExercise {
-  id              String                        @id @default(uuid())
-  sessionId       String
-  session         GymWorkoutSession             @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  order           Int
-  type            GymExerciseType
-  exerciseKey     String
-  presetName      String?
-  notes           String?
-  durationMinutes Float?
-  distance        Float?
-  distanceUnit    String?
-  strengthSets    GymStrengthSet[]
-  variations      GymWorkoutExerciseVariation[]
+  id                   String                        @id @default(uuid())
+  sessionId            String
+  session              GymWorkoutSession             @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  order                Int
+  type                 GymExerciseType
+  exerciseKey          String
+  presetName           String?
+  notes                String?
+  durationMinutes      Float?
+  distance             Float?
+  distanceUnit         String?
+  supersetGroupId      String?
+  supersetTemplateId   String?
+  supersetTemplate     GymSupersetTemplate?          @relation(fields: [supersetTemplateId], references: [id], onDelete: SetNull)
+  strengthSets         GymStrengthSet[]
+  variations           GymWorkoutExerciseVariation[]
 
   @@index([sessionId, order])
   @@index([exerciseKey])
+  @@index([supersetGroupId])
 }
 
 model GymStrengthSet {
@@ -237,6 +241,19 @@ model GymExerciseVariationPreset {
   createdAt   DateTime @default(now())
 
   @@unique([userId, exerciseKey, name])
+  @@index([userId])
+}
+
+model GymSupersetTemplate {
+  id            String               @id @default(uuid())
+  userId        String
+  exerciseAKey  String
+  exerciseBKey  String
+  createdAt     DateTime             @default(now())
+
+  workoutExercises GymWorkoutExercise[]
+
+  @@unique([userId, exerciseAKey, exerciseBKey])
   @@index([userId])
 }
 

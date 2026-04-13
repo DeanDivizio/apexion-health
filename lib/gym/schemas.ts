@@ -165,6 +165,8 @@ export const strengthExerciseEntrySchema = z.object({
   variations: z.record(z.string(), z.string()).optional(),
   presetName: z.string().optional(),
   notes: z.string().optional(),
+  supersetGroupId: z.string().optional(),
+  supersetTemplateId: z.string().optional(),
 });
 
 export const cardioExerciseEntrySchema = z.object({
@@ -238,12 +240,20 @@ export const variationPresetSummarySchema = z.object({
   variations: z.record(z.string(), z.string()),
 });
 
+export const supersetTemplateSummarySchema = z.object({
+  id: z.string().min(1),
+  exerciseAKey: z.string().min(1),
+  exerciseBKey: z.string().min(1),
+  createdAt: z.string(),
+});
+
 export const gymUserMetaSchema = z.object({
   userID: z.string().min(1),
   customExercises: z.array(exerciseGroupSchema),
   customExerciseDefinitions: z.record(z.string(), customExerciseDefinitionSchema),
   exerciseData: z.record(z.string(), exerciseStatsSchema),
   variationPresets: z.array(variationPresetSummarySchema),
+  supersetTemplates: z.array(supersetTemplateSummarySchema),
 });
 
 // =============================================================================
@@ -403,3 +413,12 @@ export const updatePersistentExerciseNoteSchema = z.object({
   notes: z.string().max(5000).nullable(),
 });
 export type UpdatePersistentExerciseNote = z.infer<typeof updatePersistentExerciseNoteSchema>;
+
+/**
+ * Input schema for creating a saved superset template.
+ */
+export const createSupersetTemplateInputSchema = z.object({
+  exerciseAKey: z.string().min(1),
+  exerciseBKey: z.string().min(1),
+});
+export type CreateSupersetTemplateInput = z.infer<typeof createSupersetTemplateInputSchema>;
