@@ -26,6 +26,7 @@ const SECTION_LABELS: Record<string, string> = {
   workoutSummary: "Workout Summary",
   medsSummary: "Meds & Supplements",
   microNutrientSummary: "Micro Nutrients",
+  activitySummary: "Habits & Activities",
 };
 
 const VISIBILITY_KEYS: Record<string, keyof UserHomePreferencesView> = {
@@ -34,6 +35,7 @@ const VISIBILITY_KEYS: Record<string, keyof UserHomePreferencesView> = {
   workoutSummary: "showWorkoutSummary",
   medsSummary: "showMedsSummary",
   microNutrientSummary: "showMicroNutrientSummary",
+  activitySummary: "showActivitySummary",
 };
 
 export default function HomeSettingsPage() {
@@ -174,7 +176,7 @@ function HomeSettingsSkeleton() {
     <div className="w-full max-w-lg space-y-4">
       <div className="h-4 w-48 bg-muted animate-pulse rounded" />
       <div className="rounded-xl bg-neutral-800/50 p-3 space-y-1">
-        {Array.from({ length: 5 }).map((_, i) => (
+        {Array.from({ length: 6 }).map((_, i) => (
           <div
             key={i}
             className="h-12 rounded-lg bg-neutral-900/50 animate-pulse"

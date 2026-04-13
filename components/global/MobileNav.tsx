@@ -7,6 +7,7 @@ import {
   Dumbbell,
   Pill,
   Apple,
+  CheckSquare,
   Droplets,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
@@ -25,12 +26,14 @@ const navItems = [
   { href: "/meals", icon: Apple, label: "Food" },
   { href: "/gymsessions", icon: Dumbbell, label: "Gym" },
   { href: "/meds", icon: Pill, label: "Meds" },
+  { href: "/activities", icon: CheckSquare, label: "Activities" },
 ];
 
 const logItems = [
   { href: "/logmeal", icon: Apple, label: "Meal" },
   { href: "/logmedication", icon: Pill, label: "Meds / Supplements" },
   { href: "/logworkout", icon: Dumbbell, label: "Workout" },
+  { href: "/logactivity", icon: CheckSquare, label: "Activity" },
 ];
 
 function AddButton({

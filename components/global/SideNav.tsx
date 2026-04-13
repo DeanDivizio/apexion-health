@@ -13,6 +13,7 @@ import {
     Activity,
     Apple,
     ClipboardPlus,
+    Clock3,
     Dumbbell,
     MenuIcon,
     MessageSquareWarning,
@@ -30,6 +31,7 @@ const collections = [
     { href: "/gymsessions", icon: Dumbbell, label: "Gym Sessions" },
     { href: "/meals", icon: Apple, label: "Meals Logged" },
     { href: "/meds", icon: ClipboardPlus, label: "Medication & Supplements" },
+    { href: "/activities", icon: Clock3, label: "Habits & Activities" },
     { href: "/bodymeasurements", icon: Scale, label: "Body Measurements", placeholder: true },
     { href: "/biometrics", icon: Activity, label: "Biometrics", placeholder: true },
 ];

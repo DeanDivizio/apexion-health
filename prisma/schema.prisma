@@ -725,6 +725,93 @@ model HydrationLog {
   @@index([userId, dateStr])
 }
 
+enum ActivityDimensionKind {
+  text
+  number
+  number_with_unit
+  date
+  time
+  datetime
+  scale_1_5
+}
+
+model ActivityType {
+  id         String   @id @default(uuid())
+  userId     String
+  name       String
+  color      String?
+  icon       String?
+  archivedAt DateTime?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  dimensions ActivityDimension[]
+  logs       ActivityLog[]
+
+  @@unique([userId, name])
+  @@index([userId, archivedAt])
+}
+
+model ActivityDimension {
+  id             String                @id @default(uuid())
+  activityTypeId String
+  activityType   ActivityType          @relation(fields: [activityTypeId], references: [id], onDelete: Cascade)
+  key            String
+  label          String
+  kind           ActivityDimensionKind
+  required       Boolean               @default(false)
+  sortOrder      Int                   @default(0)
+  config         Json?
+  archivedAt     DateTime?
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+
+  logValues ActivityLogValue[]
+
+  @@unique([activityTypeId, key])
+  @@index([activityTypeId, sortOrder])
+}
+
+model ActivityLog {
+  id                    String   @id @default(uuid())
+  userId                String
+  activityTypeId        String
+  activityType          ActivityType @relation(fields: [activityTypeId], references: [id], onDelete: Restrict)
+  loggedAt              DateTime
+  dateStr               String
+  timezoneOffsetMinutes Int      @default(0)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  values ActivityLogValue[]
+
+  @@index([userId, dateStr])
+  @@index([activityTypeId, loggedAt])
+}
+
+model ActivityLogValue {
+  id           String                @id @default(uuid())
+  logId         String
+  log           ActivityLog           @relation(fields: [logId], references: [id], onDelete: Cascade)
+  dimensionId   String?
+  dimension     ActivityDimension?    @relation(fields: [dimensionId], references: [id], onDelete: SetNull)
+  keySnapshot   String
+  labelSnapshot String
+  kindSnapshot  ActivityDimensionKind
+  textValue     String?
+  numberValue   Float?
+  unitValue     String?
+  dateValue     String?
+  timeValue     String?
+  dateTimeValue DateTime?
+  intValue      Int?
+  jsonValue     Json?
+  createdAt     DateTime              @default(now())
+
+  @@index([logId])
+  @@index([dimensionId])
+}
+
 model UserHomePreferences {
   id                       String   @id @default(uuid())
   userId                   String   @unique
@@ -734,7 +821,8 @@ model UserHomePreferences {
   showMicroNutrientSummary Boolean  @default(false)
   showWorkoutSummary       Boolean  @default(true)
   showMedsSummary          Boolean  @default(true)
-  componentOrder           Json     @default("[\"macroSummary\",\"hydrationSummary\",\"workoutSummary\",\"medsSummary\",\"microNutrientSummary\"]")
+  showActivitySummary      Boolean  @default(true)
+  componentOrder           Json     @default("[\"macroSummary\",\"hydrationSummary\",\"workoutSummary\",\"medsSummary\",\"microNutrientSummary\",\"activitySummary\"]")
   createdAt                DateTime @default(now())
   updatedAt                DateTime @updatedAt
 }

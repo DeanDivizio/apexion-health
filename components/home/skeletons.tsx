@@ -148,3 +148,19 @@ export function MedsSummarySkeleton() {
     </div>
   );
 }
+
+export function ActivitySummarySkeleton() {
+  return (
+    <div className="rounded-xl border border-white/10 bg-neutral-900/40 p-4">
+      <div className="flex items-center justify-between mb-2">
+        <Bone className="h-3 w-32" />
+        <Bone className="h-3.5 w-3.5 rounded" />
+      </div>
+      <div className="space-y-3">
+        <Bone className="h-3 w-40" />
+        <Bone className="h-3 w-full" />
+        <Bone className="h-3 w-4/5" />
+      </div>
+    </div>
+  );
+}

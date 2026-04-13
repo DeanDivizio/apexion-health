@@ -8,6 +8,7 @@ export interface UserHomePreferencesView {
   showMicroNutrientSummary: boolean;
   showWorkoutSummary: boolean;
   showMedsSummary: boolean;
+  showActivitySummary: boolean;
   componentOrder: string[];
 }
 
@@ -18,12 +19,14 @@ const DEFAULTS: UserHomePreferencesView = {
   showMicroNutrientSummary: false,
   showWorkoutSummary: true,
   showMedsSummary: true,
+  showActivitySummary: true,
   componentOrder: [
     "macroSummary",
     "hydrationSummary",
     "workoutSummary",
     "medsSummary",
     "microNutrientSummary",
+    "activitySummary",
   ],
 };
 
@@ -46,6 +49,7 @@ function rowToView(row: any): UserHomePreferencesView {
     showMicroNutrientSummary: row.showMicroNutrientSummary,
     showWorkoutSummary: row.showWorkoutSummary,
     showMedsSummary: row.showMedsSummary,
+    showActivitySummary: row.showActivitySummary ?? true,
     componentOrder: row.componentOrder as string[],
   };
 }

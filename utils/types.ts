@@ -158,13 +158,23 @@ export interface SubstanceSession {
   items: SubstanceSessionItem[];
 }
 
-export type SummaryData = [{
-  date: string,
-  gym?: GymDataPoints[],
-  hormoneData?: HormoneDataObject[],
-  macros?: MacrosObject,
-  substances?: SubstanceSession[],
-}]
+export interface ActivitySummaryLog {
+  logId: string;
+  activityTypeId: string;
+  activityName: string;
+  activityColor: string | null;
+  loggedAt: string;
+  summary: string[];
+}
+
+export type SummaryData = Array<{
+  date: string;
+  gym?: GymDataPoints[];
+  hormoneData?: HormoneDataObject[];
+  macros?: MacrosObject;
+  substances?: SubstanceSession[];
+  activities?: ActivitySummaryLog[];
+}>;
 
 export type GymDataPoints = {
   startTime: String,

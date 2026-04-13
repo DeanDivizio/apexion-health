@@ -35,6 +35,7 @@ import { HydrationSummary } from "@/components/home/HydrationSummary";
 import { MicroNutrientSummary } from "@/components/home/MicroNutrientSummary";
 import { WorkoutSummary } from "@/components/home/WorkoutSummary";
 import { MedsSummary } from "@/components/home/MedsSummary";
+import { ActivitySummary } from "@/components/home/ActivitySummary";
 import {
   MacroSummarySkeleton,
   MacroRingChartsSkeleton,
@@ -42,11 +43,13 @@ import {
   MicroNutrientSummarySkeleton,
   WorkoutSummarySkeleton,
   MedsSummarySkeleton,
+  ActivitySummarySkeleton,
 } from "@/components/home/skeletons";
 import type { UserHomePreferencesView } from "@/lib/settings/server/settingsService";
 import type { WorkoutDaySummarySession } from "@/lib/gym/server/gymService";
 import type { MedsDaySummarySession } from "@/lib/medication/server/medicationService";
 import type { MicroNutrientEntry } from "@/lib/nutrition/server/nutritionService";
+import type { ActivityContributionDay } from "@/lib/activity";
 import dynamic from "next/dynamic";
 import { toCompactDateStr } from "@/lib/dates/dateStr";
 import { Skeleton } from "@/components/ui_primitives/skeleton";
@@ -60,6 +63,10 @@ import {
 } from "@/components/ui_primitives/popover";
 import { CalendarDays, Settings } from "lucide-react";
 import Link from "next/link";
+import {
+  getActivityBootstrapAction,
+  getActivityContributionAction,
+} from "@/actions/activity";
 
 const MacroRingChartsGrid = dynamic(
   () =>
@@ -107,6 +114,7 @@ const VISIBILITY_KEYS: Record<string, keyof UserHomePreferencesView> = {
   workoutSummary: "showWorkoutSummary",
   medsSummary: "showMedsSummary",
   microNutrientSummary: "showMicroNutrientSummary",
+  activitySummary: "showActivitySummary",
 };
 
 const SKELETON_MAP: Record<string, React.FC> = {
@@ -115,6 +123,7 @@ const SKELETON_MAP: Record<string, React.FC> = {
   workoutSummary: WorkoutSummarySkeleton,
   medsSummary: MedsSummarySkeleton,
   microNutrientSummary: MicroNutrientSummarySkeleton,
+  activitySummary: ActivitySummarySkeleton,
 };
 
 const HYDRATION_LOGGED_EVENT = "hydration:logged";
@@ -144,6 +153,9 @@ export default function Home() {
   const [workoutData, setWorkoutData] = useState<WorkoutDaySummarySession[] | null>(null);
   const [medsData, setMedsData] = useState<MedsDaySummarySession[] | null>(null);
   const [microData, setMicroData] = useState<MicroNutrientEntry[] | null>(null);
+  const [activityTypesCount, setActivityTypesCount] = useState<number | null>(null);
+  const [activityContribution, setActivityContribution] = useState<ActivityContributionDay[] | null>(null);
+  const [activitySelectedDateStr, setActivitySelectedDateStr] = useState<string | null>(null);
   const fetchGenRef = useRef(0);
   const loadingGenRef = useRef(0);
   const lastFetchAtRef = useRef(0);
@@ -186,6 +198,8 @@ export default function Home() {
       setWorkoutData(null);
       setMedsData(null);
       setMicroData(null);
+      setActivityTypesCount(null);
+      setActivityContribution(null);
     }
 
     try {
@@ -243,6 +257,39 @@ export default function Home() {
       if (workout.status === "fulfilled") setWorkoutData(workout.value);
       if (meds.status === "fulfilled") setMedsData(meds.value);
       if (micro.status === "fulfilled") setMicroData(micro.value);
+
+      void getActivityBootstrapAction()
+        .then((bootstrap) => {
+          if (stale()) return;
+          setActivityTypesCount(bootstrap.activityTypes.length);
+        })
+        .catch((error) => {
+          console.error("[HOME] activity bootstrap failed", error);
+        });
+
+      const monthDate = new Date(
+        Number(selectedDateStr.slice(0, 4)),
+        Number(selectedDateStr.slice(4, 6)) - 1,
+        1,
+      );
+      const monthStart = toCompactDateStr(monthDate);
+      const monthEnd = toCompactDateStr(
+        new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0),
+      );
+      void getActivityContributionAction(monthStart, monthEnd)
+        .then((rows) => {
+          if (stale()) return;
+          const nonZeroRows = rows.filter((entry) => entry.count > 0);
+          setActivityContribution(nonZeroRows);
+          setActivitySelectedDateStr((current) =>
+            current && nonZeroRows.some((entry) => entry.dateStr === current)
+              ? current
+              : null,
+          );
+        })
+        .catch((error) => {
+          console.error("[HOME] activity contribution failed", error);
+        });
 
       console.log(`[HOME] gen=${gen} firing homeFetch...`);
       void homeFetch({ startDate, endDate, timezoneOffsetMinutes })
@@ -368,6 +415,14 @@ export default function Home() {
       case "microNutrientSummary":
         if (!microData) return null;
         return <MicroNutrientSummary nutrients={microData} />;
+      case "activitySummary":
+        if (!activityContribution) return null;
+        return (
+          <ActivitySummary
+            contributions={activityContribution}
+            activityTypesCount={activityTypesCount ?? 0}
+          />
+        );
       default:
         return null;
     }
@@ -387,6 +442,7 @@ export default function Home() {
     "workoutSummary",
     "medsSummary",
     "microNutrientSummary",
+    "activitySummary",
   ];
   const greeting = getGreetingForHour(new Date());
   const userFirstName = user?.firstName ?? "there";
@@ -460,6 +516,8 @@ export default function Home() {
                         ? medsData !== null
                         : key === "microNutrientSummary"
                           ? microData !== null
+                          : key === "activitySummary"
+                            ? activityContribution !== null
                           : true;
 
               return (

@@ -1,5 +1,11 @@
 'use client'
-import { GymDataPoints, Exercises, SummaryData, SubstanceSession } from "@/utils/types";
+import {
+  ActivitySummaryLog,
+  GymDataPoints,
+  Exercises,
+  SummaryData,
+  SubstanceSession,
+} from "@/utils/types";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../ui_primitives/accordion";
 import { useState } from "react";
 import { Skeleton } from "@/components/ui_primitives/skeleton";
@@ -72,6 +78,19 @@ export function WeeklyDataDisplayComponent({ data, isLoading }: { data: SummaryD
               )}
             </div>
 
+            <div className="mb-6">
+              <h3 className="font-light border-b border-blue-900 w-fit pr-2 mb-1 tracking-wide text-base text-neutral-300">Activities</h3>
+              {item.activities && item.activities.length > 0 ? (
+                <div className="space-y-3">
+                  {item.activities.map((log: ActivitySummaryLog) => (
+                    <ActivityLogRow key={log.logId} log={log} />
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs md:text-sm text-neutral-500">No activities recorded</p>
+              )}
+            </div>
+
           </AccordionContent>
         </AccordionItem>
       ))}
@@ -103,6 +122,30 @@ function SubstanceSessionRow({ session }: { session: SubstanceSession }) {
           </li>
         ))}
       </ul>
+    </div>
+  );
+}
+
+function ActivityLogRow({ log }: { log: ActivitySummaryLog }) {
+  const timeStr = formatTime(log.loggedAt);
+  return (
+    <div>
+      <p className="text-xs text-neutral-500 mb-1">{timeStr}</p>
+      <p
+        className="text-sm text-neutral-100"
+        style={log.activityColor ? { color: log.activityColor } : undefined}
+      >
+        {log.activityName}
+      </p>
+      {log.summary.length > 0 && (
+        <ul className="space-y-0.5 mt-1">
+          {log.summary.slice(0, 3).map((line, index) => (
+            <li key={`${log.logId}-${index}`} className="text-xs text-neutral-400">
+              {line}
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

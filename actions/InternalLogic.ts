@@ -3,6 +3,7 @@ import { addItemToTable, genericAddItemToTable, getDataFromTable, getGymMeta_CAC
 import { listWorkoutSessions } from "@/lib/gym/server/gymService";
 import { getMacroSummaryByDateRange } from "@/lib/nutrition/server/nutritionService";
 import { getMedsDateRangeSummary } from "@/lib/medication/server/medicationService";
+import { getActivityDateRangeSummary } from "@/lib/activity/server/activityService";
 import { ExerciseGroup } from "@/utils/types";
 import { auth } from '@clerk/nextjs/server';
 import { unstable_cacheTag as cacheTag, revalidateTag } from 'next/cache'
@@ -18,11 +19,12 @@ export async function homeFetch({startDate, endDate, timezoneOffsetMinutes = 0}:
       userID = userId;
     }
     try {
-        const [hormoneData, gymSessions, macroData, substanceData] = await Promise.all([
+        const [hormoneData, gymSessions, macroData, substanceData, activityData] = await Promise.all([
           getDataFromTable(userID, "Apexion-Hormone", startDate, endDate),
           listWorkoutSessions(userId, { startDate, endDate }),
           getMacroSummaryByDateRange(userId, startDate, endDate),
           getMedsDateRangeSummary(userId, startDate, endDate, timezoneOffsetMinutes),
+          getActivityDateRangeSummary(userId, startDate, endDate),
         ]);
         let summaryData = new Map()
         //@ts-ignore
@@ -64,6 +66,15 @@ export async function homeFetch({startDate, endDate, timezoneOffsetMinutes = 0}:
             existingItem.substances = sessions;
           } else {
             summaryData.set(date, { date, substances: sessions });
+          }
+        });
+
+        activityData.forEach(({ date, logs }) => {
+          const existingItem = summaryData.get(date);
+          if (existingItem) {
+            existingItem.activities = logs;
+          } else {
+            summaryData.set(date, { date, activities: logs });
           }
         });
         let summary = Array.from(summaryData.values())
