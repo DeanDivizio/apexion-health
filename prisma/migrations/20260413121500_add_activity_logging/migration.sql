@@ -105,4 +105,5 @@ ALTER TABLE "ActivityLogValue" ADD CONSTRAINT "ActivityLogValue_dimensionId_fkey
 
 -- AlterTable
 ALTER TABLE "UserHomePreferences"
+ADD COLUMN "showActivitySummary" BOOLEAN NOT NULL DEFAULT true,
 ALTER COLUMN "componentOrder" SET DEFAULT '["macroSummary","hydrationSummary","workoutSummary","medsSummary","microNutrientSummary","activitySummary"]';

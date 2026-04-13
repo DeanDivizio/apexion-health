@@ -152,14 +152,18 @@ export function MedsSummarySkeleton() {
 export function ActivitySummarySkeleton() {
   return (
     <div className="rounded-xl border border-white/10 bg-neutral-900/40 p-4">
-      <div className="flex items-center justify-between mb-2">
+      <div className="flex items-center justify-between mb-3">
         <Bone className="h-3 w-32" />
         <Bone className="h-3.5 w-3.5 rounded" />
       </div>
       <div className="space-y-3">
-        <Bone className="h-3 w-40" />
-        <Bone className="h-3 w-full" />
-        <Bone className="h-3 w-4/5" />
+        <Bone className="h-5 w-28" />
+        <div className="flex gap-1">
+          {Array.from({ length: 7 }).map((_, i) => (
+            <Bone key={i} className="flex-1 h-5 rounded-sm" />
+          ))}
+        </div>
+        <Bone className="h-3 w-32" />
       </div>
     </div>
   );

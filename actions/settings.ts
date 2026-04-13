@@ -27,3 +27,31 @@ export async function upsertUserHomePreferencesAction(
   updateTag(`homePreferences:${userId}`);
   return result;
 }
+
+export async function toggleActivityCalendarPinAction(pinned: boolean) {
+  const userId = await requireUserId();
+  const result = await upsertUserHomePreferences(userId, {
+    showActivityCalendar: pinned,
+  });
+  updateTag(`homePreferences:${userId}`);
+  return result;
+}
+
+export async function toggleActivityTypePinAction(
+  activityTypeId: string,
+  pinned: boolean,
+) {
+  const userId = await requireUserId();
+  const current = await getUserHomePreferences(userId);
+  const ids = new Set(current.pinnedActivityTypeIds);
+  if (pinned) {
+    ids.add(activityTypeId);
+  } else {
+    ids.delete(activityTypeId);
+  }
+  const result = await upsertUserHomePreferences(userId, {
+    pinnedActivityTypeIds: [...ids],
+  });
+  updateTag(`homePreferences:${userId}`);
+  return result;
+}

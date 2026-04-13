@@ -13,15 +13,18 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui_primitives/alert-dialog";
-import type { ActivityLogView } from "@/lib/activity";
+import type { ActivityLogView, ActivityTypeView } from "@/lib/activity";
 import { deleteActivityLogAction } from "@/actions/activity";
 import { useToast } from "@/hooks/use-toast";
 import { summarizeActivityValue } from "@/lib/activity/summary";
 
 interface ActivityLogsListProps {
   initialLogs: ActivityLogView[];
+  activityTypes?: ActivityTypeView[];
   onDeleted?: () => Promise<void> | void;
 }
+
+const FALLBACK_COLOR = "#10b981";
 
 function formatDayHeader(dateStr: string): string {
   const [year, month, day] = [
@@ -55,7 +58,7 @@ function formatTime(iso: string): string {
   });
 }
 
-export function ActivityLogsList({ initialLogs, onDeleted }: ActivityLogsListProps) {
+export function ActivityLogsList({ initialLogs, activityTypes, onDeleted }: ActivityLogsListProps) {
   const { toast } = useToast();
   const [logs, setLogs] = React.useState(initialLogs);
   const [deleteId, setDeleteId] = React.useState<string | null>(null);
@@ -64,6 +67,14 @@ export function ActivityLogsList({ initialLogs, onDeleted }: ActivityLogsListPro
   React.useEffect(() => {
     setLogs(initialLogs);
   }, [initialLogs]);
+
+  const colorMap = React.useMemo(() => {
+    const m = new Map<string, string>();
+    for (const t of activityTypes ?? []) {
+      m.set(t.id, t.color ?? FALLBACK_COLOR);
+    }
+    return m;
+  }, [activityTypes]);
 
   const groupedDays = React.useMemo(() => {
     const sorted = [...logs].sort(
@@ -88,11 +99,7 @@ export function ActivityLogsList({ initialLogs, onDeleted }: ActivityLogsListPro
       toast({ title: "Activity deleted" });
       await onDeleted?.();
     } catch {
-      toast({
-        title: "Error",
-        description: "Failed to delete this activity log.",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Failed to delete this activity log.", variant: "destructive" });
     } finally {
       setDeleting(false);
     }
@@ -100,7 +107,7 @@ export function ActivityLogsList({ initialLogs, onDeleted }: ActivityLogsListPro
 
   if (logs.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-white/10 p-6 text-center text-sm text-muted-foreground">
+      <div className="rounded-xl border border-dashed border-white/10 p-6 text-center text-sm text-muted-foreground">
         No activity logs yet.
       </div>
     );
@@ -114,34 +121,44 @@ export function ActivityLogsList({ initialLogs, onDeleted }: ActivityLogsListPro
             <h3 className="text-sm font-medium text-muted-foreground px-1">
               {formatDayHeader(dateStr)}
             </h3>
-            <div className="rounded-xl border border-white/10 bg-gradient-to-b from-emerald-950/20 to-emerald-950/5 divide-y divide-white/5 overflow-hidden">
-              {dayLogs.map((log) => (
-                <div key={log.id} className="px-4 py-3">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium">
-                      {formatTime(log.loggedAtIso)} · {log.activityName}
-                    </p>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7"
-                      onClick={() => setDeleteId(log.id)}
-                    >
-                      <Trash2 className="h-3.5 w-3.5 text-red-400" />
-                    </Button>
+            <div className="rounded-xl border border-emerald-300/20 divide-y divide-white/5 bg-gradient-to-br from-blue-950/30 via-slate-900/40 to-blackoverflow-hidden">
+              {dayLogs.map((log) => {
+                const logColor = log.activityColor ?? colorMap.get(log.activityTypeId) ?? FALLBACK_COLOR;
+                return (
+                  <div key={log.id} className="px-4 py-3 ">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium flex items-center gap-2">
+                        <span
+                          className="h-2 w-2 rounded-full shrink-0"
+                          style={{ backgroundColor: logColor }}
+                        />
+                        <span className="text-muted-foreground">{formatTime(log.loggedAtIso)}</span>
+                        <span className="mx-0.5">·</span>
+                        {log.activityName}
+                      </p>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={() => setDeleteId(log.id)}
+                        aria-label={`Delete ${log.activityName} log`}
+                      >
+                        <Trash2 className="h-3.5 w-3.5 text-red-400" />
+                      </Button>
+                    </div>
+                    <ul className="mt-1 space-y-0.5 pl-4">
+                      {log.values
+                        .map(summarizeActivityValue)
+                        .filter((line): line is string => Boolean(line))
+                        .map((line, i) => (
+                          <li key={`${log.id}-${i}`} className="text-xs text-muted-foreground">
+                            {line}
+                          </li>
+                        ))}
+                    </ul>
                   </div>
-                  <ul className="mt-1 space-y-0.5">
-                    {log.values
-                      .map(summarizeActivityValue)
-                      .filter((line): line is string => Boolean(line))
-                      .map((line, index) => (
-                      <li key={`${log.id}-${index}`} className="text-xs text-muted-foreground">
-                        {line}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         ))}
@@ -149,9 +166,7 @@ export function ActivityLogsList({ initialLogs, onDeleted }: ActivityLogsListPro
 
       <AlertDialog
         open={deleteId !== null}
-        onOpenChange={(open) => {
-          if (!open) setDeleteId(null);
-        }}
+        onOpenChange={(open) => { if (!open) setDeleteId(null); }}
       >
         <AlertDialogContent>
           <AlertDialogHeader>

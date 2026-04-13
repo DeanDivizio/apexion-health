@@ -5,8 +5,10 @@ import {
   getUserHomePreferencesAction,
   upsertUserHomePreferencesAction,
 } from "@/actions/settings";
+import { listActivityTypesAction } from "@/actions/activity";
 import { captureClientEvent } from "@/lib/posthog-client";
 import type { UserHomePreferencesView } from "@/lib/settings/server/settingsService";
+import type { ActivityTypeView } from "@/lib/activity";
 import { Switch } from "@/components/ui_primitives/switch";
 import { Button } from "@/components/ui_primitives/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui_primitives/card";
@@ -17,8 +19,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui_primitives/select";
-import { ChevronUp, ChevronDown, Loader2, LayoutDashboard } from "lucide-react";
+import { ChevronUp, ChevronDown, Loader2, LayoutDashboard, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { ACTIVITY_ICON_MAP } from "@/components/activity/activityIconMap";
 
 const SECTION_LABELS: Record<string, string> = {
   macroSummary: "Macro Summary",
@@ -40,14 +43,18 @@ const VISIBILITY_KEYS: Record<string, keyof UserHomePreferencesView> = {
 
 export default function HomeSettingsPage() {
   const [prefs, setPrefs] = useState<UserHomePreferencesView | null>(null);
+  const [activityTypes, setActivityTypes] = useState<ActivityTypeView[]>([]);
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
   useEffect(() => {
     getUserHomePreferencesAction().then(setPrefs);
+    listActivityTypesAction().then(setActivityTypes);
   }, []);
 
   if (!prefs) return <HomeSettingsSkeleton />;
+
+  const activityTypesById = new Map(activityTypes.map((t) => [t.id, t]));
 
   function toggleVisibility(key: string) {
     if (!prefs) return;
@@ -70,6 +77,28 @@ export default function HomeSettingsPage() {
     setPrefs({ ...prefs, componentOrder: order });
   }
 
+  function movePinnedUp(index: number) {
+    if (!prefs || index <= 0) return;
+    const ids = [...prefs.pinnedActivityTypeIds];
+    [ids[index - 1], ids[index]] = [ids[index], ids[index - 1]];
+    setPrefs({ ...prefs, pinnedActivityTypeIds: ids });
+  }
+
+  function movePinnedDown(index: number) {
+    if (!prefs || index >= prefs.pinnedActivityTypeIds.length - 1) return;
+    const ids = [...prefs.pinnedActivityTypeIds];
+    [ids[index], ids[index + 1]] = [ids[index + 1], ids[index]];
+    setPrefs({ ...prefs, pinnedActivityTypeIds: ids });
+  }
+
+  function removePinned(id: string) {
+    if (!prefs) return;
+    setPrefs({
+      ...prefs,
+      pinnedActivityTypeIds: prefs.pinnedActivityTypeIds.filter((x) => x !== id),
+    });
+  }
+
   function handleSave() {
     if (!prefs) return;
     startTransition(async () => {
@@ -82,6 +111,10 @@ export default function HomeSettingsPage() {
       }
     });
   }
+
+  const activityVisible = prefs.showActivitySummary;
+  const hasPinnedItems =
+    prefs.showActivityCalendar || prefs.pinnedActivityTypeIds.length > 0;
 
   return (
     <div className="w-full max-w-lg space-y-4">
@@ -101,57 +134,163 @@ export default function HomeSettingsPage() {
             const isVisible = visKey ? (prefs[visKey] as boolean) : false;
 
             return (
-              <div
-                key={key}
-                className="flex items-center gap-2 rounded-lg px-3 py-2.5 bg-neutral-900/50"
-              >
-                <span className="flex-1 text-sm font-medium">
-                  {SECTION_LABELS[key] ?? key}
-                </span>
+              <div key={key}>
+                <div className="flex items-center gap-2 rounded-lg px-3 py-2.5 bg-neutral-900/50">
+                  <span className="flex-1 text-sm font-medium">
+                    {SECTION_LABELS[key] ?? key}
+                  </span>
 
-                {key === "macroSummary" && isVisible && (
-                  <Select
-                    value={prefs.macroSummarySize}
-                    onValueChange={(val) =>
-                      setPrefs({ ...prefs, macroSummarySize: val as "large" | "small" })
-                    }
-                  >
-                    <SelectTrigger className="w-24 h-7 text-xs bg-neutral-800 border-neutral-700">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="large">Large</SelectItem>
-                      <SelectItem value="small">Small</SelectItem>
-                    </SelectContent>
-                  </Select>
-                )}
+                  {key === "macroSummary" && isVisible && (
+                    <Select
+                      value={prefs.macroSummarySize}
+                      onValueChange={(val) =>
+                        setPrefs({ ...prefs, macroSummarySize: val as "large" | "small" })
+                      }
+                    >
+                      <SelectTrigger className="w-24 h-7 text-xs bg-neutral-800 border-neutral-700">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="large">Large</SelectItem>
+                        <SelectItem value="small">Small</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
 
-                <Switch
-                  checked={isVisible}
-                  onCheckedChange={() => toggleVisibility(key)}
-                  className="data-[state=checked]:bg-green-500 [&_span]:bg-gray-400 [&_span]:data-[state=checked]:bg-white"
-                />
+                  <Switch
+                    checked={isVisible}
+                    onCheckedChange={() => toggleVisibility(key)}
+                    className="data-[state=checked]:bg-green-500 [&_span]:bg-gray-400 [&_span]:data-[state=checked]:bg-white"
+                  />
 
-                <div className="flex flex-col">
-                  <button
-                    type="button"
-                    disabled={index === 0}
-                    className="p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors"
-                    onClick={() => moveUp(index)}
-                    aria-label={`Move ${SECTION_LABELS[key]} up`}
-                  >
-                    <ChevronUp className="w-4 h-4" />
-                  </button>
-                  <button
-                    type="button"
-                    disabled={index === prefs.componentOrder.length - 1}
-                    className="p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors"
-                    onClick={() => moveDown(index)}
-                    aria-label={`Move ${SECTION_LABELS[key]} down`}
-                  >
-                    <ChevronDown className="w-4 h-4" />
-                  </button>
+                  <div className="flex flex-col">
+                    <button
+                      type="button"
+                      disabled={index === 0}
+                      className="p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors"
+                      onClick={() => moveUp(index)}
+                      aria-label={`Move ${SECTION_LABELS[key]} up`}
+                    >
+                      <ChevronUp className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      disabled={index === prefs.componentOrder.length - 1}
+                      className="p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors"
+                      onClick={() => moveDown(index)}
+                      aria-label={`Move ${SECTION_LABELS[key]} down`}
+                    >
+                      <ChevronDown className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
+
+                {/* Activity sub-controls */}
+                {key === "activitySummary" && activityVisible && (
+                  <div className="ml-4 mt-1 space-y-1">
+                    {/* Calendar toggle */}
+                    <div className="flex items-center gap-2 rounded-lg px-3 py-2 bg-neutral-900/30">
+                      <span className="flex-1 text-xs text-muted-foreground">
+                        Month Calendar
+                      </span>
+                      <Switch
+                        checked={prefs.showActivityCalendar}
+                        onCheckedChange={(v) =>
+                          setPrefs({ ...prefs, showActivityCalendar: v })
+                        }
+                        className="data-[state=checked]:bg-teal-500 [&_span]:bg-gray-400 [&_span]:data-[state=checked]:bg-white scale-90"
+                      />
+                    </div>
+
+                    {/* Compact summary toggle */}
+                    <div className="flex items-center gap-2 rounded-lg px-3 py-2 bg-neutral-900/30">
+                      <span className="flex-1 text-xs text-muted-foreground">
+                        Compact Summary
+                      </span>
+                      <Switch
+                        checked={prefs.showActivityCompactSummary}
+                        onCheckedChange={(v) =>
+                          setPrefs({ ...prefs, showActivityCompactSummary: v })
+                        }
+                        className="data-[state=checked]:bg-teal-500 [&_span]:bg-gray-400 [&_span]:data-[state=checked]:bg-white scale-90"
+                      />
+                    </div>
+
+                    {/* Pinned activity strips */}
+                    {prefs.pinnedActivityTypeIds.length > 0 && (
+                      <>
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground px-3 pt-1">
+                          Pinned Activities
+                        </p>
+                        {prefs.pinnedActivityTypeIds.map((id, pi) => {
+                          const type = activityTypesById.get(id);
+                          const name = type?.name ?? "Unknown";
+                          const color = type?.color ?? "#10b981";
+                          const IconComp = type?.icon
+                            ? ACTIVITY_ICON_MAP[type.icon]
+                            : null;
+                          return (
+                            <div
+                              key={id}
+                              className="flex items-center gap-2 rounded-lg px-3 py-2 bg-neutral-900/30"
+                            >
+                              {IconComp ? (
+                                <IconComp
+                                  className="h-3.5 w-3.5 shrink-0"
+                                  style={{ color }}
+                                />
+                              ) : (
+                                <span
+                                  className="h-2.5 w-2.5 rounded-full shrink-0"
+                                  style={{ backgroundColor: color }}
+                                />
+                              )}
+                              <span className="flex-1 text-xs truncate">
+                                {name}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => removePinned(id)}
+                                className="p-0.5 text-muted-foreground hover:text-red-400 transition-colors"
+                                aria-label={`Remove ${name}`}
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                              <div className="flex flex-col">
+                                <button
+                                  type="button"
+                                  disabled={pi === 0}
+                                  className="p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors"
+                                  onClick={() => movePinnedUp(pi)}
+                                  aria-label={`Move ${name} up`}
+                                >
+                                  <ChevronUp className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={
+                                    pi === prefs.pinnedActivityTypeIds.length - 1
+                                  }
+                                  className="p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors"
+                                  onClick={() => movePinnedDown(pi)}
+                                  aria-label={`Move ${name} down`}
+                                >
+                                  <ChevronDown className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </>
+                    )}
+
+                    {!hasPinnedItems && (
+                      <p className="text-[10px] text-muted-foreground px-3 py-1">
+                        Pin activities from the Activities page to show them here.
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
             );
           })}

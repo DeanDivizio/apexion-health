@@ -40,7 +40,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className="dark">
       <head>
         {/* Workaround for Next.js bug #86060 – performance.measure negative timestamp */}
         {process.env.NODE_ENV === "development" && (
@@ -65,7 +65,7 @@ export default function RootLayout({
         <link rel="apple-touch-startup-image" href="/splash/apple-splash-1668-2388.png" media="(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" />
         <link rel="apple-touch-startup-image" href="/splash/apple-splash-2048-2732.png" media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" />
       </head>
-      <body className="w-full h-auto overflow-clip bg-black">
+      <body className="w-full h-auto overflow-hidden bg-black">
         <Suspense>
           <ClerkProvider>
             <PostHogIdentifier />

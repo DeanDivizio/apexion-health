@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronRight, Home, Apple, Dumbbell } from "lucide-react";
+import { ChevronRight, Home, Apple, Dumbbell, Navigation } from "lucide-react";
 import { Card, CardContent } from "@/components/ui_primitives/card";
 
 const SECTIONS = [
@@ -8,6 +8,12 @@ const SECTIONS = [
     icon: Home,
     title: "Home Screen",
     description: "Customize your dashboard",
+  },
+  {
+    href: "/settings/navigation",
+    icon: Navigation,
+    title: "Navigation Bar",
+    description: "Choose which tabs appear in the nav",
   },
   {
     href: "/settings/nutrition",

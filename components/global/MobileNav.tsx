@@ -18,16 +18,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui_primitives/dropdown-menu-raw";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import LogHydrationDrawer from "@/components/hydration/LogHydrationDrawer";
-
-const navItems = [
-  { href: "/", icon: House, label: "Home" },
-  { href: "/meals", icon: Apple, label: "Food" },
-  { href: "/gymsessions", icon: Dumbbell, label: "Gym" },
-  { href: "/meds", icon: Pill, label: "Meds" },
-  { href: "/activities", icon: CheckSquare, label: "Activities" },
-];
+import { useNavItems } from "@/hooks/useNavItems";
+import type { NavOption } from "@/lib/nav/navItems";
 
 const logItems = [
   { href: "/logmeal", icon: Apple, label: "Meal" },
@@ -111,6 +105,12 @@ export default function MobileNav() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [hydrationOpen, setHydrationOpen] = useState(false);
+  const customItems = useNavItems();
+
+  const navItems: NavOption[] = useMemo(
+    () => [{ key: "home", href: "/", icon: House, label: "Home" }, ...customItems],
+    [customItems],
+  );
 
   if (pathname.startsWith("/sign-in") || pathname.startsWith("/sign-up")) {
     return null;

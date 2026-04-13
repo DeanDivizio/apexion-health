@@ -49,7 +49,7 @@ import type { UserHomePreferencesView } from "@/lib/settings/server/settingsServ
 import type { WorkoutDaySummarySession } from "@/lib/gym/server/gymService";
 import type { MedsDaySummarySession } from "@/lib/medication/server/medicationService";
 import type { MicroNutrientEntry } from "@/lib/nutrition/server/nutritionService";
-import type { ActivityContributionDay } from "@/lib/activity";
+import type { ActivityContributionDay, ActivityLogView, ActivityTypeView } from "@/lib/activity";
 import dynamic from "next/dynamic";
 import { toCompactDateStr } from "@/lib/dates/dateStr";
 import { Skeleton } from "@/components/ui_primitives/skeleton";
@@ -66,7 +66,11 @@ import Link from "next/link";
 import {
   getActivityBootstrapAction,
   getActivityContributionAction,
+  listActivityTypesAction,
+  listActivityLogsAction,
 } from "@/actions/activity";
+import { ActivityContributionGrid } from "@/components/activity/ActivityContributionGrid";
+import { ActivityTrackerStrip } from "@/components/activity/ActivityTrackerStrip";
 
 const MacroRingChartsGrid = dynamic(
   () =>
@@ -156,6 +160,10 @@ export default function Home() {
   const [activityTypesCount, setActivityTypesCount] = useState<number | null>(null);
   const [activityContribution, setActivityContribution] = useState<ActivityContributionDay[] | null>(null);
   const [activitySelectedDateStr, setActivitySelectedDateStr] = useState<string | null>(null);
+  const [pinnedActivityTypes, setPinnedActivityTypes] = useState<ActivityTypeView[]>([]);
+  const [pinnedActivityLogs, setPinnedActivityLogs] = useState<ActivityLogView[]>([]);
+  const [homeCalendarMonth, setHomeCalendarMonth] = useState(() => new Date());
+  const [homeCalendarContributions, setHomeCalendarContributions] = useState<ActivityContributionDay[] | null>(null);
   const fetchGenRef = useRef(0);
   const loadingGenRef = useRef(0);
   const lastFetchAtRef = useRef(0);
@@ -281,6 +289,7 @@ export default function Home() {
           if (stale()) return;
           const nonZeroRows = rows.filter((entry) => entry.count > 0);
           setActivityContribution(nonZeroRows);
+          setHomeCalendarContributions(rows);
           setActivitySelectedDateStr((current) =>
             current && nonZeroRows.some((entry) => entry.dateStr === current)
               ? current
@@ -290,6 +299,28 @@ export default function Home() {
         .catch((error) => {
           console.error("[HOME] activity contribution failed", error);
         });
+
+      const resolvedPrefs = prefs.status === "fulfilled" ? prefs.value : null;
+      const hasPinnedItems =
+        resolvedPrefs?.showActivityCalendar ||
+        (resolvedPrefs?.pinnedActivityTypeIds?.length ?? 0) > 0;
+      if (hasPinnedItems) {
+        void Promise.allSettled([
+          listActivityTypesAction(),
+          listActivityLogsAction(),
+        ]).then(([typesResult, logsResult]) => {
+          if (stale()) return;
+          if (typesResult.status === "fulfilled") {
+            const pinnedIds = new Set(resolvedPrefs?.pinnedActivityTypeIds ?? []);
+            setPinnedActivityTypes(
+              typesResult.value.filter((t) => pinnedIds.has(t.id)),
+            );
+          }
+          if (logsResult.status === "fulfilled") {
+            setPinnedActivityLogs(logsResult.value);
+          }
+        });
+      }
 
       console.log(`[HOME] gen=${gen} firing homeFetch...`);
       void homeFetch({ startDate, endDate, timezoneOffsetMinutes })
@@ -373,6 +404,15 @@ export default function Home() {
     setHeaderInnerRight(null);
   }, [setHeaderInnerLeft, setHeaderInnerRight]);
 
+  const handleHomeCalendarMonthChange = useCallback((newMonth: Date) => {
+    setHomeCalendarMonth(newMonth);
+    const first = new Date(newMonth.getFullYear(), newMonth.getMonth(), 1);
+    const last = new Date(newMonth.getFullYear(), newMonth.getMonth() + 1, 0);
+    void getActivityContributionAction(toCompactDateStr(first), toCompactDateStr(last))
+      .then(setHomeCalendarContributions)
+      .catch((err) => console.error("[HOME] calendar month fetch failed", err));
+  }, []);
+
   function renderComponent(key: string) {
     switch (key) {
       case "macroSummary": {
@@ -415,14 +455,46 @@ export default function Home() {
       case "microNutrientSummary":
         if (!microData) return null;
         return <MicroNutrientSummary nutrients={microData} />;
-      case "activitySummary":
+      case "activitySummary": {
         if (!activityContribution) return null;
+        const showCalendar = preferences?.showActivityCalendar ?? false;
+        const showCompact = preferences?.showActivityCompactSummary ?? true;
+        const hasPinnedStrips = pinnedActivityTypes.length > 0;
+        if (!showCalendar && !hasPinnedStrips) {
+          return showCompact ? (
+            <ActivitySummary
+              contributions={activityContribution}
+              activityTypesCount={activityTypesCount ?? 0}
+            />
+          ) : null;
+        }
         return (
-          <ActivitySummary
-            contributions={activityContribution}
-            activityTypesCount={activityTypesCount ?? 0}
-          />
+          <div className="space-y-3">
+            {showCalendar && homeCalendarContributions && (
+              <ActivityContributionGrid
+                contributions={homeCalendarContributions}
+                monthDate={homeCalendarMonth}
+                selectedDateStr={null}
+                onSelectDate={() => {}}
+                onMonthChange={handleHomeCalendarMonthChange}
+              />
+            )}
+            {showCompact && (
+              <ActivitySummary
+                contributions={activityContribution}
+                activityTypesCount={activityTypesCount ?? 0}
+              />
+            )}
+            {pinnedActivityTypes.map((type) => (
+              <ActivityTrackerStrip
+                key={type.id}
+                type={type}
+                logs={pinnedActivityLogs}
+              />
+            ))}
+          </div>
         );
+      }
       default:
         return null;
     }

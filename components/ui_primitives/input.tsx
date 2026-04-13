@@ -14,6 +14,11 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         ? "[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0"
         : ""
 
+    const dateInputClass =
+      inputType === "date" || inputType === "time" || inputType === "datetime-local"
+        ? "[&::-webkit-calendar-picker-indicator]:hidden"
+        : ""
+
     return (
       <input
         type={inputType}
@@ -22,6 +27,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         className={cn(
           "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:italic focus:outline-none",
           numberInputClass,
+          dateInputClass,
           className
         )}
         ref={ref}

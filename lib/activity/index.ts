@@ -23,7 +23,7 @@ export {
   listActivityLogsOptionsSchema,
 } from "./schemas";
 
-export { summarizeActivityValue, summarizeActivityLogLine } from "./summary";
+export { summarizeActivityValue, summarizeActivityLogLine, computeStreaks } from "./summary";
 
 export type {
   CreateActivityTypeInput,

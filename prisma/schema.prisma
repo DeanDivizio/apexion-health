@@ -822,6 +822,9 @@ model UserHomePreferences {
   showWorkoutSummary       Boolean  @default(true)
   showMedsSummary          Boolean  @default(true)
   showActivitySummary      Boolean  @default(true)
+  showActivityCalendar        Boolean  @default(false)
+  showActivityCompactSummary  Boolean  @default(true)
+  pinnedActivityTypeIds       Json     @default("[]")
   componentOrder           Json     @default("[\"macroSummary\",\"hydrationSummary\",\"workoutSummary\",\"medsSummary\",\"microNutrientSummary\",\"activitySummary\"]")
   createdAt                DateTime @default(now())
   updatedAt                DateTime @updatedAt

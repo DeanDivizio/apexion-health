@@ -131,10 +131,13 @@ function ActivityLogRow({ log }: { log: ActivitySummaryLog }) {
   return (
     <div>
       <p className="text-xs text-neutral-500 mb-1">{timeStr}</p>
-      <p
-        className="text-sm text-neutral-100"
-        style={log.activityColor ? { color: log.activityColor } : undefined}
-      >
+      <p className="text-sm text-neutral-100 flex items-center gap-1.5">
+        {log.activityColor && (
+          <span
+            className="inline-block h-2 w-2 rounded-full shrink-0"
+            style={{ backgroundColor: log.activityColor }}
+          />
+        )}
         {log.activityName}
       </p>
       {log.summary.length > 0 && (
