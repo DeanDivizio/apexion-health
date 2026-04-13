@@ -138,6 +138,7 @@ export default function LogHydrationDrawer({
   function handleLog() {
     const parsed = parseFloat(amount);
     if (!parsed || parsed <= 0) return;
+    const amountOz = toOz(parsed, unit);
 
     startTransition(async () => {
       await logHydrationAction({
@@ -153,6 +154,14 @@ export default function LogHydrationDrawer({
         beverageSubtype: activeSubtype,
         caffeineMg: caffeineEstimate,
       });
+      window.dispatchEvent(
+        new CustomEvent("hydration:logged", {
+          detail: {
+            amountOz,
+            beverageType,
+          },
+        }),
+      );
       reset();
       onOpenChange(false);
     });

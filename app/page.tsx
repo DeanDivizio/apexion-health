@@ -17,7 +17,11 @@ import {
   DEFAULT_FAT,
 } from "@/lib/nutrition/defaults";
 import { getUserHomePreferencesAction } from "@/actions/settings";
-import { getHydrationSummaryAction } from "@/actions/hydration";
+import {
+  getHydrationSummaryAction,
+  type BeverageType,
+  type HydrationSummaryView,
+} from "@/actions/hydration";
 import { getMicroNutrientSummaryAction } from "@/actions/nutrition";
 import { getWorkoutDaySummaryAction } from "@/actions/gym";
 import { getMedsDaySummaryAction } from "@/actions/medication";
@@ -40,7 +44,6 @@ import {
   MedsSummarySkeleton,
 } from "@/components/home/skeletons";
 import type { UserHomePreferencesView } from "@/lib/settings/server/settingsService";
-import type { HydrationSummaryView } from "@/actions/hydration";
 import type { WorkoutDaySummarySession } from "@/lib/gym/server/gymService";
 import type { MedsDaySummarySession } from "@/lib/medication/server/medicationService";
 import type { MicroNutrientEntry } from "@/lib/nutrition/server/nutritionService";
@@ -113,6 +116,12 @@ const SKELETON_MAP: Record<string, React.FC> = {
   medsSummary: MedsSummarySkeleton,
   microNutrientSummary: MicroNutrientSummarySkeleton,
 };
+
+const HYDRATION_LOGGED_EVENT = "hydration:logged";
+
+function isBeverageType(value: unknown): value is BeverageType {
+  return value === "water" || value === "coffee" || value === "tea";
+}
 
 export default function Home() {
   const { setHeaderInnerLeft, setHeaderInnerRight } = useContext(MobileHeaderContext);
@@ -272,6 +281,39 @@ export default function Home() {
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
   }, [dataFetch]);
+
+  useEffect(() => {
+    function onHydrationLogged(event: Event) {
+      if (!(event instanceof CustomEvent)) return;
+      const detail = event.detail as {
+        amountOz?: unknown;
+        beverageType?: unknown;
+      };
+      if (!detail) return;
+
+      const amountOz =
+        typeof detail.amountOz === "number" ? detail.amountOz : Number.NaN;
+      if (!Number.isFinite(amountOz) || amountOz <= 0) return;
+      if (!isBeverageType(detail.beverageType)) return;
+      if (selectedDateStr !== getTodayDateStrCompact()) return;
+
+      setHydrationData((current) => {
+        if (!current) return current;
+        if (detail.beverageType === "coffee") {
+          return { ...current, coffeeOz: current.coffeeOz + amountOz };
+        }
+        if (detail.beverageType === "tea") {
+          return { ...current, teaOz: current.teaOz + amountOz };
+        }
+        return { ...current, waterOz: current.waterOz + amountOz };
+      });
+    }
+
+    window.addEventListener(HYDRATION_LOGGED_EVENT, onHydrationLogged);
+    return () => {
+      window.removeEventListener(HYDRATION_LOGGED_EVENT, onHydrationLogged);
+    };
+  }, [selectedDateStr]);
 
   useEffect(() => {
     setHeaderInnerLeft(
