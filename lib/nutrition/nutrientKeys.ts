@@ -2,7 +2,7 @@ export interface NutrientMeta {
   key: string;
   name: string;
   unit: string;
-  category: "macro" | "vitamin" | "mineral" | "other";
+  category: "macro" | "vitamin" | "mineral" | "caffeine" | "other";
 }
 
 export const NUTRIENT_KEYS: Record<string, NutrientMeta> = {
@@ -47,6 +47,9 @@ export const NUTRIENT_KEYS: Record<string, NutrientMeta> = {
   phosphorus:   { key: "phosphorus",     name: "Phosphorus",        unit: "mg",    category: "mineral" },
   iodine:       { key: "iodine",         name: "Iodine",            unit: "mcg",   category: "mineral" },
   chloride:     { key: "chloride",       name: "Chloride",          unit: "mg",    category: "mineral" },
+
+  // Caffeine
+  caffeine:     { key: "caffeine",       name: "Caffeine",          unit: "mg",    category: "caffeine" },
 
   // Other
   cholesterol:  { key: "cholesterol",    name: "Cholesterol",       unit: "mg",    category: "other" },

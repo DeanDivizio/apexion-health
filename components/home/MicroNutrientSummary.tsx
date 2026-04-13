@@ -9,7 +9,7 @@ interface NutrientEntry {
   nutrientName: string;
   amount: number;
   unit: string;
-  category: "vitamin" | "mineral" | "other";
+  category: "vitamin" | "mineral" | "caffeine" | "other";
 }
 
 interface MicroNutrientSummaryProps {
@@ -21,6 +21,7 @@ export function MicroNutrientSummary({ nutrients }: MicroNutrientSummaryProps) {
   const filtered = nutrients.filter((n) => n.amount > 0);
   const vitamins = filtered.filter((n) => n.category === "vitamin");
   const minerals = filtered.filter((n) => n.category === "mineral");
+  const caffeineItems = filtered.filter((n) => n.category === "caffeine");
   const others = filtered.filter((n) => n.category === "other");
 
   return (
@@ -60,6 +61,9 @@ export function MicroNutrientSummary({ nutrients }: MicroNutrientSummaryProps) {
           {minerals.length > 0 && (
             <NutrientGroup label="Minerals" items={minerals} />
           )}
+          {caffeineItems.length > 0 && (
+            <CaffeineGroup items={caffeineItems} />
+          )}
           {others.length > 0 && (
             <NutrientGroup label="Other" items={others} />
           )}
@@ -68,6 +72,39 @@ export function MicroNutrientSummary({ nutrients }: MicroNutrientSummaryProps) {
               No micronutrient data logged today.
             </p>
           )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CaffeineGroup({ items }: { items: NutrientEntry[] }) {
+  const total = items.reduce((sum, n) => sum + n.amount, 0);
+
+  return (
+    <div>
+      <p className="text-[10px] uppercase tracking-wider text-yellow-400 opacity-50 mb-1">
+        Caffeine
+      </p>
+      <div className="flex items-center justify-between text-xs py-0.5 mb-0.5">
+        <span className="text-neutral-100 font-medium">Total</span>
+        <span className="font-mono text-neutral-100 tabular-nums font-medium">
+          {formatAmount(total)} mg
+        </span>
+      </div>
+      {items.length > 1 && (
+        <div className="space-y-0.5 pl-2 border-l border-white/5">
+          {items.map((n) => (
+            <div
+              key={n.nutrientKey}
+              className="flex items-center justify-between text-xs py-0.5"
+            >
+              <span className="text-neutral-500">{n.nutrientName}</span>
+              <span className="font-mono text-neutral-400 tabular-nums">
+                {formatAmount(n.amount)} {n.unit}
+              </span>
+            </div>
+          ))}
         </div>
       )}
     </div>
