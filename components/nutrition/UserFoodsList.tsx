@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { Search } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -11,6 +12,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui_primitives/alert-dialog";
+import { Input } from "@/components/ui_primitives/input";
 import { UserFoodCard } from "./UserFoodCard";
 import { UserFoodEditor } from "./UserFoodEditor";
 import { deleteUserFoodAction } from "@/actions/nutrition";
@@ -28,6 +30,17 @@ export function UserFoodsList({ initialUserFoods }: UserFoodsListProps) {
   const [editingFood, setEditingFood] = React.useState<NutritionUserFoodView | null>(null);
   const [deleteId, setDeleteId] = React.useState<string | null>(null);
   const [deleting, setDeleting] = React.useState(false);
+  const [search, setSearch] = React.useState("");
+
+  const filteredFoods = React.useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return userFoods;
+    return userFoods.filter(
+      (f) =>
+        f.name.toLowerCase().includes(q) ||
+        (f.brand && f.brand.toLowerCase().includes(q)),
+    );
+  }, [userFoods, search]);
 
   function handleEdit(food: NutritionUserFoodView) {
     setEditingFood(food);
@@ -69,8 +82,25 @@ export function UserFoodsList({ initialUserFoods }: UserFoodsListProps) {
         </p>
       )}
 
+      {userFoods.length > 0 && (
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+          <Input
+            placeholder="Search my foods..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+      )}
+
       <div className="space-y-2">
-        {userFoods.map((food) => (
+        {filteredFoods.length === 0 && userFoods.length > 0 && (
+          <p className="text-sm text-muted-foreground text-center py-8">
+            No foods matching &ldquo;{search.trim()}&rdquo;
+          </p>
+        )}
+        {filteredFoods.map((food) => (
           <UserFoodCard
             key={food.id}
             food={food}
