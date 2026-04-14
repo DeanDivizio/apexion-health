@@ -119,12 +119,13 @@ interface WorkoutFlowProps {
   repInputStyle?: RepInputStyle;
   carryOverWeight?: boolean;
   carryOverReps?: boolean;
+  showFailureMode?: boolean;
 }
 
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
-export function WorkoutFlow({ userMeta, customExerciseGroups, repInputStyle, carryOverWeight, carryOverReps }: WorkoutFlowProps) {
+export function WorkoutFlow({ userMeta, customExerciseGroups, repInputStyle, carryOverWeight, carryOverReps, showFailureMode }: WorkoutFlowProps) {
   const router = useRouter();
   const { toast } = useToast();
   const {
@@ -174,6 +175,7 @@ export function WorkoutFlow({ userMeta, customExerciseGroups, repInputStyle, car
   );
   const [liveCarryOverWeight, setLiveCarryOverWeight] = React.useState(carryOverWeight ?? true);
   const [liveCarryOverReps, setLiveCarryOverReps] = React.useState(carryOverReps ?? false);
+  const [liveShowFailureMode, setLiveShowFailureMode] = React.useState(showFailureMode ?? true);
 
   useEffect(() => {
     getGymUserPreferencesAction().then((data) => {
@@ -181,6 +183,7 @@ export function WorkoutFlow({ userMeta, customExerciseGroups, repInputStyle, car
       setLiveRepInputStyle(val === "freeform" ? "freeform" : "dropdown");
       setLiveCarryOverWeight(data?.carryOverWeight ?? true);
       setLiveCarryOverReps(data?.carryOverReps ?? false);
+      setLiveShowFailureMode(data?.showFailureMode ?? true);
     }).catch(() => {});
   }, []);
 
@@ -862,6 +865,7 @@ export function WorkoutFlow({ userMeta, customExerciseGroups, repInputStyle, car
           repInputStyle={liveRepInputStyle}
           carryOverWeight={liveCarryOverWeight}
           carryOverReps={liveCarryOverReps}
+          showFailureMode={liveShowFailureMode}
         />
       )}
 
@@ -879,6 +883,7 @@ export function WorkoutFlow({ userMeta, customExerciseGroups, repInputStyle, car
           repInputStyle={liveRepInputStyle}
           carryOverWeight={liveCarryOverWeight}
           carryOverReps={liveCarryOverReps}
+          showFailureMode={liveShowFailureMode}
           sessionExerciseNotes={activeExerciseNotes}
           onSessionExerciseNotesChange={setActiveExerciseNotes}
           onPersistentNoteChange={handlePersistentNoteChange}

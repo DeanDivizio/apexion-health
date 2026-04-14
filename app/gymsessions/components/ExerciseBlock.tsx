@@ -1,14 +1,25 @@
 "use client"
 
-import { Clock, FileText, StickyNote, Timer } from "lucide-react"
+import { Clock, FileText, StickyNote, Target, Timer } from "lucide-react"
 import { capitalize } from "@/lib/utils"
 import type { ExerciseEntry, StrengthSet } from "@/lib/gym"
 import { calcExerciseVolume, formatRepCount, formatVolume } from "./helpers"
 import { VariationChips } from "./VariationChips"
 
+const FAILURE_MODE_SHORT: Record<string, string> = {
+  primary_muscle: "Primary",
+  supporting_muscle: "Support",
+  cardio: "Cardio",
+  grip: "Grip",
+  form_breakdown: "Form",
+  pain_discomfort: "Pain",
+  mental: "Mental",
+}
+
 function SetChip({ set, index }: { set: StrengthSet; index: number }) {
   const hasEffort = set.effort !== undefined && set.effort > 0
   const hasDuration = set.duration !== undefined && set.duration > 0
+  const hasFailureMode = !!set.failureMode && set.failureMode !== "untracked"
   const hasNotes = !!set.notes
 
   return (
@@ -39,6 +50,15 @@ function SetChip({ set, index }: { set: StrengthSet; index: number }) {
             <span className="inline-flex items-center gap-0.5 text-blue-400/80">
               <Timer className="h-3 w-3" />
               <span className="tabular-nums">{set.duration}s</span>
+            </span>
+          </>
+        )}
+        {hasFailureMode && (
+          <>
+            <span className="text-muted-foreground/30">•</span>
+            <span className="inline-flex items-center gap-0.5 text-purple-400/80">
+              <Target className="h-3 w-3" />
+              <span className="text-[10px]">{FAILURE_MODE_SHORT[set.failureMode!] ?? set.failureMode}</span>
             </span>
           </>
         )}

@@ -17,19 +17,21 @@ import {
 import { Label } from "@/components/ui_primitives/label";
 import { Switch } from "@/components/ui_primitives/switch";
 import { Button } from "@/components/ui_primitives/button";
-import { Loader2, SlidersHorizontal, Repeat2 } from "lucide-react";
+import { Loader2, SlidersHorizontal, Repeat2, Target } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface GymPrefsState {
   repInputStyle: RepInputStyle;
   carryOverWeight: boolean;
   carryOverReps: boolean;
+  showFailureMode: boolean;
 }
 
 const DEFAULT_PREFS: GymPrefsState = {
   repInputStyle: "dropdown",
   carryOverWeight: true,
   carryOverReps: false,
+  showFailureMode: true,
 };
 
 function toRepInputStyle(value: string | undefined | null): RepInputStyle {
@@ -47,6 +49,7 @@ export default function GymSettingsPage() {
         repInputStyle: toRepInputStyle(data?.repInputStyle),
         carryOverWeight: data?.carryOverWeight ?? DEFAULT_PREFS.carryOverWeight,
         carryOverReps: data?.carryOverReps ?? DEFAULT_PREFS.carryOverReps,
+        showFailureMode: data?.showFailureMode ?? DEFAULT_PREFS.showFailureMode,
       });
     });
   }, []);
@@ -61,6 +64,7 @@ export default function GymSettingsPage() {
           repInputStyle: prefs.repInputStyle,
           carryOverWeight: prefs.carryOverWeight,
           carryOverReps: prefs.carryOverReps,
+          showFailureMode: prefs.showFailureMode,
         });
         toast({ title: "Gym settings saved" });
       } catch {
@@ -139,6 +143,35 @@ export default function GymSettingsPage() {
               checked={prefs.carryOverReps}
               onCheckedChange={(checked) =>
                 setPrefs({ ...prefs, carryOverReps: checked })
+              }
+              className="data-[state=checked]:bg-green-500 [&_span]:bg-gray-400 [&_span]:data-[state=checked]:bg-white"
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="bg-gradient-to-br from-purple-900/10 to-neutral-950 backdrop-blur-xl border-purple-950/80 !rounded-xl ring-1 ring-purple-950/30">
+        <CardHeader className="px-4 pt-4 pb-4 space-y-1">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Target className="h-5 w-5 text-purple-400/90 shrink-0" />
+            Set Tracking
+          </CardTitle>
+          <p className="text-xs text-muted-foreground font-normal leading-relaxed">
+            Control which optional metrics appear on each set.
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-4 px-4 pb-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="space-y-0.5">
+              <Label className="text-sm font-medium">Show failure mode</Label>
+              <p className="text-xs text-muted-foreground">
+                Track what limited your performance on each set (primary muscle, grip, cardio, etc.).
+              </p>
+            </div>
+            <Switch
+              checked={prefs.showFailureMode}
+              onCheckedChange={(checked) =>
+                setPrefs({ ...prefs, showFailureMode: checked })
               }
               className="data-[state=checked]:bg-green-500 [&_span]:bg-gray-400 [&_span]:data-[state=checked]:bg-white"
             />

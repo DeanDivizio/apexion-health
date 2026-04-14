@@ -7,8 +7,15 @@ import { Calendar } from "@/components/ui_primitives/calendar"
 import { Input } from "@/components/ui_primitives/input"
 import { Textarea } from "@/components/ui_primitives/textarea"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui_primitives/popover"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui_primitives/select"
 import { capitalize } from "@/lib/utils"
-import type { ExerciseEntry, StrengthSet } from "@/lib/gym"
+import type { ExerciseEntry, FailureMode, StrengthSet } from "@/lib/gym"
 import { generateSessionName } from "@/lib/gym"
 import { inputValueToDateStr, inputValueToTimeStr, spellOutDateShortYear, timeStrToInputValue } from "./helpers"
 import type { SessionWithId } from "./types"
@@ -24,6 +31,28 @@ interface EditableSessionContentProps {
 
 const NUMBER_INPUT_NO_SPIN_CLASS =
   "[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+
+const FAILURE_MODE_DISPLAY: Record<string, string> = {
+  untracked: "Untracked",
+  primary_muscle: "Primary Muscle",
+  supporting_muscle: "Supporting Muscle",
+  cardio: "Cardio / Conditioning",
+  grip: "Grip",
+  form_breakdown: "Form Breakdown",
+  pain_discomfort: "Pain / Discomfort",
+  mental: "Mental",
+}
+
+const FAILURE_MODE_KEYS: FailureMode[] = [
+  "untracked",
+  "primary_muscle",
+  "supporting_muscle",
+  "cardio",
+  "grip",
+  "form_breakdown",
+  "pain_discomfort",
+  "mental",
+]
 
 function EditableSetRow({
   set,
@@ -68,6 +97,10 @@ function EditableSetRow({
   const commitDuration = (e: React.FocusEvent<HTMLInputElement>) => {
     const v = parseInt(e.target.value)
     onUpdate({ ...set, duration: isNaN(v) || v <= 0 ? undefined : v })
+  }
+
+  const commitFailureMode = (val: string) => {
+    onUpdate({ ...set, failureMode: val === "untracked" ? undefined : (val as FailureMode) })
   }
 
   const commitName = (e: React.FocusEvent<HTMLInputElement>) => {
@@ -165,6 +198,24 @@ function EditableSetRow({
             placeholder="sec"
             className={`h-8 text-xs ${NUMBER_INPUT_NO_SPIN_CLASS}`}
           />
+        </div>
+        <div className="col-span-2">
+          <label className="text-[9px] text-muted-foreground/50 uppercase tracking-wider">Failure Mode</label>
+          <Select
+            value={set.failureMode ?? "untracked"}
+            onValueChange={commitFailureMode}
+          >
+            <SelectTrigger className="h-8 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {FAILURE_MODE_KEYS.map((key) => (
+                <SelectItem key={key} value={key}>
+                  {FAILURE_MODE_DISPLAY[key]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div className="col-span-2 space-y-1">
           <Input

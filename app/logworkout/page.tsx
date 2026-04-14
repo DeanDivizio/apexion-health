@@ -21,6 +21,7 @@ async function WorkoutFlowLoader() {
   let repInputStyle: RepInputStyle = "dropdown";
   let carryOverWeight = true;
   let carryOverReps = false;
+  let showFailureMode = true;
 
   try {
     const [meta, prefs] = await Promise.all([
@@ -31,6 +32,7 @@ async function WorkoutFlowLoader() {
     repInputStyle = toRepInputStyle(prefs?.repInputStyle);
     carryOverWeight = prefs?.carryOverWeight ?? true;
     carryOverReps = prefs?.carryOverReps ?? false;
+    showFailureMode = prefs?.showFailureMode ?? true;
   } catch {
     // User might not have any data yet -- that's fine
   }
@@ -63,6 +65,7 @@ async function WorkoutFlowLoader() {
       repInputStyle={repInputStyle}
       carryOverWeight={carryOverWeight}
       carryOverReps={carryOverReps}
+      showFailureMode={showFailureMode}
     />
   );
 }

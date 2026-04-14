@@ -33,6 +33,7 @@ interface ExerciseLoggerProps {
   repInputStyle?: RepInputStyle;
   carryOverWeight?: boolean;
   carryOverReps?: boolean;
+  showFailureMode?: boolean;
   sessionExerciseNotes?: string;
   onSessionExerciseNotesChange?: (notes: string) => void;
   onPersistentNoteChange?: (notes: string | null) => void;
@@ -82,6 +83,7 @@ export function ExerciseLogger({
   repInputStyle,
   carryOverWeight = true,
   carryOverReps = false,
+  showFailureMode = true,
   sessionExerciseNotes,
   onSessionExerciseNotesChange,
   onPersistentNoteChange,
@@ -328,6 +330,7 @@ export function ExerciseLogger({
               splitReps={!!splitMap[i]}
               repMode={repMode}
               repInputStyle={repInputStyle ?? "dropdown"}
+              showFailureMode={showFailureMode}
               onUpdate={(updated) => handleUpdateSet(i, updated)}
               onSplitRepsToggle={() => handleSplitToggle(i)}
               onDelete={() => {

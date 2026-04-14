@@ -149,11 +149,24 @@ export const repCountSchema = z.object({
   }
 );
 
+export const failureModeSchema = z.enum([
+  "untracked",
+  "primary_muscle",
+  "supporting_muscle",
+  "cardio",
+  "grip",
+  "form_breakdown",
+  "pain_discomfort",
+  "mental",
+]);
+export type FailureModeSchema = z.infer<typeof failureModeSchema>;
+
 export const strengthSetSchema = z.object({
   weight: z.number().min(0, "Weight cannot be negative"),
   reps: repCountSchema,
   effort: z.number().int().min(0).max(10).optional(),
   duration: z.number().min(0).optional(),
+  failureMode: failureModeSchema.optional(),
   name: z.string().max(100).optional(),
   notes: z.string().max(2000).optional(),
 });
@@ -386,6 +399,7 @@ export const updateGymPreferencesSchema = z.object({
   repInputStyle: repInputStyleSchema.optional(),
   carryOverWeight: z.boolean().optional(),
   carryOverReps: z.boolean().optional(),
+  showFailureMode: z.boolean().optional(),
 });
 export type UpdateGymPreferences = z.infer<typeof updateGymPreferencesSchema>;
 

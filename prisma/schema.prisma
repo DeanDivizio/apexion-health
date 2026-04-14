@@ -66,6 +66,7 @@ model GymStrengthSet {
   repsRight      Int?
   effort         Int?
   durationSeconds Int?
+  failureMode    String?
   name           String?
   notes          String?
 
@@ -217,6 +218,7 @@ model GymUserPreferences {
   repInputStyle   String   @default("dropdown")
   carryOverWeight Boolean  @default(true)
   carryOverReps   Boolean  @default(false)
+  showFailureMode Boolean  @default(true)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }

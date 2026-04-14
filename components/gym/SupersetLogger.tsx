@@ -49,6 +49,7 @@ interface SupersetLoggerProps {
   repInputStyle?: RepInputStyle;
   carryOverWeight?: boolean;
   carryOverReps?: boolean;
+  showFailureMode?: boolean;
 }
 
 function makeEmptySet(): StrengthSet {
@@ -82,6 +83,7 @@ export function SupersetLogger({
   repInputStyle,
   carryOverWeight = true,
   carryOverReps = false,
+  showFailureMode = true,
 }: SupersetLoggerProps) {
   const repModeA: StrengthRepMode =
     exerciseA.repMode ?? (exerciseA.isUnilateral ? "dualUnilateral" : "bilateral");
@@ -357,6 +359,7 @@ export function SupersetLogger({
                 splitReps={!!splitMapA[ri]}
                 repMode={repModeA}
                 repInputStyle={repInputStyle ?? "dropdown"}
+                showFailureMode={showFailureMode}
                 onUpdate={(updated) => handleUpdateSetA(ri, updated)}
                 onSplitRepsToggle={() => handleSplitToggleA(ri)}
                 onDelete={() => handleDeleteRound(ri)}
@@ -372,6 +375,7 @@ export function SupersetLogger({
                 splitReps={!!splitMapB[ri]}
                 repMode={repModeB}
                 repInputStyle={repInputStyle ?? "dropdown"}
+                showFailureMode={showFailureMode}
                 onUpdate={(updated) => handleUpdateSetB(ri, updated)}
                 onSplitRepsToggle={() => handleSplitToggleB(ri)}
                 onDelete={() => handleDeleteRound(ri)}

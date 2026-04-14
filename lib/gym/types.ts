@@ -258,6 +258,20 @@ export interface RepCount {
 }
 
 /**
+ * Failure mode categories for set-level fatigue tracking.
+ * Discriminates the primary limiting factor for the set.
+ */
+export type FailureMode =
+  | "untracked"
+  | "primary_muscle"
+  | "supporting_muscle"
+  | "cardio"
+  | "grip"
+  | "form_breakdown"
+  | "pain_discomfort"
+  | "mental";
+
+/**
  * A single set of a strength exercise.
  */
 export interface StrengthSet {
@@ -269,6 +283,8 @@ export interface StrengthSet {
   effort?: number;
   /** Duration of the set in seconds (for time-under-tension tracking) */
   duration?: number;
+  /** Primary limiting factor / fatigue source for this set */
+  failureMode?: FailureMode;
   /** User-assigned name for this set (e.g., "Warm-up", "Working Set", "Drop Set") */
   name?: string;
   /** User notes for this individual set */

@@ -186,6 +186,7 @@ function transformExercise(dbExercise: {
     repsRight: number | null;
     effort: number | null;
     durationSeconds: number | null;
+    failureMode: string | null;
     name: string | null;
     notes: string | null;
   }>;
@@ -225,6 +226,7 @@ function transformExercise(dbExercise: {
       }),
       effort: set.effort ?? undefined,
       duration: set.durationSeconds ?? undefined,
+      failureMode: (set.failureMode as StrengthSet["failureMode"]) ?? undefined,
       name: set.name ?? undefined,
       notes: set.notes ?? undefined,
     })),
@@ -284,6 +286,7 @@ async function createExercisesForSession(
             weight: set.weight,
             effort: set.effort ?? null,
             durationSeconds: set.duration ?? null,
+            failureMode: set.failureMode ?? null,
             name: set.name?.trim() || null,
             notes: set.notes?.trim() || null,
             ...repCountToColumns(set.reps),
@@ -1178,7 +1181,7 @@ export async function getUserPreferences(userId: string) {
   const prefs = await prisma.gymUserPreferences.findUnique({
     where: { userId },
   });
-  return prefs ?? { userId, weightUnit: "lbs", repInputStyle: "dropdown", carryOverWeight: true, carryOverReps: false };
+  return prefs ?? { userId, weightUnit: "lbs", repInputStyle: "dropdown", carryOverWeight: true, carryOverReps: false, showFailureMode: true };
 }
 
 /**
@@ -1186,7 +1189,7 @@ export async function getUserPreferences(userId: string) {
  */
 export async function updateUserPreferences(
   userId: string,
-  data: { weightUnit?: string; repInputStyle?: string; carryOverWeight?: boolean; carryOverReps?: boolean },
+  data: { weightUnit?: string; repInputStyle?: string; carryOverWeight?: boolean; carryOverReps?: boolean; showFailureMode?: boolean },
 ) {
   return prisma.gymUserPreferences.upsert({
     where: { userId },
@@ -1196,12 +1199,14 @@ export async function updateUserPreferences(
       repInputStyle: data.repInputStyle ?? "dropdown",
       carryOverWeight: data.carryOverWeight ?? true,
       carryOverReps: data.carryOverReps ?? false,
+      showFailureMode: data.showFailureMode ?? true,
     },
     update: {
       ...(data.weightUnit !== undefined ? { weightUnit: data.weightUnit } : {}),
       ...(data.repInputStyle !== undefined ? { repInputStyle: data.repInputStyle } : {}),
       ...(data.carryOverWeight !== undefined ? { carryOverWeight: data.carryOverWeight } : {}),
       ...(data.carryOverReps !== undefined ? { carryOverReps: data.carryOverReps } : {}),
+      ...(data.showFailureMode !== undefined ? { showFailureMode: data.showFailureMode } : {}),
     },
   });
 }

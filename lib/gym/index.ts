@@ -31,6 +31,7 @@ export type {
   ExerciseDefinition,
   ExerciseGroup,
   // Workout data
+  FailureMode,
   RepCount,
   StrengthSet,
   StrengthExerciseEntry,
@@ -88,6 +89,7 @@ export {
   exerciseDefinitionSchema,
   exerciseGroupSchema,
   // Workout data
+  failureModeSchema,
   repCountSchema,
   strengthSetSchema,
   strengthExerciseEntrySchema,
@@ -138,6 +140,7 @@ export type {
   UpdateCustomExerciseInput,
   UpdatePersistentExerciseNote,
   RepInputStyle,
+  FailureModeSchema,
   CreateSupersetTemplateInput,
 } from "./schemas";
 
