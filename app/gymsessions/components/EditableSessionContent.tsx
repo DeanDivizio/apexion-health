@@ -15,8 +15,8 @@ import {
   SelectValue,
 } from "@/components/ui_primitives/select"
 import { capitalize } from "@/lib/utils"
-import type { ExerciseEntry, FailureMode, StrengthSet } from "@/lib/gym"
-import { generateSessionName } from "@/lib/gym"
+import type { ExerciseEntry, StrengthSet } from "@/lib/gym"
+import { EXERCISE_MAP, generateSessionName, MUSCLE_GROUP_LABELS } from "@/lib/gym"
 import { inputValueToDateStr, inputValueToTimeStr, spellOutDateShortYear, timeStrToInputValue } from "./helpers"
 import type { SessionWithId } from "./types"
 import { VariationChips } from "./VariationChips"
@@ -32,38 +32,42 @@ interface EditableSessionContentProps {
 const NUMBER_INPUT_NO_SPIN_CLASS =
   "[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
 
-const FAILURE_MODE_DISPLAY: Record<string, string> = {
-  untracked: "Untracked",
-  primary_muscle: "Primary Muscle",
-  supporting_muscle: "Supporting Muscle",
-  cardio: "Cardio / Conditioning",
-  grip: "Grip",
-  form_breakdown: "Form Breakdown",
-  pain_discomfort: "Pain / Discomfort",
-  mental: "Mental",
+function buildEditFailureModeOptions(
+  exerciseKey: string,
+): { value: string; label: string }[] {
+  const muscleOptions: { value: string; label: string }[] = [];
+  const def = EXERCISE_MAP.get(exerciseKey);
+  if (def) {
+    const seen = new Set<string>();
+    for (const t of def.baseTargets) {
+      const label = MUSCLE_GROUP_LABELS[t.muscle] ?? t.muscle;
+      if (!seen.has(label)) {
+        seen.add(label);
+        muscleOptions.push({ value: label, label });
+      }
+    }
+  }
+  return [
+    { value: "untracked", label: "Untracked" },
+    ...muscleOptions,
+    { value: "cardio", label: "Cardio / Conditioning" },
+    { value: "grip", label: "Grip" },
+    { value: "general_fatigue", label: "General Fatigue / Energy" },
+  ];
 }
-
-const FAILURE_MODE_KEYS: FailureMode[] = [
-  "untracked",
-  "primary_muscle",
-  "supporting_muscle",
-  "cardio",
-  "grip",
-  "form_breakdown",
-  "pain_discomfort",
-  "mental",
-]
 
 function EditableSetRow({
   set,
   index,
   setKey,
+  exerciseKey,
   onUpdate,
   onDelete,
 }: {
   set: StrengthSet
   index: number
   setKey: string
+  exerciseKey: string
   onUpdate: (updated: StrengthSet) => void
   onDelete: () => void
 }) {
@@ -99,8 +103,9 @@ function EditableSetRow({
     onUpdate({ ...set, duration: isNaN(v) || v <= 0 ? undefined : v })
   }
 
+  const failureModeOptions = buildEditFailureModeOptions(exerciseKey)
   const commitFailureMode = (val: string) => {
-    onUpdate({ ...set, failureMode: val === "untracked" ? undefined : (val as FailureMode) })
+    onUpdate({ ...set, failureMode: val === "untracked" ? undefined : val })
   }
 
   const commitName = (e: React.FocusEvent<HTMLInputElement>) => {
@@ -200,7 +205,7 @@ function EditableSetRow({
           />
         </div>
         <div className="col-span-2">
-          <label className="text-[9px] text-muted-foreground/50 uppercase tracking-wider">Failure Mode</label>
+          <label className="text-[9px] text-muted-foreground/50 uppercase tracking-wider">Limiting Factor</label>
           <Select
             value={set.failureMode ?? "untracked"}
             onValueChange={commitFailureMode}
@@ -209,9 +214,9 @@ function EditableSetRow({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {FAILURE_MODE_KEYS.map((key) => (
-                <SelectItem key={key} value={key}>
-                  {FAILURE_MODE_DISPLAY[key]}
+              {failureModeOptions.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -512,6 +517,7 @@ export function EditableSessionContent({
                     set={set}
                     index={setIndex}
                     setKey={setKeys[exIndex]?.[setIndex] ?? `s-${exIndex}-${setIndex}`}
+                    exerciseKey={exercise.exerciseType}
                     onUpdate={(updated) => updateSet(exIndex, setIndex, updated)}
                     onDelete={() => removeSet(exIndex, setIndex)}
                   />

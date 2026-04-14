@@ -149,16 +149,7 @@ export const repCountSchema = z.object({
   }
 );
 
-export const failureModeSchema = z.enum([
-  "untracked",
-  "primary_muscle",
-  "supporting_muscle",
-  "cardio",
-  "grip",
-  "form_breakdown",
-  "pain_discomfort",
-  "mental",
-]);
+export const failureModeSchema = z.string().max(100);
 export type FailureModeSchema = z.infer<typeof failureModeSchema>;
 
 export const strengthSetSchema = z.object({

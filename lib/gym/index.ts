@@ -31,6 +31,7 @@ export type {
   ExerciseDefinition,
   ExerciseGroup,
   // Workout data
+  FixedFailureMode,
   FailureMode,
   RepCount,
   StrengthSet,
@@ -53,6 +54,7 @@ export type {
 
 // Type guards & utilities from types
 export {
+  FIXED_FAILURE_MODES,
   isStrengthExercise,
   isCardioExercise,
   isUnilateralReps,

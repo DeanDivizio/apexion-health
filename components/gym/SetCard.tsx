@@ -36,7 +36,8 @@ import { Button } from "@/components/ui_primitives/button";
 import { Input } from "@/components/ui_primitives/input";
 import { Label } from "@/components/ui_primitives/label";
 import { Textarea } from "@/components/ui_primitives/textarea";
-import type { FailureMode, RepInputStyle, StrengthRepMode, StrengthSet } from "@/lib/gym";
+import type { MuscleTargets, RepInputStyle, StrengthRepMode, StrengthSet } from "@/lib/gym";
+import { MUSCLE_GROUP_LABELS } from "@/lib/gym";
 
 // ---------------------------------------------------------------------------
 // RPE labels per the spec
@@ -70,19 +71,35 @@ const EFFORT_TOOLTIP =
 const DURATION_TOOLTIP =
   "The amount of time you took to finish your set. This is an optional metric that allows Apexion to calculate your optimal rep pacing, as well as understand discrepancies in your data (like if you did the same reps and load twice but recorded a lower effort the second time. That's unexpected if duration is the same, but reasonable if you took your time on the second set.)";
 
-const FAILURE_MODE_TOOLTIP =
-  "Track what limited your performance on this set. This helps Apexion understand whether fatigue is coming from the target muscle, a supporting muscle, cardiovascular limits, grip, or other factors — enabling smarter programming recommendations.";
+const LIMITING_FACTOR_TOOLTIP =
+  "Track what limited your performance on this set. This improves your analytics and helps Apexion recommend smarter programming adjustments. This can be disabled in settings.";
 
-const FAILURE_MODE_OPTIONS: { value: FailureMode; label: string }[] = [
-  { value: "untracked", label: "Untracked" },
-  { value: "primary_muscle", label: "Primary Muscle" },
-  { value: "supporting_muscle", label: "Supporting Muscle" },
+const FIXED_MODE_OPTIONS: { value: string; label: string }[] = [
   { value: "cardio", label: "Cardio / Conditioning" },
   { value: "grip", label: "Grip" },
-  { value: "form_breakdown", label: "Form Breakdown" },
-  { value: "pain_discomfort", label: "Pain / Discomfort" },
-  { value: "mental", label: "Mental" },
+  { value: "general_fatigue", label: "General Fatigue / Energy" },
 ];
+
+function buildFailureModeOptions(
+  targets?: MuscleTargets,
+): { value: string; label: string }[] {
+  const muscleOptions: { value: string; label: string }[] = [];
+  if (targets && targets.length > 0) {
+    const seen = new Set<string>();
+    for (const t of targets) {
+      const label = MUSCLE_GROUP_LABELS[t.muscle] ?? t.muscle;
+      if (!seen.has(label)) {
+        seen.add(label);
+        muscleOptions.push({ value: label, label });
+      }
+    }
+  }
+  return [
+    { value: "untracked", label: "Untracked" },
+    ...muscleOptions,
+    ...FIXED_MODE_OPTIONS,
+  ];
+}
 
 // ---------------------------------------------------------------------------
 // Types
@@ -95,6 +112,8 @@ interface SetCardProps {
   repMode?: StrengthRepMode;
   repInputStyle?: RepInputStyle;
   showFailureMode?: boolean;
+  /** Base muscle targets for the exercise — used to build dynamic failure mode options. */
+  muscleTargets?: MuscleTargets;
   onUpdate: (set: StrengthSet) => void;
   onSplitRepsToggle: () => void;
   onDelete: () => void;
@@ -209,6 +228,7 @@ export function SetCard({
   repMode = "bilateral",
   repInputStyle = "dropdown",
   showFailureMode = true,
+  muscleTargets,
   onUpdate,
   onSplitRepsToggle,
   onDelete,
@@ -475,10 +495,14 @@ export function SetCard({
   };
 
   // ---- failure mode ----
+  const failureModeOptions = React.useMemo(
+    () => buildFailureModeOptions(muscleTargets),
+    [muscleTargets],
+  );
   const handleFailureMode = (val: string) => {
     applySetUpdate((prev) => ({
       ...prev,
-      failureMode: val === "untracked" ? undefined : (val as FailureMode),
+      failureMode: val === "untracked" ? undefined : val,
     }));
   };
 
@@ -873,8 +897,8 @@ export function SetCard({
           {showFailureMode && (
             <div className="space-y-1.5">
               <div className="flex items-center gap-1.5">
-                <Label className="text-xs text-muted-foreground">Failure Mode</Label>
-                <FieldPopover text={FAILURE_MODE_TOOLTIP} />
+                <Label className="text-xs text-muted-foreground">Limiting Factor</Label>
+                <FieldPopover text={LIMITING_FACTOR_TOOLTIP} />
               </div>
               <Select
                 value={draftSet.failureMode ?? "untracked"}
@@ -884,7 +908,7 @@ export function SetCard({
                   <SelectValue placeholder="Untracked" />
                 </SelectTrigger>
                 <SelectContent>
-                  {FAILURE_MODE_OPTIONS.map((opt) => (
+                  {failureModeOptions.map((opt) => (
                     <SelectItem key={opt.value} value={opt.value}>
                       {opt.label}
                     </SelectItem>

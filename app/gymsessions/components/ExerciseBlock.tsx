@@ -7,13 +7,9 @@ import { calcExerciseVolume, formatRepCount, formatVolume } from "./helpers"
 import { VariationChips } from "./VariationChips"
 
 const FAILURE_MODE_SHORT: Record<string, string> = {
-  primary_muscle: "Primary",
-  supporting_muscle: "Support",
   cardio: "Cardio",
   grip: "Grip",
-  form_breakdown: "Form",
-  pain_discomfort: "Pain",
-  mental: "Mental",
+  general_fatigue: "Fatigue",
 }
 
 function SetChip({ set, index }: { set: StrengthSet; index: number }) {

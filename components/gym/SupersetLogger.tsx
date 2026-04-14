@@ -360,6 +360,7 @@ export function SupersetLogger({
                 repMode={repModeA}
                 repInputStyle={repInputStyle ?? "dropdown"}
                 showFailureMode={showFailureMode}
+                muscleTargets={exerciseA.baseTargets}
                 onUpdate={(updated) => handleUpdateSetA(ri, updated)}
                 onSplitRepsToggle={() => handleSplitToggleA(ri)}
                 onDelete={() => handleDeleteRound(ri)}
@@ -376,6 +377,7 @@ export function SupersetLogger({
                 repMode={repModeB}
                 repInputStyle={repInputStyle ?? "dropdown"}
                 showFailureMode={showFailureMode}
+                muscleTargets={exerciseB.baseTargets}
                 onUpdate={(updated) => handleUpdateSetB(ri, updated)}
                 onSplitRepsToggle={() => handleSplitToggleB(ri)}
                 onDelete={() => handleDeleteRound(ri)}

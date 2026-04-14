@@ -331,6 +331,7 @@ export function ExerciseLogger({
               repMode={repMode}
               repInputStyle={repInputStyle ?? "dropdown"}
               showFailureMode={showFailureMode}
+              muscleTargets={exercise.baseTargets}
               onUpdate={(updated) => handleUpdateSet(i, updated)}
               onSplitRepsToggle={() => handleSplitToggle(i)}
               onDelete={() => {

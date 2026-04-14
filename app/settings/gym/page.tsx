@@ -163,9 +163,9 @@ export default function GymSettingsPage() {
         <CardContent className="space-y-4 px-4 pb-4">
           <div className="flex items-center justify-between gap-4">
             <div className="space-y-0.5">
-              <Label className="text-sm font-medium">Show failure mode</Label>
+              <Label className="text-sm font-medium">Show limiting factor</Label>
               <p className="text-xs text-muted-foreground">
-                Track what limited your performance on each set (primary muscle, grip, cardio, etc.).
+                Track what limited your performance on each set (target muscle, grip, cardio, etc.).
               </p>
             </div>
             <Switch

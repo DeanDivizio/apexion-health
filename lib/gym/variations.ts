@@ -78,6 +78,10 @@ export const CABLE_ATTACHMENT_TEMPLATE: VariationTemplate = {
     { key: "singleDHandle", label: "Single D Handle", description: "Single-hand D handle.", order: 6 },
     { key: "doubleDHandle", label: "Double D Handle", description: "Two-hand D handle.", order: 7 },
     { key: "vHandle", label: "V Handle", description: "Close-grip V handle.", order: 8 },
+    { key: "magClose", label: "MAG Grip (Close)", description: "Maximum Advantage Grip (~5 in width).", order: 9 },
+    { key: "magMedium", label: "MAG Grip (Medium)", description: "Maximum Advantage Grip (~22 in width).", order: 10 },
+    { key: "magThreeQuarter", label: "MAG Grip (Three-Quarter)", description: "Maximum Advantage Grip (~30 in width).", order: 11 },
+    { key: "magWide", label: "MAG Grip (Wide)", description: "Maximum Advantage Grip (~38 in width).", order: 12 },
   ],
 };
 

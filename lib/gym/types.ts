@@ -258,18 +258,17 @@ export interface RepCount {
 }
 
 /**
- * Failure mode categories for set-level fatigue tracking.
- * Discriminates the primary limiting factor for the set.
+ * Non-muscle failure mode categories (always available regardless of exercise).
  */
-export type FailureMode =
-  | "untracked"
-  | "primary_muscle"
-  | "supporting_muscle"
-  | "cardio"
-  | "grip"
-  | "form_breakdown"
-  | "pain_discomfort"
-  | "mental";
+export const FIXED_FAILURE_MODES = ["cardio", "grip", "general_fatigue"] as const;
+export type FixedFailureMode = (typeof FIXED_FAILURE_MODES)[number];
+
+/**
+ * Failure mode for set-level fatigue tracking.
+ * Either a fixed category ("cardio" | "grip") or a muscle group label
+ * derived from the exercise's baseTargets (e.g. "Chest", "Triceps").
+ */
+export type FailureMode = FixedFailureMode | (string & {});
 
 /**
  * A single set of a strength exercise.
