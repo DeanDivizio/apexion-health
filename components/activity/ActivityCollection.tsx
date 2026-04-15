@@ -275,19 +275,27 @@ export function ActivityCollection({
 
         {/* ── Library tab ──────────────────────────────────────────── */}
         <TabsContent value="library" className="mt-4 space-y-4">
-          {/* <div className="flex flex-col items-center justify-between">
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">
+              {types.length} {types.length === 1 ? "activity" : "activities"}
+            </p>
             <Button
               type="button"
               size="sm"
+              variant={showForm && !editing ? "secondary" : "default"}
               onClick={() => {
-                setEditing(null);
-                setShowForm((prev) => !prev);
+                if (showForm && !editing) {
+                  setShowForm(false);
+                } else {
+                  setEditing(null);
+                  setShowForm(true);
+                }
               }}
             >
               <Plus className="mr-1 h-4 w-4" />
               New Activity
             </Button>
-          </div> */}
+          </div>
 
           {showForm && (
             <ActivityTypeForm
@@ -303,8 +311,19 @@ export function ActivityCollection({
 
           <div className="space-y-3">
             {types.length === 0 && !showForm ? (
-              <div className="rounded-xl border border-dashed border-white/10 p-6 text-center text-sm text-muted-foreground">
-                No activities yet. Create one to start tracking.
+              <div className="rounded-xl border border-dashed border-white/10 p-6 text-center text-sm text-muted-foreground space-y-3">
+                <p>No activities yet. Create one to start tracking.</p>
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => {
+                    setEditing(null);
+                    setShowForm(true);
+                  }}
+                >
+                  <Plus className="mr-1 h-4 w-4" />
+                  Create Activity
+                </Button>
               </div>
             ) : (
               types.map((type) => {
