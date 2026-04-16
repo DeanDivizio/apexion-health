@@ -22,6 +22,7 @@ import {
     Settings,
     TestTube,
     UserPen,
+    Users,
 } from "lucide-react";
 import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
@@ -42,6 +43,10 @@ const dashboards = [
     { href: "/supplementgraphs", icon: Pill, label: "Medications & Supplements" },
     { href: "/bodygraphs", icon: Scale, label: "Body Measurements", placeholder: true },
     { href: "/labs", icon: TestTube, label: "Lab Results" },
+];
+
+const social = [
+    { href: "/friends", icon: Users, label: "Friends" },
 ];
 
 const admin = [
@@ -107,6 +112,15 @@ export function SideNav() {
                             Collections
                         </p>
                         {collections.map((item) => (
+                            <NavItem key={item.href} {...item} />
+                        ))}
+                    </div>
+
+                    <div>
+                        <p className="mb-2 px-3 text-xs font-medium uppercase tracking-wide text-white/40">
+                            Social
+                        </p>
+                        {social.map((item) => (
                             <NavItem key={item.href} {...item} />
                         ))}
                     </div>
