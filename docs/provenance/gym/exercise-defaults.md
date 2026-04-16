@@ -13,6 +13,7 @@ This is the index of provenance pages for **built-in strength + core exercises**
 - `seatedRow`: [seated-row.md](./exercises/seated-row.md)
 - `pullUp`: [pull-up.md](./exercises/pull-up.md)
 - `rearDelt`: [rear-delt.md](./exercises/rear-delt.md)
+- `reverseWristCurl`: [reverse-wrist-curl.md](./exercises/reverse-wrist-curl.md)
 - `bentOverRow`: [bent-over-row.md](./exercises/bent-over-row.md)
 - `shrug`: [shrug.md](./exercises/shrug.md)
 - `facePull`: [face-pull.md](./exercises/face-pull.md)
@@ -27,6 +28,7 @@ This is the index of provenance pages for **built-in strength + core exercises**
 - `tricepExtension`: [tricep-extension.md](./exercises/tricep-extension.md)
 - `tricepPushdown`: [tricep-pushdown.md](./exercises/tricep-pushdown.md)
 - `tricepRopePushdown`: [tricep-rope-pushdown.md](./exercises/tricep-rope-pushdown.md)
+- `wristCurl`: [wrist-curl.md](./exercises/wrist-curl.md)
 
 ### Core
 

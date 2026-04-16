@@ -40,7 +40,7 @@ export default function NavigationSettingsPage() {
     selected.some((k, i) => k !== currentKeys[i]);
 
   return (
-    <div className="w-full max-w-lg space-y-4">
+    <div className="w-full space-y-4 md:hidden">
       <Card className="bg-gradient-to-br from-blue-950/20 to-neutral-950 backdrop-blur-xl border-blue-950/40 !rounded-xl ring-1 ring-blue-950/30">
         <CardHeader className="p-3 pb-4 space-y-1">
           <CardTitle className="text-lg flex items-center gap-2">

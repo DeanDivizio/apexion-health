@@ -117,8 +117,8 @@ export default function HomeSettingsPage() {
     prefs.showActivityCalendar || prefs.pinnedActivityTypeIds.length > 0;
 
   return (
-    <div className="w-full max-w-lg space-y-4">
-      <Card className="bg-gradient-to-br from-blue-950/20 to-neutral-950 backdrop-blur-xl border-blue-950/40 !rounded-xl ring-1 ring-blue-950/30">
+    <div className="w-full space-y-4 md:hidden">
+      <Card className="md:col-span-2 bg-gradient-to-br from-blue-950/20 to-neutral-950 backdrop-blur-xl border-blue-950/40 !rounded-xl ring-1 ring-blue-950/30">
         <CardHeader className="p-3 pb-4 space-y-1">
           <CardTitle className="text-lg flex items-center gap-2">
             <LayoutDashboard className="h-5 w-5 text-blue-400/90 shrink-0" />
@@ -298,7 +298,7 @@ export default function HomeSettingsPage() {
       </Card>
 
       <Button
-        className="w-full"
+        className="w-full md:col-span-2"
         size="lg"
         disabled={isPending}
         onClick={handleSave}
@@ -312,7 +312,7 @@ export default function HomeSettingsPage() {
 
 function HomeSettingsSkeleton() {
   return (
-    <div className="w-full max-w-lg space-y-4">
+    <div className="w-full space-y-4">
       <div className="h-4 w-48 bg-muted animate-pulse rounded" />
       <div className="rounded-xl bg-neutral-800/50 p-3 space-y-1">
         {Array.from({ length: 6 }).map((_, i) => (

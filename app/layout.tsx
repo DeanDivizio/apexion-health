@@ -5,6 +5,7 @@ import { ClerkProvider } from '@clerk/nextjs'
 import MobileNav from "@/components/global/MobileNav";
 import {SubNavContextProvider} from "@/context/SubNavOpenContext"
 import MobileHeader from "@/components/global/MobileHeader";
+import { DesktopSidebar } from "@/components/global/DesktopSidebar";
 import { Toaster } from "@/components/ui_primitives/toaster";
 import { MobileHeaderProvider } from "@/context/MobileHeaderContext";
 import { SyncStatusProvider } from "@/context/SyncStatusContext";
@@ -72,8 +73,11 @@ export default function RootLayout({
             <MobileHeaderProvider>
               <SyncStatusProvider>
                   <MobileHeader />
+                  <DesktopSidebar />
                   <SubNavContextProvider>
-                    {children}
+                    <div className="md:ml-56 md:h-screen md:flex md:flex-col md:overflow-hidden">
+                      {children}
+                    </div>
                     <MobileNav />
                   </SubNavContextProvider>
               </SyncStatusProvider>

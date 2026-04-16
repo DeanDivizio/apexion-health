@@ -101,8 +101,8 @@ export default function BiometricsPage() {
 
   if (loading) {
     return (
-      <main className="w-full min-h-screen pt-20 px-4 pb-16">
-        <div className="flex flex-col gap-4 max-w-lg mx-auto">
+      <main className="w-full min-h-screen md:min-h-0 md:h-full md:flex md:flex-col md:overflow-hidden pt-20 px-4 pb-16 md:pb-0">
+        <div className="flex flex-col gap-4 max-w-lg mx-auto md:flex-1 md:overflow-y-auto">
           {Array.from({ length: 3 }, (_, i) => (
             <Skeleton key={i} className="w-full h-[200px] rounded-xl" />
           ))}
@@ -113,7 +113,7 @@ export default function BiometricsPage() {
 
   if (connected === false) {
     return (
-      <main className="w-full min-h-screen pt-20 px-4 pb-16 flex flex-col items-center justify-center">
+      <main className="w-full min-h-screen md:min-h-0 md:h-full pt-20 px-4 pb-16 md:pb-0 flex flex-col items-center justify-center">
         <Activity className="h-12 w-12 text-muted-foreground/30 mb-4" />
         <p className="text-muted-foreground text-center mb-4">
           No biometric provider connected.
@@ -129,8 +129,8 @@ export default function BiometricsPage() {
   }
 
   return (
-    <main className="w-full min-h-screen pt-20 pb-24 bg-gradient-to-b from-background to-background">
-      <div className="max-w-lg mx-auto px-2">
+    <main className="w-full min-h-screen md:min-h-0 md:h-full md:flex md:flex-col md:overflow-hidden pt-20 pb-24 md:pb-0 bg-gradient-to-b from-background to-background">
+      <div className="max-w-lg mx-auto px-2 md:flex-1 md:overflow-y-auto md:pb-4">
         <h1 className="mb-4 text-2xl font-medium tracking-wide text-neutral-100 md:hidden">Biometrics</h1>
         {connectionError && (
           <div className="mb-4 rounded-lg border border-yellow-500/30 bg-yellow-950/20 px-4 py-3 text-sm text-yellow-300">

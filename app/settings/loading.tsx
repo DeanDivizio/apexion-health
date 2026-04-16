@@ -2,7 +2,7 @@ import { Skeleton } from "@/components/ui_primitives/skeleton";
 
 export default function SettingsHubLoading() {
   return (
-    <div className="w-full max-w-lg space-y-3">
+    <div className="w-full space-y-3">
       {Array.from({ length: 2 }).map((_, i) => (
         <div
           key={i}

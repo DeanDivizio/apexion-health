@@ -127,7 +127,7 @@ function NutritionSettingsForm({
   );
 
   return (
-    <div className="w-full max-w-lg space-y-6">
+    <div className="w-full space-y-6 md:grid md:grid-cols-2 md:gap-4 md:space-y-0">
       <Card className="bg-gradient-to-br from-blue-900/10 to-neutral-950 backdrop-blur-xl border-green-950/80 !rounded-xl ring-1 ring-orange-950/30">
         <CardHeader className="pb-2 space-y-1">
           <CardTitle className="text-lg flex items-center gap-2">
@@ -313,7 +313,7 @@ function NutritionSettingsForm({
       </Card>
 
       <Button
-        className="w-full"
+        className="w-full md:col-span-2"
         size="lg"
         disabled={isPending}
         onClick={() =>
@@ -441,7 +441,7 @@ function MacroValidationMessage({
 
 function NutritionSettingsSkeleton() {
   return (
-    <div className="w-full max-w-lg space-y-6">
+    <div className="w-full space-y-6">
       {Array.from({ length: 4 }).map((_, i) => (
         <div key={i} className="rounded-xl bg-neutral-800/50 animate-pulse h-28" />
       ))}

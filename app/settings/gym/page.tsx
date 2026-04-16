@@ -74,7 +74,7 @@ export default function GymSettingsPage() {
   }
 
   return (
-    <div className="w-full max-w-lg space-y-4">
+    <div className="w-full space-y-4 md:grid md:grid-cols-2 md:gap-4 md:space-y-0">
       <Card className="bg-gradient-to-br from-emerald-900/10 to-neutral-950 backdrop-blur-xl border-emerald-950/80 !rounded-xl ring-1 ring-emerald-950/30">
         <CardHeader className="px-4 pt-4 pb-4 space-y-1">
           <CardTitle className="text-lg flex items-center gap-2">
@@ -180,7 +180,7 @@ export default function GymSettingsPage() {
       </Card>
 
       <Button
-        className="w-full"
+        className="w-full md:col-span-2"
         size="lg"
         disabled={isPending}
         onClick={handleSave}
@@ -194,7 +194,7 @@ export default function GymSettingsPage() {
 
 function GymSettingsSkeleton() {
   return (
-    <div className="w-full max-w-lg space-y-4">
+    <div className="w-full space-y-4">
       <div className="h-4 w-48 bg-muted animate-pulse rounded" />
       <div className="rounded-xl bg-neutral-800/50 p-4 space-y-3">
         <div className="h-5 w-32 bg-muted animate-pulse rounded" />

@@ -1,40 +1,18 @@
-"use client"
-import React, {useState, useEffect, Suspense} from "react";
-// import { categoryFetch } from "@/actions/InternalLogic";
-import { RenderCharts } from "@/utils/ChartRendering";
+import { listLabReportsAction } from "@/actions/labs";
+import { LabsDashboard } from "@/components/labs/LabsDashboard";
 
-export default function Labs() {
-  const [data, setData] = useState({});
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [approvedIDs, setApprovedIDs] = useState() // Used to filter displayed results
+export default async function LabsPage() {
+  const reports = await listLabReportsAction();
 
-  // //Grabs Data
-  // useEffect(() => {
-  //   async function dataFetch() {
-  //     try {
-  //       const data = await categoryFetch("ClinicalLabs");
-  //       setData(data); 
-  //       // console.log(data);
-  //     } catch (err) {
-  //       setError('Failed to fetch data');
-  //       console.error(err);
-  //     } finally {
-  //       setIsLoading(false);
-  //     }
-  //   }
-  //     dataFetch();
-  // }, []);
   return (
-    <main className="flex flex-col items-center justify-start pb-12 px-8 xl:px-48">
-      <div id="heading" className="mt-8 mb-16">
-        <p className="text-center font-thin italic text-4xl">{`Your Labs, by Category`}</p>
-      </div>
-      <div id="homeCharts">
-        {/* <Suspense>
-        <RenderCharts data={data} approvedIDs={approvedIDs} categorize={true} categoryOrder={["Hormones - All", "COMPLETE BLOOD COUNT", "COMPREHENSIVE METABOLIC PANEL", "LIPID PANEL w/ CHOLESTEROL"]}/>
-        </Suspense> */}
-        <p>placeholder</p>
+    <main className="flex flex-col items-start pb-12 md:pb-0 px-4 md:px-8 xl:px-16 md:h-full md:overflow-hidden">
+      <header className="mb-6 mt-8 w-full shrink-0">
+        <h1 className="text-3xl font-thin italic text-white/90">
+          Lab Results
+        </h1>
+      </header>
+      <div className="w-full md:flex-1 md:overflow-y-auto md:min-h-0">
+        <LabsDashboard reports={reports} />
       </div>
     </main>
   );

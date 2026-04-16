@@ -154,8 +154,8 @@ export default function GymSessions() {
 
   if (loading) {
     return (
-      <main className="w-full min-h-screen pt-20 px-4 pb-16">
-        <div className="flex flex-col gap-3 max-w-lg mx-auto">
+      <main className="w-full min-h-screen md:min-h-0 md:h-full md:flex md:flex-col md:overflow-hidden pt-20 px-4 pb-16 md:pb-0">
+        <div className="flex flex-col gap-3 max-w-lg mx-auto md:flex-1 md:overflow-y-auto">
           {Array.from({ length: 5 }, (_, i) => (
             <Skeleton key={i} className="w-full h-[72px] rounded-xl" />
           ))}
@@ -166,7 +166,7 @@ export default function GymSessions() {
 
   if (sortedSessions.length === 0) {
     return (
-      <main className="w-full min-h-screen pt-20 px-4 pb-16 flex flex-col items-center justify-center">
+      <main className="w-full min-h-screen md:min-h-0 md:h-full pt-20 px-4 pb-16 md:pb-0 flex flex-col items-center justify-center">
         <Dumbbell className="h-12 w-12 text-muted-foreground/30 mb-4" />
         <p className="text-muted-foreground text-center">No sessions logged yet.</p>
       </main>
@@ -177,8 +177,8 @@ export default function GymSessions() {
 
   return (
     <>
-      <main className="w-full min-h-screen pt-20 pb-16 bg-gradient-to-b from-background to-background">
-        <div className="flex flex-col gap-3 max-w-lg mx-auto px-2">
+      <main className="w-full min-h-screen md:min-h-0 md:h-full md:flex md:flex-col md:overflow-hidden pt-20 pb-16 md:pb-0 bg-gradient-to-b from-background to-background">
+        <div className="flex flex-col gap-3 max-w-lg mx-auto px-2 md:flex-1 md:overflow-y-auto md:pb-4">
           <h1 className="text-2xl font-medium tracking-wide text-neutral-100 md:hidden">Gym Sessions</h1>
           {sortedSessions.map((session, i) =>
             editingId === session.id ? (

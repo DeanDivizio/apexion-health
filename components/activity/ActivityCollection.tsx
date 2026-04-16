@@ -202,189 +202,270 @@ export function ActivityCollection({
     return logs.filter((l) => l.dateStr === selectedDateStr);
   }, [logs, selectedDateStr]);
 
+  const libraryTypeCard = (type: ActivityTypeView) => {
+    const typeColor = type.color ?? FALLBACK_COLOR;
+    const IconComp = type.icon ? ACTIVITY_ICON_MAP[type.icon] : null;
+    return (
+      <div
+        key={type.id}
+        className="rounded-xl border border-white/10 bg-gradient-to-b from-emerald-950/20 to-neutral-900/40 p-4 flex items-center gap-3"
+        style={{ borderLeftWidth: 3, borderLeftColor: typeColor }}
+      >
+        {IconComp ? (
+          <div
+            className="h-9 w-9 rounded-lg flex items-center justify-center shrink-0"
+            style={{ backgroundColor: typeColor + "20" }}
+          >
+            <IconComp className="h-4.5 w-4.5" style={{ color: typeColor }} />
+          </div>
+        ) : (
+          <div
+            className="h-9 w-9 rounded-lg shrink-0"
+            style={{ backgroundColor: typeColor + "20" }}
+          />
+        )}
+        <div className="flex-1 min-w-0">
+          <p className="font-medium truncate">{type.name}</p>
+          <p className="text-xs text-muted-foreground">
+            {type.dimensions.length} field{type.dimensions.length === 1 ? "" : "s"}
+          </p>
+        </div>
+        <div className="flex gap-2 shrink-0">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setEditing(type);
+              setShowForm(true);
+            }}
+          >
+            Edit
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="text-red-400 hover:text-red-300"
+            onClick={() => setArchiveTarget(type)}
+          >
+            Archive
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
+  const libraryHeader = (
+    <div className="flex items-center justify-between">
+      <p className="text-sm text-muted-foreground">
+        {types.length} {types.length === 1 ? "activity" : "activities"}
+      </p>
+      <Button
+        type="button"
+        size="sm"
+        variant={showForm && !editing ? "secondary" : "default"}
+        onClick={() => {
+          if (showForm && !editing) {
+            setShowForm(false);
+          } else {
+            setEditing(null);
+            setShowForm(true);
+          }
+        }}
+      >
+        <Plus className="mr-1 h-4 w-4" />
+        New Activity
+      </Button>
+    </div>
+  );
+
+  const libraryEmptyState = (
+    <div className="rounded-xl border border-dashed border-white/10 p-6 text-center text-sm text-muted-foreground space-y-3">
+      <p>No activities yet. Create one to start tracking.</p>
+      <Button
+        type="button"
+        size="sm"
+        onClick={() => {
+          setEditing(null);
+          setShowForm(true);
+        }}
+      >
+        <Plus className="mr-1 h-4 w-4" />
+        Create Activity
+      </Button>
+    </div>
+  );
+
+  const libraryForm = showForm && (
+    <ActivityTypeForm
+      initialType={editing}
+      saving={savingType}
+      onCancel={() => {
+        setShowForm(false);
+        setEditing(null);
+      }}
+      onSave={handleSaveType}
+    />
+  );
+
+  const libraryList = (
+    <div className="space-y-3">
+      {types.length === 0 && !showForm
+        ? libraryEmptyState
+        : types.map(libraryTypeCard)}
+    </div>
+  );
+
   return (
-    <div className="max-w-3xl mx-auto px-4 pt-24 pb-32 md:pt-6 space-y-6">
-      {/* Header */}
-      <h1 className="text-2xl font-semibold">Habits & Activities</h1>
+    <div className="max-w-3xl mx-auto md:max-w-none md:mx-0 px-4 pt-24 pb-32 md:pt-6 md:pb-0 space-y-6 md:h-full md:flex md:flex-col md:overflow-hidden">
+      <h1 className="text-2xl font-semibold shrink-0">Habits & Activities</h1>
 
-      {/* Tabs */}
-      <Tabs defaultValue="overview">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="history">History</TabsTrigger>
-          <TabsTrigger value="library">Library</TabsTrigger>
-        </TabsList>
+      {/* Mobile: tabs */}
+      <div className="md:hidden">
+        <Tabs defaultValue="overview">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="history">History</TabsTrigger>
+            <TabsTrigger value="library">Library</TabsTrigger>
+          </TabsList>
 
-        {/* ── Overview tab ─────────────────────────────────────────── */}
-        <TabsContent value="overview" className="mt-4 space-y-4">
-          <ActivityContributionGrid
-            contributions={contributions}
-            monthDate={monthDate}
-            selectedDateStr={selectedDateStr}
-            onSelectDate={setSelectedDateStr}
-            onMonthChange={handleMonthChange}
-            pinnedToHome={calendarPinned}
-            onTogglePin={handleToggleCalendarPin}
-          />
-
-          <div className="flex gap-4">
-            <div className="flex-1 rounded-xl border border-white/10 bg-gradient-to-br from-purple-950/30 via-slate-950/20 to-black px-4 py-3 text-center">
-              <p className="text-2xl font-bold text-emerald-400">{currentStreak}</p>
-              <p className="text-xs text-muted-foreground">Current streak</p>
-            </div>
-            <div className="flex-1 rounded-xl border border-white/10 bg-gradient-to-br from-teal-950/40 via-slate-950/20 to-black px-4 py-3 text-center">
-              <p className="text-2xl font-bold text-teal-400">{bestStreak}</p>
-              <p className="text-xs text-muted-foreground">Best streak</p>
-            </div>
-          </div>
-
-          {/* Per-activity tracker strips */}
-          {types.length > 0 && (
-            <div className="space-y-3 pt-2">
-              <h2 className="text-sm font-medium text-muted-foreground">Per Activity</h2>
-              {types.map((type) => (
-                <ActivityTrackerStrip
-                  key={type.id}
-                  type={type}
-                  logs={logs}
-                  pinnedToHome={pinnedTypeIds.has(type.id)}
-                  onTogglePin={handleToggleTypePin}
-                />
-              ))}
-            </div>
-          )}
-        </TabsContent>
-
-        {/* ── History tab ──────────────────────────────────────────── */}
-        <TabsContent value="history" className="mt-4">
-          {selectedDateStr && (
-            <button
-              type="button"
-              onClick={() => setSelectedDateStr(null)}
-              className="mb-3 text-xs text-emerald-400 hover:text-emerald-300 transition-colors"
-            >
-              Showing {selectedDateStr} &mdash; tap to clear filter
-            </button>
-          )}
-          <ActivityLogsList
-            initialLogs={filteredLogs}
-            activityTypes={types}
-            onDeleted={refresh}
-          />
-        </TabsContent>
-
-        {/* ── Library tab ──────────────────────────────────────────── */}
-        <TabsContent value="library" className="mt-4 space-y-4">
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">
-              {types.length} {types.length === 1 ? "activity" : "activities"}
-            </p>
-            <Button
-              type="button"
-              size="sm"
-              variant={showForm && !editing ? "secondary" : "default"}
-              onClick={() => {
-                if (showForm && !editing) {
-                  setShowForm(false);
-                } else {
-                  setEditing(null);
-                  setShowForm(true);
-                }
-              }}
-            >
-              <Plus className="mr-1 h-4 w-4" />
-              New Activity
-            </Button>
-          </div>
-
-          {showForm && (
-            <ActivityTypeForm
-              initialType={editing}
-              saving={savingType}
-              onCancel={() => {
-                setShowForm(false);
-                setEditing(null);
-              }}
-              onSave={handleSaveType}
+          <TabsContent value="overview" className="mt-4 space-y-4">
+            <ActivityContributionGrid
+              contributions={contributions}
+              monthDate={monthDate}
+              selectedDateStr={selectedDateStr}
+              onSelectDate={setSelectedDateStr}
+              onMonthChange={handleMonthChange}
+              pinnedToHome={calendarPinned}
+              onTogglePin={handleToggleCalendarPin}
             />
-          )}
 
-          <div className="space-y-3">
-            {types.length === 0 && !showForm ? (
-              <div className="rounded-xl border border-dashed border-white/10 p-6 text-center text-sm text-muted-foreground space-y-3">
-                <p>No activities yet. Create one to start tracking.</p>
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={() => {
-                    setEditing(null);
-                    setShowForm(true);
-                  }}
-                >
-                  <Plus className="mr-1 h-4 w-4" />
-                  Create Activity
-                </Button>
+            <div className="flex gap-4">
+              <div className="flex-1 rounded-xl border border-white/10 bg-gradient-to-br from-purple-950/30 via-slate-950/20 to-black px-4 py-3 text-center">
+                <p className="text-2xl font-bold text-emerald-400">{currentStreak}</p>
+                <p className="text-xs text-muted-foreground">Current streak</p>
               </div>
-            ) : (
-              types.map((type) => {
-                const typeColor = type.color ?? FALLBACK_COLOR;
-                const IconComp = type.icon ? ACTIVITY_ICON_MAP[type.icon] : null;
-                return (
-                  <div
+              <div className="flex-1 rounded-xl border border-white/10 bg-gradient-to-br from-teal-950/40 via-slate-950/20 to-black px-4 py-3 text-center">
+                <p className="text-2xl font-bold text-teal-400">{bestStreak}</p>
+                <p className="text-xs text-muted-foreground">Best streak</p>
+              </div>
+            </div>
+
+            {types.length > 0 && (
+              <div className="space-y-3 pt-2">
+                <h2 className="text-sm font-medium text-muted-foreground">Per Activity</h2>
+                {types.map((type) => (
+                  <ActivityTrackerStrip
                     key={type.id}
-                    className="rounded-xl border border-white/10 bg-gradient-to-b from-emerald-950/20 to-neutral-900/40 p-4 flex items-center gap-3"
-                    style={{ borderLeftWidth: 3, borderLeftColor: typeColor }}
-                  >
-                    {IconComp ? (
-                      <div
-                        className="h-9 w-9 rounded-lg flex items-center justify-center shrink-0"
-                        style={{ backgroundColor: typeColor + "20" }}
-                      >
-                        <IconComp className="h-4.5 w-4.5" style={{ color: typeColor }} />
-                      </div>
-                    ) : (
-                      <div
-                        className="h-9 w-9 rounded-lg shrink-0"
-                        style={{ backgroundColor: typeColor + "20" }}
-                      />
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">{type.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {type.dimensions.length} field{type.dimensions.length === 1 ? "" : "s"}
-                      </p>
-                    </div>
-                    <div className="flex gap-2 shrink-0">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setEditing(type);
-                          setShowForm(true);
-                        }}
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="text-red-400 hover:text-red-300"
-                        onClick={() => setArchiveTarget(type)}
-                      >
-                        Archive
-                      </Button>
-                    </div>
-                  </div>
-                );
-              })
+                    type={type}
+                    logs={logs}
+                    pinnedToHome={pinnedTypeIds.has(type.id)}
+                    onTogglePin={handleToggleTypePin}
+                  />
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="history" className="mt-4">
+            {selectedDateStr && (
+              <button
+                type="button"
+                onClick={() => setSelectedDateStr(null)}
+                className="mb-3 text-xs text-emerald-400 hover:text-emerald-300 transition-colors"
+              >
+                Showing {selectedDateStr} &mdash; tap to clear filter
+              </button>
+            )}
+            <ActivityLogsList
+              initialLogs={filteredLogs}
+              activityTypes={types}
+              onDeleted={refresh}
+            />
+          </TabsContent>
+
+          <TabsContent value="library" className="mt-4 space-y-4">
+            {libraryHeader}
+            {libraryForm}
+            {libraryList}
+          </TabsContent>
+        </Tabs>
+      </div>
+
+      {/* Desktop: three scrollable columns */}
+      <div className="hidden md:grid md:grid-cols-3 gap-6 flex-1 min-h-0">
+        <div className="flex flex-col min-h-0">
+          <h2 className="text-sm font-medium text-neutral-400 uppercase tracking-wider mb-3 shrink-0">Overview</h2>
+          <div className="flex-1 overflow-y-auto pr-2 space-y-4">
+            <ActivityContributionGrid
+              contributions={contributions}
+              monthDate={monthDate}
+              selectedDateStr={selectedDateStr}
+              onSelectDate={setSelectedDateStr}
+              onMonthChange={handleMonthChange}
+              pinnedToHome={calendarPinned}
+              onTogglePin={handleToggleCalendarPin}
+            />
+
+            <div className="flex gap-4">
+              <div className="flex-1 rounded-xl border border-white/10 bg-gradient-to-br from-purple-950/30 via-slate-950/20 to-black px-4 py-3 text-center">
+                <p className="text-2xl font-bold text-emerald-400">{currentStreak}</p>
+                <p className="text-xs text-muted-foreground">Current streak</p>
+              </div>
+              <div className="flex-1 rounded-xl border border-white/10 bg-gradient-to-br from-teal-950/40 via-slate-950/20 to-black px-4 py-3 text-center">
+                <p className="text-2xl font-bold text-teal-400">{bestStreak}</p>
+                <p className="text-xs text-muted-foreground">Best streak</p>
+              </div>
+            </div>
+
+            {types.length > 0 && (
+              <div className="space-y-3 pt-2">
+                <h2 className="text-sm font-medium text-muted-foreground">Per Activity</h2>
+                {types.map((type) => (
+                  <ActivityTrackerStrip
+                    key={type.id}
+                    type={type}
+                    logs={logs}
+                    pinnedToHome={pinnedTypeIds.has(type.id)}
+                    onTogglePin={handleToggleTypePin}
+                  />
+                ))}
+              </div>
             )}
           </div>
-        </TabsContent>
-      </Tabs>
+        </div>
 
-      {/* Archive confirmation */}
+        <div className="flex flex-col min-h-0">
+          <h2 className="text-sm font-medium text-neutral-400 uppercase tracking-wider mb-3 shrink-0">History</h2>
+          <div className="flex-1 overflow-y-auto pr-2">
+            {selectedDateStr && (
+              <button
+                type="button"
+                onClick={() => setSelectedDateStr(null)}
+                className="mb-3 text-xs text-emerald-400 hover:text-emerald-300 transition-colors"
+              >
+                Showing {selectedDateStr} &mdash; tap to clear filter
+              </button>
+            )}
+            <ActivityLogsList
+              initialLogs={filteredLogs}
+              activityTypes={types}
+              onDeleted={refresh}
+            />
+          </div>
+        </div>
+
+        <div className="flex flex-col min-h-0">
+          <h2 className="text-sm font-medium text-neutral-400 uppercase tracking-wider mb-3 shrink-0">Library</h2>
+          <div className="flex-1 overflow-y-auto pr-2 space-y-4">
+            {libraryHeader}
+            {libraryForm}
+            {libraryList}
+          </div>
+        </div>
+      </div>
+
       <AlertDialog
         open={archiveTarget !== null}
         onOpenChange={(open) => { if (!open) setArchiveTarget(null); }}

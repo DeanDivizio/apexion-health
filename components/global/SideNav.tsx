@@ -41,7 +41,7 @@ const dashboards = [
     { href: "/nutrientgraphs", icon: Apple, label: "Nutrient Intake" },
     { href: "/supplementgraphs", icon: Pill, label: "Medications & Supplements" },
     { href: "/bodygraphs", icon: Scale, label: "Body Measurements", placeholder: true },
-    { href: "/labs", icon: TestTube, label: "Lab Results", placeholder: true },
+    { href: "/labs", icon: TestTube, label: "Lab Results" },
 ];
 
 const admin = [
@@ -115,10 +115,13 @@ export function SideNav() {
                         <p className="mb-2 px-3 text-xs font-medium uppercase tracking-wide text-white/40">
                             Dashboards
                         </p>
+                        {dashboards.filter((item) => !item.placeholder).map((item) => (
+                            <NavItem key={item.href} {...item} />
+                        ))}
                         <p className="text-xs px-3 italic font-light text-white/40">Coming Soon</p>
-                        {/* {dashboards.map((item) => ( */}
-                            {/* <NavItem key={item.href} {...item} /> */}
-                        {/* ))} */}
+                        {dashboards.filter((item) => item.placeholder).map((item) => (
+                            <NavItem key={item.href} {...item} />
+                        ))}
                     </div>
 
                     <div className="absolute bottom-8 left-0 w-full px-6">

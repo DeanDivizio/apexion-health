@@ -1414,3 +1414,113 @@ model KnowledgeClaim {
   @@index([sourceId])
   @@index([verificationStatus])
 }
+
+// ─── Lab / Blood Test Models ────────────────────────────────────────────────
+
+enum LabMarkerAliasSource {
+  seed
+  ocr
+  manual
+}
+
+model LabMarker {
+  id               String   @id @default(uuid())
+  key              String   @unique
+  canonicalName    String
+  unit             String
+  defaultRangeLow  Float?
+  defaultRangeHigh Float?
+  description      String?
+  active           Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  aliases         LabMarkerAlias[]
+  panelLinks      LabPanelMarker[]
+  unitConversions LabUnitConversion[]
+  results         LabResult[]
+}
+
+model LabPanel {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  displayName String
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  markerLinks LabPanelMarker[]
+}
+
+model LabPanelMarker {
+  panelId  String
+  panel    LabPanel  @relation(fields: [panelId], references: [id], onDelete: Cascade)
+  markerId String
+  marker   LabMarker @relation(fields: [markerId], references: [id], onDelete: Cascade)
+
+  @@id([panelId, markerId])
+  @@index([markerId])
+}
+
+model LabMarkerAlias {
+  id        String               @id @default(uuid())
+  markerId  String
+  marker    LabMarker            @relation(fields: [markerId], references: [id], onDelete: Cascade)
+  alias     String               @unique
+  source    LabMarkerAliasSource
+  createdAt DateTime             @default(now())
+
+  @@index([markerId])
+}
+
+model LabUnitConversion {
+  id       String    @id @default(uuid())
+  markerId String
+  marker   LabMarker @relation(fields: [markerId], references: [id], onDelete: Cascade)
+  fromUnit String
+  toUnit   String
+  factor   Float
+
+  @@unique([markerId, fromUnit, toUnit])
+  @@index([markerId])
+}
+
+model LabReport {
+  id                   String   @id @default(uuid())
+  userId               String
+  reportDate           DateTime
+  drawTime             String?
+  institution          String?
+  providerName         String?
+  notes                String?
+  originalFileUrl      String?
+  originalFileName     String?
+  originalFileMimeType String?
+  fileEncrypted        Boolean  @default(false)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  results LabResult[]
+
+  @@index([userId, reportDate])
+}
+
+model LabResult {
+  id              String    @id @default(uuid())
+  reportId        String
+  report          LabReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  markerId        String
+  marker          LabMarker @relation(fields: [markerId], references: [id], onDelete: Restrict)
+  value           Float
+  unit            String
+  normalizedValue Float?
+  normalizedUnit  String?
+  rangeLow        Float?
+  rangeHigh       Float?
+  flag            String?
+  rawName         String
+  createdAt       DateTime  @default(now())
+
+  @@index([reportId])
+  @@index([markerId])
+}

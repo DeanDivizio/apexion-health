@@ -21,7 +21,7 @@ export const ALL_NAV_OPTIONS: NavOption[] = [
   { key: "meds", href: "/meds", icon: Pill, label: "Meds" },
   { key: "activities", href: "/activities", icon: CheckSquare, label: "Activities" },
   // { key: "biometrics", href: "/biometrics", icon: Activity, label: "Biometrics" },
-  // { key: "labs", href: "/labs", icon: FlaskConical, label: "Labs" },
+  { key: "labs", href: "/labs", icon: FlaskConical, label: "Labs" },
 ];
 
 export const DEFAULT_NAV_KEYS = ["meals", "gymsessions", "meds"];

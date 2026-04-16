@@ -524,19 +524,23 @@ export default function Home() {
     : compactDateStrToIsoDate(selectedDateStr);
 
   return (
-    <main className="flex pb-12 md:pb-0 px-4 pt-24 md:pt-4 h-auto 3xl:h-[100vh] overflow-clip w-full flex-col items-center justify-start bg-gradient-to-br from-blue-950/20 to-neutral-950">
+    <main className="flex pb-12 md:pb-0 px-4 pt-24 md:pt-4 h-auto md:h-full md:overflow-hidden w-full flex-col items-center justify-start bg-gradient-to-br from-blue-950/20 to-neutral-950">
       <Defocuser />
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 w-full xl:h-[95vh]">
-        <div className="col-span-1 order-2 xl:order-1 flex flex-col items-center lg:items-start p-4 border-2 bg-neutral-800/50 backdrop-blur-xl rounded-xl overflow-y-scroll">
-          <h3 className="text-5xl w-full font-regular tracking-normal mt-4 xl:mt-0 mb-8 text-center">Recent Days</h3>
-          {data ? (
-            // @ts-ignore
-            <WeeklyDataDisplayComponent isLoading={weeklyLoading} data={data} />
-          ) : weeklyLoading ? (
-            <Skeleton className="w-full bg-neutral-800 h-32 mb-4" />
-          ) : null}
+      {/* Desktop: coming soon */}
+      <div className="hidden xl:flex flex-col items-center justify-center w-full flex-1 gap-4">
+        <div className="rounded-2xl border border-neutral-800 bg-neutral-900/60 backdrop-blur-xl px-12 py-16 text-center max-w-lg">
+          <h2 className="text-3xl font-light tracking-tight text-neutral-100 mb-3">
+            Home Screen Coming Soon
+          </h2>
+          <p className="text-sm text-neutral-400 leading-relaxed">
+            We&apos;re building a new desktop dashboard experience. In the meantime, use the sidebar to navigate to your sections.
+          </p>
         </div>
-        <div className="col-span-1 xl:col-span-2 order-1 xl:order-2 xl:h-[95vh] overflow-y-scroll xl:p-4 rounded-xl backdrop-blur-xl">
+      </div>
+
+      {/* Mobile: existing layout */}
+      <div className="grid grid-cols-1 gap-8 w-full xl:hidden">
+        <div className="col-span-1 overflow-y-scroll rounded-xl backdrop-blur-xl">
           <div className="space-y-4">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-thin italic tracking-tight text-neutral-100">
