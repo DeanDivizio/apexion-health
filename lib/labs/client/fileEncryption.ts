@@ -6,7 +6,7 @@ const IV_LENGTH = 12;
 
 async function deriveKey(
   password: string,
-  salt: Uint8Array,
+  salt: Uint8Array<ArrayBuffer>,
 ): Promise<CryptoKey> {
   const encoder = new TextEncoder();
   const keyMaterial = await crypto.subtle.importKey(
