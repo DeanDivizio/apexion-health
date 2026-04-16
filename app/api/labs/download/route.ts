@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
   try {
     const bytes = await downloadLabReportFile(userId, reportId, report.originalFileName);
 
-    return new NextResponse(bytes, {
+    return new NextResponse(Buffer.from(bytes), {
       headers: {
         "Content-Type": report.originalFileMimeType ?? "application/octet-stream",
         "Content-Disposition": `attachment; filename="${report.originalFileName}"`,
