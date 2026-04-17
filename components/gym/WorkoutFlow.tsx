@@ -93,6 +93,17 @@ function clearPersistedState() {
 }
 
 // ---------------------------------------------------------------------------
+// Set helpers
+// ---------------------------------------------------------------------------
+function makeInitialStrengthSet(def?: ExerciseDefinition | null): StrengthSet {
+  const repMode = def?.repMode ?? (def?.isUnilateral ? "dualUnilateral" : "bilateral");
+  if (repMode === "dualUnilateral") {
+    return { weight: 0, reps: { left: 0, right: 0 } };
+  }
+  return { weight: 0, reps: { bilateral: 0 } };
+}
+
+// ---------------------------------------------------------------------------
 // Time helpers
 // ---------------------------------------------------------------------------
 function formatTimeNow(): string {
@@ -456,8 +467,10 @@ export function WorkoutFlow({ userMeta, customExerciseGroups, repInputStyle, car
     async (exerciseAKey: string, exerciseBKey: string, templateId?: string) => {
       setActiveSupersetAKey(exerciseAKey);
       setActiveSupersetBKey(exerciseBKey);
-      setActiveSupersetSetsA([{ weight: 0, reps: { bilateral: 0 } }]);
-      setActiveSupersetSetsB([{ weight: 0, reps: { bilateral: 0 } }]);
+      const defA = effectiveExerciseMap.get(exerciseAKey) ?? null;
+      const defB = effectiveExerciseMap.get(exerciseBKey) ?? null;
+      setActiveSupersetSetsA([makeInitialStrengthSet(defA)]);
+      setActiveSupersetSetsB([makeInitialStrengthSet(defB)]);
       setActiveSupersetGroupId(crypto.randomUUID());
       setActiveSupersetTemplateId(templateId ?? null);
       setView("logSuperset");
@@ -579,7 +592,8 @@ export function WorkoutFlow({ userMeta, customExerciseGroups, repInputStyle, car
   const handleSelectExercise = useCallback(
     async (key: string, presetVariations?: Record<string, string>, presetName?: string) => {
       setActiveExerciseKey(key);
-      setActiveSets([{ weight: 0, reps: { bilateral: 0 } }]);
+      const def = effectiveExerciseMap.get(key) ?? null;
+      setActiveSets([makeInitialStrengthSet(def)]);
       setActivePresetName(presetName ?? null);
       setView("logExercise");
 

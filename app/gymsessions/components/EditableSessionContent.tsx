@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { CalendarDays, Plus, Save, StickyNote, Trash2, X } from "lucide-react"
+import { CalendarDays, Plus, Save, SplitSquareHorizontal, StickyNote, Trash2, X } from "lucide-react"
 import { Button } from "@/components/ui_primitives/button"
 import { Calendar } from "@/components/ui_primitives/calendar"
 import { Input } from "@/components/ui_primitives/input"
@@ -118,6 +118,16 @@ function EditableSetRow({
     onUpdate({ ...set, notes: v || undefined })
   }
 
+  const toggleSplitReps = () => {
+    if (isUnilateral) {
+      const bilateral = Math.max(set.reps.left ?? 0, set.reps.right ?? 0)
+      onUpdate({ ...set, reps: { bilateral } })
+    } else {
+      const val = set.reps.bilateral ?? 0
+      onUpdate({ ...set, reps: { left: val, right: val } })
+    }
+  }
+
   return (
     <div className="flex items-start gap-1.5 py-2 border-b border-white/5 last:border-b-0">
       <span className="text-[10px] text-muted-foreground/60 font-mono pt-2.5 h-fit my-auto -translate-x-1 w-4 shrink-0 text-center">
@@ -138,9 +148,20 @@ function EditableSetRow({
           />
         </div>
         {isUnilateral ? (
-          <div className="grid grid-cols-2 gap-1">
-            <div>
-              <label className="text-[9px] text-muted-foreground/50 uppercase tracking-wider">L</label>
+          <div>
+            <div className="flex items-center justify-between">
+              <label className="text-[9px] text-muted-foreground/50 uppercase tracking-wider">Reps (L // R)</label>
+              <button
+                type="button"
+                onClick={toggleSplitReps}
+                className="inline-flex items-center gap-1 text-[9px] uppercase tracking-wider text-muted-foreground/70 hover:text-foreground transition-colors"
+                aria-label="Merge left and right reps"
+              >
+                <SplitSquareHorizontal className="h-3 w-3" />
+                Merge
+              </button>
+            </div>
+            <div className="grid grid-cols-2 gap-1">
               <Input
                 key={`${setKey}-rl`}
                 type="number"
@@ -150,9 +171,6 @@ function EditableSetRow({
                 placeholder="L"
                 className={`h-8 text-xs ${NUMBER_INPUT_NO_SPIN_CLASS}`}
               />
-            </div>
-            <div>
-              <label className="text-[9px] text-muted-foreground/50 uppercase tracking-wider">R</label>
               <Input
                 key={`${setKey}-rr`}
                 type="number"
@@ -166,7 +184,18 @@ function EditableSetRow({
           </div>
         ) : (
           <div>
-            <label className="text-[9px] text-muted-foreground/50 uppercase tracking-wider">Reps</label>
+            <div className="flex items-center justify-between">
+              <label className="text-[9px] text-muted-foreground/50 uppercase tracking-wider">Reps</label>
+              <button
+                type="button"
+                onClick={toggleSplitReps}
+                className="inline-flex items-center gap-1 text-[9px] uppercase tracking-wider text-muted-foreground/70 hover:text-foreground transition-colors"
+                aria-label="Split left and right reps"
+              >
+                <SplitSquareHorizontal className="h-3 w-3" />
+                Split
+              </button>
+            </div>
             <Input
               key={`${setKey}-r`}
               type="number"
@@ -382,7 +411,10 @@ export function EditableSessionContent({
       const exercises = [...prev.exercises]
       const exercise = exercises[exIndex]
       if (exercise.type !== "strength") return prev
-      exercises[exIndex] = { ...exercise, sets: [...exercise.sets, { weight: 0, reps: { bilateral: 0 } }] }
+      const lastSet = exercise.sets[exercise.sets.length - 1]
+      const lastIsSplit = lastSet && (lastSet.reps.left !== undefined || lastSet.reps.right !== undefined)
+      const emptyReps = lastIsSplit ? { left: 0, right: 0 } : { bilateral: 0 }
+      exercises[exIndex] = { ...exercise, sets: [...exercise.sets, { weight: 0, reps: emptyReps }] }
       return { ...prev, exercises }
     })
     setSetKeys((prev) => prev.map((keys, i) => (i === exIndex ? [...keys, crypto.randomUUID()] : keys)))

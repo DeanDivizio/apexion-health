@@ -52,12 +52,19 @@ interface SupersetLoggerProps {
   showFailureMode?: boolean;
 }
 
-function makeEmptySet(): StrengthSet {
+function makeEmptySet(repMode?: StrengthRepMode): StrengthSet {
+  if (repMode === "dualUnilateral") {
+    return { weight: 0, reps: { left: 0, right: 0 } };
+  }
   return { weight: 0, reps: { bilateral: 0 } };
 }
 
 function makeSetId(): string {
   return `set-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function isSplitReps(set: StrengthSet): boolean {
+  return set.reps.left !== undefined || set.reps.right !== undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -100,10 +107,6 @@ export function SupersetLogger({
   const [setIdsA, setSetIdsA] = React.useState<string[]>(() => setsA.map(() => makeSetId()));
   const [setIdsB, setSetIdsB] = React.useState<string[]>(() => setsB.map(() => makeSetId()));
 
-  // Split reps tracking
-  const [splitMapA, setSplitMapA] = React.useState<Record<number, boolean>>({});
-  const [splitMapB, setSplitMapB] = React.useState<Record<number, boolean>>({});
-
   // Sync set IDs
   React.useEffect(() => {
     setSetIdsA((prev) => {
@@ -145,44 +148,33 @@ export function SupersetLogger({
     onSetsBChange(nextB);
     setSetIdsA((prev) => prev.filter((_, i) => i !== roundIndex));
     setSetIdsB((prev) => prev.filter((_, i) => i !== roundIndex));
-
-    const reindex = (map: Record<number, boolean>, idx: number) => {
-      const next: Record<number, boolean> = {};
-      for (const [k, v] of Object.entries(map)) {
-        const i = Number(k);
-        if (i === idx) continue;
-        next[i > idx ? i - 1 : i] = v;
-      }
-      return next;
-    };
-    setSplitMapA((prev) => reindex(prev, roundIndex));
-    setSplitMapB((prev) => reindex(prev, roundIndex));
   };
 
   const handleAddRound = () => {
     const lastA = setsA[setsA.length - 1];
     const lastB = setsB[setsB.length - 1];
+    const emptyA = repModeA === "dualUnilateral" ? { left: 0, right: 0 } : { bilateral: 0 };
+    const emptyB = repModeB === "dualUnilateral" ? { left: 0, right: 0 } : { bilateral: 0 };
     const newSetA: StrengthSet = {
       weight: carryOverWeight && lastA ? lastA.weight : 0,
-      reps: carryOverReps && lastA ? { ...lastA.reps } : { bilateral: 0 },
+      reps: carryOverReps && lastA ? { ...lastA.reps } : emptyA,
     };
     const newSetB: StrengthSet = {
       weight: carryOverWeight && lastB ? lastB.weight : 0,
-      reps: carryOverReps && lastB ? { ...lastB.reps } : { bilateral: 0 },
+      reps: carryOverReps && lastB ? { ...lastB.reps } : emptyB,
     };
     onSetsAChange([...setsA, newSetA]);
     onSetsBChange([...setsB, newSetB]);
     setSetIdsA((prev) => [...prev, makeSetId()]);
     setSetIdsB((prev) => [...prev, makeSetId()]);
-
   };
 
   const handleSplitToggleA = (index: number) => {
-    const isSplit = !!splitMapA[index];
-    setSplitMapA((prev) => ({ ...prev, [index]: !isSplit }));
     const s = setsA[index];
+    const isSplit = isSplitReps(s);
     if (isSplit) {
-      handleUpdateSetA(index, { ...s, reps: { bilateral: s.reps.left ?? 0 } });
+      const bilateral = Math.max(s.reps.left ?? 0, s.reps.right ?? 0);
+      handleUpdateSetA(index, { ...s, reps: { bilateral } });
     } else {
       const val = s.reps.bilateral ?? 0;
       handleUpdateSetA(index, { ...s, reps: { left: val, right: val } });
@@ -190,11 +182,11 @@ export function SupersetLogger({
   };
 
   const handleSplitToggleB = (index: number) => {
-    const isSplit = !!splitMapB[index];
-    setSplitMapB((prev) => ({ ...prev, [index]: !isSplit }));
     const s = setsB[index];
+    const isSplit = isSplitReps(s);
     if (isSplit) {
-      handleUpdateSetB(index, { ...s, reps: { bilateral: s.reps.left ?? 0 } });
+      const bilateral = Math.max(s.reps.left ?? 0, s.reps.right ?? 0);
+      handleUpdateSetB(index, { ...s, reps: { bilateral } });
     } else {
       const val = s.reps.bilateral ?? 0;
       handleUpdateSetB(index, { ...s, reps: { left: val, right: val } });
@@ -332,8 +324,8 @@ export function SupersetLogger({
       {/* ── Interleaved Set Cards ────────────────────────────────────── */}
       <Accordion type="single" collapsible className="flex flex-col gap-2 pb-4 mt-2">
         {Array.from({ length: roundCount }, (_, ri) => {
-          const setA = setsA[ri] ?? makeEmptySet();
-          const setB = setsB[ri] ?? makeEmptySet();
+          const setA = setsA[ri] ?? makeEmptySet(repModeA);
+          const setB = setsB[ri] ?? makeEmptySet(repModeB);
           const isPrA =
             !!statsA &&
             ((historicalRecordWeightA > 0 && setA.weight > historicalRecordWeightA) ||
@@ -356,7 +348,7 @@ export function SupersetLogger({
                 index={ri}
                 set={setA}
                 isPr={isPrA}
-                splitReps={!!splitMapA[ri]}
+                splitReps={isSplitReps(setA)}
                 repMode={repModeA}
                 repInputStyle={repInputStyle ?? "dropdown"}
                 showFailureMode={showFailureMode}
@@ -373,7 +365,7 @@ export function SupersetLogger({
                 index={ri}
                 set={setB}
                 isPr={isPrB}
-                splitReps={!!splitMapB[ri]}
+                splitReps={isSplitReps(setB)}
                 repMode={repModeB}
                 repInputStyle={repInputStyle ?? "dropdown"}
                 showFailureMode={showFailureMode}

@@ -39,8 +39,8 @@ interface ExerciseLoggerProps {
   onPersistentNoteChange?: (notes: string | null) => void;
 }
 
-function makeEmptySet(): StrengthSet {
-  return { weight: 0, reps: { bilateral: 0 } };
+function isSplitReps(set: StrengthSet): boolean {
+  return set.reps.left !== undefined || set.reps.right !== undefined;
 }
 
 function makeSetId(): string {
@@ -91,8 +91,6 @@ export function ExerciseLogger({
   const repMode =
     exercise.repMode ?? (exercise.isUnilateral ? "dualUnilateral" : "bilateral");
 
-  // Track which sets have split L/R reps enabled
-  const [splitMap, setSplitMap] = React.useState<Record<number, boolean>>({});
   // Stable per-set IDs so each card keeps identity across insert/delete
   const [setIds, setSetIds] = React.useState<string[]>(() => sets.map(() => makeSetId()));
   // Track which accordion item is open (new sets start open)
@@ -131,17 +129,6 @@ export function ExerciseLogger({
     onSetsChange(nextSets);
     setSetIds((prev) => prev.filter((id) => id !== setId));
 
-    // Reindex splitMap so it continues to align with set indices
-    setSplitMap((prev) => {
-      const next: Record<number, boolean> = {};
-      for (const [k, v] of Object.entries(prev)) {
-        const idx = Number(k);
-        if (Number.isNaN(idx) || idx === index) continue;
-        next[idx > index ? idx - 1 : idx] = v;
-      }
-      return next;
-    });
-
     // Keep the accordion open item stable after deletion
     setOpenItem((prev) => {
       if (!prev) return "";
@@ -164,9 +151,10 @@ export function ExerciseLogger({
   const handleAddSet = () => {
     const nextIndex = sets.length;
     const lastSet = sets[sets.length - 1];
+    const emptyReps = repMode === "dualUnilateral" ? { left: 0, right: 0 } : { bilateral: 0 };
     const newSet: StrengthSet = {
       weight: carryOverWeight && lastSet ? lastSet.weight : 0,
-      reps: carryOverReps && lastSet ? { ...lastSet.reps } : { bilateral: 0 },
+      reps: carryOverReps && lastSet ? { ...lastSet.reps } : emptyReps,
     };
     onSetsChange([...sets, newSet]);
     setSetIds((prev) => [...prev, makeSetId()]);
@@ -174,17 +162,13 @@ export function ExerciseLogger({
   };
 
   const handleSplitToggle = (index: number) => {
-    const isSplit = !!splitMap[index];
-    setSplitMap((prev) => ({ ...prev, [index]: !isSplit }));
-
-    // Convert reps format when toggling
     const s = sets[index];
+    const isSplit = isSplitReps(s);
+
     if (isSplit) {
-      // merge back to bilateral: keep left, discard right
-      const bilateral = s.reps.left ?? 0;
+      const bilateral = Math.max(s.reps.left ?? 0, s.reps.right ?? 0);
       handleUpdateSet(index, { ...s, reps: { bilateral } });
     } else {
-      // split: copy bilateral to both sides
       const val = s.reps.bilateral ?? 0;
       handleUpdateSet(index, { ...s, reps: { left: val, right: val } });
     }
@@ -327,7 +311,7 @@ export function ExerciseLogger({
                   (historicalBestSetVolume > 0 &&
                     calculateSetVolume(set) > historicalBestSetVolume))
               }
-              splitReps={!!splitMap[i]}
+              splitReps={isSplitReps(set)}
               repMode={repMode}
               repInputStyle={repInputStyle ?? "dropdown"}
               showFailureMode={showFailureMode}

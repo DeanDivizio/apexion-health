@@ -295,11 +295,11 @@ export function SetCard({
     (draftSet.reps.left ?? 0) > 0 ||
     (draftSet.reps.right ?? 0) > 0;
   const isUnilateral = repMode === "dualUnilateral";
-  const repsLabel = !isUnilateral
-    ? "Reps (bilateral)"
-    : splitReps
-      ? "Reps (Left // Right)"
-      : "Reps (unilateral)";
+  const repsLabel = splitReps
+    ? "Reps (Left // Right)"
+    : isUnilateral
+      ? "Reps (unilateral)"
+      : "Reps (bilateral)";
 
   // ---- weight ----
   const [weightStr, setWeightStr] = React.useState(
@@ -685,30 +685,28 @@ export function SetCard({
                       onChange={handleFreeformRepsBilateral}
                       className="flex-1 h-10 min-w-0"
                     />
-                    {isUnilateral && (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <button
-                            type="button"
-                            className="h-10 w-6 flex items-center justify-center rounded-md border border-input hover:bg-accent shrink-0"
-                            aria-label="Reps options"
-                          >
-                            <MoreVertical className="h-4 w-4" />
-                          </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() => {
-                              flushPendingUpdate();
-                              onSplitRepsToggle();
-                            }}
-                          >
-                            <SplitSquareHorizontal className="mr-2 h-4 w-4" />
-                            Split L/R Reps
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    )}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          type="button"
+                          className="h-10 w-6 flex items-center justify-center rounded-md border border-input hover:bg-accent shrink-0"
+                          aria-label="Reps options"
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={() => {
+                            flushPendingUpdate();
+                            onSplitRepsToggle();
+                          }}
+                        >
+                          <SplitSquareHorizontal className="mr-2 h-4 w-4" />
+                          Split L/R Reps
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 )
               ) : (
@@ -809,31 +807,28 @@ export function SetCard({
                       </SelectContent>
                     </Select>
 
-                    {/* Context menu: only relevant for unilateral lifts */}
-                    {isUnilateral && (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <button
-                            type="button"
-                            className="h-10 w-6 flex items-center justify-center rounded-md border border-input hover:bg-accent shrink-0"
-                            aria-label="Reps options"
-                          >
-                            <MoreVertical className="h-4 w-4" />
-                          </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() => {
-                              flushPendingUpdate();
-                              onSplitRepsToggle();
-                            }}
-                          >
-                            <SplitSquareHorizontal className="mr-2 h-4 w-4" />
-                            Split L/R Reps
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    )}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          type="button"
+                          className="h-10 w-6 flex items-center justify-center rounded-md border border-input hover:bg-accent shrink-0"
+                          aria-label="Reps options"
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={() => {
+                            flushPendingUpdate();
+                            onSplitRepsToggle();
+                          }}
+                        >
+                          <SplitSquareHorizontal className="mr-2 h-4 w-4" />
+                          Split L/R Reps
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 )
               )}
