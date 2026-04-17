@@ -155,7 +155,7 @@ export type FailureModeSchema = z.infer<typeof failureModeSchema>;
 export const strengthSetSchema = z.object({
   weight: z.number().min(0, "Weight cannot be negative"),
   reps: repCountSchema,
-  effort: z.number().int().min(0).max(10).optional(),
+  repsInReserve: z.number().int().min(0).max(5).optional(),
   duration: z.number().min(0).optional(),
   failureMode: failureModeSchema.optional(),
   name: z.string().max(100).optional(),

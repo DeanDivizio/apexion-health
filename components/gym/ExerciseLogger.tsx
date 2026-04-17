@@ -54,9 +54,9 @@ const MOCK_EXERCISE_STATS: ExerciseStats = {
   mostRecentSession: {
     date: "20260210",
     sets: [
-      { weight: 115, reps: { bilateral: 8 }, effort: 7 },
-      { weight: 125, reps: { bilateral: 6 }, effort: 8 },
-      { weight: 135, reps: { bilateral: 4 }, effort: 9 },
+      { weight: 115, reps: { bilateral: 8 }, repsInReserve: 4 },
+      { weight: 125, reps: { bilateral: 6 }, repsInReserve: 2 },
+      { weight: 135, reps: { bilateral: 4 }, repsInReserve: 1 },
     ],
   },
   recordSet: {

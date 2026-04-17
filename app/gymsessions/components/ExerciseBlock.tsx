@@ -13,7 +13,7 @@ const FAILURE_MODE_SHORT: Record<string, string> = {
 }
 
 function SetChip({ set, index }: { set: StrengthSet; index: number }) {
-  const hasEffort = set.effort !== undefined && set.effort > 0
+  const hasRir = set.repsInReserve !== undefined
   const hasDuration = set.duration !== undefined && set.duration > 0
   const hasFailureMode = !!set.failureMode && set.failureMode !== "untracked"
   const hasNotes = !!set.notes
@@ -31,12 +31,11 @@ function SetChip({ set, index }: { set: StrengthSet; index: number }) {
           {formatRepCount(set.reps)}
           <span className="text-[10px] text-muted-foreground ml-0.5">reps</span>
         </span>
-        {hasEffort && (
+        {hasRir && (
           <>
             <span className="text-muted-foreground/30">•</span>
             <span className="inline-flex items-center gap-0.5 text-amber-400/90">
-              {/* <Flame className="h-3 w-3" /> */}
-              <span className="tabular-nums">{set.effort}</span>
+              <span className="tabular-nums">{set.repsInReserve} RIR</span>
             </span>
           </>
         )}

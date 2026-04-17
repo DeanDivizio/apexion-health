@@ -95,7 +95,7 @@ function CollapsedStatsPreview({
                 className="w-[32.5%] rounded border border-blue-600/80 px-1 bg-neutral-700/60 py-0.5 text-[10px] leading-tight whitespace-nowrap text-muted-foreground"
               >
                 {set.weight}lbs x {formatReps(set)}
-                {set.effort !== undefined ? ` RPE ${set.effort}` : ""}
+                {set.repsInReserve !== undefined ? ` w/ ${set.repsInReserve} RIR` : ""}
               </div>
             ))}
           </div>
@@ -333,7 +333,7 @@ function ExerciseStatsContent({
                   <span>Set {i + 1}</span>
                   <span>
                     {set.weight}lbs x {formatReps(set)}
-                    {set.effort ? ` @ RPE ${set.effort}` : ""}
+                    {set.repsInReserve !== undefined ? ` w/ ${set.repsInReserve} RIR` : ""}
                     <span className="text-muted-foreground/60 ml-1.5">
                       ({Math.round(vol)} vol)
                     </span>

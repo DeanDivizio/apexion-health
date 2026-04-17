@@ -93,9 +93,18 @@ function EditableSetRow({
     onUpdate({ ...set, reps: { left: set.reps.left ?? 0, right: v } })
   }
 
-  const commitEffort = (e: React.FocusEvent<HTMLInputElement>) => {
-    const v = parseInt(e.target.value)
-    onUpdate({ ...set, effort: isNaN(v) || v <= 0 ? undefined : Math.min(v, 10) })
+  const commitRir = (e: React.FocusEvent<HTMLInputElement>) => {
+    const raw = e.target.value.trim()
+    if (raw === "") {
+      onUpdate({ ...set, repsInReserve: undefined })
+      return
+    }
+    const v = parseInt(raw)
+    if (isNaN(v) || v < 0) {
+      onUpdate({ ...set, repsInReserve: undefined })
+      return
+    }
+    onUpdate({ ...set, repsInReserve: Math.min(v, 5) })
   }
 
   const commitDuration = (e: React.FocusEvent<HTMLInputElement>) => {
@@ -179,16 +188,16 @@ function EditableSetRow({
           </div>
         )}
         <div>
-          <label className="text-[9px] text-muted-foreground/50 uppercase tracking-wider">Effort</label>
+          <label className="text-[9px] text-muted-foreground/50 uppercase tracking-wider">RIR</label>
           <Input
-            key={`${setKey}-e`}
+            key={`${setKey}-rir`}
             type="number"
             inputMode="numeric"
-            min={1}
-            max={10}
-            defaultValue={set.effort && set.effort > 0 ? set.effort : ""}
-            onBlur={commitEffort}
-            placeholder="1-10"
+            min={0}
+            max={5}
+            defaultValue={set.repsInReserve !== undefined ? set.repsInReserve : ""}
+            onBlur={commitRir}
+            placeholder="0-5"
             className={`h-8 text-xs ${NUMBER_INPUT_NO_SPIN_CLASS}`}
           />
         </div>

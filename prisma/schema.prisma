@@ -64,7 +64,7 @@ model GymStrengthSet {
   repsBilateral  Int?
   repsLeft       Int?
   repsRight      Int?
-  effort         Int?
+  repsInReserve  Int?
   durationSeconds Int?
   failureMode    String?
   name           String?

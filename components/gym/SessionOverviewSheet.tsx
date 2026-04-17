@@ -357,7 +357,7 @@ export function SessionOverviewSheet({
                               <span>Set {si + 1}</span>
                               <span>
                                 {set.weight}lbs x {reps}
-                                {set.effort ? ` @ RPE ${set.effort}` : ""}
+                                {set.repsInReserve !== undefined ? ` w/ ${set.repsInReserve} RIR` : ""}
                               </span>
                             </div>
                           );

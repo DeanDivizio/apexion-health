@@ -278,8 +278,8 @@ export interface StrengthSet {
   weight: number;
   /** Rep count - supports both bilateral and unilateral tracking */
   reps: RepCount;
-  /** Rating of Perceived Exertion (1-10, where 10 is failure) */
-  effort?: number;
+  /** Reps in Reserve (0-5, where 0 means failure). Undefined means untracked. */
+  repsInReserve?: number;
   /** Duration of the set in seconds (for time-under-tension tracking) */
   duration?: number;
   /** Primary limiting factor / fatigue source for this set */

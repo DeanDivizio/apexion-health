@@ -3229,18 +3229,14 @@ export const DEFAULT_UNILATERAL_SET = {
 } as const;
 
 /**
- * RPE (Rating of Perceived Exertion) scale labels.
+ * Reps In Reserve (RIR) scale labels.
+ * 0 = trained to failure, higher values = more reps left in the tank.
  */
-export const RPE_LABELS: Record<number, string> = {
-  0: "Not Recorded",
-  1: "1",
+export const RIR_LABELS: Record<number, string> = {
+  0: "Failure",
+  1: "1 rep left",
   2: "2",
   3: "3",
   4: "4",
-  5: "5",
-  6: "6",
-  7: "7",
-  8: "8",
-  9: "One From Failure",
-  10: "Failure",
+  5: "5+ reps left",
 };
