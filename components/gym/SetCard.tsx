@@ -42,15 +42,13 @@ import { MUSCLE_GROUP_LABELS } from "@/lib/gym";
 // ---------------------------------------------------------------------------
 // Reps In Reserve labels
 // ---------------------------------------------------------------------------
-const RIR_UNTRACKED = "untracked";
 const RIR_OPTIONS: { value: string; label: string }[] = [
-  { value: RIR_UNTRACKED, label: "Untracked" },
   { value: "0", label: "0 (Failure)" },
-  { value: "1", label: "1 (1 rep left)" },
+  { value: "1", label: "1" },
   { value: "2", label: "2" },
   { value: "3", label: "3" },
   { value: "4", label: "4" },
-  { value: "5", label: "5 (5+ reps left)" },
+  { value: "5", label: "5+" },
 ];
 
 // ---------------------------------------------------------------------------
@@ -470,14 +468,13 @@ export function SetCard({
 
   // ---- reps in reserve ----
   const handleRir = (val: string) => {
-    if (val === RIR_UNTRACKED) {
-      applySetUpdate((prev) => ({ ...prev, repsInReserve: undefined }));
+    const n = parseInt(val, 10);
+    if (Number.isNaN(n)) {
       return;
     }
-    const n = parseInt(val, 10);
     applySetUpdate((prev) => ({
       ...prev,
-      repsInReserve: Number.isNaN(n) ? undefined : n,
+      repsInReserve: n,
     }));
   };
 
@@ -867,7 +864,7 @@ export function SetCard({
                 value={
                   draftSet.repsInReserve !== undefined
                     ? String(draftSet.repsInReserve)
-                    : RIR_UNTRACKED
+                    : undefined
                 }
                 onValueChange={handleRir}
               >
