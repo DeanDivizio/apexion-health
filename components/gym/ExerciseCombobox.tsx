@@ -111,9 +111,9 @@ export function ExerciseCombobox({
           </CommandGroup>
         ))}
         {onCreateCustom && (
-          <CommandGroup heading="">
+          <CommandGroup heading="" forceMount>
             <CommandItem
-              value={`__create_custom__ ${search}`}
+              value="__create_custom__"
               onSelect={handleCreateCustom}
               className="text-blue-400 cursor-pointer"
               forceMount

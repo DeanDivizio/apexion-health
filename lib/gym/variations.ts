@@ -292,6 +292,299 @@ export const HEEL_ELEVATION_TEMPLATE: VariationTemplate = {
   ],
 };
 
+/**
+ * Seat height for machines.
+ */
+export const SEAT_HEIGHT_TEMPLATE: VariationTemplate = {
+  id: "seatHeight",
+  label: "Seat Height",
+  description: "Relative seat height setting on the machine.",
+  options: [
+    { key: "untracked", label: "Untracked", description: "Don't record the seat height.", order: 0 },
+    { key: "low", label: "Low", description: "Lowest seat position.", order: 1 },
+    { key: "mid", label: "Mid", description: "Middle/standard seat position.", order: 2 },
+    { key: "high", label: "High", description: "Highest seat position.", order: 3 },
+  ],
+};
+
+/**
+ * Bar height (e.g., safety bar / rack / lever height).
+ */
+export const BAR_HEIGHT_TEMPLATE: VariationTemplate = {
+  id: "barHeight",
+  label: "Bar Height",
+  description: "Relative bar or lever height setting.",
+  options: [
+    { key: "untracked", label: "Untracked", description: "Don't record the bar height.", order: 0 },
+    { key: "low", label: "Low", description: "Low bar height.", order: 1 },
+    { key: "mid", label: "Mid", description: "Mid bar height.", order: 2 },
+    { key: "high", label: "High", description: "High bar height.", order: 3 },
+  ],
+};
+
+/**
+ * Cable attachment height on pulley machines.
+ */
+export const CABLE_HEIGHT_TEMPLATE: VariationTemplate = {
+  id: "cableHeight",
+  label: "Cable Height",
+  description: "Relative cable/pulley attachment height.",
+  options: [
+    { key: "untracked", label: "Untracked", description: "Don't record the cable height.", order: 0 },
+    { key: "low", label: "Low", description: "Low pulley position.", order: 1 },
+    { key: "mid", label: "Mid", description: "Mid pulley position.", order: 2 },
+    { key: "high", label: "High", description: "High pulley position.", order: 3 },
+  ],
+};
+
+/**
+ * Seat/backpad angle (degrees) for adjustable machines.
+ */
+export const SEAT_ANGLE_TEMPLATE: VariationTemplate = {
+  id: "seatAngle",
+  label: "Seat Angle",
+  description: "Seat or backpad angle in degrees.",
+  options: [
+    { key: "untracked", label: "Untracked", description: "Don't record the seat angle.", order: 0 },
+    { key: "0", label: "0°", description: "Neutral / flat.", order: 1 },
+    { key: "15", label: "15°", description: "Slight incline.", order: 2 },
+    { key: "30", label: "30°", description: "Moderate incline.", order: 3 },
+    { key: "45", label: "45°", description: "Steeper incline.", order: 4 },
+  ],
+};
+
+/**
+ * ROM limiter / end-stop position for machines that support adjustable stops.
+ * Useful for tracking lengthened or shortened partials.
+ */
+export const END_STOP_TEMPLATE: VariationTemplate = {
+  id: "endStop",
+  label: "End Stop / ROM Limiter",
+  description: "Adjustable stop position on machines that support it.",
+  options: [
+    { key: "untracked", label: "Untracked", description: "Don't record the end-stop setting.", order: 0 },
+    { key: "none", label: "None", description: "No stop set; full machine ROM.", order: 1 },
+    { key: "lengthenedStop", label: "Lengthened Stop", description: "Stop set in the stretched position (lengthened partials).", order: 2 },
+    { key: "shortenedStop", label: "Shortened Stop", description: "Stop set in the contracted position (shortened partials).", order: 3 },
+    { key: "both", label: "Both", description: "Stops set at both ends.", order: 4 },
+  ],
+};
+
+/**
+ * How close the backrest / chest pad is to the handles or load.
+ * Distinct from SEAT_HEIGHT — this is pad-to-handle distance (e.g., seated row, chest press).
+ */
+export const BACKREST_DEPTH_TEMPLATE: VariationTemplate = {
+  id: "backrestDepth",
+  label: "Backrest Depth",
+  description: "How close the backrest/chest pad is to the handles or load.",
+  options: [
+    { key: "untracked", label: "Untracked", description: "Don't record the backrest depth.", order: 0 },
+    { key: "shortest", label: "Shortest", description: "Pad closest to the handles.", order: 1 },
+    { key: "short", label: "Short", description: "Shorter than neutral.", order: 2 },
+    { key: "mid", label: "Mid", description: "Your usual/standard depth.", order: 3 },
+    { key: "long", label: "Long", description: "Longer than neutral.", order: 4 },
+    { key: "longest", label: "Longest", description: "Pad farthest from the handles.", order: 5 },
+  ],
+};
+
+/**
+ * Where the ankle/shin pad contacts the leg.
+ * Common on leg extension, leg curl, glute kickback.
+ */
+export const ANKLE_PAD_POSITION_TEMPLATE: VariationTemplate = {
+  id: "anklePadPosition",
+  label: "Ankle Pad Position",
+  description: "Where the ankle/shin pad contacts your leg.",
+  options: [
+    { key: "untracked", label: "Untracked", description: "Don't record the ankle pad position.", order: 0 },
+    { key: "low", label: "Low (Near Ankle)", description: "Pad placed low on the shin.", order: 1 },
+    { key: "mid", label: "Mid Shin", description: "Pad centered on the shin.", order: 2 },
+    { key: "high", label: "High (Near Knee)", description: "Pad placed high on the shin.", order: 3 },
+  ],
+};
+
+/**
+ * Thigh / knee clamp pad height.
+ * Common on lat pulldown, seated leg curl, hack squat shoulder pads.
+ */
+export const THIGH_PAD_HEIGHT_TEMPLATE: VariationTemplate = {
+  id: "thighPadHeight",
+  label: "Thigh Pad Height",
+  description: "Thigh/knee clamp pad height on the machine.",
+  options: [
+    { key: "untracked", label: "Untracked", description: "Don't record the thigh pad height.", order: 0 },
+    { key: "loose", label: "Loose / Not Clamped", description: "Pad not contacting the thighs.", order: 1 },
+    { key: "low", label: "Low", description: "Low pad setting.", order: 2 },
+    { key: "mid", label: "Mid", description: "Middle pad setting.", order: 3 },
+    { key: "high", label: "High", description: "High pad setting (more clamp).", order: 4 },
+  ],
+};
+
+/**
+ * Forward/back foot position on a leg press / hack squat platform.
+ * Distinct from FOOT_VERTICAL_POSITION which is low/mid/high on the plate.
+ */
+export const FOOTPLATE_DEPTH_TEMPLATE: VariationTemplate = {
+  id: "footplateDepth",
+  label: "Footplate Depth",
+  description: "Forward/back foot position on the platform.",
+  options: [
+    { key: "untracked", label: "Untracked", description: "Don't record the footplate depth.", order: 0 },
+    { key: "shallow", label: "Shallow", description: "Feet toward the front of the platform.", order: 1 },
+    { key: "mid", label: "Mid", description: "Feet at standard depth.", order: 2 },
+    { key: "deep", label: "Deep", description: "Feet toward the back of the platform.", order: 3 },
+  ],
+};
+
+/**
+ * Arm path on machines that allow convergent/divergent movement.
+ * Relevant for chest press, shoulder press, row machines.
+ */
+export const ARM_PATH_TEMPLATE: VariationTemplate = {
+  id: "armPath",
+  label: "Arm Path",
+  description: "Path the arms travel on machines that allow it.",
+  options: [
+    { key: "untracked", label: "Untracked", description: "Don't record the arm path.", order: 0 },
+    { key: "converging", label: "Converging", description: "Arms converge toward center at lockout.", order: 1 },
+    { key: "parallel", label: "Parallel", description: "Arms travel straight and parallel.", order: 2 },
+    { key: "diverging", label: "Diverging", description: "Arms flare outward at lockout.", order: 3 },
+  ],
+};
+
+/**
+ * How the feet are arranged. Distinct from Width (which is distance apart
+ * when feet are parallel). Relevant for lunges, RDL, split squats, deadlifts.
+ */
+export const STANCE_TYPE_TEMPLATE: VariationTemplate = {
+  id: "stanceType",
+  label: "Stance Type",
+  description: "How your feet are arranged.",
+  options: [
+    { key: "parallel", label: "Parallel", description: "Both feet side by side.", order: 1 },
+    { key: "staggered", label: "Staggered", description: "One foot slightly ahead of the other.", order: 2 },
+    { key: "split", label: "Split", description: "Front foot planted, rear foot back.", order: 3 },
+    { key: "splitReverse", label: "Reverse Split", description: "Rear foot elevated; standard split reversed.", order: 4 },
+    { key: "singleLeg", label: "Single Leg", description: "Only one foot on the ground.", order: 5 },
+  ],
+};
+
+/**
+ * How the torso is angled during the movement.
+ * Relevant for cable rows, pulldowns, RDL, hack squat.
+ */
+export const TORSO_LEAN_TEMPLATE: VariationTemplate = {
+  id: "torsoLean",
+  label: "Torso Lean",
+  description: "How your torso is angled during the movement.",
+  options: [
+    { key: "upright", label: "Upright", description: "Torso vertical.", order: 1 },
+    { key: "slightForward", label: "Slightly Forward", description: "Minor forward lean.", order: 2 },
+    { key: "forward", label: "Forward", description: "Significant forward lean.", order: 3 },
+    { key: "reclined", label: "Reclined", description: "Leaning back past vertical.", order: 4 },
+  ],
+};
+
+/**
+ * Whether you stand elevated or in a deficit.
+ * Relevant for deadlifts, push-ups, split squats, RDL.
+ */
+export const ELEVATION_TEMPLATE: VariationTemplate = {
+  id: "elevation",
+  label: "Elevation / Deficit",
+  description: "Whether you stand elevated or in a deficit.",
+  options: [
+    { key: "neutral", label: "Neutral", description: "Standard ground level.", order: 1 },
+    { key: "deficitSmall", label: "Small Deficit", description: "Slightly below the bar/floor level.", order: 2 },
+    { key: "deficitLarge", label: "Large Deficit", description: "Well below the bar/floor level.", order: 3 },
+    { key: "elevatedSmall", label: "Small Elevation", description: "Slightly elevated surface.", order: 4 },
+    { key: "elevatedLarge", label: "Large Elevation", description: "Significantly elevated surface.", order: 5 },
+  ],
+};
+
+/**
+ * Accommodating resistance added to the bar (chains or bands).
+ * Orthogonal to resistanceSource.
+ */
+export const ACCOMMODATING_RESISTANCE_TEMPLATE: VariationTemplate = {
+  id: "accommodatingResistance",
+  label: "Accommodating Resistance",
+  description: "Chains or bands added that change resistance through the ROM.",
+  options: [
+    { key: "none", label: "None", description: "No accommodating resistance.", order: 1 },
+    { key: "chains", label: "Chains", description: "Chains added to the bar.", order: 2 },
+    { key: "bandsLight", label: "Bands (Light)", description: "Light bands added.", order: 3 },
+    { key: "bandsHeavy", label: "Bands (Heavy)", description: "Heavy bands added.", order: 4 },
+    { key: "reverseBands", label: "Reverse Bands", description: "Bands assist rather than add resistance.", order: 5 },
+  ],
+};
+
+/**
+ * Assistance used during bodyweight movements.
+ * Relevant for pull-ups, dips, pistol squats.
+ */
+export const ASSISTANCE_TEMPLATE: VariationTemplate = {
+  id: "assistance",
+  label: "Assistance",
+  description: "Assistance used during bodyweight movements.",
+  options: [
+    { key: "none", label: "None", description: "No assistance.", order: 1 },
+    { key: "bandLight", label: "Band (Light)", description: "Light band assistance.", order: 2 },
+    { key: "bandHeavy", label: "Band (Heavy)", description: "Heavy band assistance.", order: 3 },
+    { key: "machine", label: "Machine Assist", description: "Assisted pull-up/dip machine.", order: 4 },
+    { key: "partner", label: "Partner / Spotter", description: "Manual assistance from a partner.", order: 5 },
+  ],
+};
+
+/**
+ * External load attachment for bodyweight movements.
+ */
+export const LOADED_BODYWEIGHT_TEMPLATE: VariationTemplate = {
+  id: "loadedBodyweight",
+  label: "External Load",
+  description: "How external load is attached for bodyweight movements.",
+  options: [
+    { key: "none", label: "None", description: "Bodyweight only.", order: 1 },
+    { key: "dipBelt", label: "Dip Belt", description: "Weight hung from a dip belt.", order: 2 },
+    { key: "weightVest", label: "Weight Vest", description: "Weight worn in a vest.", order: 3 },
+    { key: "plateHeld", label: "Plate / Dumbbell Held", description: "Plate or dumbbell held during the rep.", order: 4 },
+    { key: "ankleWeights", label: "Ankle Weights", description: "Weights attached to the ankles.", order: 5 },
+  ],
+};
+
+/**
+ * Isometric hold position (and implicit duration).
+ * Distinct from PAUSE which is a binary at a position.
+ */
+export const ISO_HOLD_TEMPLATE: VariationTemplate = {
+  id: "isoHold",
+  label: "Isometric Hold",
+  description: "Where you hold an isometric contraction during the rep.",
+  options: [
+    { key: "none", label: "None", description: "No iso hold.", order: 1 },
+    { key: "holdAtStretch", label: "Hold at Stretch", description: "Hold in the lengthened position.", order: 2 },
+    { key: "holdAtPeak", label: "Hold at Peak", description: "Hold in the contracted position.", order: 3 },
+    { key: "holdMid", label: "Hold Mid", description: "Hold in the middle of the ROM.", order: 4 },
+    { key: "holdBoth", label: "Hold Both Ends", description: "Hold at both stretch and peak.", order: 5 },
+  ],
+};
+
+/**
+ * How unilateral reps are sequenced between sides.
+ * Only meaningful for dualUnilateral exercises.
+ */
+export const EXECUTION_PATTERN_TEMPLATE: VariationTemplate = {
+  id: "executionPattern",
+  label: "Execution Pattern",
+  description: "How unilateral reps are sequenced between sides.",
+  options: [
+    { key: "simultaneous", label: "Simultaneous", description: "Both sides move at the same time.", order: 1 },
+    { key: "alternating", label: "Alternating", description: "Alternate sides rep-by-rep.", order: 2 },
+    { key: "sequential", label: "Sequential", description: "All reps one side, then the other.", order: 3 },
+  ],
+};
+
 // =============================================================================
 // TEMPLATE REGISTRY & UTILITIES
 // =============================================================================
@@ -317,6 +610,24 @@ export const VARIATION_TEMPLATES: VariationTemplate[] = [
   FOOT_VERTICAL_POSITION_TEMPLATE,
   FOOT_ANGLE_TEMPLATE,
   HEEL_ELEVATION_TEMPLATE,
+  SEAT_HEIGHT_TEMPLATE,
+  BAR_HEIGHT_TEMPLATE,
+  CABLE_HEIGHT_TEMPLATE,
+  SEAT_ANGLE_TEMPLATE,
+  END_STOP_TEMPLATE,
+  BACKREST_DEPTH_TEMPLATE,
+  ANKLE_PAD_POSITION_TEMPLATE,
+  THIGH_PAD_HEIGHT_TEMPLATE,
+  FOOTPLATE_DEPTH_TEMPLATE,
+  ARM_PATH_TEMPLATE,
+  STANCE_TYPE_TEMPLATE,
+  TORSO_LEAN_TEMPLATE,
+  ELEVATION_TEMPLATE,
+  ACCOMMODATING_RESISTANCE_TEMPLATE,
+  ASSISTANCE_TEMPLATE,
+  LOADED_BODYWEIGHT_TEMPLATE,
+  ISO_HOLD_TEMPLATE,
+  EXECUTION_PATTERN_TEMPLATE,
 ];
 
 /**

@@ -45,6 +45,11 @@ import {
   type MovementPreset,
 } from "@/lib/gym/presets";
 import { AdvancedTargetEditor } from "./AdvancedTargetEditor";
+import { DimensionAddPicker } from "./DimensionAddPicker";
+import {
+  DimensionLabelWithTooltip,
+  VariationOptionSelect,
+} from "./variationEditorControls";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -387,26 +392,17 @@ export function CreateCustomExerciseSheet({
                 className="flex items-center gap-2 rounded-lg border border-border/60 bg-muted/30 p-2.5"
               >
                 <div className="flex-1 min-w-0 space-y-1.5">
-                  <p className="text-sm font-medium truncate">
-                    {template.label}
-                  </p>
-                  <Select
+                  <DimensionLabelWithTooltip
+                    label={template.label}
+                    description={template.description}
+                  />
+                  <VariationOptionSelect
+                    template={template}
                     value={v.defaultOptionKey}
-                    onValueChange={(val) =>
+                    onChange={(val) =>
                       updateVariationDefault(v.templateId, val)
                     }
-                  >
-                    <SelectTrigger className="h-8 text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {template.options.map((opt) => (
-                        <SelectItem key={opt.key} value={opt.key}>
-                          {opt.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  />
                 </div>
                 <Button
                   variant="ghost"
@@ -427,21 +423,10 @@ export function CreateCustomExerciseSheet({
           <Label className="text-xs text-muted-foreground">
             Add dimension
           </Label>
-          <Select onValueChange={addVariation} value="">
-            <SelectTrigger className="h-9">
-              <div className="flex items-center gap-1.5 text-muted-foreground">
-                <Plus className="h-3.5 w-3.5" />
-                <span className="text-xs">Add dimension</span>
-              </div>
-            </SelectTrigger>
-            <SelectContent>
-              {availableTemplates.map((t) => (
-                <SelectItem key={t.id} value={t.id}>
-                  {t.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <DimensionAddPicker
+            availableTemplates={availableTemplates}
+            onAdd={addVariation}
+          />
         </div>
       )}
 

@@ -7,6 +7,7 @@ import {
   Info,
   Pencil,
   Save,
+  Search,
   X,
 } from "lucide-react";
 import {
@@ -17,18 +18,15 @@ import {
   SheetDescription,
 } from "@/components/ui_primitives/sheet";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui_primitives/select";
-import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui_primitives/tooltip";
+import {
+  DimensionLabelWithTooltip,
+  VariationOptionSelect,
+} from "./variationEditorControls";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -93,12 +91,16 @@ export function ExerciseSettingsSheet({
   // Archive state
   const [archiving, setArchiving] = React.useState(false);
 
+  // Manage-tab search
+  const [manageSearch, setManageSearch] = React.useState("");
+
   React.useEffect(() => {
     if (!open) {
       setShowPresetInput(false);
       setPresetName("");
       setIsRenaming(false);
       setRenameValue("");
+      setManageSearch("");
     }
   }, [open]);
 
@@ -286,44 +288,37 @@ export function ExerciseSettingsSheet({
 
                 return (
                   <div key={selector.templateId} className={`${spanClass} space-y-1.5`}>
-                    <div className="flex items-center justify-between">
-                      <label className="text-xs text-muted-foreground">{selector.label}</label>
+                    <div className="flex items-center justify-between gap-2">
+                      <DimensionLabelWithTooltip
+                        label={selector.label}
+                        description={selector.template.description}
+                        className="text-xs text-muted-foreground font-normal"
+                      />
                       {!selector.isDefault && (
                         <button
                           type="button"
                           onClick={() => handleRemoveVariation(selector.templateId)}
-                          className="rounded p-0.5 text-muted-foreground/50 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                          className="rounded p-0.5 text-muted-foreground/50 hover:text-red-400 hover:bg-red-500/10 transition-colors shrink-0"
                           aria-label={`Remove ${selector.label}`}
                         >
                           <X className="h-3.5 w-3.5" />
                         </button>
                       )}
                     </div>
-                    <Select
+                    <VariationOptionSelect
+                      template={selector.template}
                       value={
                         variations[selector.templateId] ??
                         selector.override?.defaultOptionKey ??
-                        selector.template.options[0]?.key
+                        selector.template.options[0]?.key ??
+                        ""
                       }
-                      onValueChange={(val) =>
+                      onChange={(val) =>
                         handleVariationChange(selector.templateId, val)
                       }
-                    >
-                      <SelectTrigger className="h-10 w-full">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {selector.template.options.map((opt) => {
-                          const optLabel =
-                            selector.override?.optionLabelOverrides?.[opt.key] ?? opt.label;
-                          return (
-                            <SelectItem key={opt.key} value={opt.key}>
-                              {optLabel}
-                            </SelectItem>
-                          );
-                        })}
-                      </SelectContent>
-                    </Select>
+                      optionLabelOverrides={selector.override?.optionLabelOverrides}
+                      triggerClassName="h-10 text-sm"
+                    />
                   </div>
                 );
               })}
@@ -332,33 +327,64 @@ export function ExerciseSettingsSheet({
 
           {/* Tab 2: Toggle dimensions on/off */}
           {nonDefaultTemplates.length > 0 && (
-            <TabsContent value="manage" className="space-y-0.5">
-              <p className="text-xs text-muted-foreground/70 mb-2">
+            <TabsContent value="manage" className="space-y-2">
+              <p className="text-xs text-muted-foreground/70">
                 Toggle additional dimensions. Built-in dimensions are always shown.
               </p>
-              {nonDefaultTemplates.map((template) => {
-                const isActive = activeNonDefaultIds.has(template.id);
+              <div className="relative">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/60 pointer-events-none" />
+                <Input
+                  type="text"
+                  placeholder="Search dimensions..."
+                  value={manageSearch}
+                  onChange={(e) => setManageSearch(e.target.value)}
+                  className="h-8 pl-7 text-xs"
+                />
+              </div>
+              {(() => {
+                const q = manageSearch.trim().toLowerCase();
+                const filtered = q.length === 0
+                  ? nonDefaultTemplates
+                  : nonDefaultTemplates.filter(
+                      (t) =>
+                        t.label.toLowerCase().includes(q) ||
+                        t.description.toLowerCase().includes(q),
+                    );
+                if (filtered.length === 0) {
+                  return (
+                    <p className="text-xs text-muted-foreground/60 italic py-3 text-center">
+                      No dimensions match &ldquo;{manageSearch.trim()}&rdquo;.
+                    </p>
+                  );
+                }
                 return (
-                  <label
-                    key={template.id}
-                    className="flex items-center gap-3 rounded-md px-2 py-2 hover:bg-accent/50 transition-colors cursor-pointer"
-                  >
-                    <Switch
-                      checked={isActive}
-                      onCheckedChange={(checked) =>
-                        handleToggleDimension(template, checked)
-                      }
-                      className="shrink-0 data-[state=checked]:bg-green-500 [&_span]:bg-gray-400 [&_span]:data-[state=checked]:bg-white"
-                    />
-                    <div className="flex flex-col min-w-0">
-                      <span className="text-sm">{template.label}</span>
-                      <span className="text-xs text-muted-foreground truncate">
-                        {template.description}
-                      </span>
-                    </div>
-                  </label>
+                  <div className="space-y-0.5">
+                    {filtered.map((template) => {
+                      const isActive = activeNonDefaultIds.has(template.id);
+                      return (
+                        <label
+                          key={template.id}
+                          className="flex items-center gap-3 rounded-md px-2 py-2 hover:bg-accent/50 transition-colors cursor-pointer"
+                        >
+                          <Switch
+                            checked={isActive}
+                            onCheckedChange={(checked) =>
+                              handleToggleDimension(template, checked)
+                            }
+                            className="shrink-0 data-[state=checked]:bg-green-500 [&_span]:bg-gray-400 [&_span]:data-[state=checked]:bg-white"
+                          />
+                          <div className="flex flex-col min-w-0">
+                            <span className="text-sm">{template.label}</span>
+                            <span className="text-xs text-muted-foreground truncate">
+                              {template.description}
+                            </span>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
                 );
-              })}
+              })()}
             </TabsContent>
           )}
         </Tabs>

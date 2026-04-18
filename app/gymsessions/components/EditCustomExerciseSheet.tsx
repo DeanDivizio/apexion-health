@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { Loader2, Pencil, Plus, X } from "lucide-react"
+import { Loader2, Pencil, X } from "lucide-react"
 import {
   Sheet,
   SheetContent,
@@ -12,13 +12,6 @@ import {
 import { Button } from "@/components/ui_primitives/button"
 import { Input } from "@/components/ui_primitives/input"
 import { Label } from "@/components/ui_primitives/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui_primitives/select"
 import { ScrollArea } from "@/components/ui_primitives/scroll-area"
 import { useToast } from "@/hooks/use-toast"
 import { updateCustomExerciseAction } from "@/actions/gym"
@@ -33,6 +26,11 @@ import {
 } from "@/lib/gym"
 import { getPreset } from "@/lib/gym/presets"
 import { AdvancedTargetEditor } from "@/components/gym/AdvancedTargetEditor"
+import { DimensionAddPicker } from "@/components/gym/DimensionAddPicker"
+import {
+  DimensionLabelWithTooltip,
+  VariationOptionSelect,
+} from "@/components/gym/variationEditorControls"
 
 // ---------------------------------------------------------------------------
 // Types
@@ -300,26 +298,17 @@ export function EditCustomExerciseSheet({
                       className="flex items-center gap-2 rounded-lg border border-border/60 bg-muted/30 p-2.5"
                     >
                       <div className="flex-1 min-w-0 space-y-1.5">
-                        <p className="text-sm font-medium truncate">
-                          {template.label}
-                        </p>
-                        <Select
+                        <DimensionLabelWithTooltip
+                          label={template.label}
+                          description={template.description}
+                        />
+                        <VariationOptionSelect
+                          template={template}
                           value={v.defaultOptionKey}
-                          onValueChange={(val) =>
+                          onChange={(val) =>
                             updateVariationDefault(v.templateId, val)
                           }
-                        >
-                          <SelectTrigger className="h-8 text-xs">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {template.options.map((opt) => (
-                              <SelectItem key={opt.key} value={opt.key}>
-                                {opt.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        />
                       </div>
                       <Button
                         variant="ghost"
@@ -339,21 +328,10 @@ export function EditCustomExerciseSheet({
                   <Label className="text-xs text-muted-foreground">
                     Add dimension
                   </Label>
-                  <Select onValueChange={addVariation} value="">
-                    <SelectTrigger className="h-9">
-                      <div className="flex items-center gap-1.5 text-muted-foreground">
-                        <Plus className="h-3.5 w-3.5" />
-                        <span className="text-xs">Add dimension</span>
-                      </div>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableTemplates.map((t) => (
-                        <SelectItem key={t.id} value={t.id}>
-                          {t.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <DimensionAddPicker
+                    availableTemplates={availableTemplates}
+                    onAdd={addVariation}
+                  />
                 </div>
               )}
             </div>
