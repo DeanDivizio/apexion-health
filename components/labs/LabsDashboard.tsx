@@ -8,43 +8,59 @@ import { LabReportCard } from "@/components/labs/LabReportCard";
 import { LabReportDetail } from "@/components/labs/LabReportDetail";
 import { MarkerTrendChart } from "@/components/labs/MarkerTrendChart";
 import { LabReportUploader } from "@/components/labs/LabReportUploader";
-import { listLabReportsAction } from "@/actions/labs";
-import type { LabReportView } from "@/lib/labs/types";
+import { listLabReportGroupsAction } from "@/actions/labs";
+import type { LabReportGroupView } from "@/lib/labs/types";
 
 interface LabsDashboardProps {
-  reports: LabReportView[];
+  groups: LabReportGroupView[];
 }
 
 type MainView =
   | { kind: "empty" }
-  | { kind: "report"; reportId: string }
+  | { kind: "group"; groupId: string; reportIds: string[] }
   | { kind: "trends"; markerKey: string }
   | { kind: "upload" };
 
-export function LabsDashboard({ reports: initial }: LabsDashboardProps) {
-  const [reports, setReports] = useState(initial);
+function findGroupByReportId(
+  groups: LabReportGroupView[],
+  reportId: string,
+): LabReportGroupView | undefined {
+  return groups.find((g) => g.reportIds.includes(reportId));
+}
+
+export function LabsDashboard({ groups: initial }: LabsDashboardProps) {
+  const [groups, setGroups] = useState(initial);
   const [mainView, setMainView] = useState<MainView>(
     initial.length > 0
-      ? { kind: "report", reportId: initial[0].id }
+      ? {
+          kind: "group",
+          groupId: initial[0].groupId,
+          reportIds: initial[0].reportIds,
+        }
       : { kind: "empty" },
   );
   const [mobileTab, setMobileTab] = useState<"list" | "content">("list");
   const [, startRefresh] = useTransition();
 
-  const refreshReports = useCallback(() => {
-    startRefresh(async () => {
-      const fresh = await listLabReportsAction();
-      setReports(fresh);
-    });
-  }, []);
-
-  const handleSelectReport = useCallback(
-    (id: string) => {
-      setMainView({ kind: "report", reportId: id });
-      setMobileTab("content");
+  const refreshGroups = useCallback(
+    (after?: (fresh: LabReportGroupView[]) => void) => {
+      startRefresh(async () => {
+        const fresh = await listLabReportGroupsAction();
+        setGroups(fresh);
+        after?.(fresh);
+      });
     },
     [],
   );
+
+  const handleSelectGroup = useCallback((group: LabReportGroupView) => {
+    setMainView({
+      kind: "group",
+      groupId: group.groupId,
+      reportIds: group.reportIds,
+    });
+    setMobileTab("content");
+  }, []);
 
   const handleSelectMarker = useCallback((markerKey: string) => {
     setMainView({ kind: "trends", markerKey });
@@ -53,20 +69,64 @@ export function LabsDashboard({ reports: initial }: LabsDashboardProps) {
 
   const handleUploadComplete = useCallback(
     (newReportId: string) => {
-      refreshReports();
-      setMainView({ kind: "report", reportId: newReportId });
-      setMobileTab("content");
+      refreshGroups((fresh) => {
+        const target = findGroupByReportId(fresh, newReportId) ?? fresh[0];
+        if (target) {
+          setMainView({
+            kind: "group",
+            groupId: target.groupId,
+            reportIds: target.reportIds,
+          });
+        } else {
+          setMainView({ kind: "empty" });
+        }
+        setMobileTab("content");
+      });
     },
-    [refreshReports],
+    [refreshGroups],
   );
 
-  const handleDelete = useCallback(() => {
-    refreshReports();
-    setMainView(reports.length > 1 ? { kind: "report", reportId: reports[0].id } : { kind: "empty" });
-    setMobileTab("list");
-  }, [refreshReports, reports]);
+  const handleReportDeleted = useCallback(
+    (deletedReportId: string) => {
+      refreshGroups((fresh) => {
+        setMainView((current) => {
+          if (current.kind !== "group") return current;
 
-  const selectedId = mainView.kind === "report" ? mainView.reportId : null;
+          if (!current.reportIds.includes(deletedReportId)) return current;
+
+          const remaining = current.reportIds.filter(
+            (id) => id !== deletedReportId,
+          );
+
+          if (remaining.length === 0) {
+            const next = fresh[0];
+            return next
+              ? {
+                  kind: "group",
+                  groupId: next.groupId,
+                  reportIds: next.reportIds,
+                }
+              : { kind: "empty" };
+          }
+
+          const refreshed =
+            fresh.find((g) => g.reportIds.some((id) => remaining.includes(id))) ??
+            fresh[0];
+          return refreshed
+            ? {
+                kind: "group",
+                groupId: refreshed.groupId,
+                reportIds: refreshed.reportIds,
+              }
+            : { kind: "empty" };
+        });
+      });
+    },
+    [refreshGroups],
+  );
+
+  const selectedGroupId =
+    mainView.kind === "group" ? mainView.groupId : null;
 
   return (
     <div className="w-full">
@@ -94,12 +154,11 @@ export function LabsDashboard({ reports: initial }: LabsDashboardProps) {
       <div className="flex gap-6">
         {/* Sidebar — report list */}
         <aside
-          className={`w-full shrink-0 md:block md:w-80 ${
+          className={`w-full shrink-0 md:block md:min-w-0 md:flex-1 ${
             mobileTab === "list" ? "block" : "hidden"
           }`}
         >
-          <div className="mb-3 flex items-center justify-between">
-            <h3 className="text-sm font-medium text-white/60">Reports</h3>
+          <div className="mb-3 flex items-center">
             <Button
               size="sm"
               onClick={() => {
@@ -112,7 +171,7 @@ export function LabsDashboard({ reports: initial }: LabsDashboardProps) {
             </Button>
           </div>
 
-          {reports.length === 0 ? (
+          {groups.length === 0 ? (
             <div className="rounded-xl border border-white/10 bg-white/[0.02] px-4 py-12 text-center">
               <FlaskConical className="mx-auto mb-3 h-8 w-8 text-white/20" />
               <p className="text-sm text-white/40">No reports yet</p>
@@ -120,12 +179,13 @@ export function LabsDashboard({ reports: initial }: LabsDashboardProps) {
           ) : (
             <ScrollArea className="h-[calc(100vh-240px)]">
               <div className="space-y-2 pr-2">
-                {reports.map((r) => (
+                {groups.map((g) => (
                   <LabReportCard
-                    key={r.id}
-                    report={r}
-                    isSelected={r.id === selectedId}
-                    onSelect={handleSelectReport}
+                    key={g.groupId}
+                    group={g}
+                    isSelected={g.groupId === selectedGroupId}
+                    onSelect={handleSelectGroup}
+                    onReportDeleted={handleReportDeleted}
                   />
                 ))}
               </div>
@@ -135,7 +195,7 @@ export function LabsDashboard({ reports: initial }: LabsDashboardProps) {
 
         {/* Main content */}
         <main
-          className={`min-w-0 flex-1 md:block ${
+          className={`min-w-0 flex-1 md:block md:w-[45vw] md:flex-none md:shrink-0 ${
             mobileTab === "content" ? "block" : "hidden"
           }`}
         >
@@ -157,10 +217,9 @@ export function LabsDashboard({ reports: initial }: LabsDashboardProps) {
             </div>
           )}
 
-          {mainView.kind === "report" && (
+          {mainView.kind === "group" && (
             <LabReportDetail
-              reportId={mainView.reportId}
-              onDeleted={handleDelete}
+              reportIds={mainView.reportIds}
               onBack={() => setMobileTab("list")}
               onSelectMarker={handleSelectMarker}
             />
@@ -170,8 +229,13 @@ export function LabsDashboard({ reports: initial }: LabsDashboardProps) {
             <MarkerTrendChart
               initialMarkerKey={mainView.markerKey}
               onBack={() => {
-                if (selectedId) {
-                  setMainView({ kind: "report", reportId: selectedId });
+                const fallback = groups[0];
+                if (fallback) {
+                  setMainView({
+                    kind: "group",
+                    groupId: fallback.groupId,
+                    reportIds: fallback.reportIds,
+                  });
                 } else {
                   setMainView({ kind: "empty" });
                 }
@@ -183,10 +247,14 @@ export function LabsDashboard({ reports: initial }: LabsDashboardProps) {
             <LabReportUploader
               onComplete={handleUploadComplete}
               onCancel={() => {
-                const first = reports[0];
+                const first = groups[0];
                 setMainView(
                   first
-                    ? { kind: "report", reportId: first.id }
+                    ? {
+                        kind: "group",
+                        groupId: first.groupId,
+                        reportIds: first.reportIds,
+                      }
                     : { kind: "empty" },
                 );
               }}

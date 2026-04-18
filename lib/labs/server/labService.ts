@@ -7,6 +7,9 @@ import type {
   LabReportView,
   LabReportDetailView,
   LabResultView,
+  LabReportGroupView,
+  LabReportGroupDetailView,
+  LabReportSourceView,
   MarkerHistoryPoint,
   MarkerCatalogView,
 } from "@/lib/labs/types";
@@ -77,6 +80,7 @@ function toResultView(row: ResultWithMarkerAndPanels): LabResultView {
       key: pl.panel.key,
       displayName: pl.panel.displayName,
     })),
+    sourceReportId: row.reportId,
   };
 }
 
@@ -265,6 +269,263 @@ export async function getLabReport(
 
   if (!report) return null;
   return toDetailView(report);
+}
+
+type GroupingReport = {
+  id: string;
+  reportDate: Date;
+  drawTime: string | null;
+  institution: string | null;
+  providerName: string | null;
+  createdAt: Date;
+  originalFileUrl: string | null;
+  originalFileName: string | null;
+  fileEncrypted: boolean;
+  resultCount: number;
+};
+
+type WorkingGroup = {
+  reportIds: string[];
+  reportDate: Date;
+  institution: string | null;
+  providerName: string | null;
+  drawTimes: (string | null)[];
+  earliestCreatedAt: Date;
+  sources: LabReportSourceView[];
+  resultCount: number;
+  notes: string[];
+};
+
+function sameDay(a: Date, b: Date): boolean {
+  return a.getTime() === b.getTime();
+}
+
+function fieldMatches<T>(a: T | null, b: T | null): boolean {
+  return a === null || b === null || a === b;
+}
+
+function specificity(r: GroupingReport): number {
+  return (r.institution !== null ? 1 : 0) + (r.providerName !== null ? 1 : 0);
+}
+
+/**
+ * Greedy clustering of reports into visit groups.
+ *
+ * Two reports share a group when their reportDate matches AND each of
+ * (institution, providerName) is either equal or null on at least one side
+ * (null acts as a wildcard). More-specific reports are processed first so a
+ * less-specific report attaches to the correct concrete group when multiple
+ * would be compatible; ties fall back to earliest createdAt for determinism.
+ */
+export function computeGroups(
+  reports: GroupingReport[],
+  notesByReportId: Map<string, string | null>,
+): LabReportGroupView[] {
+  const sorted = [...reports].sort((a, b) => {
+    const specDiff = specificity(b) - specificity(a);
+    if (specDiff !== 0) return specDiff;
+    return a.createdAt.getTime() - b.createdAt.getTime();
+  });
+
+  const groups: WorkingGroup[] = [];
+
+  for (const r of sorted) {
+    let attached = false;
+    for (const g of groups) {
+      if (
+        sameDay(g.reportDate, r.reportDate) &&
+        fieldMatches(g.institution, r.institution) &&
+        fieldMatches(g.providerName, r.providerName)
+      ) {
+        g.reportIds.push(r.id);
+        g.institution = g.institution ?? r.institution;
+        g.providerName = g.providerName ?? r.providerName;
+        g.drawTimes.push(r.drawTime);
+        if (r.createdAt < g.earliestCreatedAt) g.earliestCreatedAt = r.createdAt;
+        g.sources.push({
+          id: r.id,
+          hasFile: !!r.originalFileUrl,
+          fileEncrypted: r.fileEncrypted,
+          originalFileName: r.originalFileName ?? null,
+          createdAt: r.createdAt.toISOString(),
+          resultCount: r.resultCount,
+        });
+        g.resultCount += r.resultCount;
+        const note = notesByReportId.get(r.id);
+        if (note) g.notes.push(note);
+        attached = true;
+        break;
+      }
+    }
+    if (!attached) {
+      const note = notesByReportId.get(r.id) ?? null;
+      groups.push({
+        reportIds: [r.id],
+        reportDate: r.reportDate,
+        institution: r.institution,
+        providerName: r.providerName,
+        drawTimes: [r.drawTime],
+        earliestCreatedAt: r.createdAt,
+        sources: [
+          {
+            id: r.id,
+            hasFile: !!r.originalFileUrl,
+            fileEncrypted: r.fileEncrypted,
+            originalFileName: r.originalFileName ?? null,
+            createdAt: r.createdAt.toISOString(),
+            resultCount: r.resultCount,
+          },
+        ],
+        resultCount: r.resultCount,
+        notes: note ? [note] : [],
+      });
+    }
+  }
+
+  return groups
+    .map<LabReportGroupView>((g) => {
+      const sortedIds = [...g.reportIds].sort();
+      const nonNullDrawTimes = g.drawTimes.filter(
+        (t): t is string => t !== null,
+      );
+      const allSame =
+        nonNullDrawTimes.length > 0 &&
+        nonNullDrawTimes.every((t) => t === nonNullDrawTimes[0]);
+      const drawTime = allSame
+        ? nonNullDrawTimes[0]
+        : nonNullDrawTimes.length > 0
+          ? [...nonNullDrawTimes].sort()[0]
+          : null;
+      const sourcesSorted = [...g.sources].sort((a, b) =>
+        a.createdAt.localeCompare(b.createdAt),
+      );
+      return {
+        groupId: sortedIds.join("|"),
+        reportIds: sortedIds,
+        reportDate: g.reportDate.toISOString(),
+        drawTime,
+        institution: g.institution,
+        providerName: g.providerName,
+        resultCount: g.resultCount,
+        sources: sourcesSorted,
+      };
+    })
+    .sort((a, b) => b.reportDate.localeCompare(a.reportDate));
+}
+
+export async function listLabReportGroups(
+  userId: string,
+): Promise<LabReportGroupView[]> {
+  "use cache";
+  cacheTag(`labs-${userId}`);
+  cacheLife("hours");
+
+  const reports = await prisma.labReport.findMany({
+    where: { userId },
+    orderBy: { reportDate: "desc" },
+    include: { _count: { select: { results: true } } },
+  });
+
+  const grouping: GroupingReport[] = reports.map((r) => ({
+    id: r.id,
+    reportDate: r.reportDate,
+    drawTime: r.drawTime ?? null,
+    institution: r.institution ?? null,
+    providerName: r.providerName ?? null,
+    createdAt: r.createdAt,
+    originalFileUrl: r.originalFileUrl ?? null,
+    originalFileName: r.originalFileName ?? null,
+    fileEncrypted: r.fileEncrypted,
+    resultCount: r._count?.results ?? 0,
+  }));
+
+  const notesMap = new Map<string, string | null>(
+    reports.map((r) => [r.id, r.notes ?? null]),
+  );
+
+  return computeGroups(grouping, notesMap);
+}
+
+export async function getLabReportGroup(
+  userId: string,
+  reportIds: string[],
+): Promise<LabReportGroupDetailView | null> {
+  "use cache";
+  cacheTag(`labs-${userId}`);
+  cacheLife("hours");
+
+  if (reportIds.length === 0) return null;
+
+  const reports = await prisma.labReport.findMany({
+    where: { id: { in: reportIds }, userId },
+    include: {
+      results: {
+        include: resultInclude,
+        orderBy: { createdAt: "asc" },
+      },
+    },
+  });
+
+  if (reports.length === 0) return null;
+
+  const sortedIds = reports.map((r) => r.id).sort();
+  const reportDate = reports.reduce(
+    (min, r) => (r.reportDate < min ? r.reportDate : min),
+    reports[0].reportDate,
+  );
+  const institution = reports.find((r) => r.institution)?.institution ?? null;
+  const providerName =
+    reports.find((r) => r.providerName)?.providerName ?? null;
+
+  const drawTimes = reports
+    .map((r) => r.drawTime)
+    .filter((t): t is string => !!t);
+  const allSame =
+    drawTimes.length > 0 && drawTimes.every((t) => t === drawTimes[0]);
+  const drawTime = allSame
+    ? drawTimes[0]
+    : drawTimes.length > 0
+      ? [...drawTimes].sort()[0]
+      : null;
+
+  const sources: LabReportSourceView[] = reports
+    .map((r) => ({
+      id: r.id,
+      hasFile: !!r.originalFileUrl,
+      fileEncrypted: r.fileEncrypted,
+      originalFileName: r.originalFileName ?? null,
+      createdAt: r.createdAt.toISOString(),
+      resultCount: r.results.length,
+    }))
+    .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+
+  const createdAtById = new Map(sources.map((s) => [s.id, s.createdAt]));
+
+  const results: LabResultView[] = reports
+    .flatMap((r) => r.results.map(toResultView))
+    .sort((a, b) => {
+      const nameCmp = a.canonicalName.localeCompare(b.canonicalName);
+      if (nameCmp !== 0) return nameCmp;
+      return (createdAtById.get(a.sourceReportId) ?? "").localeCompare(
+        createdAtById.get(b.sourceReportId) ?? "",
+      );
+    });
+
+  const notes = reports
+    .map((r) => r.notes)
+    .filter((n): n is string => !!n && n.trim().length > 0);
+
+  return {
+    groupId: sortedIds.join("|"),
+    reportIds: sortedIds,
+    reportDate: reportDate.toISOString(),
+    drawTime,
+    institution,
+    providerName,
+    notes,
+    sources,
+    results,
+  };
 }
 
 export async function getMarkerHistory(

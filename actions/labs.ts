@@ -8,6 +8,8 @@ import {
   createLabReport,
   listLabReports,
   getLabReport,
+  listLabReportGroups,
+  getLabReportGroup,
   getMarkerHistory,
   deleteLabReport,
   createMarkerAlias,
@@ -52,6 +54,19 @@ export async function getLabReportAction(reportId: string) {
   const userId = await requireUserId();
   if (!reportId) throw new Error("Report ID is required.");
   return getLabReport(userId, reportId);
+}
+
+export async function listLabReportGroupsAction() {
+  const userId = await requireUserId();
+  return listLabReportGroups(userId);
+}
+
+export async function getLabReportGroupAction(reportIds: string[]) {
+  const userId = await requireUserId();
+  if (!Array.isArray(reportIds) || reportIds.length === 0) {
+    throw new Error("At least one report ID is required.");
+  }
+  return getLabReportGroup(userId, reportIds);
 }
 
 export async function getMarkerHistoryAction(markerKey: string) {

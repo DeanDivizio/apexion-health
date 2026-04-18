@@ -25,6 +25,39 @@ export interface LabResultView {
   flag: string | null;
   rawName: string;
   panels: { id: string; key: string; displayName: string }[];
+  sourceReportId: string;
+}
+
+export interface LabReportSourceView {
+  id: string;
+  hasFile: boolean;
+  fileEncrypted: boolean;
+  originalFileName: string | null;
+  createdAt: string;
+  resultCount: number;
+}
+
+export interface LabReportGroupView {
+  groupId: string;
+  reportIds: string[];
+  reportDate: string;
+  drawTime: string | null;
+  institution: string | null;
+  providerName: string | null;
+  resultCount: number;
+  sources: LabReportSourceView[];
+}
+
+export interface LabReportGroupDetailView {
+  groupId: string;
+  reportIds: string[];
+  reportDate: string;
+  drawTime: string | null;
+  institution: string | null;
+  providerName: string | null;
+  notes: string[];
+  sources: LabReportSourceView[];
+  results: LabResultView[];
 }
 
 export interface LabReportDetailView {

@@ -70,6 +70,7 @@ function prepareChartData(history: MarkerHistoryPoint[]): ChartPoint[] {
         month: "short",
         day: "numeric",
         year: "2-digit",
+        timeZone: "UTC",
       }),
       value: Math.round(pointValue * 100) / 100,
       unit: pointUnit,
