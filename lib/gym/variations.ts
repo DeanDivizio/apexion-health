@@ -133,8 +133,9 @@ export const SUPPORT_TEMPLATE: VariationTemplate = {
   description: "What supports your body during the movement.",
   options: [
     { key: "none", label: "None", description: "No external support.", order: 1 },
-    { key: "inclineBenchSupported", label: "Incline Bench Supported", description: "Supported by an incline bench.", order: 2 },
-    { key: "chestSupported", label: "Chest Supported", description: "Chest supported against a pad.", order: 3 },
+    { key: "flatBenchSupported", label: "Flat Bench Supported", description: "Supported by a flat bench.", order: 2 },
+    { key: "inclineBenchSupported", label: "Incline Bench Supported", description: "Supported by an incline bench.", order: 3 },
+    { key: "chestSupported", label: "Chest Supported", description: "Chest supported against a pad.", order: 4 },
   ],
 };
 
