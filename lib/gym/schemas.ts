@@ -132,7 +132,7 @@ export const exerciseGroupSchema = z.object({
  * Ensures either bilateral is set, OR both left and right are set.
  */
 export const repCountSchema = z.object({
-  bilateral: z.number().int().min(1).optional(),
+  bilateral: z.number().int().min(0).optional(),
   left: z.number().int().min(0).optional(),
   right: z.number().int().min(0).optional(),
 }).refine(
