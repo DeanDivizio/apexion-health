@@ -1,10 +1,12 @@
 -- Manual backfill: GymStrengthSet.effort (RPE, 0-10, 0 = untracked)
 -- → GymStrengthSet.repsInReserve (RIR, 0-5, NULL = untracked).
 --
--- This is NOT a Prisma migration — run it manually (e.g. via
--- `psql`, `prisma db execute --file …`, or the Supabase SQL editor)
--- *after* the `20260417000000_add_reps_in_reserve` migration has been
--- applied and *before* the follow-up migration that drops `effort`.
+-- This is NOT a Prisma migration (it lives outside prisma/migrations/ so
+-- `prisma migrate deploy` won't pick it up). Run it manually — e.g. via
+-- `psql`, `prisma db execute --file prisma/backfills/backfill_reps_in_reserve.sql`,
+-- or the Supabase SQL editor — *after* the
+-- `20260417000000_add_reps_in_reserve` migration has been applied and
+-- *before* the follow-up migration that drops `effort`.
 --
 -- Mapping (RPE → RIR):
 --   NULL or 0 (untracked) → NULL

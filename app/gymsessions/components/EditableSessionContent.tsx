@@ -100,11 +100,11 @@ function EditableSetRow({
       return
     }
     const v = parseInt(raw)
-    if (isNaN(v) || v < 0) {
+    if (isNaN(v)) {
       onUpdate({ ...set, repsInReserve: undefined })
       return
     }
-    onUpdate({ ...set, repsInReserve: Math.min(v, 5) })
+    onUpdate({ ...set, repsInReserve: Math.max(0, Math.min(v, 5)) })
   }
 
   const commitDuration = (e: React.FocusEvent<HTMLInputElement>) => {
