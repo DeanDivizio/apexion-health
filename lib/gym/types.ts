@@ -422,6 +422,8 @@ export interface CustomExerciseDefinition {
   repMode: StrengthRepMode;
   baseTargets: MuscleTargets;
   isCustom: true;
+  presetId?: string;
+  bodyRegion?: string;
   variationTemplates?: Record<string, VariationTemplateOverride>;
   variationEffects?: VariationEffects;
 }

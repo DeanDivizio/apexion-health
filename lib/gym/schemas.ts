@@ -233,6 +233,8 @@ export const customExerciseDefinitionSchema = z.object({
   repMode: strengthRepModeSchema,
   baseTargets: muscleTargetsSchema,
   isCustom: z.literal(true),
+  presetId: z.string().optional(),
+  bodyRegion: z.string().optional(),
   variationTemplates: z.record(z.string(), variationTemplateOverrideSchema).optional(),
   variationEffects: variationEffectsSchema.optional(),
 });

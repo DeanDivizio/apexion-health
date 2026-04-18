@@ -751,6 +751,8 @@ function toCustomExerciseDefinition(customExercise: {
   name: string;
   category: string;
   repMode: string;
+  presetId?: string | null;
+  bodyRegion?: string | null;
   targets: Array<{ muscle: string; weight: number }>;
   variationSupports: Array<{
     templateId: string;
@@ -815,6 +817,8 @@ function toCustomExerciseDefinition(customExercise: {
       weight: target.weight,
     })),
     isCustom: true,
+    presetId: customExercise.presetId ?? undefined,
+    bodyRegion: customExercise.bodyRegion ?? undefined,
     variationTemplates:
       Object.keys(variationTemplates).length > 0 ? variationTemplates : undefined,
     variationEffects:
@@ -840,6 +844,8 @@ export async function getGymMeta(userId: string): Promise<GymUserMeta> {
         category: true,
         name: true,
         repMode: true,
+        presetId: true,
+        bodyRegion: true,
         targets: {
           select: {
             muscle: true,
