@@ -200,5 +200,5 @@ export {
   // Form defaults
   DEFAULT_STRENGTH_SET,
   DEFAULT_UNILATERAL_SET,
-  RPE_LABELS,
+  RIR_LABELS,
 } from "./exercises";

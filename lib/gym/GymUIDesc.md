@@ -25,7 +25,7 @@ When logging an exercise, the UX should be similar to that of an ecommerce site.
 At the top of the middle section of the page, you select your exercise. once you do, at the bottom of the page, stats for that exercise historically should be displayed, as well as those pertaining to the current session.
 - previous session details
 -- date
--- each set's reps, weight, and effort
+-- each set's reps, weight, and reps in reserve
 -- inter-set volume
 - personal records
 -- interset volume
@@ -71,7 +71,7 @@ Ignore the cardio options for now. just use an empty dropdown as a placeholder.
 for strength exercises, the UI should show the name at the top, followed by cards (use accordions for this too) that contain the form fields for each set.
 
 ### The Set Cards
-For each set, the form fields should live in a card. The title of the card should be "Current Set" until there's info, then it should be a recap of the set like "X Reps, Ylbs, RPE: Z". X, Y, and Z in this case obviously being stand-ins for the actual values.
+For each set, the form fields should live in a card. The title of the card should be "Current Set" until there's info, then it should be a recap of the set like "X Reps, Ylbs, w/ Z RIR". X, Y, and Z in this case obviously being stand-ins for the actual values.
 
 We need the following form fields
 - Weight
@@ -85,22 +85,22 @@ We need the following form fields
 -- to the right of the drop down should be a context menu trigger. inside this menu should be a button labeled "Split L/R Reps". That should allow the user to input left and right separately for unilateral movements where there's a difference in rep count (like if on bicep curls, user can do a set of 10 with the right but fails on 9 with the left). If reps aren't split, the same number should be set to repsLeft and repsRight on the backend.
 -- Tooltip: "The number of reps this set (including failure if applicable). For bilateral (uses both sides at the same time) movements, just log reps normally. For unilateral (one side at a time) movements, if both sides are the same, you can log that number here and Apexion will do the math automatically. If unilateral but sides are different (full 10 on right but failed at 9 on left, for instance), click the three dots next to the drop down and select "Split L/R Reps", then input the numbers appropriately."
 
-- Effort
--- dropdown with values 0 - 10 and labels that match, with the following exceptions
---- 0 = "untracked"
---- 2 = "2 (near zero resistence)
---- 5 = "5 (resistence felt. nowhere near failure)
---- 7 = "7 (4-5 reps in reserve)
---- 8 = "8 (2-3 reps in reserve)
---- 9 = "9 (1 from failure)
---- 10 = "10 (Failure)
+- Reps In Reserve (RIR)
+-- dropdown with an "untracked" option and values 0 - 5, with the following labels
+--- "untracked"
+--- 0 = "0 (Failure)"
+--- 1 = "1 (1 rep left)"
+--- 2 = "2"
+--- 3 = "3"
+--- 4 = "4"
+--- 5 = "5 (5+ reps left)"
 -- optional
--- tooltip: "Effort is an optional metric that gives Apexion more insight into your performance. It allows for tracking progress even when weight/rep count is fixed, and lets Apexion calculate your optimal pacing/set structure. This is **highly reccomended**."
+-- tooltip: "Reps In Reserve — how many more reps you could have done before failure (0 = trained to failure, 1 = one rep left in the tank, etc.). This is an optional metric that gives Apexion more insight into your performance. It allows for tracking progress even when weight/rep count is fixed, and lets Apexion calculate your optimal pacing/set structure. This is **highly reccomended**."
 
 - Duration (seconds)
 -- Text input thats restricted to whole numbers
 -- optional
--- tooltip: "The amount of time you took to finish your set. This is an optional metric that allows Apexion to calculate your optimal rep pacing, as well as understand discrepencies in your data (like if you did the same reps and load twice but recorded a lower effort the second time. That's unexpected if duration is the same, but reasonable if you took your time on the second set.)"
+-- tooltip: "The amount of time you took to finish your set. This is an optional metric that allows Apexion to calculate your optimal rep pacing, as well as understand discrepencies in your data (like if you did the same reps and load twice but recorded a lower RIR the second time. That's unexpected if duration is the same, but reasonable if you took your time on the second set.)"
 
 Below the last set card in the list, there should be two buttons; "Add set" and "Save Exercise". Add set should to exactly that. Save exercise should commit the exercise to the session and bring the user back to the "Add Exercise" screen described earlier.
 

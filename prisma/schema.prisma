@@ -64,6 +64,10 @@ model GymStrengthSet {
   repsBilateral  Int?
   repsLeft       Int?
   repsRight      Int?
+  repsInReserve  Int?
+  /// @deprecated Legacy RPE (0-10) column. Kept temporarily so historical
+  /// data can be backfilled into `repsInReserve`. Will be dropped in a
+  /// follow-up migration once the backfill is verified.
   effort         Int?
   durationSeconds Int?
   failureMode    String?

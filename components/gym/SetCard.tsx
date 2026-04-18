@@ -40,20 +40,17 @@ import type { MuscleTargets, RepInputStyle, StrengthRepMode, StrengthSet } from 
 import { MUSCLE_GROUP_LABELS } from "@/lib/gym";
 
 // ---------------------------------------------------------------------------
-// RPE labels per the spec
+// Reps In Reserve labels
 // ---------------------------------------------------------------------------
-const EFFORT_OPTIONS: { value: string; label: string }[] = [
-  { value: "0", label: "Untracked" },
-  { value: "1", label: "1" },
+const RIR_UNTRACKED = "untracked";
+const RIR_OPTIONS: { value: string; label: string }[] = [
+  { value: RIR_UNTRACKED, label: "Untracked" },
+  { value: "0", label: "0 (Failure)" },
+  { value: "1", label: "1 (1 rep left)" },
   { value: "2", label: "2" },
   { value: "3", label: "3" },
   { value: "4", label: "4" },
-  { value: "5", label: "5" },
-  { value: "6", label: "6" },
-  { value: "7", label: "7 (4-5 from fail)" },
-  { value: "8", label: "8 (2-3 from fail)" },
-  { value: "9", label: "9 (1 from failure)" },
-  { value: "10", label: "10 (Failure)" },
+  { value: "5", label: "5 (5+ reps left)" },
 ];
 
 // ---------------------------------------------------------------------------
@@ -65,11 +62,11 @@ const WEIGHT_TOOLTIP =
 const REPS_TOOLTIP =
   'The number of reps this set (including failure if applicable). For bilateral (uses both sides at the same time) movements, just log reps normally. For unilateral (one side at a time) movements, if both sides are the same, you can log that number here and Apexion will do the math automatically. If unilateral but sides are different (full 10 on right but failed at 9 on left, for instance), click the three dots next to the drop down and select "Split L/R Reps", then input the numbers appropriately.';
 
-const EFFORT_TOOLTIP =
-  "Effort is an optional metric that gives Apexion more insight into your performance. It allows for tracking progress even when weight/rep count is fixed, and lets Apexion calculate your optimal pacing/set structure. This is highly recommended.";
+const RIR_TOOLTIP =
+  "Reps In Reserve — how many more reps you could have done before failure (0 = trained to failure, 1 = one rep left in the tank, etc.). This is an optional metric that gives Apexion more insight into your performance. It allows for tracking progress even when weight/rep count is fixed, and lets Apexion calculate your optimal pacing/set structure. This is highly recommended.";
 
 const DURATION_TOOLTIP =
-  "The amount of time you took to finish your set. This is an optional metric that allows Apexion to calculate your optimal rep pacing, as well as understand discrepancies in your data (like if you did the same reps and load twice but recorded a lower effort the second time. That's unexpected if duration is the same, but reasonable if you took your time on the second set.)";
+  "The amount of time you took to finish your set. This is an optional metric that allows Apexion to calculate your optimal rep pacing, as well as understand discrepancies in your data (like if you did the same reps and load twice but recorded a lower RIR the second time. That's unexpected if duration is the same, but reasonable if you took your time on the second set.)";
 
 const LIMITING_FACTOR_TOOLTIP =
   "Track what limited your performance on this set. This improves your analytics and helps Apexion recommend smarter programming adjustments. This can be disabled in settings.";
@@ -136,8 +133,8 @@ function formatTitle(index: number, set: StrengthSet, hasData: boolean): string 
     set.reps.bilateral !== undefined
       ? set.reps.bilateral
       : `L${set.reps.left ?? 0}/R${set.reps.right ?? 0}`;
-  const effort = set.effort !== undefined && set.effort > 0 ? `, RPE: ${set.effort}` : "";
-  return `${reps} Reps, ${set.weight}lbs${effort}`;
+  const rir = set.repsInReserve !== undefined ? `, w/ ${set.repsInReserve} RIR` : "";
+  return `${reps} Reps, ${set.weight}lbs${rir}`;
 }
 
 function isValidWeight(value: string): boolean {
@@ -475,10 +472,17 @@ export function SetCard({
     }
   };
 
-  // ---- effort ----
-  const handleEffort = (val: string) => {
+  // ---- reps in reserve ----
+  const handleRir = (val: string) => {
+    if (val === RIR_UNTRACKED) {
+      applySetUpdate((prev) => ({ ...prev, repsInReserve: undefined }));
+      return;
+    }
     const n = parseInt(val, 10);
-    applySetUpdate((prev) => ({ ...prev, effort: n === 0 ? undefined : n }));
+    applySetUpdate((prev) => ({
+      ...prev,
+      repsInReserve: Number.isNaN(n) ? undefined : n,
+    }));
   };
 
   // ---- duration ----
@@ -854,21 +858,25 @@ export function SetCard({
           </div>
 
           <div className="grid grid-cols-2 gap-3 items-start">
-            {/* Effort (RPE) */}
+            {/* Reps In Reserve */}
             <div className="space-y-1.5 min-w-0">
               <div className="flex items-center gap-1.5">
-                <Label className="text-xs text-muted-foreground">Effort (RPE)</Label>
-                <FieldPopover text={EFFORT_TOOLTIP} />
+                <Label className="text-xs text-muted-foreground">Reps In Reserve</Label>
+                <FieldPopover text={RIR_TOOLTIP} />
               </div>
               <Select
-                value={draftSet.effort !== undefined ? String(draftSet.effort) : "0"}
-                onValueChange={handleEffort}
+                value={
+                  draftSet.repsInReserve !== undefined
+                    ? String(draftSet.repsInReserve)
+                    : RIR_UNTRACKED
+                }
+                onValueChange={handleRir}
               >
                 <SelectTrigger className="h-10 min-w-0">
                   <SelectValue placeholder="Optional" />
                 </SelectTrigger>
                 <SelectContent>
-                  {EFFORT_OPTIONS.map((opt) => (
+                  {RIR_OPTIONS.map((opt) => (
                     <SelectItem key={opt.value} value={opt.value}>
                       {opt.label}
                     </SelectItem>

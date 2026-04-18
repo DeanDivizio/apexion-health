@@ -184,7 +184,7 @@ function transformExercise(dbExercise: {
     repsBilateral: number | null;
     repsLeft: number | null;
     repsRight: number | null;
-    effort: number | null;
+    repsInReserve: number | null;
     durationSeconds: number | null;
     failureMode: string | null;
     name: string | null;
@@ -224,7 +224,7 @@ function transformExercise(dbExercise: {
         repsLeft: set.repsLeft,
         repsRight: set.repsRight,
       }),
-      effort: set.effort ?? undefined,
+      repsInReserve: set.repsInReserve ?? undefined,
       duration: set.durationSeconds ?? undefined,
       failureMode: (set.failureMode as StrengthSet["failureMode"]) ?? undefined,
       name: set.name ?? undefined,
@@ -284,7 +284,7 @@ async function createExercisesForSession(
             exerciseId: createdExercise.id,
             order: setIndex,
             weight: set.weight,
-            effort: set.effort ?? null,
+            repsInReserve: set.repsInReserve ?? null,
             durationSeconds: set.duration ?? null,
             failureMode: set.failureMode ?? null,
             name: set.name?.trim() || null,

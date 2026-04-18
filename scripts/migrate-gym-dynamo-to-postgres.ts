@@ -241,7 +241,7 @@ async function main() {
                 exerciseId: createdExercise.id,
                 order: setIndex,
                 weight: set.weight,
-                effort: set.effort ?? null,
+                repsInReserve: null,
                 durationSeconds: set.duration ?? null,
                 repsBilateral: repMode === "bilateral" ? set.reps : null,
                 repsLeft: repMode === "dualUnilateral" ? set.reps : null,
