@@ -151,10 +151,13 @@ export function ExerciseLogger({
   const handleAddSet = () => {
     const nextIndex = sets.length;
     const lastSet = sets[sets.length - 1];
-    const emptyReps = repMode === "dualUnilateral" ? { left: 0, right: 0 } : { bilateral: 0 };
+    const lastIsSplit = lastSet ? isSplitReps(lastSet) : repMode === "dualUnilateral";
+    const zeroedShape: StrengthSet["reps"] = lastIsSplit ? { left: 0, right: 0 } : { bilateral: 0 };
+    const carriedShape: StrengthSet["reps"] | undefined =
+      lastSet && carryOverReps ? { ...lastSet.reps } : undefined;
     const newSet: StrengthSet = {
       weight: carryOverWeight && lastSet ? lastSet.weight : 0,
-      reps: carryOverReps && lastSet ? { ...lastSet.reps } : emptyReps,
+      reps: carriedShape ?? zeroedShape,
     };
     onSetsChange([...sets, newSet]);
     setSetIds((prev) => [...prev, makeSetId()]);
@@ -162,6 +165,7 @@ export function ExerciseLogger({
   };
 
   const handleSplitToggle = (index: number) => {
+    if (repMode === "dualUnilateral") return;
     const s = sets[index];
     const isSplit = isSplitReps(s);
 
@@ -311,7 +315,7 @@ export function ExerciseLogger({
                   (historicalBestSetVolume > 0 &&
                     calculateSetVolume(set) > historicalBestSetVolume))
               }
-              splitReps={isSplitReps(set)}
+              splitReps={repMode === "dualUnilateral" || isSplitReps(set)}
               repMode={repMode}
               repInputStyle={repInputStyle ?? "dropdown"}
               showFailureMode={showFailureMode}

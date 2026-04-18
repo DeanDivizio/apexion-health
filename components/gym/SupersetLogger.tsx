@@ -153,15 +153,21 @@ export function SupersetLogger({
   const handleAddRound = () => {
     const lastA = setsA[setsA.length - 1];
     const lastB = setsB[setsB.length - 1];
-    const emptyA = repModeA === "dualUnilateral" ? { left: 0, right: 0 } : { bilateral: 0 };
-    const emptyB = repModeB === "dualUnilateral" ? { left: 0, right: 0 } : { bilateral: 0 };
+    const lastAIsSplit = lastA ? isSplitReps(lastA) : repModeA === "dualUnilateral";
+    const lastBIsSplit = lastB ? isSplitReps(lastB) : repModeB === "dualUnilateral";
+    const zeroedA: StrengthSet["reps"] = lastAIsSplit ? { left: 0, right: 0 } : { bilateral: 0 };
+    const zeroedB: StrengthSet["reps"] = lastBIsSplit ? { left: 0, right: 0 } : { bilateral: 0 };
+    const carriedA: StrengthSet["reps"] | undefined =
+      lastA && carryOverReps ? { ...lastA.reps } : undefined;
+    const carriedB: StrengthSet["reps"] | undefined =
+      lastB && carryOverReps ? { ...lastB.reps } : undefined;
     const newSetA: StrengthSet = {
       weight: carryOverWeight && lastA ? lastA.weight : 0,
-      reps: carryOverReps && lastA ? { ...lastA.reps } : emptyA,
+      reps: carriedA ?? zeroedA,
     };
     const newSetB: StrengthSet = {
       weight: carryOverWeight && lastB ? lastB.weight : 0,
-      reps: carryOverReps && lastB ? { ...lastB.reps } : emptyB,
+      reps: carriedB ?? zeroedB,
     };
     onSetsAChange([...setsA, newSetA]);
     onSetsBChange([...setsB, newSetB]);
@@ -170,6 +176,7 @@ export function SupersetLogger({
   };
 
   const handleSplitToggleA = (index: number) => {
+    if (repModeA === "dualUnilateral") return;
     const s = setsA[index];
     const isSplit = isSplitReps(s);
     if (isSplit) {
@@ -182,6 +189,7 @@ export function SupersetLogger({
   };
 
   const handleSplitToggleB = (index: number) => {
+    if (repModeB === "dualUnilateral") return;
     const s = setsB[index];
     const isSplit = isSplitReps(s);
     if (isSplit) {
@@ -348,7 +356,7 @@ export function SupersetLogger({
                 index={ri}
                 set={setA}
                 isPr={isPrA}
-                splitReps={isSplitReps(setA)}
+                splitReps={repModeA === "dualUnilateral" || isSplitReps(setA)}
                 repMode={repModeA}
                 repInputStyle={repInputStyle ?? "dropdown"}
                 showFailureMode={showFailureMode}
@@ -365,7 +373,7 @@ export function SupersetLogger({
                 index={ri}
                 set={setB}
                 isPr={isPrB}
-                splitReps={isSplitReps(setB)}
+                splitReps={repModeB === "dualUnilateral" || isSplitReps(setB)}
                 repMode={repModeB}
                 repInputStyle={repInputStyle ?? "dropdown"}
                 showFailureMode={showFailureMode}

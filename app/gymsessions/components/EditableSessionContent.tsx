@@ -71,7 +71,12 @@ function EditableSetRow({
   onUpdate: (updated: StrengthSet) => void
   onDelete: () => void
 }) {
-  const isUnilateral = set.reps.left !== undefined && set.reps.right !== undefined
+  const exerciseDef = EXERCISE_MAP.get(exerciseKey)
+  const isUnilateralExercise =
+    exerciseDef?.repMode === "dualUnilateral" ||
+    (exerciseDef?.repMode === undefined && exerciseDef?.isUnilateral === true)
+  const isSplitShape = set.reps.left !== undefined || set.reps.right !== undefined
+  const isUnilateral = isUnilateralExercise || isSplitShape
 
   const commitWeight = (e: React.FocusEvent<HTMLInputElement>) => {
     const v = e.target.valueAsNumber
@@ -83,14 +88,18 @@ function EditableSetRow({
     onUpdate({ ...set, reps: { bilateral: v } })
   }
 
+  const legacyBilateralFallback = isUnilateralExercise ? set.reps.bilateral : undefined
+
   const commitLeftReps = (e: React.FocusEvent<HTMLInputElement>) => {
     const v = Math.max(0, parseInt(e.target.value) || 0)
-    onUpdate({ ...set, reps: { left: v, right: set.reps.right ?? 0 } })
+    const rightFallback = set.reps.right ?? legacyBilateralFallback ?? 0
+    onUpdate({ ...set, reps: { left: v, right: rightFallback } })
   }
 
   const commitRightReps = (e: React.FocusEvent<HTMLInputElement>) => {
     const v = Math.max(0, parseInt(e.target.value) || 0)
-    onUpdate({ ...set, reps: { left: set.reps.left ?? 0, right: v } })
+    const leftFallback = set.reps.left ?? legacyBilateralFallback ?? 0
+    onUpdate({ ...set, reps: { left: leftFallback, right: v } })
   }
 
   const commitEffort = (e: React.FocusEvent<HTMLInputElement>) => {
@@ -119,7 +128,8 @@ function EditableSetRow({
   }
 
   const toggleSplitReps = () => {
-    if (isUnilateral) {
+    if (isUnilateralExercise) return
+    if (isSplitShape) {
       const bilateral = Math.max(set.reps.left ?? 0, set.reps.right ?? 0)
       onUpdate({ ...set, reps: { bilateral } })
     } else {
@@ -151,22 +161,26 @@ function EditableSetRow({
           <div>
             <div className="flex items-center justify-between">
               <label className="text-[9px] text-muted-foreground/50 uppercase tracking-wider">Reps (L // R)</label>
-              <button
-                type="button"
-                onClick={toggleSplitReps}
-                className="inline-flex items-center gap-1 text-[9px] uppercase tracking-wider text-muted-foreground/70 hover:text-foreground transition-colors"
-                aria-label="Merge left and right reps"
-              >
-                <SplitSquareHorizontal className="h-3 w-3" />
-                Merge
-              </button>
+              {!isUnilateralExercise && (
+                <button
+                  type="button"
+                  onClick={toggleSplitReps}
+                  className="inline-flex items-center gap-1 text-[9px] uppercase tracking-wider text-muted-foreground/70 hover:text-foreground transition-colors"
+                  aria-label="Merge left and right reps"
+                >
+                  <SplitSquareHorizontal className="h-3 w-3" />
+                  Merge
+                </button>
+              )}
             </div>
             <div className="grid grid-cols-2 gap-1">
               <Input
                 key={`${setKey}-rl`}
                 type="number"
                 inputMode="numeric"
-                defaultValue={(set.reps.left ?? 0) > 0 ? set.reps.left : ""}
+                defaultValue={(set.reps.left ?? legacyBilateralFallback ?? 0) > 0
+                  ? (set.reps.left ?? legacyBilateralFallback)
+                  : ""}
                 onBlur={commitLeftReps}
                 placeholder="L"
                 className={`h-8 text-xs ${NUMBER_INPUT_NO_SPIN_CLASS}`}
@@ -175,7 +189,9 @@ function EditableSetRow({
                 key={`${setKey}-rr`}
                 type="number"
                 inputMode="numeric"
-                defaultValue={(set.reps.right ?? 0) > 0 ? set.reps.right : ""}
+                defaultValue={(set.reps.right ?? legacyBilateralFallback ?? 0) > 0
+                  ? (set.reps.right ?? legacyBilateralFallback)
+                  : ""}
                 onBlur={commitRightReps}
                 placeholder="R"
                 className={`h-8 text-xs ${NUMBER_INPUT_NO_SPIN_CLASS}`}
@@ -412,8 +428,16 @@ export function EditableSessionContent({
       const exercise = exercises[exIndex]
       if (exercise.type !== "strength") return prev
       const lastSet = exercise.sets[exercise.sets.length - 1]
-      const lastIsSplit = lastSet && (lastSet.reps.left !== undefined || lastSet.reps.right !== undefined)
-      const emptyReps = lastIsSplit ? { left: 0, right: 0 } : { bilateral: 0 }
+      const exDef = EXERCISE_MAP.get(exercise.exerciseType)
+      const isUnilateralExercise =
+        exDef?.repMode === "dualUnilateral" ||
+        (exDef?.repMode === undefined && exDef?.isUnilateral === true)
+      const lastIsSplit = lastSet
+        ? lastSet.reps.left !== undefined || lastSet.reps.right !== undefined
+        : isUnilateralExercise
+      const emptyReps = isUnilateralExercise || lastIsSplit
+        ? { left: 0, right: 0 }
+        : { bilateral: 0 }
       exercises[exIndex] = { ...exercise, sets: [...exercise.sets, { weight: 0, reps: emptyReps }] }
       return { ...prev, exercises }
     })
